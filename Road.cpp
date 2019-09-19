@@ -3,7 +3,10 @@
 
 Road::Road(double length, int id, int junction, std::vector<std::shared_ptr<RoadGeometry>> geometries)
     : length(length), id(id), junction(junction), geometries(geometries)
-{  }
+{  
+    std::sort(this->geometries.begin(), this->geometries.end()
+        , [](const std::shared_ptr<RoadGeometry>& a, const std::shared_ptr<RoadGeometry>& b) { return a->s0 < b->s0; } );
+}
 
 void Road::add_lanesection(std::shared_ptr<LaneSection> lane_section)
 {
@@ -20,8 +23,12 @@ void Road::add_lanesection(std::vector<std::shared_ptr<LaneSection>> lane_sectio
 
 std::pair<double, double> Road::get_refline_point(double s, double t)
 {
-    for( std::shared_ptr<RoadGeometry> geom : geometries ) {
-        std::cout << geom->s0 << std::endl;
+    std::shared_ptr<RoadGeometry> target_geom = this->geometries.front();
+    for( int idx = 1; idx < geometries.size(); idx++ ) {
+        if( s > geometries.at(idx)->s0 ) {
+            target_geom = geometries.at(idx-1);
+            break;
+        }
     }
-    return std::make_pair(0.0, 0.0);
+    return target_geom->get_point(s, t);
 }
