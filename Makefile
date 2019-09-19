@@ -1,15 +1,23 @@
 CC = g++
 FLAGS = -std=c++11 -g `pkg-config --cflags --libs pugixml`
-BUILDDIR = build
+BUILD_DIR = build
+CPP_FILES=$(shell find . -name '*.cpp' -type f ! -name 'main.cpp')
+OBJ_FILES=$(CPP_FILES:.cpp=.o)
 
-all: dir OpenDriveMap.o
-	$(CC) $(FLAGS) -o $(BUILDDIR)/main main.cpp $(BUILDDIR)/OpenDriveMap.o 
+all: dir $(OBJ_FILES)
+	$(CC) $(FLAGS) -o $(BUILD_DIR)/main $(wildcard $(BUILD_DIR)/*.o) main.cpp
 
 dir:
-	mkdir -p $(BUILDDIR)
+	mkdir -p $(BUILD_DIR)
 
-OpenDriveMap.o:
-	$(CC) $(FLAGS) -c -o $(BUILDDIR)/OpenDriveMap.o OpenDriveMap.cpp
+Geometries.o: Geometries.cpp odrSpiral.o
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+
+odrSpiral.o: Spiral/odrSpiral.c
+	$(CC) -c -o $(BUILD_DIR)/$@ $< 
+
+%.o: %.cpp
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
 
 clean:
-	rm -rf $(BUILDDIR)/*
+	rm -rf $(BUILD_DIR)/*
