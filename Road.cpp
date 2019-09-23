@@ -25,9 +25,10 @@ std::pair<double, double> Road::get_refline_point(double s, double t)
 {
     std::shared_ptr<RoadGeometry> target_geom = this->geometries.front();
     for( int idx = 1; idx < geometries.size(); idx++ ) {
-        if( s > geometries.at(idx)->s0 ) {
-            target_geom = geometries.at(idx-1);
+        if( geometries.at(idx)->s0 > s ) {
             break;
+        } else {
+            target_geom = geometries.at(idx);
         }
     }
     return target_geom->get_point(s, t);

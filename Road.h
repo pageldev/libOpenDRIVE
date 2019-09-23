@@ -18,7 +18,8 @@ class Road : public std::enable_shared_from_this<Road>
         void add_lanesection(std::vector<std::shared_ptr<LaneSection>> lane_sections);
         std::pair<double, double> get_refline_point(double s, double t = 0);
 
-        double length, id, junction;
+        int id;
+        double length, junction;
         std::vector<std::shared_ptr<RoadGeometry>> geometries;
         std::vector<std::shared_ptr<LaneSection>> lane_sections;
 };

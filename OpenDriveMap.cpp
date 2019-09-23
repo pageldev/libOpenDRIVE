@@ -1,5 +1,6 @@
 #include "OpenDriveMap.h"
 
+
 OpenDriveMap::OpenDriveMap(std::string xodr_file) 
     : xodr_file(xodr_file)
 {
@@ -89,4 +90,71 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         }
         road->add_lanesection(lane_sections);
     }
+}
+
+void OpenDriveMap::export_as_obj(std::string out_file, double resolution)
+{
+    std::ofstream obj_file(out_file);
+    int vert_idx = 1;
+    for( int idx = 0; idx < roads.size(); idx++ ) {
+        std::shared_ptr<Road> road = this->roads.at(idx);
+        for( std::shared_ptr<LaneSection> lane_section : road->lane_sections ) {
+            std::vector<int> sideA_idxs, sideB_idxs;
+            auto outer_lanes = std::minmax_element(lane_section->lanes.begin(), lane_section->lanes.end()
+                , [](const std::shared_ptr<Lane>& a, const std::shared_ptr<Lane>& b){ return a->id < b->id; } );
+            for( int val = 0; val < int(lane_section->length/resolution); val++ ) {
+                double s = val*resolution + lane_section->s0;
+                std::pair<double, double> xy_pt_A = lane_section->id2lane.at((*outer_lanes.first)->id)->get_outer_border_pt(s);
+                obj_file << "v " << xy_pt_A.first << " " << xy_pt_A.second << " 0.0" << std::endl;
+                sideA_idxs.push_back(vert_idx++);
+                std::pair<double, double> xy_pt_B = lane_section->id2lane.at((*outer_lanes.second)->id)->get_outer_border_pt(s);
+                obj_file << "v " << xy_pt_B.first << " " << xy_pt_B.second << " 0.0" << std::endl;
+                sideB_idxs.push_back(vert_idx++);
+            }
+            std::reverse(sideB_idxs.begin(), sideB_idxs.end());
+            obj_file << "f ";
+            for( int vert_idx : sideA_idxs ) obj_file << vert_idx << " ";
+            for( int vert_idx : sideB_idxs ) obj_file << vert_idx << " ";
+            obj_file << std::endl;
+        }
+    }
+    obj_file.close();
+}
+
+void OpenDriveMap::export_as_geojson(std::string out_file, double resolution)
+{
+    Json::Value features;
+    for( int idx = 0; idx < this->roads.size(); idx++ ) {
+        std::shared_ptr<Road> road = this->roads.at(idx);
+        Json::Value coordinates;
+        for( int sample_nr = 0; sample_nr < int(road->length/resolution); sample_nr++ ) {
+            double s = sample_nr*resolution;
+            std::pair<double, double> xy_pt = road->get_refline_point(s);
+            Json::Value position;
+            position[0] = xy_pt.first;
+            position[1] = xy_pt.second;
+            coordinates[sample_nr] = position;
+        }
+        Json::Value geometry;
+        geometry["type"] = "LineString";
+        geometry["coordinates"] = coordinates;
+        
+        Json::Value properties;
+        properties["id"] = road->id;
+        properties["length"] = road->length;
+        
+        Json::Value feature;
+        feature["type"] = "Feature";
+        feature["geometry"] = geometry;
+        feature["properties"] = properties;
+
+        features[idx] = feature;
+    }
+    Json::Value feature_collection;
+    feature_collection["type"] = "FeatureCollection";
+    feature_collection["features"] = features;
+
+    std::ofstream geojson_file(out_file);
+    geojson_file << feature_collection;
+    geojson_file.close();
 }

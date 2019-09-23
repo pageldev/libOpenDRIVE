@@ -2,6 +2,7 @@
 
 #include "Road.h"
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -21,7 +22,7 @@ struct LaneWidth
 struct Lane
 {
     Lane(int id, std::vector<std::shared_ptr<LaneWidth>> lane_widths);
-    std::pair<double, double> get_lane_border_pt(double s);
+    std::pair<double, double> get_outer_border_pt(double s);
 
     int id;
     std::shared_ptr<LaneSection> lanesection;
@@ -36,6 +37,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     void add_lane(std::vector<std::shared_ptr<Lane>> lanes);
 
     double s0, length;
+    std::map<int, std::shared_ptr<Lane>> id2lane;
     std::shared_ptr<Road> road;
     std::vector<std::shared_ptr<Lane>> lanes;
 };
