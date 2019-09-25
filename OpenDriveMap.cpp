@@ -121,7 +121,7 @@ void OpenDriveMap::export_as_obj(std::string out_file, double resolution)
     obj_file.close();
 }
 
-void OpenDriveMap::export_as_geojson(std::string out_file, double resolution)
+void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 {
     Json::Value features;
     for( int idx = 0; idx < this->roads.size(); idx++ ) {
