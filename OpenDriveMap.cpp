@@ -49,7 +49,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             }
         }
         std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id, geometries);
-        this->roads.push_back(road);
+        this->roads.insert( std::pair<int, std::shared_ptr<Road>>(road->id, road) );
 
         /* read and sort lanesections by s */
         pugi::xpath_node_set lane_section__xpath_nodes = road_node.node().select_nodes(".//lanes//laneSection");
@@ -125,8 +125,8 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 {
     Json::Value features;
     int feature_idx = 0;
-    for( std::shared_ptr<Road> road : this->roads ) {
-        for( std::shared_ptr<RoadGeometry> road_geometry : road->geometries ) {
+    for( std::pair<int, std::shared_ptr<Road>> road : this->roads ) {
+        for( std::shared_ptr<RoadGeometry> road_geometry : road.second->geometries ) {
             Json::Value coordinates;
             for( int sample_nr = 0; sample_nr < int(road_geometry->length/resolution); sample_nr++ ) {
                 double s = road_geometry->s0 + sample_nr*resolution;
@@ -141,7 +141,7 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
             geometry["coordinates"] = coordinates;
             
             Json::Value properties;
-            properties["road_id"] = road->id;
+            properties["road_id"] = road.second->id;
             properties["geometry_type"] = geometry_type2str.at(road_geometry->type);
             properties["length"] = road_geometry->length;
             
