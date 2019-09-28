@@ -8,7 +8,7 @@ RoadGeometry::~RoadGeometry() { };
 
 
 Line::Line(double s0, double x0, double y0, double hdg0, double length)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::line)
+    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Line)
 {  }
 
 std::pair<double, double> Line::get_point(double s, double t)
@@ -20,7 +20,7 @@ std::pair<double, double> Line::get_point(double s, double t)
 
 
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::spiral)
+    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Spiral)
     , curv_start(curv_start)
     , curv_end(curv_end)
 {  
@@ -46,7 +46,7 @@ std::pair<double, double> Spiral::get_point(double s, double t)
 
 
 Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double curvature)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::arc)
+    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Arc)
     , curvature(curvature)
 {  }
 
@@ -64,7 +64,7 @@ std::pair<double, double> Arc::get_point(double s, double t)
 
 ParamPoly3::ParamPoly3(double s0, double x0, double y0, double hdg0, double length
         , double aU, double bU, double cU, double dU, double aV, double bV, double cV, double dV)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::paramPoly3)
+    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::ParamPoly3)
     , aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV)
 {  }
 

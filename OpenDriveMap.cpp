@@ -124,31 +124,34 @@ void OpenDriveMap::export_as_obj(std::string out_file, double resolution)
 void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 {
     Json::Value features;
-    for( int idx = 0; idx < this->roads.size(); idx++ ) {
-        std::shared_ptr<Road> road = this->roads.at(idx);
-        Json::Value coordinates;
-        for( int sample_nr = 0; sample_nr < int(road->length/resolution); sample_nr++ ) {
-            double s = sample_nr*resolution;
-            std::pair<double, double> xy_pt = road->get_refline_point(s);
-            Json::Value position;
-            position[0] = xy_pt.first;
-            position[1] = xy_pt.second;
-            coordinates[sample_nr] = position;
-        }
-        Json::Value geometry;
-        geometry["type"] = "LineString";
-        geometry["coordinates"] = coordinates;
-        
-        Json::Value properties;
-        properties["id"] = road->id;
-        properties["length"] = road->length;
-        
-        Json::Value feature;
-        feature["type"] = "Feature";
-        feature["geometry"] = geometry;
-        feature["properties"] = properties;
+    int feature_idx = 0;
+    for( std::shared_ptr<Road> road : this->roads ) {
+        for( std::shared_ptr<RoadGeometry> road_geometry : road->geometries ) {
+            Json::Value coordinates;
+            for( int sample_nr = 0; sample_nr < int(road_geometry->length/resolution); sample_nr++ ) {
+                double s = road_geometry->s0 + sample_nr*resolution;
+                std::pair<double, double> xy_pt = road_geometry->get_point(s);
+                Json::Value position;
+                position[0] = xy_pt.first;
+                position[1] = xy_pt.second;
+                coordinates[sample_nr] = position;
+            }
+            Json::Value geometry;
+            geometry["type"] = "LineString";
+            geometry["coordinates"] = coordinates;
+            
+            Json::Value properties;
+            properties["road_id"] = road->id;
+            properties["geometry_type"] = geometry_type2str.at(road_geometry->type);
+            properties["length"] = road_geometry->length;
+            
+            Json::Value feature;
+            feature["type"] = "Feature";
+            feature["geometry"] = geometry;
+            feature["properties"] = properties;
 
-        features[idx] = feature;
+            features[feature_idx++] = feature;
+        }
     }
     Json::Value feature_collection;
     feature_collection["type"] = "FeatureCollection";
