@@ -25,6 +25,9 @@ Road.o: Road.cpp
 OpenDriveMap.o: OpenDriveMap.cpp
 	$(CC) $(FLAGS) `pkg-config --cflags pugixml jsoncpp` -c -o $(BUILD_DIR)/$@ $<
 
+Utils.o: Utils.cpp
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+
 %.o: %.cpp
 	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
 

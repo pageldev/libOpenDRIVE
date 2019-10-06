@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Road.h"
+#include "Geometries.h"
 
 #include <map>
 #include <memory>
@@ -22,7 +23,7 @@ struct LaneWidth
 struct Lane
 {
     Lane(int id, std::vector<std::shared_ptr<LaneWidth>> lane_widths);
-    std::pair<double, double> get_outer_border_pt(double s);
+    Point3D get_outer_border_pt(double s);
 
     int id;
     std::shared_ptr<LaneSection> lanesection;

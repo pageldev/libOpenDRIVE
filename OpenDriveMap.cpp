@@ -49,7 +49,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             }
         }
         std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id, geometries);
-        this->roads.insert( std::pair<int, std::shared_ptr<Road>>(road->id, road) );
+        this->roads.push_back( road );
 
         /* read and sort lanesections by s */
         pugi::xpath_node_set lane_section__xpath_nodes = road_node.node().select_nodes(".//lanes//laneSection");
@@ -92,65 +92,37 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
     }
 }
 
-void OpenDriveMap::export_as_obj(std::string out_file, double resolution)
-{
-    std::ofstream obj_file(out_file);
-    int vert_idx = 1;
-    for( int idx = 0; idx < roads.size(); idx++ ) {
-        std::shared_ptr<Road> road = this->roads.at(idx);
-        for( std::shared_ptr<LaneSection> lane_section : road->lane_sections ) {
-            std::vector<int> sideA_idxs, sideB_idxs;
-            auto outer_lanes = std::minmax_element(lane_section->lanes.begin(), lane_section->lanes.end()
-                , [](const std::shared_ptr<Lane>& a, const std::shared_ptr<Lane>& b){ return a->id < b->id; } );
-            for( int val = 0; val < int(lane_section->length/resolution); val++ ) {
-                double s = val*resolution + lane_section->s0;
-                std::pair<double, double> xy_pt_A = lane_section->id2lane.at((*outer_lanes.first)->id)->get_outer_border_pt(s);
-                obj_file << "v " << xy_pt_A.first << " " << xy_pt_A.second << " 0.0" << std::endl;
-                sideA_idxs.push_back(vert_idx++);
-                std::pair<double, double> xy_pt_B = lane_section->id2lane.at((*outer_lanes.second)->id)->get_outer_border_pt(s);
-                obj_file << "v " << xy_pt_B.first << " " << xy_pt_B.second << " 0.0" << std::endl;
-                sideB_idxs.push_back(vert_idx++);
-            }
-            std::reverse(sideB_idxs.begin(), sideB_idxs.end());
-            obj_file << "f ";
-            for( int vert_idx : sideA_idxs ) obj_file << vert_idx << " ";
-            for( int vert_idx : sideB_idxs ) obj_file << vert_idx << " ";
-            obj_file << std::endl;
-        }
-    }
-    obj_file.close();
-}
 
 void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 {
     Json::Value features;
     int feature_idx = 0;
-    for( std::pair<int, std::shared_ptr<Road>> road : this->roads ) {
-        for( std::shared_ptr<RoadGeometry> road_geometry : road.second->geometries ) {
+    for( std::shared_ptr<Road> road : this->roads ) {
+        for( std::shared_ptr<LaneSection> lane_section : road->lane_sections ) {
             Json::Value coordinates;
-            for( int sample_nr = 0; sample_nr < int(road_geometry->length/resolution); sample_nr++ ) {
-                double s = road_geometry->s0 + sample_nr*resolution;
-                std::pair<double, double> xy_pt = road_geometry->get_point(s);
-                Json::Value position;
-                position[0] = xy_pt.first;
-                position[1] = xy_pt.second;
-                coordinates[sample_nr] = position;
-            }
-            Json::Value geometry;
-            geometry["type"] = "LineString";
-            geometry["coordinates"] = coordinates;
-            
-            Json::Value properties;
-            properties["road_id"] = road.second->id;
-            properties["geometry_type"] = geometry_type2str.at(road_geometry->type);
-            properties["length"] = road_geometry->length;
-            
-            Json::Value feature;
-            feature["type"] = "Feature";
-            feature["geometry"] = geometry;
-            feature["properties"] = properties;
+            for( std::shared_ptr<Lane> lane : lane_section->lanes ) {
+                for( int sample_nr = 0; sample_nr < int(lane_section->length/resolution); sample_nr++ ) {
+                    double s = lane_section->s0 + sample_nr*resolution;
+                    Point3D pt = lane->get_outer_border_pt(s);
+                    Json::Value position;
+                    position[0] = pt.x;
+                    position[1] = pt.y;
+                    coordinates[sample_nr] = position;
+                }
+                Json::Value geometry;
+                geometry["type"] = "LineString";
+                geometry["coordinates"] = coordinates;
 
-            features[feature_idx++] = feature;
+                Json::Value properties;
+                properties["road_id"] = road->id;
+
+                Json::Value feature;
+                feature["type"] = "Feature";
+                feature["geometry"] = geometry;
+                feature["properties"] = properties;
+
+                features[feature_idx++] = feature;
+            }
         }
     }
     Json::Value feature_collection;

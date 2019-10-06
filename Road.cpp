@@ -21,7 +21,7 @@ void Road::add_lanesection(std::vector<std::shared_ptr<LaneSection>> lane_sectio
     }
 }
 
-std::pair<double, double> Road::get_refline_point(double s, double t)
+Point3D Road::get_refline_point(double s, double t)
 {
     std::shared_ptr<RoadGeometry> target_geom = this->geometries.front();
     for( int idx = 1; idx < geometries.size(); idx++ ) {

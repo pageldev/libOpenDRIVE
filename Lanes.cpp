@@ -17,7 +17,7 @@ Lane::Lane(int id, std::vector<std::shared_ptr<LaneWidth>> lane_widths)
         , [](std::shared_ptr<LaneWidth> a, std::shared_ptr<LaneWidth> b){ return a->s_offset < b->s_offset; } );
 }
 
-std::pair<double, double> Lane::get_outer_border_pt(double s)
+Point3D Lane::get_outer_border_pt(double s)
 {    
     int lane_id = this->id;
     double t = 0.0;

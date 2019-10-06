@@ -1,5 +1,6 @@
 #include "OpenDriveMap.h"
 #include "Road.h"
+#include "Utils.h"
 
 #include <iostream>
 #include <memory>
@@ -12,6 +13,6 @@ int main(int argc, char**argv) {
     }
     OpenDriveMap odr(argv[1]);
     odr.export_as_json("out.json");
-    odr.export_as_obj("out.obj");
+
     return 0;
 }

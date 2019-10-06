@@ -19,9 +19,8 @@ class OpenDriveMap
 {
     public:
         OpenDriveMap(std::string xodr_file);
-        void export_as_obj(std::string out_file, double resolution = 0.1);
         void export_as_json(std::string out_file, double resolution = 0.1);
 
         std::string xodr_file;
-        std::map<int /*id*/, std::shared_ptr<Road>> roads;
+        std::vector<std::shared_ptr<Road>> roads;
 };
