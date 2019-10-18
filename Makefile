@@ -1,5 +1,5 @@
 CC = g++
-FLAGS = -std=c++11 -g
+FLAGS = -std=c++11 -g -O3
 BUILD_DIR = build
 CPP_FILES=$(shell find . -name '*.cpp' -type f ! -name 'main.cpp')
 OBJ_FILES=$(CPP_FILES:.cpp=.o)

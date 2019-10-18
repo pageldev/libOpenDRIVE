@@ -3,6 +3,7 @@
 #include "Geometries.h"
 #include "Lanes.h"
 #include "Road.h"
+#include "Utils.h"
 
 #include "pugixml.hpp"
 #include "json/json.h"
@@ -19,7 +20,7 @@ class OpenDriveMap
 {
     public:
         OpenDriveMap(std::string xodr_file);
-        void export_as_json(std::string out_file, double resolution = 0.1);
+        void export_as_json(std::string out_file, double resolution = 0.01);
 
         std::string xodr_file;
         std::vector<std::shared_ptr<Road>> roads;

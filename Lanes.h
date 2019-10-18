@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 
@@ -20,16 +21,28 @@ struct LaneWidth
 };
 
 
-struct Lane
+struct CmpLaneWidth {
+    bool operator()(const std::shared_ptr<LaneWidth>& lhs, const std::shared_ptr<LaneWidth>& rhs) const {
+        return (lhs->s_offset < rhs->s_offset); 
+    }
+};
+
+struct Lane : public std::enable_shared_from_this<Lane>
 {
-    Lane(int id, std::vector<std::shared_ptr<LaneWidth>> lane_widths);
+    Lane(int id, std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths);
     Point3D get_outer_border_pt(double s);
 
     int id;
     std::shared_ptr<LaneSection> lanesection;
-    std::vector<std::shared_ptr<LaneWidth>> lane_widths;
+    std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths;
 };
 
+
+struct CmpLane {
+    bool operator()(const std::shared_ptr<Lane>& lhs, const std::shared_ptr<Lane>& rhs) const {
+        return (lhs->id < rhs->id); 
+    }
+};
 
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
@@ -38,7 +51,6 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     void add_lane(std::vector<std::shared_ptr<Lane>> lanes);
 
     double s0, length;
-    std::map<int, std::shared_ptr<Lane>> id2lane;
     std::shared_ptr<Road> road;
-    std::vector<std::shared_ptr<Lane>> lanes;
+    std::set<std::shared_ptr<Lane>, CmpLane> lanes;
 };
