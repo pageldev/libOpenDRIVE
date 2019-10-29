@@ -1,18 +1,8 @@
 #pragma once
 
-#include "Geometries.h"
-#include "Lanes.h"
 #include "Road.h"
-#include "Utils.h"
 
-#include "pugixml.hpp"
-#include "json/json.h"
-
-#include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 

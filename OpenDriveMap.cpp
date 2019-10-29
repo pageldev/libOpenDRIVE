@@ -1,4 +1,15 @@
 #include "OpenDriveMap.h"
+#include "Geometries.h"
+#include "Lanes.h"
+#include "Utils.h"
+
+#include "pugixml.hpp"
+#include "json/json.h"
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <set>
 
 
 OpenDriveMap::OpenDriveMap(std::string xodr_file) 
@@ -15,7 +26,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         int road_id = road_node.node().attribute("id").as_int();
         int junction_id = road_node.node().attribute("junction").as_int();
         
-        std::set<std::shared_ptr<RoadGeometry>, CmpRoadGeometry> geometries;
+        std::set<std::shared_ptr<RoadGeometry>, PtrCompareS0<RoadGeometry>> geometries;
         pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
         for( pugi::xpath_node geometry_hdr_node : geometry_headers ) {
             double s0 = geometry_hdr_node.node().attribute("s").as_double();
@@ -60,8 +71,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             , [](const pugi::xml_node& a, const pugi::xml_node& b){ 
                 return a.attribute("s").as_double() < b.attribute("s").as_double(); } );
 
-        // std::vector<std::shared_ptr<LaneSection>> lane_sections;
-        std::set<std::shared_ptr<LaneSection>, CmpLaneSection> lane_sections;
+        // std::set<std::shared_ptr<LaneSection>, CmpLaneSection> lane_sections;
         for( int idx = 0; idx < lane_section_nodes.size(); idx++ ) {
             double s0 = lane_section_nodes.at(idx).attribute("s").as_double();
             double lane_section_length = 0;
@@ -70,8 +80,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             } else {
                 lane_section_length = road_length - s0;
             }
-            std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0, lane_section_length);
-            lane_sections.insert(lane_section);
+            // std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0, lane_section_length, road);
+            // lane_sections.insert(lane_section);
+            std::shared_ptr<LaneSection> lane_section = LaneSection::create_lane_section(s0, lane_section_length, road);
             
             std::set<std::shared_ptr<Lane>, CmpLane> lanes;
             for( pugi::xpath_node lane_node : lane_section_nodes.at(idx).select_nodes(".//lane") ) {
@@ -85,11 +96,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                     double d = lane_width_node.node().attribute("d").as_double();
                     lane_widths.insert(std::make_shared<LaneWidth>(s_offset, a, b, c, d));
                 }
-                lanes.insert(std::make_shared<Lane>(lane_id, lane_widths));
+                lanes.insert(Lane::create_lane(lane_id, lane_section, lane_widths));
             }
-            lane_section->add_lane(lanes);
         }
-        road->add_lanesection(lane_sections);
     }
 }
 

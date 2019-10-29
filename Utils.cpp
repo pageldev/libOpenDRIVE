@@ -1,5 +1,9 @@
 #include "Utils.h"
 
+#include <cmath>
+#include <stdexcept>
+#include <utility>
+
 
 std::vector<Point3D> rdp( const std::vector<Point3D>& points, double epsilon )
 {

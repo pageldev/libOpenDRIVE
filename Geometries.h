@@ -1,15 +1,10 @@
 #pragma once
 
-#include "Spiral/odrSpiral.h"
-
-#include <cmath>
-#include <cstring>
 #include <map>
 #include <string>
-#include <utility>
 
 
-enum class Geometry_type { Line, Spiral, Arc, ParamPoly3};
+enum class Geometry_type { Line, Spiral, Arc, ParamPoly3 };
 
 const std::map<Geometry_type, std::string> geometry_type2str = {
     { Geometry_type::Line , "line" },

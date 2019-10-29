@@ -1,15 +1,12 @@
 #pragma once
 
 #include "Road.h"
-#include "Geometries.h"
 
-#include <map>
 #include <memory>
 #include <set>
 
 
-class Road;
-struct LaneSection;
+struct Lane;
 
 struct LaneWidth
 {
@@ -20,32 +17,50 @@ struct LaneWidth
 };
 
 
-struct CmpLaneWidth {
+struct CmpLaneWidth 
+{
     bool operator()(const std::shared_ptr<LaneWidth>& lhs, const std::shared_ptr<LaneWidth>& rhs) const;
 };
 
-struct Lane : public std::enable_shared_from_this<Lane>
+
+struct CmpLane 
 {
-    Lane(int id, std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths);
-    Point3D get_outer_border_pt(double s);
-
-    int id;
-    std::shared_ptr<LaneSection> lanesection;
-    std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths;
-};
-
-
-struct CmpLane {
     bool operator()(const std::shared_ptr<Lane>& lhs, const std::shared_ptr<Lane>& rhs) const;
 };
 
-struct LaneSection : public std::enable_shared_from_this<LaneSection>
+struct LaneSection
 {
-    LaneSection(double s0, double length);
-    void add_lane(std::shared_ptr<Lane> lane);
-    void add_lane(std::set<std::shared_ptr<Lane>, CmpLane> lanes);
-
+    static std::shared_ptr<LaneSection> create_lane_section(double s0, double length, std::shared_ptr<Road> road) 
+    {
+        std::shared_ptr<LaneSection> lane_section(new LaneSection(s0, length, road));
+        road->lane_sections.insert(lane_section);
+        return lane_section;
+    }
     double s0, length;
     std::shared_ptr<Road> road;
     std::set<std::shared_ptr<Lane>, CmpLane> lanes;
+
+    private:
+        LaneSection(double s0, double length, std::shared_ptr<Road> road);
+};
+
+
+/* Lane factory method uses Lanesection - therefore this order, fw-declaring Lane instead of LaneSection */
+struct Lane : public std::enable_shared_from_this<Lane>
+{
+    /* Factory method to register this with parent lane_section (shared_from_this in CTOR not possible) */
+    static std::shared_ptr<Lane> create_lane(int id, std::shared_ptr<LaneSection> lane_section, std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths) 
+    {
+        std::shared_ptr<Lane> lane(new Lane(id, lane_section, lane_widths));
+        lane_section->lanes.insert(lane);
+        return lane;
+    }
+    Point3D get_outer_border_pt(double s);
+
+    int id;
+    std::shared_ptr<LaneSection> lane_section;
+    std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths;
+
+    private:
+        Lane(int id, std::shared_ptr<LaneSection> lane_section, std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths);
 };
