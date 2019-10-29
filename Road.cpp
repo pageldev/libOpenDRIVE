@@ -1,20 +1,25 @@
 #include "Road.h"
 
 
-Road::Road(double length, int id, int junction, std::vector<std::shared_ptr<RoadGeometry>> geometries)
-    : length(length), id(id), junction(junction), geometries(geometries)
-{  
-    std::sort(this->geometries.begin(), this->geometries.end()
-        , [](const std::shared_ptr<RoadGeometry>& a, const std::shared_ptr<RoadGeometry>& b) { return a->s0 < b->s0; } );
+bool CmpRoadGeometry::operator()(const std::shared_ptr<RoadGeometry>& lhs, const std::shared_ptr<RoadGeometry>& rhs) const {
+    return (lhs->s0 < rhs->s0);
 }
+
+bool CmpLaneSection::operator()(const std::shared_ptr<LaneSection>& lhs, const std::shared_ptr<LaneSection>& rhs) const {
+    return (lhs->s0 < rhs->s0);
+}
+
+Road::Road(double length, int id, int junction, std::set<std::shared_ptr<RoadGeometry>, CmpRoadGeometry> geometries)
+    : length(length), id(id), junction(junction), geometries(geometries)
+{  }
 
 void Road::add_lanesection(std::shared_ptr<LaneSection> lane_section)
 {
-    this->lane_sections.push_back(lane_section);
+    this->lane_sections.insert(lane_section);
     lane_section->road = shared_from_this();
 }
 
-void Road::add_lanesection(std::vector<std::shared_ptr<LaneSection>> lane_sections)
+void Road::add_lanesection(std::set<std::shared_ptr<LaneSection>, CmpLaneSection> lane_sections)
 {
     for( std::shared_ptr<LaneSection> lane_section : lane_sections ) {
         this->add_lanesection(lane_section);
@@ -23,13 +28,10 @@ void Road::add_lanesection(std::vector<std::shared_ptr<LaneSection>> lane_sectio
 
 Point3D Road::get_refline_point(double s, double t)
 {
-    std::shared_ptr<RoadGeometry> target_geom = this->geometries.front();
-    for( int idx = 1; idx < geometries.size(); idx++ ) {
-        if( geometries.at(idx)->s0 > s ) {
-            break;
-        } else {
-            target_geom = geometries.at(idx);
-        }
+    std::set<std::shared_ptr<RoadGeometry>, CmpRoadGeometry>::iterator target_geom_iter 
+        = this->geometries.upper_bound(std::make_shared<Line>(s, 0.0, 0.0, 0.0, 0.0));
+    if( target_geom_iter != geometries.begin() ) {
+        target_geom_iter--;
     }
-    return target_geom->get_point(s, t);
+    return (*target_geom_iter)->get_point(s, t);
 }

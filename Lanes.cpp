@@ -1,8 +1,20 @@
 #include "Lanes.h"
 
+
+bool CmpLane::operator()(const std::shared_ptr<Lane>& lhs, const std::shared_ptr<Lane>& rhs) const {
+    return (lhs->id < rhs->id); 
+}
+
+
+bool CmpLaneWidth::operator()(const std::shared_ptr<LaneWidth>& lhs, const std::shared_ptr<LaneWidth>& rhs) const {
+    return (lhs->s_offset < rhs->s_offset); 
+}
+
+
 LaneWidth::LaneWidth(double sOffset, double a, double b, double c, double d)
     : s_offset(sOffset), a(a), b(b), c(c), d(d)
 {  }
+
 
 double LaneWidth::get_width(double ds)
 {
@@ -41,13 +53,15 @@ LaneSection::LaneSection(double s0, double length)
     : s0(s0), length(length)
 {  }
 
+
 void LaneSection::add_lane(std::shared_ptr<Lane> lane)
 {
     lanes.insert(lane);
     lane->lanesection = shared_from_this();
 }
 
-void LaneSection::add_lane(std::vector<std::shared_ptr<Lane>> lanes)
+
+void LaneSection::add_lane(std::set<std::shared_ptr<Lane>, CmpLane> lanes)
 {
     for( std::shared_ptr<Lane> lane : lanes ) {
         this->add_lane(lane);

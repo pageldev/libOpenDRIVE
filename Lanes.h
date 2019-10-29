@@ -6,7 +6,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <vector>
 
 
 class Road;
@@ -22,9 +21,7 @@ struct LaneWidth
 
 
 struct CmpLaneWidth {
-    bool operator()(const std::shared_ptr<LaneWidth>& lhs, const std::shared_ptr<LaneWidth>& rhs) const {
-        return (lhs->s_offset < rhs->s_offset); 
-    }
+    bool operator()(const std::shared_ptr<LaneWidth>& lhs, const std::shared_ptr<LaneWidth>& rhs) const;
 };
 
 struct Lane : public std::enable_shared_from_this<Lane>
@@ -39,16 +36,14 @@ struct Lane : public std::enable_shared_from_this<Lane>
 
 
 struct CmpLane {
-    bool operator()(const std::shared_ptr<Lane>& lhs, const std::shared_ptr<Lane>& rhs) const {
-        return (lhs->id < rhs->id); 
-    }
+    bool operator()(const std::shared_ptr<Lane>& lhs, const std::shared_ptr<Lane>& rhs) const;
 };
 
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0, double length);
     void add_lane(std::shared_ptr<Lane> lane);
-    void add_lane(std::vector<std::shared_ptr<Lane>> lanes);
+    void add_lane(std::set<std::shared_ptr<Lane>, CmpLane> lanes);
 
     double s0, length;
     std::shared_ptr<Road> road;

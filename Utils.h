@@ -3,9 +3,9 @@
 #include "Geometries.h"
 
 #include <cmath>
+#include <stdexcept>
 #include <utility>
 #include <vector>
-#include <stdexcept>
 
 
 std::vector<std::pair<double, double>> rdp( const std::vector<std::pair<double, double>>& points, double epsilon = 0.1 );
