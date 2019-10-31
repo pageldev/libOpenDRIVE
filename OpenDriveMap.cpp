@@ -26,6 +26,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         int road_id = road_node.node().attribute("id").as_int();
         int junction_id = road_node.node().attribute("junction").as_int();
         
+        /* parse road geometries */
         std::set<std::shared_ptr<RoadGeometry>, PtrCompareS0<RoadGeometry>> geometries;
         pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
         for( pugi::xpath_node geometry_hdr_node : geometry_headers ) {
@@ -59,33 +60,29 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                 std::cout << "Could not parse " << geometry_type << std::endl;
             }
         }
+
+        /* make road from geometries */
         std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id, geometries);
         this->roads.push_back( road );
 
-        /* read and sort lanesections by s */
-        pugi::xpath_node_set lane_section__xpath_nodes = road_node.node().select_nodes(".//lanes//laneSection");
-        std::vector<pugi::xml_node> lane_section_nodes;
-        std::transform(lane_section__xpath_nodes.begin(), lane_section__xpath_nodes.end(), std::back_inserter(lane_section_nodes)
-            , [](const pugi::xpath_node& a) { return a.node(); } ); 
-        std::sort(lane_section_nodes.begin(), lane_section_nodes.end()
-            , [](const pugi::xml_node& a, const pugi::xml_node& b){ 
-                return a.attribute("s").as_double() < b.attribute("s").as_double(); } );
+        /* parse road elevation profiles */
+        pugi::xpath_node_set elevation_nodes = road_node.node().select_nodes(".//elevationProfile//elevation");
+        for( pugi::xpath_node elevation_node : elevation_nodes ) {
+            double s0 = elevation_node.node().attribute("s").as_double();
+            double a = elevation_node.node().attribute("a").as_double();
+            double b = elevation_node.node().attribute("b").as_double();
+            double c = elevation_node.node().attribute("c").as_double();
+            double d = elevation_node.node().attribute("d").as_double();
+            road->elevation_profiles.insert(std::make_shared<ElevationProfile>(s0, a, b, c, d));
+        }
 
-        // std::set<std::shared_ptr<LaneSection>, CmpLaneSection> lane_sections;
-        for( int idx = 0; idx < lane_section_nodes.size(); idx++ ) {
-            double s0 = lane_section_nodes.at(idx).attribute("s").as_double();
-            double lane_section_length = 0;
-            if( (idx+1) < lane_section_nodes.size() ) {
-                lane_section_length = lane_section_nodes.at(idx+1).attribute("s").as_double() - s0;
-            } else {
-                lane_section_length = road_length - s0;
-            }
-            // std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0, lane_section_length, road);
-            // lane_sections.insert(lane_section);
-            std::shared_ptr<LaneSection> lane_section = LaneSection::create_lane_section(s0, lane_section_length, road);
-            
+        /* parse road lane sections and lanes */
+        pugi::xpath_node_set lane_section_nodes = road_node.node().select_nodes(".//lanes//laneSection");
+        for( pugi::xpath_node lane_section_node : lane_section_nodes ) {
+            double s0 = lane_section_node.node().attribute("s").as_double();
+            std::shared_ptr<LaneSection> lane_section = LaneSection::create_lane_section(s0, road);
             std::set<std::shared_ptr<Lane>, CmpLane> lanes;
-            for( pugi::xpath_node lane_node : lane_section_nodes.at(idx).select_nodes(".//lane") ) {
+            for( pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane") ) {
                 int lane_id = lane_node.node().attribute("id").as_int();
                 std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths;
                 for( pugi::xpath_node lane_width_node : lane_node.node().select_nodes(".//width") ) {
@@ -120,14 +117,21 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
     Json::Value features;
     int feature_idx = 0;
     for( std::shared_ptr<Road> road : this->roads ) {
-        for( std::shared_ptr<LaneSection> lane_section : road->lane_sections ) {
-            for( std::shared_ptr<Lane> lane : lane_section->lanes ) {
+        for( std::set<std::shared_ptr<LaneSection>>::iterator lane_sec_iter = road->lane_sections.begin(); lane_sec_iter != road->lane_sections.end(); lane_sec_iter++ ) {
+            double lane_section_length = 0;
+            if( std::next(lane_sec_iter) == road->lane_sections.end() ) {
+                lane_section_length = road->length - (*lane_sec_iter)->s0;
+            } else {
+                lane_section_length = (*std::next(lane_sec_iter))->s0 - (*lane_sec_iter)->s0;
+            }
+            for( std::shared_ptr<Lane> lane : (*lane_sec_iter)->lanes ) {
                 std::vector<Point3D> points;
-                for( int sample_nr = 0; sample_nr < int(lane_section->length/resolution); sample_nr++ ) {
-                    double s = lane_section->s0 + static_cast<double>(sample_nr)*resolution;
+                for( int sample_nr = 0; sample_nr < int(lane_section_length/resolution); sample_nr++ ) {
+                    double s = (*lane_sec_iter)->s0 + static_cast<double>(sample_nr)*resolution;
                     points.push_back(lane->get_outer_border_pt(s));
                 }
-                points.push_back( lane->get_outer_border_pt(lane_section->s0 + lane_section->length ) );
+
+                points.push_back( lane->get_outer_border_pt((*lane_sec_iter)->s0 + lane_section_length ) );
                 Json::Value coordinates;
                 std::vector<Point3D> reduced_points = rdp( points, resolution );           
                 for( int idx = 0; idx < reduced_points.size(); idx++ ) {
@@ -135,6 +139,7 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
                     Json::Value position;
                     position[0] = pt.x - center_of_gravity.x;
                     position[1] = pt.y - center_of_gravity.y;
+                    position[2] = pt.z;
                     coordinates[idx] = position;
                 }
 

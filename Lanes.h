@@ -30,18 +30,18 @@ struct CmpLane
 
 struct LaneSection
 {
-    static std::shared_ptr<LaneSection> create_lane_section(double s0, double length, std::shared_ptr<Road> road) 
+    static std::shared_ptr<LaneSection> create_lane_section(double s0, std::shared_ptr<Road> road) 
     {
-        std::shared_ptr<LaneSection> lane_section(new LaneSection(s0, length, road));
+        std::shared_ptr<LaneSection> lane_section(new LaneSection(s0, road));
         road->lane_sections.insert(lane_section);
         return lane_section;
     }
-    double s0, length;
+    double s0;
     std::shared_ptr<Road> road;
     std::set<std::shared_ptr<Lane>, CmpLane> lanes;
 
     private:
-        LaneSection(double s0, double length, std::shared_ptr<Road> road);
+        LaneSection(double s0, std::shared_ptr<Road> road);
 };
 
 

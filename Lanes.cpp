@@ -49,6 +49,6 @@ Point3D Lane::get_outer_border_pt(double s)
 }
 
 
-LaneSection::LaneSection(double s0, double length, std::shared_ptr<Road> road)
-    : s0(s0), length(length), road(road)
+LaneSection::LaneSection(double s0, std::shared_ptr<Road> road)
+    : s0(s0), road(road)
 {  }

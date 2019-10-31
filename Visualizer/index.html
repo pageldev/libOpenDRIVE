@@ -67,7 +67,7 @@
                         let geometry_line = new THREE.Geometry();
                         let road_geom =  odr_geometries[idx];
                         for( const pt of road_geom.geometry.coordinates ) {
-                            geometry_line.vertices.push(new THREE.Vector3( pt[0], pt[1], 0) );
+                            geometry_line.vertices.push(new THREE.Vector3( pt[0], pt[1], pt[2]) );
                         }
                         const material_line = new THREE.LineBasicMaterial( {
                             linewidth: 3,
