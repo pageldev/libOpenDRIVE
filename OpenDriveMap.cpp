@@ -76,11 +76,23 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             road->elevation_profiles.insert(std::make_shared<ElevationProfile>(s0, a, b, c, d));
         }
 
+        /* parse lane offsets */
+        pugi::xpath_node_set lane_offset_nodes = road_node.node().select_nodes(".//lanes//laneOffset");
+        for( pugi::xpath_node lane_offset_node : lane_offset_nodes ) {
+            double s0 = lane_offset_node.node().attribute("s").as_double();
+            double a = lane_offset_node.node().attribute("a").as_double();
+            double b = lane_offset_node.node().attribute("b").as_double();
+            double c = lane_offset_node.node().attribute("c").as_double();
+            double d = lane_offset_node.node().attribute("d").as_double();
+            road->lane_offsets.insert(std::make_shared<LaneOffset>(s0, a, b, c, d));
+        }
+
         /* parse road lane sections and lanes */
         pugi::xpath_node_set lane_section_nodes = road_node.node().select_nodes(".//lanes//laneSection");
         for( pugi::xpath_node lane_section_node : lane_section_nodes ) {
             double s0 = lane_section_node.node().attribute("s").as_double();
-            std::shared_ptr<LaneSection> lane_section = LaneSection::create_lane_section(s0, road);
+            std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
+            road->add_lane_section(lane_section);
             std::set<std::shared_ptr<Lane>, CmpLane> lanes;
             for( pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane") ) {
                 int lane_id = lane_node.node().attribute("id").as_int();
@@ -93,7 +105,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                     double d = lane_width_node.node().attribute("d").as_double();
                     lane_widths.insert(std::make_shared<LaneWidth>(s_offset, a, b, c, d));
                 }
-                lanes.insert(Lane::create_lane(lane_id, lane_section, lane_widths));
+                lane_section->add_lane(std::make_shared<Lane>(lane_id, lane_widths));
             }
         }
     }
