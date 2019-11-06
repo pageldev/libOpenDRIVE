@@ -56,11 +56,6 @@ Point3D Lane::get_outer_border_pt(double s)
     }
 
     t = (this->id < 0) ? -t : t;
-    std::cout << lane_id << std::endl;
-    // if( lane_id == 1) {
-    //     for( int i = 0; i < int(t*10); i++ ) std::cout << "#";
-    //     std::cout << std::endl;
-    // }
     return lane_section->road->get_refline_point(s, t);
 }
 
