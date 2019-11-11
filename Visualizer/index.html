@@ -74,9 +74,13 @@
                             color: colors[road_idx%colors.length][idx%3]
                         });
                         const line = new THREE.Line( geometry_line, material_line );
-                        line.odr_id = road_geom.properties.road_id;
+                        line.road_id = road_geom.properties.road_id;
+                        line.lane_id = road_geom.properties.lane_id;
+                        line.type = road_geom.properties.lane_type;
                         line.geometry_type = road_geom.properties.geometry_type;
-                        line_group.add(line);
+                        if( line.type == "driving" ) {
+                            line_group.add(line);
+                        }
                     }
                     road_idx++;
                 } );
@@ -142,10 +146,10 @@
                     if ( intersected_obj != intersections[0].object ) {
                         if ( intersected_obj ) intersected_obj.material.linewidth = 3; /* old one to default width */
                         intersected_obj = intersections[0].object;
-                        if( !intersected_obj.odr_id ) {
+                        if( !intersected_obj.road_id ) {
                             tooltip.innerHTML = "n.a";
                         } else {
-                            tooltip.innerHTML = `${intersected_obj.odr_id}<br>${intersected_obj.geometry_type}`;
+                            tooltip.innerHTML = `${intersected_obj.road_id}<br>${intersected_obj.lane_id}<br>${intersected_obj.type}`;
                         }
                     }
                     if ( intersected_obj ) intersected_obj.material.linewidth = 10;

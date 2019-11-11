@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <set>
 
 
 OpenDriveMap::OpenDriveMap(std::string xodr_file) 
@@ -27,7 +26,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         int junction_id = road_node.node().attribute("junction").as_int();
         
         /* parse road geometries */
-        std::set<std::shared_ptr<RoadGeometry>, PtrCompareS0<RoadGeometry>> geometries;
+        std::map<double, std::shared_ptr<RoadGeometry>> geometries;
         pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
         for( pugi::xpath_node geometry_hdr_node : geometry_headers ) {
             double s0 = geometry_hdr_node.node().attribute("s").as_double();
@@ -38,14 +37,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             pugi::xml_node geometry_node = geometry_hdr_node.node().first_child();
             std::string geometry_type = geometry_node.name();
             if( geometry_type == "line" ) {
-                geometries.insert(std::make_shared<Line>(s0, x0, y0, hdg0, length));
+                geometries[s0] = std::make_shared<Line>(s0, x0, y0, hdg0, length);
             } else if( geometry_type == "spiral" ) {
                 double curv_start = geometry_node.attribute("curvStart").as_double();
                 double curv_end = geometry_node.attribute("curvEnd").as_double();
-                geometries.insert(std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end));
+                geometries[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
             } else if( geometry_type == "arc" ) {
                 double curvature = geometry_node.attribute("curvature").as_double();
-                geometries.insert(std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature));
+                geometries[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature);
             } else if( geometry_type == "paramPoly3" ) {
                 double aU = geometry_node.attribute("aU").as_double();
                 double bU = geometry_node.attribute("bU").as_double();
@@ -55,7 +54,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                 double bV = geometry_node.attribute("bV").as_double();
                 double cV = geometry_node.attribute("cV").as_double();
                 double dV = geometry_node.attribute("dV").as_double();
-                geometries.insert(std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV));
+                geometries[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV);
             } else {
                 std::cout << "Could not parse " << geometry_type << std::endl;
             }
@@ -73,7 +72,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             double b = elevation_node.node().attribute("b").as_double();
             double c = elevation_node.node().attribute("c").as_double();
             double d = elevation_node.node().attribute("d").as_double();
-            road->elevation_profiles.insert(std::make_shared<ElevationProfile>(s0, a, b, c, d));
+            road->elevation_profiles[s0] = std::make_shared<ElevationProfile>(s0, a, b, c, d);
         }
 
         /* parse lane offsets */
@@ -84,7 +83,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             double b = lane_offset_node.node().attribute("b").as_double();
             double c = lane_offset_node.node().attribute("c").as_double();
             double d = lane_offset_node.node().attribute("d").as_double();
-            road->lane_offsets.insert(std::make_shared<LaneOffset>(s0, a, b, c, d));
+            road->lane_offsets[s0] = std::make_shared<LaneOffset>(s0, a, b, c, d);
         }
 
         /* parse road lane sections and lanes */
@@ -93,19 +92,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             double s0 = lane_section_node.node().attribute("s").as_double();
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
             road->add_lane_section(lane_section);
-            std::set<std::shared_ptr<Lane>, CmpLane> lanes;
             for( pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane") ) {
                 int lane_id = lane_node.node().attribute("id").as_int();
-                std::set<std::shared_ptr<LaneWidth>, CmpLaneWidth> lane_widths;
+                std::string lane_type = lane_node.node().attribute("type").as_string();
+                std::map<double, std::shared_ptr<LaneWidth>> lane_widths;
                 for( pugi::xpath_node lane_width_node : lane_node.node().select_nodes(".//width") ) {
                     double s_offset = lane_width_node.node().attribute("sOffset").as_double();
                     double a = lane_width_node.node().attribute("a").as_double();
                     double b = lane_width_node.node().attribute("b").as_double();
                     double c = lane_width_node.node().attribute("c").as_double();
                     double d = lane_width_node.node().attribute("d").as_double();
-                    lane_widths.insert(std::make_shared<LaneWidth>(s_offset, a, b, c, d));
+                    lane_widths[s_offset] = std::make_shared<LaneWidth>(s_offset, a, b, c, d);
                 }
-                lane_section->add_lane(std::make_shared<Lane>(lane_id, lane_widths));
+                lane_section->add_lane(std::make_shared<Lane>(lane_id, lane_type, lane_widths));
             }
         }
     }
@@ -117,9 +116,9 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
     Point3D center_of_gravity {0.0, 0.0, 0.0};
     int nPoints = 0;
     for( std::shared_ptr<Road> road : this->roads ) {
-        for( std::shared_ptr<RoadGeometry> geometry : road->geometries ) {
-            center_of_gravity.x += geometry->x0;
-            center_of_gravity.y += geometry->y0;
+        for( std::pair<double, std::shared_ptr<RoadGeometry>> geometry : road->geometries ) {
+            center_of_gravity.x += geometry.second->x0;
+            center_of_gravity.y += geometry.second->y0;
             nPoints++;
         }
     }
@@ -129,21 +128,21 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
     Json::Value features;
     int feature_idx = 0;
     for( std::shared_ptr<Road> road : this->roads ) {
-        for( std::set<std::shared_ptr<LaneSection>>::iterator lane_sec_iter = road->lane_sections.begin(); lane_sec_iter != road->lane_sections.end(); lane_sec_iter++ ) {
+        for( std::map<double, std::shared_ptr<LaneSection>>::iterator lane_sec_iter = road->lane_sections.begin(); lane_sec_iter != road->lane_sections.end(); lane_sec_iter++ ) {
             double lane_section_length = 0;
             if( std::next(lane_sec_iter) == road->lane_sections.end() ) {
-                lane_section_length = road->length - (*lane_sec_iter)->s0;
+                lane_section_length = road->length - (*lane_sec_iter).second->s0;
             } else {
-                lane_section_length = (*std::next(lane_sec_iter))->s0 - (*lane_sec_iter)->s0;
+                lane_section_length = (*std::next(lane_sec_iter)).second->s0 - (*lane_sec_iter).second->s0;
             }
-            for( std::shared_ptr<Lane> lane : (*lane_sec_iter)->lanes ) {
+            for( std::pair<int, std::shared_ptr<Lane>> lane : (*lane_sec_iter).second->lanes ) {
                 std::vector<Point3D> points;
                 for( int sample_nr = 0; sample_nr < int(lane_section_length/resolution); sample_nr++ ) {
-                    double s = (*lane_sec_iter)->s0 + static_cast<double>(sample_nr)*resolution;
-                    points.push_back(lane->get_outer_border_pt(s));
+                    double s = (*lane_sec_iter).second->s0 + static_cast<double>(sample_nr)*resolution;
+                    points.push_back(lane.second->get_outer_border_pt(s));
                 }
 
-                points.push_back( lane->get_outer_border_pt((*lane_sec_iter)->s0 + lane_section_length ) );
+                points.push_back( lane.second->get_outer_border_pt((*lane_sec_iter).second->s0 + lane_section_length ) );
                 Json::Value coordinates;
                 std::vector<Point3D> reduced_points = rdp( points, resolution );           
                 for( int idx = 0; idx < reduced_points.size(); idx++ ) {
@@ -161,6 +160,8 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 
                 Json::Value properties;
                 properties["road_id"] = road->id;
+                properties["lane_id"] = lane.second->id;
+                properties["lane_type"] = lane.second->type;
 
                 Json::Value feature;
                 feature["type"] = "Feature";

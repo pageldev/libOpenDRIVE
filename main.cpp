@@ -12,7 +12,7 @@ int main(int argc, char**argv) {
         return -1;
     }
     OpenDriveMap odr(argv[1]);
-    odr.export_as_json("out.json", 0.1);
+    odr.export_as_json("data.json", 0.1);
 
     return 0;
 }

@@ -4,7 +4,7 @@
 #include "Utils.h"
 
 #include <memory>
-#include <set>
+#include <map>
 
 
 struct LaneSection;
@@ -22,14 +22,14 @@ struct ElevationProfile
 class Road : public std::enable_shared_from_this<Road>
 {
     public:
-        Road(double length, int id, int junction, std::set<std::shared_ptr<RoadGeometry>, PtrCompareS0<RoadGeometry>> geometries);
+        Road(double length, int id, int junction, std::map<double, std::shared_ptr<RoadGeometry>> geometries );
         void add_lane_section(std::shared_ptr<LaneSection> lane_section);
         Point3D get_refline_point(double s, double t = 0);
 
         int id;
         double length, junction;
-        std::set<std::shared_ptr<ElevationProfile>, PtrCompareS0<ElevationProfile>> elevation_profiles;
-        std::set<std::shared_ptr<RoadGeometry>, PtrCompareS0<RoadGeometry>> geometries;
-        std::set<std::shared_ptr<LaneSection>, PtrCompareS0<LaneSection>> lane_sections;
-        std::set<std::shared_ptr<LaneOffset>, PtrCompareS0<LaneOffset>> lane_offsets;
+        std::map<double, std::shared_ptr<ElevationProfile>> elevation_profiles;
+        std::map<double, std::shared_ptr<RoadGeometry>> geometries;
+        std::map<double, std::shared_ptr<LaneSection>> lane_sections;
+        std::map<double, std::shared_ptr<LaneOffset>> lane_offsets;
 };
