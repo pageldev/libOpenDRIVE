@@ -62,7 +62,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
 
         /* make road from geometries */
         std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id, geometries);
-        this->roads.push_back( road );
+        this->roads[road->id] =  road;
 
         /* parse road elevation profiles */
         pugi::xpath_node_set elevation_nodes = road_node.node().select_nodes(".//elevationProfile//elevation");
@@ -115,8 +115,8 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
 {
     Point3D center_of_gravity {0.0, 0.0, 0.0};
     int nPoints = 0;
-    for( std::shared_ptr<Road> road : this->roads ) {
-        for( std::pair<double, std::shared_ptr<RoadGeometry>> geometry : road->geometries ) {
+    for( std::pair<int, std::shared_ptr<Road>> road : this->roads ) {
+        for( std::pair<double, std::shared_ptr<RoadGeometry>> geometry : road.second->geometries ) {
             center_of_gravity.x += geometry.second->x0;
             center_of_gravity.y += geometry.second->y0;
             nPoints++;
@@ -127,7 +127,8 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
     
     Json::Value features;
     int feature_idx = 0;
-    for( std::shared_ptr<Road> road : this->roads ) {
+    for( std::pair<int, std::shared_ptr<Road>> road_entry : this->roads ) {
+        std::shared_ptr<Road> road = road_entry.second;
         for( std::map<double, std::shared_ptr<LaneSection>>::iterator lane_sec_iter = road->lane_sections.begin(); lane_sec_iter != road->lane_sections.end(); lane_sec_iter++ ) {
             double lane_section_length = 0;
             if( std::next(lane_sec_iter) == road->lane_sections.end() ) {

@@ -38,7 +38,7 @@ Point3D Lane::get_outer_border_pt(double s)
  
     std::map<int, std::shared_ptr<Lane>>::iterator lane_iter = this->lane_section->lanes.find( this->id );
     while( (*lane_iter).second->id != 0 ) {
-        std::map<double, std::shared_ptr<LaneWidth>>::iterator target_lane_width_iter = this->lane_widths.upper_bound(s - this->lane_section->s0);
+        std::map<double, std::shared_ptr<LaneWidth>>::iterator target_lane_width_iter = (*lane_iter).second->lane_widths.upper_bound(s - this->lane_section->s0);
         if( target_lane_width_iter != lane_widths.begin() ) {
             target_lane_width_iter--;
         }
