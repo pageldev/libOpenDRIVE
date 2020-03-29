@@ -14,10 +14,10 @@
 OpenDriveMap::OpenDriveMap(std::string xodr_file) 
     : xodr_file(xodr_file)
 {
-    std::cout << this->xodr_file << std::endl;
     pugi::xml_document doc;
-    if( !doc.load_file(xodr_file.c_str()) )
+    if( !doc.load_file(xodr_file.c_str()) ) {
         throw std::runtime_error("Could not load xml");
+    }
     
     pugi::xpath_node_set roads = doc.select_nodes(".//road");
     for( pugi::xpath_node road_node : roads ) {
@@ -56,7 +56,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                 double dV = geometry_node.attribute("dV").as_double();
                 geometries[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV);
             } else {
-                std::cout << "Could not parse " << geometry_type << std::endl;
+                std::cerr << "Could not parse " << geometry_type << std::endl;
             }
         }
 

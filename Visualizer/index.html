@@ -26,7 +26,7 @@
             import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
 
             var camera, controls, scene, renderer;
-            var line_group;
+            var line_group, probe_point;
             var raycaster, intersections;
             var mouse, intersected_obj, tooltip;
             var odr_data;
@@ -105,6 +105,11 @@
                 helper.material.transparent = true;
                 scene.add( helper );
 
+                let sphere_geom = new THREE.SphereGeometry( 5, 32, 32 );
+                let sphere_material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+                probe_point = new THREE.Mesh( sphere_geom, sphere_material );
+                scene.add( probe_point );
+
                 raycaster = new THREE.Raycaster();
                 raycaster.linePrecision = 0.1;
                 mouse = new THREE.Vector2();
@@ -139,10 +144,16 @@
                 if ( intersections.length == 0 ) {
                     tooltip.style.display = "none";
                     if ( intersected_obj ) intersected_obj.material.linewidth = 3;
+                    let t_z0 = raycaster.ray.origin.z / raycaster.ray.direction.z;
+                    let x_z0 = raycaster.ray.origin.x - t_z0 * raycaster.ray.direction.x;
+                    let y_z0 = raycaster.ray.origin.y - t_z0 * raycaster.ray.direction.y;
+                    probe_point.position.set(x_z0, y_z0, 0.0);
                 } else {
                     tooltip.style.display = "block";
                     tooltip.style.left = `${ ((mouse.x + 1) / 2) * window.innerWidth - tooltip.offsetWidth - 5 }px`;
                     tooltip.style.top = `${ -((mouse.y - 1) / 2) * window.innerHeight - tooltip.offsetHeight - 5 }px`;
+                    let intersec_pt = intersections[0].point;
+                    probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
                     if ( intersected_obj != intersections[0].object ) {
                         if ( intersected_obj ) intersected_obj.material.linewidth = 3; /* old one to default width */
                         intersected_obj = intersections[0].object;

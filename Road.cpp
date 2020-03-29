@@ -35,8 +35,7 @@ Point3D Road::get_refline_point(double s, double t)
 {
     double offset = 0;
     if( this->lane_offsets.size() > 0 ) {
-        std::map<double, std::shared_ptr<LaneOffset>>::iterator target_lane_offset_iter 
-            = this->lane_offsets.upper_bound(s);
+        std::map<double, std::shared_ptr<LaneOffset>>::iterator target_lane_offset_iter = this->lane_offsets.upper_bound(s);
         if( target_lane_offset_iter != lane_offsets.begin() ) {
             target_lane_offset_iter--;
         }
