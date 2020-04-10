@@ -5,9 +5,10 @@
 #include <iostream>
 #include <memory>
 
-
-int main(int argc, char**argv) {
-    if( argc < 2 ) {
+int main(int argc, char **argv)
+{
+    if (argc < 2)
+    {
         std::cerr << "ERROR: too few arguments" << std::endl;
         return -1;
     }

@@ -5,7 +5,6 @@
 #include <map>
 #include <memory>
 
-
 struct LaneOffset
 {
     LaneOffset(double s0, double a, double b, double c, double d);
@@ -31,7 +30,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
 
     double s0;
     std::shared_ptr<Road> road;
-    std::map<int, std::shared_ptr<Lane>> lanes; 
+    std::map<int, std::shared_ptr<Lane>> lanes;
 };
 
 struct Lane : public std::enable_shared_from_this<Lane>

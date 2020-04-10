@@ -1,171 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body { 
-                margin: 0;
-            }
-            canvas { 
-                width: 100%;
-                height: 100%;
-            }
-            #tooltip {
-                position: fixed;
-                text-align: center;
-                font-family: monospace;
-                background: #a0c020;
-                display: block;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="tooltip"></div>
-        <script type="module">
-            import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
-            import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
 
-            var camera, controls, scene, renderer;
-            var line_group, probe_point;
-            var raycaster, intersections;
-            var mouse, intersected_obj, tooltip;
-            var odr_data;
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            margin: 0;
+        }
 
-            const colors = [  [0xba000d, 0xf44336, 0xff7961] /* red */
-                            , [0x6a0080, 0x9c27b0, 0xd05ce3 ] /* purple */
-                            , [0x0069c0, 0x2196f3, 0x6ec6ff ] /* blue */
-                            , [0x087f23, 0x4caf50, 0x80e27e ] /* green */
-                            , [0xc66900, 0xff9800, 0xffc947 ] /* orange */
-                            , [0x00675b, 0x009688, 0x52c7b8 ] /* teal */ 
-                            ]
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
 
-            init();
-            animate();
+        #tooltip {
+            position: fixed;
+            text-align: center;
+            font-family: monospace;
+            background: #a0c020;
+            display: block;
+        }
+    </style>
+</head>
 
-            fetch("/data.json").then( res => {
-                res.json().then( data => {
-                    add_odr_data(data);
-                })
+<body>
+    <div id="tooltip"></div>
+    <script type="module">
+        import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
+        import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
+
+        var camera, controls, scene, renderer;
+        var line_group, probe_point;
+        var raycaster, intersections;
+        var mouse, intersected_obj, tooltip;
+        var odr_data;
+
+        const colors = [[0xba000d, 0xf44336, 0xff7961] /* red */
+            , [0x6a0080, 0x9c27b0, 0xd05ce3] /* purple */
+            , [0x0069c0, 0x2196f3, 0x6ec6ff] /* blue */
+            , [0x087f23, 0x4caf50, 0x80e27e] /* green */
+            , [0xc66900, 0xff9800, 0xffc947] /* orange */
+            , [0x00675b, 0x009688, 0x52c7b8] /* teal */
+        ]
+
+        init();
+        animate();
+
+        fetch("/data.json").then(res => {
+            res.json().then(data => {
+                add_odr_data(data);
+            })
+        });
+
+        function add_odr_data(odr_data) {
+            /* group by road_id */
+            const road_2_geometries = new Map();
+            odr_data.features.forEach((feature) => {
+                const road_id = feature.properties.road_id;
+                const collection = road_2_geometries.get(road_id);
+                if (!collection) {
+                    road_2_geometries.set(road_id, [feature]);
+                } else {
+                    collection.push(feature);
+                }
             });
 
-            function add_odr_data( odr_data ) {
-                /* group by road_id */
-                const road_2_geometries = new Map();
-                odr_data.features.forEach( (feature) => {
-                    const road_id = feature.properties.road_id;
-                    const collection = road_2_geometries.get(road_id);
-                    if( !collection ) {
-                        road_2_geometries.set(road_id, [feature]);
-                    } else {
-                        collection.push(feature);
+            let road_idx = 0;
+            road_2_geometries.forEach((odr_geometries) => {
+                for (let idx = 0; idx < odr_geometries.length; idx++) {
+                    let geometry_line = new THREE.Geometry();
+                    let road_geom = odr_geometries[idx];
+                    for (const pt of road_geom.geometry.coordinates) {
+                        geometry_line.vertices.push(new THREE.Vector3(pt[0], pt[1], pt[2]));
                     }
-                } );
-
-                let road_idx = 0;
-                road_2_geometries.forEach( (odr_geometries) => {
-                    for( let idx = 0; idx < odr_geometries.length; idx++ ) {
-                        let geometry_line = new THREE.Geometry();
-                        let road_geom =  odr_geometries[idx];
-                        for( const pt of road_geom.geometry.coordinates ) {
-                            geometry_line.vertices.push(new THREE.Vector3( pt[0], pt[1], pt[2]) );
-                        }
-                        const material_line = new THREE.LineBasicMaterial( {
-                            linewidth: 3,
-                            color: colors[road_idx%colors.length][idx%3]
-                        });
-                        const line = new THREE.Line( geometry_line, material_line );
-                        line.road_id = road_geom.properties.road_id;
-                        line.lane_id = road_geom.properties.lane_id;
-                        line.type = road_geom.properties.lane_type;
-                        line.geometry_type = road_geom.properties.geometry_type;
-                        if( line.type == "driving" ) {
-                            line_group.add(line);
-                        }
+                    const material_line = new THREE.LineBasicMaterial({
+                        linewidth: 3,
+                        color: colors[road_idx % colors.length][idx % 3]
+                    });
+                    const line = new THREE.Line(geometry_line, material_line);
+                    line.road_id = road_geom.properties.road_id;
+                    line.lane_id = road_geom.properties.lane_id;
+                    line.type = road_geom.properties.lane_type;
+                    line.geometry_type = road_geom.properties.geometry_type;
+                    if (line.type == "driving") {
+                        line_group.add(line);
                     }
-                    road_idx++;
-                } );
-                scene.add( line_group );
-            }
-
-            function init() {
-                scene = new THREE.Scene();
-                renderer = new THREE.WebGLRenderer( { antialias: true} );
-                renderer.setSize( window.innerWidth, window.innerHeight );
-                document.body.appendChild( renderer.domElement );
-                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 100000);
-                camera.position.set( 0, 0, 100 );
-                camera.lookAt( 0, 0, 0 );
-                camera.up.set( 0, 0, 1 ); /* Coordinate system with Z pointing up */
-                controls = new MapControls( camera, renderer.domElement );
-
-                let helper = new THREE.GridHelper( 500, 50, 0x0000ff, 0xffffff );
-                helper.geometry.rotateX( Math.PI / 2 );
-                helper.position.y = 0;
-                helper.material.opacity = 0.25;
-                helper.material.transparent = true;
-                scene.add( helper );
-
-                let sphere_geom = new THREE.SphereGeometry( 5, 32, 32 );
-                let sphere_material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
-                probe_point = new THREE.Mesh( sphere_geom, sphere_material );
-                scene.add( probe_point );
-
-                raycaster = new THREE.Raycaster();
-                raycaster.linePrecision = 0.1;
-                mouse = new THREE.Vector2();
-                line_group = new THREE.Group();
-             
-                tooltip = document.getElementById("tooltip");
-                window.addEventListener( 'resize', onWindowResize, false );
-                window.addEventListener( 'mousemove', onDocumentMouseMove, false );
-            }
-
-            function onWindowResize() {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize( window.innerWidth, window.innerHeight );
-            }
-
-            function onDocumentMouseMove( event ) {
-                event.preventDefault();
-                mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-                mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-            }
-
-            function animate() {
-                requestAnimationFrame( animate );
-                update();
-                renderer.render( scene, camera );
-            }
-
-            function update() {
-                raycaster.setFromCamera( mouse, camera );
-                intersections = raycaster.intersectObjects( line_group.children, true );
-                if ( intersections.length == 0 ) {
-                    tooltip.style.display = "none";
-                    if ( intersected_obj ) intersected_obj.material.linewidth = 3;
-                    let t_z0 = raycaster.ray.origin.z / raycaster.ray.direction.z;
-                    let x_z0 = raycaster.ray.origin.x - t_z0 * raycaster.ray.direction.x;
-                    let y_z0 = raycaster.ray.origin.y - t_z0 * raycaster.ray.direction.y;
-                    probe_point.position.set(x_z0, y_z0, 0.0);
-                } else {
-                    tooltip.style.display = "block";
-                    tooltip.style.left = `${ ((mouse.x + 1) / 2) * window.innerWidth - tooltip.offsetWidth - 5 }px`;
-                    tooltip.style.top = `${ -((mouse.y - 1) / 2) * window.innerHeight - tooltip.offsetHeight - 5 }px`;
-                    let intersec_pt = intersections[0].point;
-                    probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
-                    if ( intersected_obj != intersections[0].object ) {
-                        if ( intersected_obj ) intersected_obj.material.linewidth = 3; /* old one to default width */
-                        intersected_obj = intersections[0].object;
-                        if( !intersected_obj.road_id ) {
-                            tooltip.innerHTML = "n.a";
-                        } else {
-                            tooltip.innerHTML = `${intersected_obj.road_id}<br>${intersected_obj.lane_id}<br>${intersected_obj.type}`;
-                        }
-                    }
-                    if ( intersected_obj ) intersected_obj.material.linewidth = 10;
                 }
+                road_idx++;
+            });
+            scene.add(line_group);
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
+            camera.position.set(0, 0, 100);
+            camera.lookAt(0, 0, 0);
+            camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
+            controls = new MapControls(camera, renderer.domElement);
+
+            let helper = new THREE.GridHelper(500, 50, 0x0000ff, 0xffffff);
+            helper.geometry.rotateX(Math.PI / 2);
+            helper.position.y = 0;
+            helper.material.opacity = 0.25;
+            helper.material.transparent = true;
+            scene.add(helper);
+
+            let sphere_geom = new THREE.SphereGeometry(5, 32, 32);
+            let sphere_material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            probe_point = new THREE.Mesh(sphere_geom, sphere_material);
+            scene.add(probe_point);
+
+            raycaster = new THREE.Raycaster();
+            raycaster.linePrecision = 0.1;
+            mouse = new THREE.Vector2();
+            line_group = new THREE.Group();
+
+            tooltip = document.getElementById("tooltip");
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('mousemove', onDocumentMouseMove, false);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDocumentMouseMove(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        function update() {
+            raycaster.setFromCamera(mouse, camera);
+            intersections = raycaster.intersectObjects(line_group.children, true);
+            if (intersections.length == 0) {
+                tooltip.style.display = "none";
+                if (intersected_obj) intersected_obj.material.linewidth = 3;
+                let t_z0 = raycaster.ray.origin.z / raycaster.ray.direction.z;
+                let x_z0 = raycaster.ray.origin.x - t_z0 * raycaster.ray.direction.x;
+                let y_z0 = raycaster.ray.origin.y - t_z0 * raycaster.ray.direction.y;
+                probe_point.position.set(x_z0, y_z0, 0.0);
+            } else {
+                tooltip.style.display = "block";
+                tooltip.style.left = `${((mouse.x + 1) / 2) * window.innerWidth - tooltip.offsetWidth - 5}px`;
+                tooltip.style.top = `${-((mouse.y - 1) / 2) * window.innerHeight - tooltip.offsetHeight - 5}px`;
+                let intersec_pt = intersections[0].point;
+                probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
+                if (intersected_obj != intersections[0].object) {
+                    if (intersected_obj) intersected_obj.material.linewidth = 3; /* old one to default width */
+                    intersected_obj = intersections[0].object;
+                    if (!intersected_obj.road_id) {
+                        tooltip.innerHTML = "n.a";
+                    } else {
+                        tooltip.innerHTML = `${intersected_obj.road_id}<br>${intersected_obj.lane_id}<br>${intersected_obj.type}`;
+                    }
+                }
+                if (intersected_obj) intersected_obj.material.linewidth = 10;
             }
-        </script>
-    </body>
+        }
+    </script>
+</body>
+
 </html>
