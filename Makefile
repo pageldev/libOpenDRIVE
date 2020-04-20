@@ -1,35 +1,35 @@
 CC = g++
 FLAGS = -std=c++11 -g -O3
 BUILD_DIR = build
-CPP_FILES=$(shell find . -name '*.cpp' -type f ! -name 'main.cpp')
-OBJ_FILES=$(CPP_FILES:.cpp=.o)
+# CPP_FILES=$(shell find . -name '*.cpp' -type f ! -name 'main.cpp')
+# OBJ_FILES=$(CPP_FILES:.cpp=.o)
 
-main: dir $(OBJ_FILES)
-	$(CC) $(FLAGS) `pkg-config --cflags --libs pugixml jsoncpp` -o $(BUILD_DIR)/main $(wildcard $(BUILD_DIR)/*.o) main.cpp
+lib: dir odrSpiral Geometries Lanes Road OpenDriveMap Utils
+	$(CC) $(FLAGS) -shared `pkg-config --libs pugixml jsoncpp` -o $(BUILD_DIR)/libOpenDrive.so $(wildcard $(BUILD_DIR)/*.o)
+
+main: dir lib
+	$(CC) $(FLAGS) -L$(BUILD_DIR) -lOpenDrive -o $(BUILD_DIR)/main main.cpp
 
 dir:
 	mkdir -p $(BUILD_DIR)
 
-odrSpiral.o: Spiral/odrSpiral.c
-	$(CC) -c -o $(BUILD_DIR)/$@ $< 
+odrSpiral: Spiral/odrSpiral.c
+	$(CC) -c -o $(BUILD_DIR)/$@.o $< 
 
-Geometries.o: Geometries.cpp odrSpiral.o
-	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+Geometries: Geometries/Geometries.cpp odrSpiral
+	$(CC) $(FLAGS) -I$(CURDIR) -c -o $(BUILD_DIR)/$@.o $<
 
-Lanes.o: Lanes.cpp
-	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+Lanes: Lanes.cpp
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@.o $<
 
-Road.o: Road.cpp
-	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+Road: Road.cpp
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@.o $<
 
-OpenDriveMap.o: OpenDriveMap.cpp
-	$(CC) $(FLAGS) `pkg-config --cflags pugixml jsoncpp` -c -o $(BUILD_DIR)/$@ $<
+OpenDriveMap: OpenDriveMap.cpp
+	$(CC) $(FLAGS) `pkg-config --cflags pugixml jsoncpp` -c -o $(BUILD_DIR)/$@.o $<
 
-Utils.o: Utils.cpp
-	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
-
-%.o: %.cpp
-	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@ $<
+Utils: Utils.cpp
+	$(CC) $(FLAGS) -c -o $(BUILD_DIR)/$@.o $<
 
 .PHONY: clean
 clean:
