@@ -3,8 +3,8 @@
 #include "Lanes.h"
 #include "Utils.h"
 
-#include "pugixml.hpp"
-#include "json/json.h"
+#include "pugixml/pugixml.hpp"
+#include "json11/json11.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -142,8 +142,7 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
     center_of_gravity.x /= static_cast<double>(nPoints);
     center_of_gravity.y /= static_cast<double>(nPoints);
 
-    Json::Value features;
-    int feature_idx = 0;
+    json11::Json::array features;
     for (std::pair<int, std::shared_ptr<Road>> road_entry : this->roads)
     {
         std::shared_ptr<Road> road = road_entry.second;
@@ -168,41 +167,42 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
                 }
 
                 points.push_back(lane.second->get_outer_border_pt((*lane_sec_iter).second->s0 + lane_section_length));
-                Json::Value coordinates;
                 std::vector<Point3D> reduced_points = rdp(points, resolution);
+                json11::Json::array coordinates(reduced_points.size());
                 for (int idx = 0; idx < reduced_points.size(); idx++)
                 {
                     Point3D pt = reduced_points.at(idx);
-                    Json::Value position;
+                    json11::Json::array position(3);
                     position[0] = pt.x - center_of_gravity.x;
                     position[1] = pt.y - center_of_gravity.y;
                     position[2] = pt.z;
                     coordinates[idx] = position;
                 }
 
-                Json::Value geometry;
-                geometry["type"] = "LineString";
-                geometry["coordinates"] = coordinates;
+                json11::Json geometry = json11::Json::object{
+                    {"type", "LineString"},
+                    {"coordinates", coordinates}};
 
-                Json::Value properties;
-                properties["road_id"] = road->id;
-                properties["lane_id"] = lane.second->id;
-                properties["lane_type"] = lane.second->type;
+                json11::Json properties = json11::Json::object{
+                    {"road_id", road->id},
+                    {"lane_id", lane.second->id},
+                    {"lane_type", lane.second->type}};
 
-                Json::Value feature;
-                feature["type"] = "Feature";
-                feature["geometry"] = geometry;
-                feature["properties"] = properties;
+                json11::Json feature = json11::Json::object{
+                    {"type", "Feature"},
+                    {"geometry", geometry},
+                    {"properties", properties}};
 
-                features[feature_idx++] = feature;
+                features.push_back(feature);
             }
         }
     }
-    Json::Value feature_collection;
-    feature_collection["type"] = "FeatureCollection";
-    feature_collection["features"] = features;
+
+    json11::Json feature_collection = json11::Json::object{
+        {"type", "FeatureCollection"},
+        {"features", features}};
 
     std::ofstream geojson_file(out_file);
-    geojson_file << feature_collection;
+    geojson_file << feature_collection.dump();
     geojson_file.close();
 }
