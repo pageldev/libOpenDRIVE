@@ -1,4 +1,5 @@
 #include "OpenDriveMap.h"
+#include "WASM/OpenDriveMapWASM.h"
 #include "Geometries/Geometries.h"
 #include "Lanes.h"
 #include "Utils.h"
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 OpenDriveMap::OpenDriveMap(std::string xodr_file)
     : xodr_file(xodr_file)
@@ -126,7 +128,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
     }
 }
 
-void OpenDriveMap::export_as_json(std::string out_file, double resolution)
+std::string OpenDriveMap::dump_json(double resolution)
 {
     Point3D center_of_gravity{0.0, 0.0, 0.0};
     int nPoints = 0;
@@ -202,7 +204,5 @@ void OpenDriveMap::export_as_json(std::string out_file, double resolution)
         {"type", "FeatureCollection"},
         {"features", features}};
 
-    std::ofstream geojson_file(out_file);
-    geojson_file << feature_collection.dump();
-    geojson_file.close();
+    return feature_collection.dump();
 }

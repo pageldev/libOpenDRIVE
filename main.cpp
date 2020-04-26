@@ -13,7 +13,7 @@ int main(int argc, char **argv)
         return -1;
     }
     OpenDriveMap odr(argv[1]);
-    odr.export_as_json("data.json", 0.1);
+    std::cout << odr.dump_json(0.1) << '\n';
 
     return 0;
 }
