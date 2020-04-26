@@ -1,9 +1,14 @@
 CC = g++
 CFLAGS = -std=c++11 $(INCLUDE_DIRS)
-INCLUDE_DIRS = -I./ -I./Thirdparty
+INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
+THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build
 LIB_SUFFIX = so
 
+CPP_FILES=$(shell find . -name '*.cpp' \
+			-type f ! -name 'main.cpp' \
+			-type f ! -path './$(BUILD_DIR)/*' \
+			-type f ! -path './$(THIRDPARTY_DIR)/*')
 
 x86: CFLAGS += -g -O3
 x86: lib
@@ -14,45 +19,11 @@ wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXT
 wasm: LIB_SUFFIX = js
 wasm: lib
 
-
-lib: dir odrSpiral Geometries Lanes Road OpenDriveMap Utils
-	$(CC) $(CFLAGS) $(WASMFLAGS) -shared -o $(BUILD_DIR)/libOpenDrive.$(LIB_SUFFIX) $(wildcard $(BUILD_DIR)/*.o) ./Thirdparty/pugixml/pugixml.cpp ./Thirdparty/json11/json11.cpp
+lib: dir
+	$(CC) $(CFLAGS) $(WASMFLAGS) -shared -o $(BUILD_DIR)/libOpenDrive.$(LIB_SUFFIX) $(CPP_FILES) ./Thirdparty/pugixml/pugixml.cpp ./Thirdparty/json11/json11.cpp
 
 main: dir lib
 	$(CC) $(CFLAGS) -L$(BUILD_DIR) -lOpenDrive -o $(BUILD_DIR)/main main.cpp
-
-
-Geometries: Geometries/RoadGeometry.cpp Line Arc Spiral ParamPoly3
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<	
-
-Line: Geometries/Line.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-Arc: Geometries/Arc.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-Spiral: Geometries/Spiral.cpp odrSpiral
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-ParamPoly3: Geometries/ParamPoly3.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-odrSpiral: Geometries/Spiral/odrSpiral.cpp
-	$(CC) -c -o $(BUILD_DIR)/$@.o $< 
-
-
-Lanes: Lanes.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-Road: Road.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-OpenDriveMap: OpenDriveMap.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
-Utils: Utils.cpp
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/$@.o $<
-
 
 dir:
 	mkdir -p $(BUILD_DIR)
