@@ -15,7 +15,8 @@ x86: lib
 
 wasm: CC = emcc
 wasm: CFLAGS += -s ENVIRONMENT=web
-wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]'
+wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s FORCE_FILESYSTEM=1 -s EXPORT_ES6=1
+wasm: BUILD_DIR = Visualizer/src
 wasm: LIB_SUFFIX = js
 wasm: lib
 

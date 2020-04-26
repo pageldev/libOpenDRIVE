@@ -28,12 +28,14 @@
     <script type="module">
         import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
         import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
+        import libOpenDrive from './src/libOpenDrive.js';
 
         var camera, controls, scene, renderer;
         var line_group, probe_point;
         var raycaster, intersections;
         var mouse, intersected_obj, tooltip;
         var odr_data;
+        var openDriveMap;
 
         const colors = [[0xba000d, 0xf44336, 0xff7961] /* red */
             , [0x6a0080, 0x9c27b0, 0xd05ce3] /* purple */
@@ -46,10 +48,14 @@
         init();
         animate();
 
-        fetch("/data.json").then(res => {
-            res.json().then(data => {
-                add_odr_data(data);
-            })
+        libOpenDrive().then(Module => {
+            fetch("./data.xodr").then((res) => {
+                res.text().then((data) => {
+                    Module['FS_createDataFile'](".", "data.xodr", data, true, true);
+                    openDriveMap = new Module.OpenDriveMap("./data.xodr");
+                    add_odr_data(JSON.parse(openDriveMap.dump_json(0.1)));
+                });
+            });
         });
 
         function add_odr_data(odr_data) {

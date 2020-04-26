@@ -16,9 +16,10 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
     : xodr_file(xodr_file)
 {
     pugi::xml_document doc;
-    if (!doc.load_file(xodr_file.c_str()))
+    pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
+    if(!result)
     {
-        throw std::runtime_error("Could not load xml");
+        std::cerr << result.description() << std::endl;
     }
 
     pugi::xpath_node_set roads = doc.select_nodes(".//road");
