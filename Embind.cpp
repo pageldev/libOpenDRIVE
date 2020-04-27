@@ -1,8 +1,7 @@
-#pragma once
-
 #ifdef __EMSCRIPTEN__
 #include "OpenDriveMap.h"
 #include <emscripten/bind.h>
+
 EMSCRIPTEN_BINDINGS(OpenDriveMap)
 {
     emscripten::class_<OpenDriveMap>("OpenDriveMap")

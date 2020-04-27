@@ -1,5 +1,4 @@
 #include "OpenDriveMap.h"
-#include "WASM/OpenDriveMapWASM.h"
 #include "Geometries/Geometries.h"
 #include "Lanes.h"
 #include "Utils.h"
