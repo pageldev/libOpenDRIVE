@@ -25,10 +25,10 @@
 
 <body>
     <div id="tooltip"></div>
+    <script src="./src/libOpenDrive.js"></script>
     <script type="module">
         import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
         import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
-        import libOpenDrive from './src/libOpenDrive.js';
 
         var camera, controls, scene, renderer;
         var line_group, probe_point;
@@ -52,8 +52,11 @@
             fetch("./data.xodr").then((res) => {
                 res.text().then((data) => {
                     Module['FS_createDataFile'](".", "data.xodr", data, true, true);
+                    console.time('someFunction')
                     openDriveMap = new Module.OpenDriveMap("./data.xodr");
-                    add_odr_data(JSON.parse(openDriveMap.dump_json(0.1)));
+                    let json_data = JSON.parse(openDriveMap.dump_json(0.1));
+                    console.timeEnd('someFunction')
+                    add_odr_data(json_data);
                 });
             });
         });
