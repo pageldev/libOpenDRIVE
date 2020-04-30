@@ -28,6 +28,7 @@
     <script src="./src/libOpenDrive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script>
         var camera, controls, scene, renderer;
         var line_group, probe_point;
@@ -35,6 +36,7 @@
         var mouse, intersected_obj, tooltip;
         var odr_data;
         var openDriveMap;
+        var gui;
 
         const colors = [[0xba000d, 0xf44336, 0xff7961] /* red */
             , [0x6a0080, 0x9c27b0, 0xd05ce3] /* purple */
@@ -44,19 +46,12 @@
             , [0x00675b, 0x009688, 0x52c7b8] /* teal */
         ]
 
+        var params = {
+            resolution: 0.1
+        };
+
         init();
         animate();
-
-        libOpenDrive().then(Module => {
-            fetch("./data.xodr").then((res) => {
-                res.text().then((data) => {
-                    Module['FS_createDataFile'](".", "data.xodr", data, true, true);
-                    openDriveMap = new Module.OpenDriveMap("./data.xodr");
-                    let json_data = JSON.parse(openDriveMap.dump_json(0.1));
-                    add_odr_data(json_data);
-                });
-            });
-        });
 
         function add_odr_data(odr_data) {
             /* group by road_id */
@@ -97,7 +92,21 @@
             scene.add(line_group);
         }
 
+        function load_odr_data(xodr_file, resolution) {
+            libOpenDrive().then(Module => {
+                fetch(xodr_file).then((res) => {
+                    res.text().then((data) => {
+                        Module['FS_createDataFile'](".", "data.xodr", data, true, true);
+                        openDriveMap = new Module.OpenDriveMap("./data.xodr");
+                        let json_data = JSON.parse(openDriveMap.dump_json(resolution));
+                        add_odr_data(json_data);
+                    });
+                });
+            });
+        }
+
         function init() {
+            load_odr_data('./data.xodr', params.resolution);
             scene = new THREE.Scene();
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -115,19 +124,26 @@
             helper.material.transparent = true;
             scene.add(helper);
 
-            let sphere_geom = new THREE.SphereGeometry(5, 32, 32);
+            let sphere_geom = new THREE.SphereGeometry(0.1, 32, 32);
             let sphere_material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             probe_point = new THREE.Mesh(sphere_geom, sphere_material);
             scene.add(probe_point);
 
             raycaster = new THREE.Raycaster();
-            raycaster.linePrecision = 0.1;
+            raycaster.params.Line.threshold = 0.1;
             mouse = new THREE.Vector2();
             line_group = new THREE.Group();
 
             tooltip = document.getElementById("tooltip");
             window.addEventListener('resize', onWindowResize, false);
             window.addEventListener('mousemove', onDocumentMouseMove, false);
+
+            gui = new dat.GUI();
+            gui.add(params, 'resolution', 0.01, 1.0).onFinishChange((val) => {
+                scene.remove(line_group);
+                line_group = new THREE.Group();
+                load_odr_data('./data.xodr', params.resolution);
+            });
         }
 
         function onWindowResize() {
