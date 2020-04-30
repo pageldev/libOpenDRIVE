@@ -26,10 +26,9 @@
 <body>
     <div id="tooltip"></div>
     <script src="./src/libOpenDrive.js"></script>
-    <script type="module">
-        import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
-        import { MapControls } from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/OrbitControls.js";
-
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
         var camera, controls, scene, renderer;
         var line_group, probe_point;
         var raycaster, intersections;
@@ -52,10 +51,8 @@
             fetch("./data.xodr").then((res) => {
                 res.text().then((data) => {
                     Module['FS_createDataFile'](".", "data.xodr", data, true, true);
-                    console.time('someFunction')
                     openDriveMap = new Module.OpenDriveMap("./data.xodr");
                     let json_data = JSON.parse(openDriveMap.dump_json(0.1));
-                    console.timeEnd('someFunction')
                     add_odr_data(json_data);
                 });
             });
@@ -109,7 +106,7 @@
             camera.position.set(0, 0, 100);
             camera.lookAt(0, 0, 0);
             camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
-            controls = new MapControls(camera, renderer.domElement);
+            controls = new THREE.MapControls(camera, renderer.domElement);
 
             let helper = new THREE.GridHelper(500, 50, 0x0000ff, 0xffffff);
             helper.geometry.rotateX(Math.PI / 2);
