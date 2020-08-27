@@ -11,7 +11,7 @@ CPP_FILES=$(shell find . -name '*.cpp' \
 			-type f ! -path './$(THIRDPARTY_DIR)/*')
 
 x86: CFLAGS += -g -O3
-x86: lib
+x86: lib main
 
 wasm: CC = emcc
 wasm: CFLAGS += -s ENVIRONMENT=web

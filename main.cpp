@@ -13,7 +13,8 @@ int main(int argc, char **argv)
         return -1;
     }
     OpenDriveMap odr(argv[1]);
-    std::cout << odr.dump_json(0.1) << '\n';
+    odr.dump_json(0.1);
+    std::cout << "Finished\n";
 
     return 0;
 }

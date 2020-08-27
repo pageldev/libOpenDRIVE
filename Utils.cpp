@@ -3,7 +3,7 @@
 #include <cmath>
 #include <utility>
 
-std::vector<Point3D> rdp(const std::vector<Point3D> &points, double epsilon)
+std::vector<Point3D> rdp(const std::vector<Point3D> &points, const double epsilon)
 {
     std::vector<Point3D> out;
     if (points.size() < 2)
@@ -14,7 +14,7 @@ std::vector<Point3D> rdp(const std::vector<Point3D> &points, double epsilon)
 
     double dx = points.back().x - points.front().x;
     double dy = points.back().y - points.front().y;
-    double mag = std::pow(std::pow(dx, 2.0) + std::pow(dy, 2.0), 0.5);
+    const double mag = std::pow(std::pow(dx, 2.0) + std::pow(dy, 2.0), 0.5);
     if (mag > 0.0)
     {
         dx /= mag;
@@ -26,15 +26,15 @@ std::vector<Point3D> rdp(const std::vector<Point3D> &points, double epsilon)
     for (int idx = 0; idx < points.size() - 1; idx++)
     {
         Point3D pt = points.at(idx);
-        double pvx = pt.x - points.front().x;
-        double pvy = pt.y - points.front().y;
-        double pv_dot = dx * pvx + dy * pvy;
-        double dsx = pv_dot * dx;
-        double dsy = pv_dot * dy;
-        double ax = pvx - dsx;
-        double ay = pvy - dsy;
+        const double pvx = pt.x - points.front().x;
+        const double pvy = pt.y - points.front().y;
+        const double pv_dot = dx * pvx + dy * pvy;
+        const double dsx = pv_dot * dx;
+        const double dsy = pv_dot * dy;
+        const double ax = pvx - dsx;
+        const double ay = pvy - dsy;
 
-        double d = std::pow(std::pow(ax, 2.0) + std::pow(ay, 2.0), 0.5);
+        const double d = std::pow(std::pow(ax, 2.0) + std::pow(ay, 2.0), 0.5);
         if (d > d_max)
         {
             d_max = d;

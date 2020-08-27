@@ -6,7 +6,7 @@ Line::Line(double s0, double x0, double y0, double hdg0, double length)
 {
 }
 
-Point2D Line::get_point(double s, double t)
+Point2D Line::get_point(double s, double t) const
 {
     double xt = (std::cos(hdg0) * (s - s0)) - (std::sin(hdg0) * t) + x0;
     double yt = (std::sin(hdg0) * (s - s0)) + (std::cos(hdg0) * t) + y0;

@@ -8,7 +8,7 @@
 struct LaneOffset
 {
     LaneOffset(double s0, double a, double b, double c, double d);
-    double get_offset(double s);
+    double get_offset(const double s) const;
 
     double s0, a, b, c, d;
 };
@@ -16,7 +16,7 @@ struct LaneOffset
 struct LaneWidth
 {
     LaneWidth(double sOffset, double a, double b, double c, double d);
-    double get_width(double ds);
+    double get_width(const double ds) const;
 
     double s_offset, a, b, c, d;
 };
@@ -36,7 +36,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, std::string type, std::map<double, std::shared_ptr<LaneWidth>> lane_widths);
-    Point3D get_outer_border_pt(double s);
+    Point3D get_outer_border_pt(const double s) const;
 
     int id;
     std::string type;

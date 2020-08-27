@@ -6,7 +6,7 @@ Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double cur
 {
 }
 
-Point2D Arc::get_point(double s, double t)
+Point2D Arc::get_point(double s, double t) const
 {
     double angle_at_s = (s - s0) * curvature - M_PI / 2;
     double r = 1 / curvature;

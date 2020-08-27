@@ -6,7 +6,7 @@ ParamPoly3::ParamPoly3(double s0, double x0, double y0, double hdg0, double leng
 {
 }
 
-Point2D ParamPoly3::get_point(double s, double t)
+Point2D ParamPoly3::get_point(double s, double t) const
 {
     double p = (s - s0) / length;
     double xs = aU + bU * p + cU * p * p + dU * p * p * p;

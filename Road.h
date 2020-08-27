@@ -13,7 +13,7 @@ struct LaneOffset;
 struct ElevationProfile
 {
     ElevationProfile(double s0, double a, double b, double c, double d);
-    double get_elevation(double s);
+    double get_elevation(const double s) const;
 
     double s0, a, b, c, d;
 };
@@ -23,7 +23,7 @@ class Road : public std::enable_shared_from_this<Road>
 public:
     Road(double length, int id, int junction, std::map<double, std::shared_ptr<RoadGeometry>> geometries);
     void add_lane_section(std::shared_ptr<LaneSection> lane_section);
-    Point3D get_refline_point(double s, double t = 0);
+    Point3D get_refline_point(const double s, const double t = 0) const;
 
     int id;
     double length, junction;

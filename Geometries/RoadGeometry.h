@@ -22,6 +22,11 @@ struct Point2D
     double x, y;
 };
 
+struct Box2D
+{
+    Point2D min, max;
+};
+
 struct Point3D
 {
     double x, y, z;
@@ -31,7 +36,7 @@ struct RoadGeometry
 {
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, Geometry_type type);
     virtual ~RoadGeometry();
-    virtual Point2D get_point(double s, double t = 0) = 0;
+    virtual Point2D get_point(double s, double t = 0) const = 0;
 
     Geometry_type type;
     double s0;

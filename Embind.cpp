@@ -13,7 +13,7 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
 {
     EMSCRIPTEN_WRAPPER(RoadGeometryWrapper);
 
-    virtual Point2D get_point(double s, double t) override
+    virtual Point2D get_point(double s, double t) const override
     {
         return call<Point2D>("get_point", s, t);
     }
@@ -26,7 +26,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::value_object<Point2D>("Point2D")
         .field("x", &Point2D::x)
-        .field("age", &Point2D::y);
+        .field("y", &Point2D::y);
 
     emscripten::enum_<Geometry_type>("Geometry_type")
         .value("Line", Geometry_type::Line)
@@ -46,11 +46,14 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("length", &RoadGeometry::length);
 
     emscripten::class_<Arc, emscripten::base<RoadGeometry>>("Arc")
+        .constructor<double, double, double, double, double, double>()
         .property("curvature", &Arc::curvature);
 
-    emscripten::class_<Line, emscripten::base<RoadGeometry>>("Line");
+    emscripten::class_<Line, emscripten::base<RoadGeometry>>("Line")
+        .constructor<double, double, double, double, double>();
 
     emscripten::class_<ParamPoly3, emscripten::base<RoadGeometry>>("ParamPoly3")
+        .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double>()
         .property("aU", &ParamPoly3::aU)
         .property("bU", &ParamPoly3::bU)
         .property("cU", &ParamPoly3::cU)
@@ -61,6 +64,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("dV", &ParamPoly3::dV);
 
     emscripten::class_<Spiral, emscripten::base<RoadGeometry>>("Spiral")
+        .constructor<double, double, double, double, double, double, double>()
         .property("curv_start", &Spiral::curv_start)
         .property("curv_end", &Spiral::curv_end)
         .property("c_dot", &Spiral::c_dot);

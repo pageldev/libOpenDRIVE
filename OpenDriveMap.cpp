@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vector>
 
-OpenDriveMap::OpenDriveMap(std::string xodr_file)
+OpenDriveMap::OpenDriveMap(const std::string xodr_file)
     : xodr_file(xodr_file)
 {
     pugi::xml_document doc;
@@ -24,9 +24,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
     pugi::xpath_node_set roads = doc.select_nodes(".//road");
     for (pugi::xpath_node road_node : roads)
     {
-        double road_length = road_node.node().attribute("length").as_double();
-        int road_id = road_node.node().attribute("id").as_int();
-        int junction_id = road_node.node().attribute("junction").as_int();
+        const double road_length = road_node.node().attribute("length").as_double();
+        const int road_id = road_node.node().attribute("id").as_int();
+        const int junction_id = road_node.node().attribute("junction").as_int();
 
         /* parse road geometries */
         std::map<double, std::shared_ptr<RoadGeometry>> geometries;
@@ -128,21 +128,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
     }
 }
 
-std::string OpenDriveMap::dump_json(double resolution)
+std::string OpenDriveMap::dump_json(const double resolution) const
 {
     Point3D center_of_gravity{0.0, 0.0, 0.0};
-    int nPoints = 0;
+    size_t nPoints = 1;
     for (std::pair<int, std::shared_ptr<Road>> road : this->roads)
     {
         for (std::pair<double, std::shared_ptr<RoadGeometry>> geometry : road.second->geometries)
         {
-            center_of_gravity.x += geometry.second->x0;
-            center_of_gravity.y += geometry.second->y0;
+            center_of_gravity.x = center_of_gravity.x + (geometry.second->x0 - center_of_gravity.x)/static_cast<double>(nPoints);
+            center_of_gravity.y = center_of_gravity.y + (geometry.second->y0 - center_of_gravity.y)/static_cast<double>(nPoints);
             nPoints++;
         }
     }
-    center_of_gravity.x /= static_cast<double>(nPoints);
-    center_of_gravity.y /= static_cast<double>(nPoints);
 
     json11::Json::array features;
     for (std::pair<int, std::shared_ptr<Road>> road_entry : this->roads)

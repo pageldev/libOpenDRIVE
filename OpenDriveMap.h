@@ -9,9 +9,9 @@
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(std::string xodr_file);
-    std::string dump_json(double resolution = 0.01);
+    OpenDriveMap(const std::string xodr_file);
+    std::string dump_json(const double resolution = 0.01) const;
 
-    std::string xodr_file;
+    const std::string xodr_file;
     std::map<int, std::shared_ptr<Road>> roads;
 };
