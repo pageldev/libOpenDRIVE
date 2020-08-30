@@ -58,6 +58,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<ParamPoly3, emscripten::base<RoadGeometry>>("ParamPoly3")
         .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double>()
+        .function("get_bbox", &ParamPoly3::get_bbox)
         .property("aU", &ParamPoly3::aU)
         .property("bU", &ParamPoly3::bU)
         .property("cU", &ParamPoly3::cU)
