@@ -51,10 +51,12 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Arc, emscripten::base<RoadGeometry>>("Arc")
         .constructor<double, double, double, double, double, double>()
+        .function("get_bbox", &Arc::get_bbox)
         .property("curvature", &Arc::curvature);
 
     emscripten::class_<Line, emscripten::base<RoadGeometry>>("Line")
-        .constructor<double, double, double, double, double>();
+        .constructor<double, double, double, double, double>()
+        .function("get_bbox", &Line::get_bbox);
 
     emscripten::class_<ParamPoly3, emscripten::base<RoadGeometry>>("ParamPoly3")
         .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double>()

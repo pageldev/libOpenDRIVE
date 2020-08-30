@@ -12,3 +12,17 @@ Point2D Line::get_point(double s, double t) const
     double yt = (std::sin(hdg0) * (s - s0)) + (std::cos(hdg0) * t) + y0;
     return Point2D{xt, yt};
 }
+
+Box2D Line::get_bbox() const
+{
+    Point2D pt0 = this->get_point(s0, 0);
+    Point2D pt1 = this->get_point(s0 + length, 0);
+
+    Box2D bbox;
+    bbox.min.x = std::min(pt0.x, pt1.x);
+    bbox.min.y = std::min(pt0.y, pt1.y);
+    bbox.max.x = std::max(pt0.x, pt1.x);
+    bbox.max.y = std::max(pt0.y, pt1.y);
+
+    return bbox;
+}
