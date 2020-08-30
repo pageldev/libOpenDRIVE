@@ -6,6 +6,8 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <functional>
+#include <array>
 
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end)
     : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Spiral), curv_start(curv_start), curv_end(curv_end)
@@ -32,20 +34,44 @@ Point2D Spiral::get_point(double s, double t) const
     return Point2D{xt, yt};
 }
 
-Box2D Spiral::get_bbox()
+Box2D Spiral::get_bbox() const
 {
-    double s_min = std::min(s_start, s_end);
-    double s_max = std::max(s_start, s_end);
+    const std::function<double(int)> f_s_x_extrema_1 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) - curv_start) / c_dot) + s0; };
+    const std::function<double(int)> f_s_x_extrema_2 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) + curv_start) / c_dot) + s0; };
+    const std::function<double(int)> f_s_y_extrema_1 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) + curv_start) / c_dot) + s0; };
+    const std::function<double(int)> f_s_y_extrema_2 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) - curv_start) / c_dot) + s0; };
+    std::array<const std::function<double(int)> *, 2> f_s_extremas;
 
-    double n_pi_s_min = sign(s_min) * ((s_min * s_min * std::abs(c_dot)) / (2 * M_PI));
-    double next_n_pi_half = n_pi_s_min - std::fmod(n_pi_s_min, 0.5);
-    double n_pi_s_max = sign(s_max) * ((s_max * s_max * std::abs(c_dot)) / (2 * M_PI));
-
-    std::vector<double> s_vals {s_min, s_max};
-    for (double n_pi = next_n_pi_half; n_pi < n_pi_s_max; n_pi += 0.5)
+    std::vector<double> s_extremas{s0, s0 + length};
+    for (bool is_x : {true, false})
     {
-        if(n_pi == 0)
-            continue;
-        s_vals.push_back(sign(n_pi) * std::sqrt((2 * std::abs(n_pi) * M_PI) / std::abs(c_dot)));
+        const double n_end = is_x ? (2 * curv_start * length + c_dot * length * length - M_PI) / (2 * M_PI) : (2 * curv_start * length + c_dot * length * length) / (2 * M_PI);
+        if (is_x)
+            f_s_extremas = {&f_s_x_extrema_1, &f_s_x_extrema_2};
+        else
+            f_s_extremas = {&f_s_y_extrema_1, &f_s_y_extrema_2};
+        for (const std::function<double(int)> *f_s_extrema : f_s_extremas)
+        {
+            for (int n = std::floor(-std::abs(n_end)) - 1; n < std::ceil(std::abs(n_end)) + 1; n++)
+            {
+                if (std::isnan((*f_s_extrema)(n)) || (*f_s_extrema)(n) < s0 || (*f_s_extrema)(n) > (s0 + length))
+                    continue;
+                s_extremas.push_back((*f_s_extrema)(n));
+            }
+        }
     }
+
+    Box2D bbox;
+    bbox.min = this->get_point(s_extremas.at(0), 0.0);
+    bbox.max = this->get_point(s_extremas.at(0), 0.0);
+    for (const double s : s_extremas)
+    {
+        Point2D pt_2d = this->get_point(s, 0.0);
+        bbox.min.x = std::min(bbox.min.x, pt_2d.x);
+        bbox.min.y = std::min(bbox.min.y, pt_2d.y);
+        bbox.max.x = std::max(bbox.max.x, pt_2d.x);
+        bbox.max.y = std::max(bbox.max.y, pt_2d.y);
+    }
+
+    return bbox;
 }

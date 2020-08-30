@@ -28,6 +28,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .field("x", &Point2D::x)
         .field("y", &Point2D::y);
 
+    emscripten::value_object<Box2D>("Box2D")
+        .field("min", &Box2D::min)
+        .field("max", &Box2D::max);
+
     emscripten::enum_<Geometry_type>("Geometry_type")
         .value("Line", Geometry_type::Line)
         .value("Spiral", Geometry_type::Spiral)
@@ -65,6 +69,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Spiral, emscripten::base<RoadGeometry>>("Spiral")
         .constructor<double, double, double, double, double, double, double>()
+        .function("get_bbox", &Spiral::get_bbox)
         .property("curv_start", &Spiral::curv_start)
         .property("curv_end", &Spiral::curv_end)
         .property("c_dot", &Spiral::c_dot);

@@ -34,9 +34,10 @@
         var line_group, probe_point;
         var raycaster, intersections;
         var mouse, intersected_obj, tooltip;
-        var odr_data;
-        var openDriveMap;
         var gui;
+        var odr_data = null;
+        var OpenDriveMap = null;
+        var ModuleOpenDrive = null;
 
         const colors = [[0xba000d, 0xf44336, 0xff7961] /* red */
             , [0x6a0080, 0x9c27b0, 0xd05ce3] /* purple */
@@ -52,6 +53,30 @@
 
         init();
         animate();
+
+        function get_extremas(c_start, c_end, length, hdg0, s0) {
+            const c_dot = (c_end - c_start) / length;
+
+            const f_s_x_extrema_1 = (n) => ((Math.sqrt(c_start * c_start + c_dot * (-2 * hdg0 - 2 * Math.PI * n + Math.PI)) - c_start) / c_dot) + s0;
+            const f_s_x_extrema_2 = (n) => (-(Math.sqrt(c_start * c_start + c_dot * (-2 * hdg0 - 2 * Math.PI * n + Math.PI)) + c_start) / c_dot) + s0;
+            const f_s_y_extrema_1 = (n) => (-(Math.sqrt(c_start * c_start + 2 * c_dot * (-hdg0 - Math.PI * n)) + c_start) / c_dot) + s0;
+            const f_s_y_extrema_2 = (n) => ((Math.sqrt(c_start * c_start + 2 * c_dot * (-hdg0 - Math.PI * n)) - c_start) / c_dot) + s0;
+
+            let s_extremas = [s0, s0 + length];
+
+            for (let is_x of [true, false]) {
+                const n_end = is_x ? (2 * c_start * length + c_dot * length * length - Math.PI) / (2 * Math.PI) : (2 * c_start * length + c_dot * length * length) / (2 * Math.PI);
+                const f_s_extremas = is_x ? [f_s_x_extrema_1, f_s_x_extrema_2] : [f_s_y_extrema_1, f_s_y_extrema_2];
+                for (let f_s_extrema of f_s_extremas) {
+                    for (let n = Math.floor(-Math.abs(n_end)) - 2; n < Math.ceil(Math.abs(n_end)) + 2; n++) {
+                        if (isNaN(f_s_extrema(n)) || f_s_extrema(n) < s0 || f_s_extrema(n) > s0 + length)
+                            continue;
+                        s_extremas.push(f_s_extrema(n));
+                    }
+                }
+            }
+            return s_extremas;
+        }
 
         function add_odr_data(odr_data) {
             /* group by road_id */
@@ -90,15 +115,39 @@
                 road_idx++;
             });
             scene.add(line_group);
+
+            for (let road_idx = 0; road_idx < OpenDriveMap.roads.keys().size(); road_idx++) {
+                const road_id = OpenDriveMap.roads.keys().get(road_idx);
+                const geoms = OpenDriveMap.roads.get(road_id).geometries;
+                for (let geom_idx = 0; geom_idx < geoms.keys().size(); geom_idx++) {
+                    const geom = geoms.get(geoms.keys().get(geom_idx));
+                    if (!(geom instanceof ModuleOpenDrive.Spiral))
+                        continue;
+                    const bbox = geom.get_bbox();
+                    let points = [];
+                    points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
+                    points.push(new THREE.Vector3(bbox.max.x, bbox.min.y, 0));
+                    points.push(new THREE.Vector3(bbox.max.x, bbox.max.y, 0));
+                    points.push(new THREE.Vector3(bbox.min.x, bbox.max.y, 0));
+                    points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
+                    const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
+                    const bbox_material = new THREE.LineBasicMaterial({
+                        color: 0xff0000
+                    });
+                    const bbox_line = new THREE.Line(bbox_geom, bbox_material);
+                    scene.add(bbox_line);
+                }
+            }
         }
 
         function load_odr_data(xodr_file, resolution) {
             libOpenDrive().then(Module => {
+                ModuleOpenDrive = Module;
                 fetch(xodr_file).then((res) => {
                     res.text().then((data) => {
                         Module['FS_createDataFile'](".", "data.xodr", data, true, true);
-                        openDriveMap = new Module.OpenDriveMap("./data.xodr");
-                        let json_data = JSON.parse(openDriveMap.dump_json(resolution));
+                        OpenDriveMap = new Module.OpenDriveMap("./data.xodr");
+                        let json_data = JSON.parse(OpenDriveMap.dump_json(resolution));
                         add_odr_data(json_data);
                     });
                 });
