@@ -130,18 +130,6 @@ OpenDriveMap::OpenDriveMap(const std::string xodr_file)
 
 std::string OpenDriveMap::dump_json(const double resolution) const
 {
-    Point3D center_of_gravity{0.0, 0.0, 0.0};
-    size_t nPoints = 1;
-    for (std::pair<int, std::shared_ptr<Road>> road : this->roads)
-    {
-        for (std::pair<double, std::shared_ptr<RoadGeometry>> geometry : road.second->geometries)
-        {
-            center_of_gravity.x = center_of_gravity.x + (geometry.second->x0 - center_of_gravity.x)/static_cast<double>(nPoints);
-            center_of_gravity.y = center_of_gravity.y + (geometry.second->y0 - center_of_gravity.y)/static_cast<double>(nPoints);
-            nPoints++;
-        }
-    }
-
     json11::Json::array features;
     for (std::pair<int, std::shared_ptr<Road>> road_entry : this->roads)
     {
@@ -173,8 +161,8 @@ std::string OpenDriveMap::dump_json(const double resolution) const
                 {
                     Point3D pt = reduced_points.at(idx);
                     json11::Json::array position(3);
-                    position[0] = pt.x - center_of_gravity.x;
-                    position[1] = pt.y - center_of_gravity.y;
+                    position[0] = pt.x;
+                    position[1] = pt.y;
                     position[2] = pt.z;
                     coordinates[idx] = position;
                 }
