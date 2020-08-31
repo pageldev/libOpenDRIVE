@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+namespace odr
+{
+
 LaneOffset::LaneOffset(double s0, double a, double b, double c, double d)
     : s0(s0), a(a), b(b), c(c), d(d)
 {
@@ -28,7 +31,7 @@ Lane::Lane(int id, std::string type, std::map<double, std::shared_ptr<LaneWidth>
 {
 }
 
-Point3D Lane::get_outer_border_pt(const double s) const
+Point3D<double> Lane::get_outer_border_pt(const double s) const
 {
     double t = 0.0;
 
@@ -63,3 +66,5 @@ void LaneSection::add_lane(std::shared_ptr<Lane> lane)
     lane->lane_section = shared_from_this();
     this->lanes[lane->id] = lane;
 }
+
+} // namespace odr

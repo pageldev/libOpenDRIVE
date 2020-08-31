@@ -3,17 +3,20 @@
 #include <cmath>
 #include <utility>
 
-std::vector<Point3D> rdp(const std::vector<Point3D> &points, const double epsilon)
+namespace odr
 {
-    std::vector<Point3D> out;
+
+std::vector<Point3D<double>> rdp(const std::vector<Point3D<double>> &points, const double epsilon)
+{
+    std::vector<Point3D<double>> out;
     if (points.size() < 2)
     {
         out = points;
         return out;
     }
 
-    double dx = points.back().x - points.front().x;
-    double dy = points.back().y - points.front().y;
+    double       dx = points.back().x - points.front().x;
+    double       dy = points.back().y - points.front().y;
     const double mag = std::pow(std::pow(dx, 2.0) + std::pow(dy, 2.0), 0.5);
     if (mag > 0.0)
     {
@@ -25,14 +28,14 @@ std::vector<Point3D> rdp(const std::vector<Point3D> &points, const double epsilo
     size_t d_max_idx = 0;
     for (int idx = 0; idx < points.size() - 1; idx++)
     {
-        Point3D pt = points.at(idx);
-        const double pvx = pt.x - points.front().x;
-        const double pvy = pt.y - points.front().y;
-        const double pv_dot = dx * pvx + dy * pvy;
-        const double dsx = pv_dot * dx;
-        const double dsy = pv_dot * dy;
-        const double ax = pvx - dsx;
-        const double ay = pvy - dsy;
+        Point3D<double> pt = points.at(idx);
+        const double    pvx = pt.x - points.front().x;
+        const double    pvy = pt.y - points.front().y;
+        const double    pv_dot = dx * pvx + dy * pvy;
+        const double    dsx = pv_dot * dx;
+        const double    dsy = pv_dot * dy;
+        const double    ax = pvx - dsx;
+        const double    ay = pvy - dsy;
 
         const double d = std::pow(std::pow(ax, 2.0) + std::pow(ay, 2.0), 0.5);
         if (d > d_max)
@@ -44,10 +47,10 @@ std::vector<Point3D> rdp(const std::vector<Point3D> &points, const double epsilo
 
     if (d_max > epsilon)
     {
-        std::vector<Point3D> first_line(points.begin(), points.begin() + d_max_idx + 1);
-        std::vector<Point3D> last_line(points.begin() + d_max_idx, points.end());
-        std::vector<Point3D> results_1 = rdp(first_line, epsilon);
-        std::vector<Point3D> results_2 = rdp(last_line, epsilon);
+        std::vector<Point3D<double>> first_line(points.begin(), points.begin() + d_max_idx + 1);
+        std::vector<Point3D<double>> last_line(points.begin() + d_max_idx, points.end());
+        std::vector<Point3D<double>> results_1 = rdp(first_line, epsilon);
+        std::vector<Point3D<double>> results_2 = rdp(last_line, epsilon);
         out.assign(results_1.begin(), results_1.end() - 1);
         out.insert(out.end(), results_2.begin(), results_2.end());
     }
@@ -59,3 +62,5 @@ std::vector<Point3D> rdp(const std::vector<Point3D> &points, const double epsilo
 
     return out;
 }
+
+} // namespace odr

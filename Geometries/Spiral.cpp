@@ -3,11 +3,14 @@
 #include "Utils.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <vector>
-#include <functional>
-#include <array>
+
+namespace odr
+{
 
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end)
     : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Spiral), curv_start(curv_start), curv_end(curv_end)
@@ -17,7 +20,7 @@ Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, doub
     this->s_end = curv_end / c_dot;
 }
 
-Point2D Spiral::get_point(double s, double t) const
+Point2D<double> Spiral::get_point(double s, double t) const
 {
     double s0_spiral = curv_start / c_dot;
     double x0_spiral, y0_spiral, a0_spiral;
@@ -31,15 +34,16 @@ Point2D Spiral::get_point(double s, double t) const
 
     double xt = (std::cos(hdg) * (xs_spiral - x0_spiral + tx)) - (std::sin(hdg) * (ys_spiral - y0_spiral + ty)) + x0;
     double yt = (std::sin(hdg) * (xs_spiral - x0_spiral + tx)) + (std::cos(hdg) * (ys_spiral - y0_spiral + ty)) + y0;
-    return Point2D{xt, yt};
+    return Point2D<double>{xt, yt};
 }
 
-Box2D Spiral::get_bbox() const
+Box2D<double> Spiral::get_bbox() const
 {
     const std::function<double(int)> f_s_x_extrema_1 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) - curv_start) / c_dot) + s0; };
     const std::function<double(int)> f_s_x_extrema_2 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) + curv_start) / c_dot) + s0; };
     const std::function<double(int)> f_s_y_extrema_1 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) + curv_start) / c_dot) + s0; };
     const std::function<double(int)> f_s_y_extrema_2 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) - curv_start) / c_dot) + s0; };
+
     std::array<const std::function<double(int)> *, 2> f_s_extremas;
 
     std::vector<double> s_extremas{s0, s0 + length};
@@ -61,12 +65,12 @@ Box2D Spiral::get_bbox() const
         }
     }
 
-    Box2D bbox;
+    Box2D<double> bbox;
     bbox.min = this->get_point(s_extremas.at(0), 0.0);
     bbox.max = this->get_point(s_extremas.at(0), 0.0);
     for (const double s : s_extremas)
     {
-        Point2D pt_2d = this->get_point(s, 0.0);
+        Point2D<double> pt_2d = this->get_point(s, 0.0);
         bbox.min.x = std::min(bbox.min.x, pt_2d.x);
         bbox.min.y = std::min(bbox.min.y, pt_2d.y);
         bbox.max.x = std::max(bbox.max.x, pt_2d.x);
@@ -75,3 +79,5 @@ Box2D Spiral::get_bbox() const
 
     return bbox;
 }
+
+} // namespace odr

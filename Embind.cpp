@@ -1,21 +1,24 @@
 #ifdef __EMSCRIPTEN__
+#include "Geometries/RoadGeometry.h"
+#include "Lanes.h"
 #include "OpenDriveMap.h"
 #include "Road.h"
-#include "Lanes.h"
-#include "Geometries/RoadGeometry.h"
 
 #include <emscripten/bind.h>
 #include <map>
 #include <memory>
 #include <string>
 
+namespace odr
+{
+
 struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
 {
     EMSCRIPTEN_WRAPPER(RoadGeometryWrapper);
 
-    virtual Point2D get_point(double s, double t) const override
+    virtual Point2D<double> get_point(double s, double t) const override
     {
-        return call<Point2D>("get_point", s, t);
+        return call<Point2D<double>>("get_point", s, t);
     }
 };
 
@@ -24,13 +27,13 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
 
-    emscripten::value_object<Point2D>("Point2D")
-        .field("x", &Point2D::x)
-        .field("y", &Point2D::y);
+    emscripten::value_object<Point2D<double>>("Point2D<double>")
+        .field("x", &Point2D<double>::x)
+        .field("y", &Point2D<double>::y);
 
-    emscripten::value_object<Box2D>("Box2D")
-        .field("min", &Box2D::min)
-        .field("max", &Box2D::max);
+    emscripten::value_object<Box2D<double>>("Box2D<double>")
+        .field("min", &Box2D<double>::min)
+        .field("max", &Box2D<double>::max);
 
     emscripten::enum_<Geometry_type>("Geometry_type")
         .value("Line", Geometry_type::Line)
@@ -111,4 +114,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads);
 }
+
+} // namespace odr
 #endif
