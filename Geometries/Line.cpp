@@ -1,4 +1,6 @@
 #include "Line.h"
+#include "Utils.h"
+
 #include <cmath>
 
 namespace odr
@@ -18,16 +20,7 @@ Point2D<double> Line::get_point(double s, double t) const
 
 Box2D<double> Line::get_bbox() const
 {
-    Point2D<double> pt0 = this->get_point(s0, 0);
-    Point2D<double> pt1 = this->get_point(s0 + length, 0);
-
-    Box2D<double> bbox;
-    bbox.min.x = std::min(pt0.x, pt1.x);
-    bbox.min.y = std::min(pt0.y, pt1.y);
-    bbox.max.x = std::max(pt0.x, pt1.x);
-    bbox.max.y = std::max(pt0.y, pt1.y);
-
-    return bbox;
+    return get_bbox_for_s_values<double>({s0, s0 + length}, std::bind(&Line::get_point, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 } // namespace odr

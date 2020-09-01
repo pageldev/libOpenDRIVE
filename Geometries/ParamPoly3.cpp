@@ -1,4 +1,5 @@
 #include "ParamPoly3.h"
+#include "Utils.h"
 
 #include <cmath>
 #include <vector>
@@ -41,19 +42,7 @@ Box2D<double> ParamPoly3::get_bbox() const
         s_extremas.push_back(s_extrema);
     }
 
-    Box2D<double> bbox;
-    bbox.min = this->get_point(s_extremas.at(0), 0.0);
-    bbox.max = this->get_point(s_extremas.at(0), 0.0);
-    for (const double s : s_extremas)
-    {
-        Point2D<double> pt_2d = this->get_point(s, 0.0);
-        bbox.min.x = std::min(bbox.min.x, pt_2d.x);
-        bbox.min.y = std::min(bbox.min.y, pt_2d.y);
-        bbox.max.x = std::max(bbox.max.x, pt_2d.x);
-        bbox.max.y = std::max(bbox.max.y, pt_2d.y);
-    }
-
-    return bbox;
+    return get_bbox_for_s_values<double>(s_extremas, std::bind(&ParamPoly3::get_point, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 } // namespace odr

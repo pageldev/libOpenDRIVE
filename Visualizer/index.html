@@ -115,7 +115,7 @@
                 }
                 road_idx++;
             });
-            // scene.add(line_group);
+            scene.add(line_group);
 
             for (let road_idx = 0; road_idx < OpenDriveMap.roads.keys().size(); road_idx++) {
                 const road_id = OpenDriveMap.roads.keys().get(road_idx);
@@ -135,7 +135,7 @@
                             color: 0xff0000
                         });
                         const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        // scene.add(bbox_line);
+                        scene.add(bbox_line);
                     } else if (geom instanceof ModuleOpenDrive.ParamPoly3) {
                         const bbox = geom.get_bbox();
                         let points = [];
@@ -149,7 +149,7 @@
                             color: 0xff0000
                         });
                         const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        // scene.add(bbox_line);
+                        scene.add(bbox_line);
                     } else if (geom instanceof ModuleOpenDrive.Line) {
                         const bbox = geom.get_bbox();
                         let points = [];
@@ -163,7 +163,7 @@
                             color: 0xff0000
                         });
                         const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        // scene.add(bbox_line);
+                        scene.add(bbox_line);
                     } else if (geom instanceof ModuleOpenDrive.Arc) { 
                         const bbox = geom.get_bbox();
                         let points = [];

@@ -20,6 +20,11 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
     {
         return call<Point2D<double>>("get_point", s, t);
     }
+
+    virtual Box2D<double> get_bbox() const override
+    {
+        return call<Box2D<double>>("get_bbox");
+    }
 };
 
 EMSCRIPTEN_BINDINGS(OpenDriveMap)
@@ -45,6 +50,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
         .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, Geometry_type>())
         .function("get_point", &RoadGeometry::get_point, emscripten::pure_virtual())
+        .function("get_bbox", &RoadGeometry::get_bbox, emscripten::pure_virtual())
         .property("type", &RoadGeometry::type)
         .property("s0", &RoadGeometry::s0)
         .property("x0", &RoadGeometry::x0)
@@ -54,16 +60,13 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Arc, emscripten::base<RoadGeometry>>("Arc")
         .constructor<double, double, double, double, double, double>()
-        .function("get_bbox", &Arc::get_bbox)
         .property("curvature", &Arc::curvature);
 
     emscripten::class_<Line, emscripten::base<RoadGeometry>>("Line")
-        .constructor<double, double, double, double, double>()
-        .function("get_bbox", &Line::get_bbox);
+        .constructor<double, double, double, double, double>();
 
     emscripten::class_<ParamPoly3, emscripten::base<RoadGeometry>>("ParamPoly3")
         .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double>()
-        .function("get_bbox", &ParamPoly3::get_bbox)
         .property("aU", &ParamPoly3::aU)
         .property("bU", &ParamPoly3::bU)
         .property("cU", &ParamPoly3::cU)
@@ -75,7 +78,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Spiral, emscripten::base<RoadGeometry>>("Spiral")
         .constructor<double, double, double, double, double, double, double>()
-        .function("get_bbox", &Spiral::get_bbox)
         .property("curv_start", &Spiral::curv_start)
         .property("curv_end", &Spiral::curv_end)
         .property("c_dot", &Spiral::c_dot);
