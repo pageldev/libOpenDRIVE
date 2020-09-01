@@ -1,6 +1,6 @@
 #include "Spiral.h"
 #include "Spiral/odrSpiral.h"
-#include "Utils.h"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <array>

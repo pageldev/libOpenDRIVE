@@ -1,5 +1,5 @@
 #include "ParamPoly3.h"
-#include "Utils.h"
+#include "Utils.hpp"
 
 #include <cmath>
 #include <vector>
