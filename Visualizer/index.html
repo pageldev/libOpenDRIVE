@@ -31,7 +31,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script>
         var camera, controls, scene, renderer;
-        var line_group, probe_point;
+        var line_group, probe_point, bbox;
         var raycaster, intersections;
         var mouse, intersected_obj, tooltip;
         var gui;
@@ -117,70 +117,33 @@
             });
             scene.add(line_group);
 
-            for (let road_idx = 0; road_idx < OpenDriveMap.roads.keys().size(); road_idx++) {
-                const road_id = OpenDriveMap.roads.keys().get(road_idx);
-                const geoms = OpenDriveMap.roads.get(road_id).geometries;
-                for (let geom_idx = 0; geom_idx < geoms.keys().size(); geom_idx++) {
-                    const geom = geoms.get(geoms.keys().get(geom_idx));
-                    if (geom instanceof ModuleOpenDrive.Spiral) {
-                        const bbox = geom.get_bbox();
-                        let points = [];
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
-                        const bbox_material = new THREE.LineBasicMaterial({
-                            color: 0xff0000
-                        });
-                        const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        scene.add(bbox_line);
-                    } else if (geom instanceof ModuleOpenDrive.ParamPoly3) {
-                        const bbox = geom.get_bbox();
-                        let points = [];
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
-                        const bbox_material = new THREE.LineBasicMaterial({
-                            color: 0xff0000
-                        });
-                        const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        scene.add(bbox_line);
-                    } else if (geom instanceof ModuleOpenDrive.Line) {
-                        const bbox = geom.get_bbox();
-                        let points = [];
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
-                        const bbox_material = new THREE.LineBasicMaterial({
-                            color: 0xff0000
-                        });
-                        const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        scene.add(bbox_line);
-                    } else if (geom instanceof ModuleOpenDrive.Arc) { 
-                        const bbox = geom.get_bbox();
-                        let points = [];
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.min.y, 0));
-                        points.push(new THREE.Vector3(bbox.max.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.max.y, 0));
-                        points.push(new THREE.Vector3(bbox.min.x, bbox.min.y, 0));
-                        const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
-                        const bbox_material = new THREE.LineBasicMaterial({
-                            color: 0xff0000
-                        });
-                        const bbox_line = new THREE.Line(bbox_geom, bbox_material);
-                        scene.add(bbox_line);
-                    }
-                }
-            }
+            // let closest_geom = null;
+            // let closest_geom_dist = Infinity;
+            // for (let road_idx = 0; road_idx < OpenDriveMap.roads.keys().size(); road_idx++) {
+            //     const road_id = OpenDriveMap.roads.keys().get(road_idx);
+            //     const geoms = OpenDriveMap.roads.get(road_id).geometries;
+            //     for (let geom_idx = 0; geom_idx < geoms.keys().size(); geom_idx++) {
+            //         const geom = geoms.get(geoms.keys().get(geom_idx));
+            //         const dist = geom.get_bbox().get_distance([0, 0]);
+            //         if (dist < closest_geom_dist) {
+            //             closest_geom = geom;
+            //             closest_geom_dist = dist;
+            //         }
+            //     }
+            // }
+            // const closest_geom_bbox = closest_geom.get_bbox();
+            // let points = [];
+            // points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.min[1], 0));
+            // points.push(new THREE.Vector3(closest_geom_bbox.max[0], closest_geom_bbox.min[1], 0));
+            // points.push(new THREE.Vector3(closest_geom_bbox.max[0], closest_geom_bbox.max[1], 0));
+            // points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.max[1], 0));
+            // points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.min[1], 0));
+            // const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
+            // const bbox_material = new THREE.LineBasicMaterial({
+            //     color: 0xff0000
+            // });
+            // const bbox_line = new THREE.Line(bbox_geom, bbox_material);
+            // scene.add(bbox_line);
         }
 
         function load_odr_data(xodr_file, resolution) {
@@ -266,6 +229,41 @@
                 let x_z0 = raycaster.ray.origin.x - t_z0 * raycaster.ray.direction.x;
                 let y_z0 = raycaster.ray.origin.y - t_z0 * raycaster.ray.direction.y;
                 probe_point.position.set(x_z0, y_z0, 0.0);
+
+                if (OpenDriveMap) {
+                    let closest_geom = null;
+                    let closest_geom_dist = Infinity;
+                    for (let road_idx = 0; road_idx < OpenDriveMap.roads.keys().size(); road_idx++) {
+                        const road_id = OpenDriveMap.roads.keys().get(road_idx);
+                        const geoms = OpenDriveMap.roads.get(road_id).geometries;
+                        for (let geom_idx = 0; geom_idx < geoms.keys().size(); geom_idx++) {
+                            const geom = geoms.get(geoms.keys().get(geom_idx));
+                            const dist = geom.get_bbox().get_distance([x_z0, y_z0]);
+                            if (dist < closest_geom_dist) {
+                                closest_geom = geom;
+                                closest_geom_dist = dist;
+                            }
+                        }
+                    }
+                    if (closest_geom) {
+                        if (bbox)
+                            scene.remove(bbox);
+                        const closest_geom_bbox = closest_geom.get_bbox();
+                        let points = [];
+                        points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.min[1], 0));
+                        points.push(new THREE.Vector3(closest_geom_bbox.max[0], closest_geom_bbox.min[1], 0));
+                        points.push(new THREE.Vector3(closest_geom_bbox.max[0], closest_geom_bbox.max[1], 0));
+                        points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.max[1], 0));
+                        points.push(new THREE.Vector3(closest_geom_bbox.min[0], closest_geom_bbox.min[1], 0));
+                        const bbox_geom = new THREE.BufferGeometry().setFromPoints(points);
+                        const bbox_material = new THREE.LineBasicMaterial({
+                            color: 0xff0000
+                        });
+
+                        bbox = new THREE.Line(bbox_geom, bbox_material);
+                        scene.add(bbox);
+                    }
+                }
             } else {
                 tooltip.style.display = "block";
                 tooltip.style.left = `${((mouse.x + 1) / 2) * window.innerWidth - tooltip.offsetWidth - 5}px`;

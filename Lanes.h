@@ -39,7 +39,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, std::string type, std::map<double, std::shared_ptr<LaneWidth>> lane_widths);
-    Point3D<double> get_outer_border_pt(const double s) const;
+    Point3D get_outer_border_pt(const double s) const;
 
     int                                          id;
     std::string                                  type;

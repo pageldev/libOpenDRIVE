@@ -32,7 +32,7 @@ void Road::add_lane_section(std::shared_ptr<LaneSection> lane_section)
     this->lane_sections[lane_section->s0] = lane_section;
 }
 
-Point3D<double> Road::get_refline_point(const double s, const double t) const
+Point3D Road::get_refline_point(const double s, const double t) const
 {
     double offset = 0;
     if (this->lane_offsets.size() > 0)
@@ -54,7 +54,7 @@ Point3D<double> Road::get_refline_point(const double s, const double t) const
     {
         target_geom_iter--;
     }
-    Point2D<double> plan_view_pt = (*target_geom_iter).second->get_point(s, t + offset);
+    Point2D plan_view_pt = (*target_geom_iter).second->get_point(s, t + offset);
 
     double z = 0;
     if (this->elevation_profiles.size() > 0)
@@ -68,7 +68,7 @@ Point3D<double> Road::get_refline_point(const double s, const double t) const
         z = (*target_elev_iter).second->get_elevation(s);
     }
 
-    return Point3D<double>{plan_view_pt.x, plan_view_pt.y, z};
+    return Point3D{plan_view_pt[0], plan_view_pt[1], z};
 }
 
 } // namespace odr

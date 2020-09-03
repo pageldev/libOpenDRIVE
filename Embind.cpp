@@ -16,14 +16,14 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
 {
     EMSCRIPTEN_WRAPPER(RoadGeometryWrapper);
 
-    virtual Point2D<double> get_point(double s, double t) const override
+    virtual Point2D get_point(double s, double t) const override
     {
-        return call<Point2D<double>>("get_point", s, t);
+        return call<Point2D>("get_point", s, t);
     }
 
-    virtual Box2D<double> get_bbox() const override
+    virtual Box2D get_bbox() const override
     {
-        return call<Box2D<double>>("get_bbox");
+        return call<Box2D>("get_bbox");
     }
 };
 
@@ -32,13 +32,17 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
 
-    emscripten::value_object<Point2D<double>>("Point2D<double>")
-        .field("x", &Point2D<double>::x)
-        .field("y", &Point2D<double>::y);
+    emscripten::value_array<Point2D>("array_int_2")
+        .element(emscripten::index<0>())
+        .element(emscripten::index<1>());
 
-    emscripten::value_object<Box2D<double>>("Box2D<double>")
-        .field("min", &Box2D<double>::min)
-        .field("max", &Box2D<double>::max);
+    emscripten::class_<Box2D>("Box2D")
+        .function("get_distance", &Box2D::get_distance)
+        .property("min", &Box2D::min)
+        .property("max", &Box2D::max)
+        .property("width", &Box2D::width)
+        .property("height", &Box2D::height)
+        .property("center", &Box2D::center);
 
     emscripten::enum_<Geometry_type>("Geometry_type")
         .value("Line", Geometry_type::Line)

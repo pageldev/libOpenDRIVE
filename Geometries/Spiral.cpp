@@ -20,7 +20,7 @@ Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, doub
     this->s_end = curv_end / c_dot;
 }
 
-Point2D<double> Spiral::get_point(double s, double t) const
+Point2D Spiral::get_point(double s, double t) const
 {
     double s0_spiral = curv_start / c_dot;
     double x0_spiral, y0_spiral, a0_spiral;
@@ -34,10 +34,10 @@ Point2D<double> Spiral::get_point(double s, double t) const
 
     double xt = (std::cos(hdg) * (xs_spiral - x0_spiral + tx)) - (std::sin(hdg) * (ys_spiral - y0_spiral + ty)) + x0;
     double yt = (std::sin(hdg) * (xs_spiral - x0_spiral + tx)) + (std::cos(hdg) * (ys_spiral - y0_spiral + ty)) + y0;
-    return Point2D<double>{xt, yt};
+    return Point2D{xt, yt};
 }
 
-Box2D<double> Spiral::get_bbox() const
+Box2D Spiral::get_bbox() const
 {
     const std::function<double(int)> f_s_x_extrema_1 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) - curv_start) / c_dot) + s0; };
     const std::function<double(int)> f_s_x_extrema_2 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) + curv_start) / c_dot) + s0; };
