@@ -23,7 +23,7 @@ Point2D ParamPoly3::get_point(double s, double t) const
     const double y_offs = ys + ((t * xs_dp) / std::sqrt(xs_dp * xs_dp + ys_dp * ys_dp));
     const double xt = (std::cos(hdg0) * x_offs) - (std::sin(hdg0) * y_offs) + x0;
     const double yt = (std::sin(hdg0) * x_offs) + (std::cos(hdg0) * y_offs) + y0;
-    
+
     return Point2D{xt, yt};
 }
 
