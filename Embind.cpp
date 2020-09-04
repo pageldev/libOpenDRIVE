@@ -32,9 +32,14 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
 
-    emscripten::value_array<Point2D>("array_int_2")
+    emscripten::value_array<Point2D>("point2d")
         .element(emscripten::index<0>())
         .element(emscripten::index<1>());
+
+    emscripten::value_array<Point3D>("point3d")
+        .element(emscripten::index<0>())
+        .element(emscripten::index<1>())
+        .element(emscripten::index<2>());
 
     emscripten::class_<Box2D>("Box2D")
         .function("get_distance", &Box2D::get_distance)
@@ -85,6 +90,15 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("curv_start", &Spiral::curv_start)
         .property("curv_end", &Spiral::curv_end)
         .property("c_dot", &Spiral::c_dot);
+
+    emscripten::class_<Lane>("Lane")
+        .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
+        .constructor<int, std::string, std::map<double, std::shared_ptr<LaneWidth>>>()
+        .function("get_outer_border_pt", &Lane::get_outer_border_pt)
+        .property("id", &Lane::id)
+        .property("type", &Lane::type)
+        .property("lane_section", &Lane::lane_section)
+        .property("lane_widths", &Lane::lane_widths);
 
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
 

@@ -139,15 +139,7 @@ std::string OpenDriveMap::dump_json(const double resolution) const
         std::shared_ptr<Road> road = road_entry.second;
         for (std::map<double, std::shared_ptr<LaneSection>>::iterator lane_sec_iter = road->lane_sections.begin(); lane_sec_iter != road->lane_sections.end(); lane_sec_iter++)
         {
-            double lane_section_length = 0;
-            if (std::next(lane_sec_iter) == road->lane_sections.end())
-            {
-                lane_section_length = road->length - (*lane_sec_iter).second->s0;
-            }
-            else
-            {
-                lane_section_length = (*std::next(lane_sec_iter)).second->s0 - (*lane_sec_iter).second->s0;
-            }
+            double lane_section_length = (std::next(lane_sec_iter) == road->lane_sections.end()) ? road->length - (*lane_sec_iter).second->s0 : (*std::next(lane_sec_iter)).second->s0 - (*lane_sec_iter).second->s0;
             for (std::pair<int, std::shared_ptr<Lane>> lane : (*lane_sec_iter).second->lanes)
             {
                 std::vector<Point3D> points;
