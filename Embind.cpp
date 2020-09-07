@@ -41,6 +41,8 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .element(emscripten::index<1>())
         .element(emscripten::index<2>());
 
+    emscripten::register_vector<Point3D>("vector<Point3D>");
+
     emscripten::class_<Box2D>("Box2D")
         .function("get_distance", &Box2D::get_distance)
         .property("min", &Box2D::min)
