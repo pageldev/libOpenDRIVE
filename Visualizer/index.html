@@ -25,7 +25,6 @@
         var camera, controls, scene, renderer;
         var line_group, mesh_group, probe_point, probe_line, gui;
         var mouse, raycaster, intersections;
-        var closest_odr_geom, bbox;
 
         var odr_data = null;
         var OpenDriveMap = null;
@@ -47,17 +46,12 @@
             return keys;
         }
 
-        function get_closest_odr_geom(x, y) {
-            let min_dist = Infinity;
-            let closest_odr_geom = null;
-            for (let [bbox, odr_geom] of bbox_to_odr_geom) {
-                const dist = bbox.get_distance([x, y]);
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    closest_odr_geom = odr_geom;
-                }
-            }
-            return closest_odr_geom;
+        function get_nearest_odr_geoms(x, y, n) {
+            let sorted_bboxs = new Array(...bbox_to_odr_geom.keys()).sort((a, b) => a.get_distance([x, y]) - b.get_distance([x, y]));
+            let result = [];
+            for (let i = 0; i < n; i++)
+                result.push(bbox_to_odr_geom.get(sorted_bboxs[i]));
+            return result;
         }
 
         function rdp(points, eps) {
@@ -160,10 +154,6 @@
             probe_point = new THREE.Mesh(probe_point_geom, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
             scene.add(probe_point);
 
-            let bbox_geom = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(5 * 3), 3));
-            bbox = new THREE.Line(bbox_geom, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            scene.add(bbox);
-
             let probe_line_geom = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3));
             probe_line = new THREE.Line(probe_line_geom, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
             scene.add(probe_line);
@@ -212,31 +202,33 @@
                 const intersec_pt = intersections[0].point;
                 probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
 
-                let new_closest_odr_geom = get_closest_odr_geom(intersec_pt.x, intersec_pt.y);
-                if (new_closest_odr_geom != closest_odr_geom) {
-                    closest_odr_geom = new_closest_odr_geom;
-                    const odr_bbox = closest_odr_geom.bounding_box;
-                    bbox.geometry.attributes.position.array.set([
-                        odr_bbox.min[0], odr_bbox.min[1], 0
-                        , odr_bbox.max[0], odr_bbox.min[1], 0
-                        , odr_bbox.max[0], odr_bbox.max[1], 0
-                        , odr_bbox.min[0], odr_bbox.max[1], 0
-                        , odr_bbox.min[0], odr_bbox.min[1], 0]);
-                    bbox.geometry.attributes.position.needsUpdate = true;
-                    bbox.geometry.computeBoundingSphere();
+                let nearest_odr_geom = null;
+                let nearest_ref_line_pt = null;
+                let nearest_s = null;
+
+                let nearest_dist = -1.0;
+                let nearest_odr_geoms = get_nearest_odr_geoms(intersec_pt.x, intersec_pt.y, 3);
+                for (let near_odr_geom of nearest_odr_geoms) {
+                    const s_proj = near_odr_geom.project(intersec_pt.x, intersec_pt.y);
+                    const near_odr_road = OpenDriveMap.roads.get(odr_geom_to_odr_road_id.get(near_odr_geom));
+                    const ref_line_pt = near_odr_road.get_refline_point(s_proj, 0.0);
+                    const new_dist = Math.sqrt(Math.pow(intersec_pt.x - ref_line_pt[0], 2) + Math.pow(intersec_pt.y - ref_line_pt[1], 2));
+                    if (new_dist < nearest_dist || nearest_dist < 0) {
+                        nearest_dist = new_dist;
+                        nearest_odr_geom = near_odr_geom;
+                        nearest_ref_line_pt = ref_line_pt;
+                        nearest_s = s_proj;
+                    }
                 }
 
-                const closest_odr_road = OpenDriveMap.roads.get(odr_geom_to_odr_road_id.get(closest_odr_geom));
-                const s_proj = closest_odr_geom.project(intersec_pt.x, intersec_pt.y);
-                const ref_line_pt = closest_odr_road.get_refline_point(s_proj, 0.0);
-
-                const grad_vec = closest_odr_geom.get_grad(s_proj);
-                const side = Math.sign(grad_vec[0] * (intersec_pt.y - ref_line_pt[1]) - grad_vec[1] * (intersec_pt.x - ref_line_pt[0]));
-                const t_offs = side * Math.sqrt(Math.pow(intersec_pt.x - ref_line_pt[0], 2) + Math.pow(intersec_pt.y - ref_line_pt[1], 2));
-                const probe_point_reconstructed = closest_odr_road.get_refline_point(s_proj, t_offs);
+                const nearest_odr_road = OpenDriveMap.roads.get(odr_geom_to_odr_road_id.get(nearest_odr_geom));
+                const grad_vec = nearest_odr_geom.get_grad(nearest_s);
+                const side = Math.sign(grad_vec[0] * (intersec_pt.y - nearest_ref_line_pt[1]) - grad_vec[1] * (intersec_pt.x - nearest_ref_line_pt[0]));
+                const t_offs = side * nearest_dist;
+                const probe_point_reconstructed = nearest_odr_road.get_refline_point(nearest_s, t_offs);
 
                 probe_line.geometry.attributes.position.array.set([
-                    ref_line_pt[0], ref_line_pt[1], intersec_pt.z,
+                    nearest_ref_line_pt[0], nearest_ref_line_pt[1], intersec_pt.z,
                     probe_point_reconstructed[0], probe_point_reconstructed[1], intersec_pt.z]);
                 probe_line.geometry.attributes.position.needsUpdate = true;
                 probe_line.geometry.computeBoundingSphere();
