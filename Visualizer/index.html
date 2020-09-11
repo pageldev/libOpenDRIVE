@@ -125,7 +125,7 @@
                             }
                             for (let geom_s0 of get_std_map_keys(odr_road.geometries)) {
                                 const odr_geom = odr_road.geometries.get(geom_s0);
-                                bbox_to_odr_geom.set(odr_geom.get_bbox(), odr_geom);
+                                bbox_to_odr_geom.set(odr_geom.bounding_box, odr_geom);
                                 odr_geom_to_odr_road_id.set(odr_geom, road_id);
                             }
                         }
@@ -215,7 +215,7 @@
                 let new_closest_odr_geom = get_closest_odr_geom(intersec_pt.x, intersec_pt.y);
                 if (new_closest_odr_geom != closest_odr_geom) {
                     closest_odr_geom = new_closest_odr_geom;
-                    const odr_bbox = closest_odr_geom.get_bbox();
+                    const odr_bbox = closest_odr_geom.bounding_box;
                     bbox.geometry.attributes.position.array.set([
                         odr_bbox.min[0], odr_bbox.min[1], 0
                         , odr_bbox.max[0], odr_bbox.min[1], 0

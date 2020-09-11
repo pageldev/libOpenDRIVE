@@ -13,18 +13,7 @@ Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double cur
 {
 }
 
-Vec2D Arc::get_point(double s, double t) const
-{
-    double angle_at_s = (s - s0) * curvature - M_PI / 2;
-    double r = 1 / curvature;
-    double xs = (r - t) * std::cos(angle_at_s);
-    double ys = (r - t) * std::sin(angle_at_s) + r;
-    double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
-    double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
-    return Vec2D{xt, yt};
-}
-
-Box2D Arc::get_bbox() const
+void Arc::update()
 {
     const int n_border = std::floor(std::abs(hdg0 / M_PI)) + 2;
 
@@ -40,7 +29,18 @@ Box2D Arc::get_bbox() const
         }
     }
 
-    return get_bbox_for_s_values<double>(s_extremas, std::bind(&Arc::get_point, this, std::placeholders::_1, std::placeholders::_2));
+    this->bounding_box = get_bbox_for_s_values<double>(s_extremas, std::bind(&Arc::get_point, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+Vec2D Arc::get_point(double s, double t) const
+{
+    const double angle_at_s = (s - s0) * curvature - M_PI / 2;
+    const double r = 1 / curvature;
+    const double xs = (r - t) * std::cos(angle_at_s);
+    const double ys = (r - t) * std::sin(angle_at_s) + r;
+    const double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
+    const double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
+    return Vec2D{xt, yt};
 }
 
 double Arc::project(double x, double y) const

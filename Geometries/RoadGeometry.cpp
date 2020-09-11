@@ -6,6 +6,11 @@
 namespace odr
 {
 
+Box2D::Box2D()
+    : min({0, 0}), max({0, 0}), center({0, 0}), width(0), height(0)
+{
+}
+
 Box2D::Box2D(Vec2D min, Vec2D max)
     : min(min), max(max)
 {

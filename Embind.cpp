@@ -16,14 +16,14 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
 {
     EMSCRIPTEN_WRAPPER(RoadGeometryWrapper);
 
+    virtual void update() override
+    {
+        return call<void>("update");
+    }
+
     virtual Vec2D get_point(double s, double t) const override
     {
         return call<Vec2D>("get_point", s, t);
-    }
-
-    virtual Box2D get_bbox() const override
-    {
-        return call<Box2D>("get_bbox");
     }
 
     virtual double project(double x, double y) const override
@@ -70,8 +70,8 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<RoadGeometry>("RoadGeometry")
         .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
         .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, GeometryType>())
+        .function("update", &RoadGeometry::update, emscripten::pure_virtual())
         .function("get_point", &RoadGeometry::get_point, emscripten::pure_virtual())
-        .function("get_bbox", &RoadGeometry::get_bbox, emscripten::pure_virtual())
         .function("project", &RoadGeometry::project, emscripten::pure_virtual())
         .function("get_grad", &RoadGeometry::get_grad, emscripten::pure_virtual())
         .property("type", &RoadGeometry::type)
@@ -79,7 +79,8 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("x0", &RoadGeometry::x0)
         .property("y0", &RoadGeometry::y0)
         .property("hdg0", &RoadGeometry::hdg0)
-        .property("length", &RoadGeometry::length);
+        .property("length", &RoadGeometry::length)
+        .property("bounding_box", &RoadGeometry::bounding_box);
 
     emscripten::class_<Arc, emscripten::base<RoadGeometry>>("Arc")
         .constructor<double, double, double, double, double, double>()
@@ -144,7 +145,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string>()
-        .function("dump_json", &OpenDriveMap::dump_json)
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads);
 }

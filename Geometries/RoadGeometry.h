@@ -15,6 +15,7 @@ using Vec3D = Vec<double, 3>;
 
 struct Box2D
 {
+    Box2D();
     Box2D(Vec2D min, Vec2D max);
     double get_distance(const Vec2D &pt);
 
@@ -36,8 +37,9 @@ struct RoadGeometry
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
     virtual ~RoadGeometry();
 
+    virtual void update() = 0;
+
     virtual Vec2D  get_point(double s, double t = 0) const = 0;
-    virtual Box2D  get_bbox() const = 0;
     virtual double project(double x, double y) const = 0;
     virtual Vec2D  get_grad(double s) const = 0;
 
@@ -48,6 +50,7 @@ struct RoadGeometry
     double y0;
     double hdg0;
     double length;
+    Box2D  bounding_box;
 };
 
 } // namespace odr
