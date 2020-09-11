@@ -10,12 +10,12 @@ CPP_FILES=$(shell find . -name '*.cpp' \
 			-type f ! -path './$(BUILD_DIR)/*' \
 			-type f ! -path './$(THIRDPARTY_DIR)/*')
 
-x86: CFLAGS += -g -O3
+x86: CFLAGS += -O3
 x86: lib main
 
 wasm: CC = emcc
 wasm: CFLAGS += -s ENVIRONMENT=web
-wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s FORCE_FILESYSTEM=1 -O1 -s ALLOW_MEMORY_GROWTH=1
+wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s FORCE_FILESYSTEM=1 -O3 -s ALLOW_MEMORY_GROWTH=1
 wasm: BUILD_DIR = Visualizer/src
 wasm: LIB_SUFFIX = js
 wasm: lib
