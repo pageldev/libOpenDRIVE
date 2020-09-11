@@ -31,7 +31,7 @@ Lane::Lane(int id, std::string type, std::map<double, std::shared_ptr<LaneWidth>
 {
 }
 
-Point3D Lane::get_outer_border_pt(const double s) const
+Vec3D Lane::get_outer_border_pt(const double s) const
 {
     double t = 0.0;
 

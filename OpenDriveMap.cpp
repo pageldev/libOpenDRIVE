@@ -142,7 +142,7 @@ std::string OpenDriveMap::dump_json(const double resolution) const
             double lane_section_length = (std::next(lane_sec_iter) == road->lane_sections.end()) ? road->length - (*lane_sec_iter).second->s0 : (*std::next(lane_sec_iter)).second->s0 - (*lane_sec_iter).second->s0;
             for (std::pair<int, std::shared_ptr<Lane>> lane : (*lane_sec_iter).second->lanes)
             {
-                std::vector<Point3D> points;
+                std::vector<Vec3D> points;
                 for (int sample_nr = 0; sample_nr < int(lane_section_length / resolution); sample_nr++)
                 {
                     double s = (*lane_sec_iter).second->s0 + static_cast<double>(sample_nr) * resolution;
@@ -150,11 +150,11 @@ std::string OpenDriveMap::dump_json(const double resolution) const
                 }
 
                 points.push_back(lane.second->get_outer_border_pt((*lane_sec_iter).second->s0 + lane_section_length));
-                std::vector<Point3D> reduced_points = rdp(points, resolution);
+                std::vector<Vec3D> reduced_points = rdp(points, resolution);
                 json11::Json::array  coordinates(reduced_points.size());
                 for (int idx = 0; idx < reduced_points.size(); idx++)
                 {
-                    Point3D pt = reduced_points.at(idx);
+                    Vec3D pt = reduced_points.at(idx);
 
                     json11::Json::array position(3);
                     position[0] = pt[0];

@@ -16,14 +16,24 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
 {
     EMSCRIPTEN_WRAPPER(RoadGeometryWrapper);
 
-    virtual Point2D get_point(double s, double t) const override
+    virtual Vec2D get_point(double s, double t) const override
     {
-        return call<Point2D>("get_point", s, t);
+        return call<Vec2D>("get_point", s, t);
     }
 
     virtual Box2D get_bbox() const override
     {
         return call<Box2D>("get_bbox");
+    }
+
+    virtual double project(double x, double y) const override
+    {
+        return call<double>("project", x, y);
+    }
+
+    virtual Vec2D get_grad(double s) const override
+    {
+        return call<Vec2D>("get_grad", s);
     }
 };
 
@@ -32,16 +42,16 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
 
-    emscripten::value_array<Point2D>("point2d")
+    emscripten::value_array<Vec2D>("Vec2d")
         .element(emscripten::index<0>())
         .element(emscripten::index<1>());
 
-    emscripten::value_array<Point3D>("point3d")
+    emscripten::value_array<Vec3D>("Vec3d")
         .element(emscripten::index<0>())
         .element(emscripten::index<1>())
         .element(emscripten::index<2>());
 
-    emscripten::register_vector<Point3D>("vector<Point3D>");
+    emscripten::register_vector<Vec3D>("vector<Vec3D>");
 
     emscripten::class_<Box2D>("Box2D")
         .function("get_distance", &Box2D::get_distance)
@@ -51,17 +61,19 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("height", &Box2D::height)
         .property("center", &Box2D::center);
 
-    emscripten::enum_<Geometry_type>("Geometry_type")
-        .value("Line", Geometry_type::Line)
-        .value("Spiral", Geometry_type::Spiral)
-        .value("Arc", Geometry_type::Arc)
-        .value("ParamPoly3", Geometry_type::ParamPoly3);
+    emscripten::enum_<GeometryType>("GeometryType")
+        .value("Line", GeometryType::Line)
+        .value("Spiral", GeometryType::Spiral)
+        .value("Arc", GeometryType::Arc)
+        .value("ParamPoly3", GeometryType::ParamPoly3);
 
     emscripten::class_<RoadGeometry>("RoadGeometry")
         .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
-        .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, Geometry_type>())
+        .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, GeometryType>())
         .function("get_point", &RoadGeometry::get_point, emscripten::pure_virtual())
         .function("get_bbox", &RoadGeometry::get_bbox, emscripten::pure_virtual())
+        .function("project", &RoadGeometry::project, emscripten::pure_virtual())
+        .function("get_grad", &RoadGeometry::get_grad, emscripten::pure_virtual())
         .property("type", &RoadGeometry::type)
         .property("s0", &RoadGeometry::s0)
         .property("x0", &RoadGeometry::x0)

@@ -13,14 +13,14 @@ namespace odr
 {
 
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Spiral), curv_start(curv_start), curv_end(curv_end)
+    : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral), curv_start(curv_start), curv_end(curv_end)
 {
     this->c_dot = (curv_end - curv_start) / length;
     this->s_start = curv_start / c_dot;
     this->s_end = curv_end / c_dot;
 }
 
-Point2D Spiral::get_point(double s, double t) const
+Vec2D Spiral::get_point(double s, double t) const
 {
     double s0_spiral = curv_start / c_dot;
     double x0_spiral, y0_spiral, a0_spiral;
@@ -34,7 +34,7 @@ Point2D Spiral::get_point(double s, double t) const
 
     double xt = (std::cos(hdg) * (xs_spiral - x0_spiral + tx)) - (std::sin(hdg) * (ys_spiral - y0_spiral + ty)) + x0;
     double yt = (std::sin(hdg) * (xs_spiral - x0_spiral + tx)) + (std::cos(hdg) * (ys_spiral - y0_spiral + ty)) + y0;
-    return Point2D{xt, yt};
+    return Vec2D{xt, yt};
 }
 
 Box2D Spiral::get_bbox() const
@@ -66,6 +66,16 @@ Box2D Spiral::get_bbox() const
     }
 
     return get_bbox_for_s_values<double>(s_extremas, std::bind(&Spiral::get_point, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+double Spiral::project(double x, double y) const
+{
+    return 0;
+}
+
+Vec2D Spiral::get_grad(double s) const
+{
+    return {{0, 0}};
 }
 
 } // namespace odr

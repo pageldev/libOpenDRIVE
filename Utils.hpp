@@ -17,9 +17,9 @@ int sign(T val)
 }
 
 template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
-std::vector<Point<T, Dim>> rdp(const std::vector<Point<T, Dim>> &points, const T epsilon)
+std::vector<Vec<T, Dim>> rdp(const std::vector<Vec<T, Dim>> &points, const T epsilon)
 {
-    std::vector<Point<T, Dim>> out;
+    std::vector<Vec<T, Dim>> out;
     if (points.size() < 2)
     {
         out = points;
@@ -40,7 +40,7 @@ std::vector<Point<T, Dim>> rdp(const std::vector<Point<T, Dim>> &points, const T
     size_t d_max_idx = 0;
     for (size_t idx = 0; idx < points.size() - 1; idx++)
     {
-        const Point<T, Dim> pt = points.at(idx);
+        const Vec<T, Dim> pt = points.at(idx);
 
         const T pvx = pt[0] - points.front()[0];
         const T pvy = pt[1] - points.front()[1];
@@ -60,10 +60,10 @@ std::vector<Point<T, Dim>> rdp(const std::vector<Point<T, Dim>> &points, const T
 
     if (d_max > epsilon)
     {
-        std::vector<Point<T, Dim>> first_line(points.begin(), points.begin() + d_max_idx + 1);
-        std::vector<Point<T, Dim>> last_line(points.begin() + d_max_idx, points.end());
-        std::vector<Point<T, Dim>> results_1 = rdp(first_line, epsilon);
-        std::vector<Point<T, Dim>> results_2 = rdp(last_line, epsilon);
+        std::vector<Vec<T, Dim>> first_line(points.begin(), points.begin() + d_max_idx + 1);
+        std::vector<Vec<T, Dim>> last_line(points.begin() + d_max_idx, points.end());
+        std::vector<Vec<T, Dim>> results_1 = rdp(first_line, epsilon);
+        std::vector<Vec<T, Dim>> results_2 = rdp(last_line, epsilon);
         out.assign(results_1.begin(), results_1.end() - 1);
         out.insert(out.end(), results_2.begin(), results_2.end());
     }
@@ -77,18 +77,18 @@ std::vector<Point<T, Dim>> rdp(const std::vector<Point<T, Dim>> &points, const T
 }
 
 template <typename T, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
-Box2D get_bbox_for_s_values(const std::vector<T> &s_values, const std::function<Point2D(double, double)> &get_point)
+Box2D get_bbox_for_s_values(const std::vector<T> &s_values, const std::function<Vec2D(double, double)> &get_point)
 {
-    std::vector<Point2D> points;
+    std::vector<Vec2D> points;
     points.reserve(s_values.size());
     for (const T &s_val : s_values)
         points.push_back(get_point(s_val, T{0}));
 
-    auto iter_min_max_x = std::minmax_element(points.begin(), points.end(), [](const Point2D &lhs, const Point2D &rhs) { return lhs[0] < rhs[0]; });
-    auto iter_min_max_y = std::minmax_element(points.begin(), points.end(), [](const Point2D &lhs, const Point2D &rhs) { return lhs[1] < rhs[1]; });
+    auto iter_min_max_x = std::minmax_element(points.begin(), points.end(), [](const Vec2D &lhs, const Vec2D &rhs) { return lhs[0] < rhs[0]; });
+    auto iter_min_max_y = std::minmax_element(points.begin(), points.end(), [](const Vec2D &lhs, const Vec2D &rhs) { return lhs[1] < rhs[1]; });
 
-    Point2D min = {iter_min_max_x.first->at(0), iter_min_max_y.first->at(1)};
-    Point2D max = {iter_min_max_x.second->at(0), iter_min_max_y.second->at(1)};
+    Vec2D min = {iter_min_max_x.first->at(0), iter_min_max_y.first->at(1)};
+    Vec2D max = {iter_min_max_x.second->at(0), iter_min_max_y.second->at(1)};
 
     return Box2D(min, max);
 };

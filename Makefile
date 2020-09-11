@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -std=c++14 $(INCLUDE_DIRS)
-INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
+INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR) `pkg-config --cflags eigen3`
 THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build
 LIB_SUFFIX = so
@@ -15,7 +15,7 @@ x86: lib main
 
 wasm: CC = emcc
 wasm: CFLAGS += -s ENVIRONMENT=web
-wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s FORCE_FILESYSTEM=1 -O2 -s ALLOW_MEMORY_GROWTH=1
+wasm: WASMFLAGS += --bind -s MODULARIZE=1 -s 'EXPORT_NAME="libOpenDrive"' -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -s FORCE_FILESYSTEM=1 -O1 -s ALLOW_MEMORY_GROWTH=1
 wasm: BUILD_DIR = Visualizer/src
 wasm: LIB_SUFFIX = js
 wasm: lib

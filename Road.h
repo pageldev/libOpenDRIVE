@@ -26,7 +26,7 @@ class Road : public std::enable_shared_from_this<Road>
 public:
     Road(double length, int id, int junction, std::map<double, std::shared_ptr<RoadGeometry>> geometries);
     void    add_lane_section(std::shared_ptr<LaneSection> lane_section);
-    Point3D get_refline_point(const double s, const double t = 0) const;
+    Vec3D get_refline_point(const double s, const double t = 0) const;
 
     int    id;
     double length, junction;

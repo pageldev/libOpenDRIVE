@@ -9,11 +9,11 @@ namespace odr
 {
 
 Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double curvature)
-    : RoadGeometry(s0, x0, y0, hdg0, length, Geometry_type::Arc), curvature(curvature)
+    : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Arc), curvature(curvature)
 {
 }
 
-Point2D Arc::get_point(double s, double t) const
+Vec2D Arc::get_point(double s, double t) const
 {
     double angle_at_s = (s - s0) * curvature - M_PI / 2;
     double r = 1 / curvature;
@@ -21,7 +21,7 @@ Point2D Arc::get_point(double s, double t) const
     double ys = (r - t) * std::sin(angle_at_s) + r;
     double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
     double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
-    return Point2D{xt, yt};
+    return Vec2D{xt, yt};
 }
 
 Box2D Arc::get_bbox() const
@@ -41,6 +41,16 @@ Box2D Arc::get_bbox() const
     }
 
     return get_bbox_for_s_values<double>(s_extremas, std::bind(&Arc::get_point, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+double Arc::project(double x, double y) const
+{
+    return 0;
+}
+
+Vec2D Arc::get_grad(double s) const
+{
+    return {{0, 0}};
 }
 
 } // namespace odr
