@@ -45,12 +45,15 @@ Vec2D Arc::get_point(double s, double t) const
 
 double Arc::project(double x, double y) const
 {
-    return 0;
+    std::function<double(double)> f_dist = [&](double s) { const Vec2D pt = this->get_point(s, 0.0); return dist_sqr(pt, {x,y}); };
+    return golden_section_search(f_dist, s0, s0 + length, 1e-2);
 }
 
 Vec2D Arc::get_grad(double s) const
 {
-    return {{0, 0}};
+    const double dx = std::cos(hdg0) * std::cos(curvature * (s - s0)) - std::sin(hdg0) * std::cos(curvature * (s - s0));
+    const double dy = std::sin(hdg0) * std::cos(curvature * (s - s0)) + std::cos(hdg0) * std::sin(curvature * (s - s0));
+    return {{dx, dy}};
 }
 
 } // namespace odr

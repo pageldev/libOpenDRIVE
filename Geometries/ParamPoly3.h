@@ -14,9 +14,6 @@ struct ParamPoly3 : public RoadGeometry
     Vec2D  get_grad(double s) const override;
 
     double aU, bU, cU, dU, aV, bV, cV, dV;
-
-private:
-    double a3, a4, a5;
 };
 
 } // namespace odr

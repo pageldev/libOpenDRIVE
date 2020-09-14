@@ -18,19 +18,23 @@ void Line::update()
 
 Vec2D Line::get_point(double s, double t) const
 {
-    double xt = (std::cos(hdg0) * (s - s0)) - (std::sin(hdg0) * t) + x0;
-    double yt = (std::sin(hdg0) * (s - s0)) + (std::cos(hdg0) * t) + y0;
+    const double xt = (std::cos(hdg0) * (s - s0)) - (std::sin(hdg0) * t) + x0;
+    const double yt = (std::sin(hdg0) * (s - s0)) + (std::cos(hdg0) * t) + y0;
     return Vec2D{xt, yt};
 }
 
 double Line::project(double x, double y) const
 {
-    return 0;
+    const Vec2D  pt_l0{{x - x0, y - y0}};
+    const Vec2D  l1l0{{std::cos(hdg0) * length, std::sin(hdg0) * length}};
+    const double dot = pt_l0[0] * l1l0[0] + pt_l0[1] * l1l0[1];
+    const double s = std::max(std::min(dot / (length * length), 1.0), 0.0);
+    return s;
 }
 
 Vec2D Line::get_grad(double s) const
 {
-    return {{0, 0}};
+    return {{std::cos(hdg0), std::sin(hdg0)}};
 }
 
 } // namespace odr
