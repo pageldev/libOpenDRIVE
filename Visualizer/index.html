@@ -33,7 +33,8 @@
         var odr_geom_to_odr_road_id = new Map();
 
         var params = {
-            resolution: 0.4
+            resolution: 0.4,
+            wireframe: false,
         };
 
         init();
@@ -74,7 +75,7 @@
             return [points[0], points[last]]
         };
 
-        function load_odr_data(xodr_file, resolution) {
+        function load_odr_data(xodr_file, resolution, use_wireframe) {
             libOpenDrive().then(Module => {
                 ModuleOpenDrive = Module;
                 fetch(xodr_file).then((res) => {
@@ -89,7 +90,7 @@
                                 ref_line_points.push(odr_road.get_refline_point(sample_nr * resolution, 0.0));
                             ref_line_points = rdp(ref_line_points, resolution);
                             const ref_line_geom = new THREE.BufferGeometry().setFromPoints(ref_line_points.map(p => new THREE.Vector3(...p)));
-                            const ref_line_line = new THREE.Line(ref_line_geom, new THREE.LineBasicMaterial({ color: 0x0000ff }));
+                            const ref_line_line = new THREE.Line(ref_line_geom, new THREE.LineBasicMaterial({ color: 0xffffff }));
                             line_group.add(ref_line_line);
 
                             let lane_sec_s0 = get_std_map_keys(odr_road.lane_sections);
@@ -105,6 +106,7 @@
                                     let lane_outer_border_pts = [];
                                     for (let sample_nr = 0; sample_nr <= (lane_sec_length / resolution); sample_nr++)
                                         lane_outer_border_pts.push(odr_lane.get_outer_border_pt(odr_lane_sec.s0 + sample_nr * resolution));
+                                    lane_outer_border_pts.push(odr_lane.get_outer_border_pt(odr_lane_sec.s0 + lane_sec_length));
                                     lane_outer_border_pts = rdp(lane_outer_border_pts, resolution);
                                     if (is_leftmost_lane)
                                         lane_outer_border_pts.reverse();
@@ -114,7 +116,7 @@
 
                                 const road_polygon_geom = new THREE.BufferGeometry().setFromPoints(road_polygon_pts.map(p => new THREE.Vector3(...p)));
                                 road_polygon_geom.setIndex(earcut(road_polygon_pts.flat(), null, 3));
-                                const road_polygon_mesh = new THREE.Mesh(road_polygon_geom, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }));
+                                const road_polygon_mesh = new THREE.Mesh(road_polygon_geom, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: use_wireframe, transparent: true, opacity: 0.3 }));
                                 mesh_group.add(road_polygon_mesh);
                             }
                             for (let geom_s0 of get_std_map_keys(odr_road.geometries)) {
@@ -131,7 +133,7 @@
         }
 
         function init() {
-            load_odr_data('./aachen.xodr', params.resolution);
+            load_odr_data('./data.xodr', params.resolution, params.wireframe);
             scene = new THREE.Scene();
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -173,7 +175,13 @@
                 scene.remove(mesh_group);
                 line_group = new THREE.Group();
                 mesh_group = new THREE.Group();
-                load_odr_data('./aachen.xodr', params.resolution);
+                load_odr_data('./data.xodr', params.resolution, params.wireframe);
+            });
+            gui.add(params, 'wireframe').onChange((val) => {
+                for (let mesh of mesh_group.children) {
+                    mesh.material.wireframe = params.wireframe;
+                    mesh.material.needsUpdate = true;
+                }
             });
         }
 
