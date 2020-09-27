@@ -16,6 +16,8 @@
 </head>
 
 <body>
+    <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="onFileLoad(this.files)" />
+
     <script src="./src/libOpenDrive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
@@ -26,16 +28,22 @@
         var line_group, mesh_group, probe_point, probe_line, gui;
         var mouse, raycaster, intersections;
 
-        var odr_data = null;
+        var xodr_file = './data.xodr';
         var OpenDriveMap = null;
         var ModuleOpenDrive = null;
+        var nearest_odr_geom = null;
         var bbox_to_odr_geom = new Map();
         var odr_geom_to_odr_road_id = new Map();
+        var odr_geom_to_three_line = new Map();
 
         var params = {
+            loadFile: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.4,
             wireframe: false,
         };
+
+        var ref_line_material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+        var ref_line_material_selected = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 1.0 });
 
         init();
         animate();
@@ -75,24 +83,28 @@
             return [points[0], points[last]]
         };
 
-        function load_odr_data(xodr_file, resolution, use_wireframe) {
+        function load_odr_data(resolution, use_wireframe) {
+            bbox_to_odr_geom.clear();
+            odr_geom_to_odr_road_id.clear();
+            odr_geom_to_three_line.clear();
+
+            if (scene) {
+                scene.remove(line_group);
+                scene.remove(mesh_group);
+                line_group = new THREE.Group();
+                mesh_group = new THREE.Group();
+                nearest_odr_geom = null;
+            }
+
             libOpenDrive().then(Module => {
                 ModuleOpenDrive = Module;
                 fetch(xodr_file).then((res) => {
                     res.text().then((data) => {
                         Module['FS_createDataFile'](".", "data.xodr", data, true, true);
                         OpenDriveMap = new Module.OpenDriveMap("./data.xodr");
+
                         for (let road_id of get_std_map_keys(OpenDriveMap.roads)) {
                             const odr_road = OpenDriveMap.roads.get(road_id);
-
-                            let ref_line_points = [];
-                            for (let sample_nr = 0; sample_nr < (odr_road.length / resolution); sample_nr++)
-                                ref_line_points.push(odr_road.get_refline_point(sample_nr * resolution, 0.0));
-                            ref_line_points = rdp(ref_line_points, resolution);
-                            const ref_line_geom = new THREE.BufferGeometry().setFromPoints(ref_line_points.map(p => new THREE.Vector3(...p)));
-                            const ref_line_line = new THREE.Line(ref_line_geom, new THREE.LineBasicMaterial({ color: 0xffffff }));
-                            line_group.add(ref_line_line);
-
                             let lane_sec_s0 = get_std_map_keys(odr_road.lane_sections);
                             lane_sec_s0.sort((a, b) => a - b);
                             for (let ls_idx = 0; ls_idx < lane_sec_s0.length; ls_idx++) {
@@ -119,10 +131,28 @@
                                 const road_polygon_mesh = new THREE.Mesh(road_polygon_geom, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: use_wireframe, transparent: true, opacity: 0.3 }));
                                 mesh_group.add(road_polygon_mesh);
                             }
+
                             for (let geom_s0 of get_std_map_keys(odr_road.geometries)) {
                                 const odr_geom = odr_road.geometries.get(geom_s0);
                                 bbox_to_odr_geom.set(odr_geom.bounding_box, odr_geom);
                                 odr_geom_to_odr_road_id.set(odr_geom, road_id);
+
+                                let ref_line_points = [];
+                                for (let sample_nr = 0; sample_nr <= (odr_geom.length / resolution); sample_nr++) {
+                                    const s = sample_nr * resolution + odr_geom.s0;
+                                    const ref_line_pt_2d = odr_geom.get_point(s, 0.0);
+                                    const elevation = odr_road.get_elevation(s);
+                                    ref_line_points.push([ref_line_pt_2d[0], ref_line_pt_2d[1], elevation]);
+                                }
+                                const last_ref_line_pt_2d = odr_geom.get_point(odr_geom.s0 + odr_geom.length, 0.0);
+                                ref_line_points.push([last_ref_line_pt_2d[0], last_ref_line_pt_2d[1], odr_road.get_elevation(odr_geom.s0 + odr_geom.length)]);
+
+                                ref_line_points = rdp(ref_line_points, resolution);
+                                const ref_line_geom = new THREE.BufferGeometry().setFromPoints(ref_line_points.map(p => new THREE.Vector3(...p)));
+                                let ref_line_line = new THREE.Line(ref_line_geom, ref_line_material);
+                                line_group.add(ref_line_line);
+
+                                odr_geom_to_three_line.set(odr_geom, ref_line_line);
                             }
                         }
                         scene.add(line_group);
@@ -133,7 +163,7 @@
         }
 
         function init() {
-            load_odr_data('./data.xodr', params.resolution, params.wireframe);
+            load_odr_data(params.resolution, params.wireframe);
             scene = new THREE.Scene();
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -170,12 +200,9 @@
             window.addEventListener('mousemove', onDocumentMouseMove, false);
 
             gui = new dat.GUI();
+            gui.add(params, 'loadFile').name('Load xodr file');
             gui.add(params, 'resolution', 0.01, 1.0).onFinishChange((val) => {
-                scene.remove(line_group);
-                scene.remove(mesh_group);
-                line_group = new THREE.Group();
-                mesh_group = new THREE.Group();
-                load_odr_data('./data.xodr', params.resolution, params.wireframe);
+                load_odr_data(params.resolution, params.wireframe);
             });
             gui.add(params, 'wireframe').onChange((val) => {
                 for (let mesh of mesh_group.children) {
@@ -197,6 +224,11 @@
             mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         }
 
+        function onFileLoad(files) {
+            xodr_file = files[0].name;
+            load_odr_data(params.resolution, params.wireframe);
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             update();
@@ -210,9 +242,12 @@
                 const intersec_pt = intersections[0].point;
                 probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
 
-                let nearest_odr_geom = null;
                 let nearest_ref_line_pt = null;
                 let nearest_s = null;
+
+                if (nearest_odr_geom) {
+                    odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material;
+                }
 
                 let nearest_dist = -1.0;
                 let nearest_odr_geoms = get_nearest_odr_geoms(intersec_pt.x, intersec_pt.y, 3);
@@ -235,11 +270,23 @@
                 const t_offs = side * nearest_dist;
                 const probe_point_reconstructed = nearest_odr_road.get_refline_point(nearest_s, t_offs);
 
+                probe_point.visible = true;
+                probe_line.visible = true;
                 probe_line.geometry.attributes.position.array.set([
                     nearest_ref_line_pt[0], nearest_ref_line_pt[1], intersec_pt.z,
                     probe_point_reconstructed[0], probe_point_reconstructed[1], intersec_pt.z]);
                 probe_line.geometry.attributes.position.needsUpdate = true;
                 probe_line.geometry.computeBoundingSphere();
+
+                odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material_selected;
+            } else {
+                probe_point.visible = false;
+                probe_line.visible = false;
+
+                if (nearest_odr_geom) {
+                    odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material;
+                    nearest_odr_geom = null;
+                }
             }
         }
     </script>

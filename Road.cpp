@@ -56,7 +56,13 @@ Vec3D Road::get_refline_point(const double s, const double t) const
     }
     Vec2D plan_view_pt = (*target_geom_iter).second->get_point(s, t + offset);
 
-    double z = 0;
+    const double z = this->get_elevation(s);
+    return Vec3D{plan_view_pt[0], plan_view_pt[1], z};
+}
+
+double Road::get_elevation(const double s) const
+{
+    double elev = 0;
     if (this->elevation_profiles.size() > 0)
     {
         std::map<double, std::shared_ptr<ElevationProfile>>::const_iterator
@@ -65,10 +71,10 @@ Vec3D Road::get_refline_point(const double s, const double t) const
         {
             target_elev_iter--;
         }
-        z = (*target_elev_iter).second->get_elevation(s);
+        elev = (*target_elev_iter).second->get_elevation(s);
     }
 
-    return Vec3D{plan_view_pt[0], plan_view_pt[1], z};
+    return elev;
 }
 
 } // namespace odr
