@@ -6,7 +6,7 @@ namespace odr
 
 struct Spiral : public RoadGeometry
 {
-    Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end);
+    Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end, std::shared_ptr<Road> road);
     void update() override;
 
     Vec2D  get_point(double s, double t = 0) const override;

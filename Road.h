@@ -24,7 +24,7 @@ struct ElevationProfile
 class Road : public std::enable_shared_from_this<Road>
 {
 public:
-    Road(double length, int id, int junction, std::map<double, std::shared_ptr<RoadGeometry>> geometries);
+    Road(double length, int id, int junction);
     void   add_lane_section(std::shared_ptr<LaneSection> lane_section);
     Vec3D  get_refline_point(const double s, const double t = 0) const;
     double get_elevation(const double s) const;

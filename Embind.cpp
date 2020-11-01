@@ -69,7 +69,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<RoadGeometry>("RoadGeometry")
         .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
-        .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, GeometryType>())
+        .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, GeometryType, std::shared_ptr<Road>>())
         .function("update", &RoadGeometry::update, emscripten::pure_virtual())
         .function("get_point", &RoadGeometry::get_point, emscripten::pure_virtual())
         .function("project", &RoadGeometry::project, emscripten::pure_virtual())
@@ -80,17 +80,18 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("y0", &RoadGeometry::y0)
         .property("hdg0", &RoadGeometry::hdg0)
         .property("length", &RoadGeometry::length)
-        .property("bounding_box", &RoadGeometry::bounding_box);
+        .property("bounding_box", &RoadGeometry::bounding_box)
+        .property("road", &RoadGeometry::road);
 
     emscripten::class_<Arc, emscripten::base<RoadGeometry>>("Arc")
-        .constructor<double, double, double, double, double, double>()
+        .constructor<double, double, double, double, double, double, std::shared_ptr<Road>>()
         .property("curvature", &Arc::curvature);
 
     emscripten::class_<Line, emscripten::base<RoadGeometry>>("Line")
-        .constructor<double, double, double, double, double>();
+        .constructor<double, double, double, double, double, std::shared_ptr<Road>>();
 
     emscripten::class_<ParamPoly3, emscripten::base<RoadGeometry>>("ParamPoly3")
-        .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double>()
+        .constructor<double, double, double, double, double, double, double, double, double, double, double, double, double, std::shared_ptr<Road>>()
         .property("aU", &ParamPoly3::aU)
         .property("bU", &ParamPoly3::bU)
         .property("cU", &ParamPoly3::cU)
@@ -101,7 +102,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("dV", &ParamPoly3::dV);
 
     emscripten::class_<Spiral, emscripten::base<RoadGeometry>>("Spiral")
-        .constructor<double, double, double, double, double, double, double>()
+        .constructor<double, double, double, double, double, double, double, std::shared_ptr<Road>>()
         .property("curv_start", &Spiral::curv_start)
         .property("curv_end", &Spiral::curv_end)
         .property("c_dot", &Spiral::c_dot);
@@ -131,7 +132,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Road>("Road")
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
-        .constructor<double, int, int, std::map<double, std::shared_ptr<RoadGeometry>>>()
+        .constructor<double, int, int>()
         .function("get_refline_point", &Road::get_refline_point)
         .function("get_elevation", &Road::get_elevation)
         .property("id", &Road::id)

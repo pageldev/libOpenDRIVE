@@ -12,55 +12,253 @@
             width: 100%;
             height: 100%;
         }
+
+        table {
+            border-spacing: 0.5em 0;
+        }
+
+        #bottom_info {
+            position: absolute;
+            bottom: 0;
+            text-align: left;
+            font-family: monospace;
+            display: block;
+            color: white;
+        }
     </style>
 </head>
 
 <body>
-    <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="onFileLoad(this.files)" />
+    <div id="bottom_info"></div>
+    <input id="xodr_file_input" type="file" style="visibility:hidden"
+        onchange="on_file_load(this.files[0].name, true)" />
 
     <script src="./src/libOpenDrive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script src="https://unpkg.com/earcut@2.2.2/dist/earcut.min.js"></script>
-    <script>
-        var camera, controls, scene, renderer;
-        var line_group, mesh_group, probe_point, probe_line, gui;
-        var mouse, raycaster, intersections;
 
+    <script>
         var xodr_file = './data.xodr';
-        var OpenDriveMap = null;
-        var ModuleOpenDrive = null;
-        var nearest_odr_geom = null;
-        var bbox_to_odr_geom = new Map();
-        var odr_geom_to_odr_road_id = new Map();
-        var odr_geom_to_three_line = new Map();
+        var bottom_info = document.getElementById('bottom_info');
 
         var params = {
-            loadFile: () => { document.getElementById('xodr_file_input').click(); },
+            load_file: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.4,
-            wireframe: false,
+            refline: true,
+            fitView: fitView,
         };
 
-        var ref_line_material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
-        var ref_line_material_selected = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 1.0 });
+        var colors = {
+            lane: 0x72deff,
+            outline: 0xffffff,
+            refline: [0xff0000, 0xff7400, 0xffc100],
+            probe_point: 0xf44336,
+        };
 
-        init();
+        var scene = new THREE.Scene();
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
+        camera.position.set(0, 0, 100);
+        camera.lookAt(0, 0, 0);
+        camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
+        var controls = new THREE.MapControls(camera, renderer.domElement);
+
+        var mesh_group = new THREE.Group();
+        var line_group = new THREE.Group();
+        var refline_group = new THREE.Group();
+        scene.add(mesh_group);
+        scene.add(line_group);
+        scene.add(refline_group);
+
+        var probe_point = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), new THREE.MeshBasicMaterial({ color: colors.probe_point }));
+        scene.add(probe_point);
+
+        var mouse = new THREE.Vector2(), INTERSECTED;
+        var raycaster = new THREE.Raycaster();
+        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener('mousemove', onDocumentMouseMove, false);
+
         animate();
 
-        function get_std_map_keys(std_map) {
-            let keys = [];
-            for (let idx = 0; idx < std_map.keys().size(); idx++)
-                keys.push(std_map.keys().get(idx));
-            return keys;
+        var gui = new dat.GUI();
+        gui.add(params, 'load_file').name('Load xodr file');
+        gui.add(params, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
+            load_odr_map(params, true)
+        });
+        gui.add(params, 'refline').name("Show RefLine").onChange((val) => {
+            refline_group.visible = val;
+        });
+        gui.add(params, 'fitView').name("Reset Camera");
+
+        var ModuleOpenDrive = null;
+        var OpenDriveMap = null;
+        libOpenDrive().then(Module => {
+            ModuleOpenDrive = Module;
+            on_file_load(xodr_file, false);
+        });
+
+
+        function on_file_load(xodr_file, clear_map) {
+            fetch(xodr_file).then((file_data) => {
+                file_data.text().then((file_text) => {
+                    if (clear_map)
+                        ModuleOpenDrive['FS_unlink']('./data.xodr');
+                    ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
+                    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr");
+                    load_odr_map(params, clear_map);
+                })
+            });
         }
 
-        function get_nearest_odr_geoms(x, y, n) {
-            let sorted_bboxs = new Array(...bbox_to_odr_geom.keys()).sort((a, b) => a.get_distance([x, y]) - b.get_distance([x, y]));
-            let result = [];
-            for (let i = 0; i < n; i++)
-                result.push(bbox_to_odr_geom.get(sorted_bboxs[i]));
-            return result;
+        function load_odr_map(params, clear_map) {
+            if (clear_map) {
+                mesh_group.remove(...mesh_group.children);
+                line_group.remove(...line_group.children);
+                refline_group.remove(...refline_group.children);
+            }
+            for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
+                const lane_secs = stdmapVals(road.lane_sections);
+
+                for (let idx = 0; idx < lane_secs.length; idx++) {
+                    /* create lane polygons - presumes lane_section lanes are sorted on lane index */
+                    let lanes_outer_border_pts = []; // 2d array
+                    let lanes = [];
+                    const lane_sec_len = (idx == lane_secs.length - 1) ? road.length - (lane_secs[idx][1]).s0 : (lane_secs[idx + 1][1]).s0 - (lane_secs[idx][1]).s0;
+                    const lane_sec = lane_secs[idx][1];
+                    for (const [lane_id, lane] of stdmapVals(lane_sec.lanes)) {
+                        let s_vals = [];
+                        for (let s = lane_sec.s0; s < (lane_sec.s0 + lane_sec_len); s += params.resolution)
+                            s_vals.push(s);
+                        s_vals.push(lane_sec.s0 + lane_sec_len);
+                        lanes_outer_border_pts.push(rdp(s_vals.map(s => lane.get_outer_border_pt(s)), params.resolution));
+                        if (lane_id != 0)
+                            lanes.push(lane);
+                    }
+
+                    /* first get outer edge of all lanes to */
+                    for (let idx = 1; idx < lanes_outer_border_pts.length; idx++) {
+                        let lane_polygon_pts = lanes_outer_border_pts[idx - 1];
+                        lane_polygon_pts.reverse();
+                        lane_polygon_pts.push(...lanes_outer_border_pts[idx]);
+                        lane_polygon_pts.push(lane_polygon_pts[0]);
+
+                        const lane_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
+                        lane_geom.setIndex(earcut(lane_polygon_pts.flat(), null, 3));
+                        let lane_polygon_mesh = new THREE.Mesh(lane_geom, new THREE.MeshBasicMaterial({ color: colors.lane, transparent: true, opacity: 0.5 }));
+                        lane_polygon_mesh.visible = false;
+                        lane_polygon_mesh.userData = { road: road, lane: lanes[idx - 1] };
+                        mesh_group.add(lane_polygon_mesh);
+
+                        const lane_outline_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
+                        const lane_outline_line = new THREE.Line(lane_outline_geom, new THREE.LineBasicMaterial({ color: colors.outline, transparent: true, opacity: 0.3 }));
+                        line_group.add(lane_outline_line);
+                    }
+                }
+
+                for (const [idx, [s0, geom]] of stdmapVals(road.geometries).entries()) {
+                    let s_vals = [];
+                    for (let s = s0; s < (s0 + geom.length); s += params.resolution)
+                        s_vals.push(s);
+                    s_vals.push(s0 + geom.length);
+                    const refl_pts = rdp(s_vals.map(s => [...geom.get_point(s, 0.0), road.get_elevation(s)]), params.resolution);
+                    const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
+                    const refline_line = new THREE.Line(refline_geom, new THREE.LineBasicMaterial({ color: colors.refline[idx % colors.refline.length], linewidth: 30 }));
+                    refline_group.add(refline_line);
+                }
+            }
+            fitView();
+        }
+
+        function fitView() {
+            const bbox = new THREE.Box3().setFromObject(line_group);
+            let center_pt = new THREE.Vector3();
+            bbox.getCenter(center_pt);
+
+            const l2xy = 0.5 * Math.sqrt(Math.pow(bbox.max.x - bbox.min.x, 2.0) + Math.pow(bbox.max.y - bbox.min.y, 2));
+            const fov2r = (camera.fov * 0.5) * (Math.PI / 180.0);
+            const dz = l2xy / Math.tan(fov2r);
+
+            camera.position.set(center_pt.x, center_pt.y, bbox.max.z + dz);
+            controls.target.set(center_pt.x, center_pt.y, center_pt.z);
+            controls.update();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        function update() {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(mesh_group.children);
+            if (intersects.length > 0) {
+                if (INTERSECTED != intersects[0].object) {
+                    if (INTERSECTED) {
+                        INTERSECTED.visible = false;
+                    }
+                    INTERSECTED = intersects[0].object;
+                    INTERSECTED.visible = true;
+                    bottom_info.style.display = "block";
+                }
+            } else {
+                if (INTERSECTED) {
+                    INTERSECTED.visible = false;
+                }
+                INTERSECTED = null;
+                bottom_info.style.display = "none";
+            }
+            if (INTERSECTED) {
+                const userData = INTERSECTED.userData;
+                const intersec_pt = intersects[0].point;
+
+                /* project interesected point onto reference line */
+                let proj_refl = { s: 0.0, dist_sqr: -1.0, geom_s0: 0.0 };
+                for (const [s0, geom] of stdmapVals(userData.road.geometries)) {
+                    const s_proj = geom.project(intersec_pt.x, intersec_pt.y);
+                    const refl_pt = userData.road.get_refline_point(s_proj, 0.0);
+                    const dist_sqr = Math.pow(refl_pt[0] - intersec_pt.x, 2.0) + Math.pow(refl_pt[1] - intersec_pt.y, 2.0);
+                    if (proj_refl.dist_sqr < 0 || dist_sqr < proj_refl.dist_sqr)
+                        proj_refl = { s: s_proj, dist_sqr: dist_sqr, geom_s0: s0 };
+                }
+                if (proj_refl.dist_sqr > 0) {
+                    const refl_pt = userData.road.get_refline_point(proj_refl.s, 0.0);
+                    probe_point.position.set(...refl_pt);
+                }
+
+                bottom_info.innerHTML = `
+                        <table>
+                            <tr><th>road id</th><th>${userData.road.id}</th></tr>
+                            <tr><th>section s0</th><th>${userData.lane.lane_section.s0}</th></tr>
+                            <tr><th>lane id</th><th>${userData.lane.id}</th></tr>
+                            <tr><th>type</th><th>${userData.lane.type}</th></tr>
+                            <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
+                        </table>`;
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDocumentMouseMove(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function stdmapVals(std_map) {
+            let values = [];
+            for (let idx = 0; idx < std_map.keys().size(); idx++)
+                values.push([std_map.keys().get(idx), std_map.get(std_map.keys().get(idx))]);
+            return values;
         }
 
         function rdp(points, eps) {
@@ -82,213 +280,6 @@
             }
             return [points[0], points[last]]
         };
-
-        function load_odr_data(resolution, use_wireframe) {
-            bbox_to_odr_geom.clear();
-            odr_geom_to_odr_road_id.clear();
-            odr_geom_to_three_line.clear();
-
-            if (scene) {
-                scene.remove(line_group);
-                scene.remove(mesh_group);
-                line_group = new THREE.Group();
-                mesh_group = new THREE.Group();
-                nearest_odr_geom = null;
-            }
-
-            libOpenDrive().then(Module => {
-                ModuleOpenDrive = Module;
-                fetch(xodr_file).then((res) => {
-                    res.text().then((data) => {
-                        Module['FS_createDataFile'](".", "data.xodr", data, true, true);
-                        OpenDriveMap = new Module.OpenDriveMap("./data.xodr");
-
-                        for (let road_id of get_std_map_keys(OpenDriveMap.roads)) {
-                            const odr_road = OpenDriveMap.roads.get(road_id);
-                            let lane_sec_s0 = get_std_map_keys(odr_road.lane_sections);
-                            lane_sec_s0.sort((a, b) => a - b);
-                            for (let ls_idx = 0; ls_idx < lane_sec_s0.length; ls_idx++) {
-                                const odr_lane_sec = odr_road.lane_sections.get(lane_sec_s0[ls_idx]);
-                                const lane_sec_length = (ls_idx == (lane_sec_s0.length - 1)) ? odr_road.length - odr_lane_sec.s0 : lane_sec_s0[ls_idx + 1] - odr_lane_sec.s0;
-                                let lane_idxs = get_std_map_keys(odr_lane_sec.lanes);
-
-                                let road_polygon_pts = [];
-                                for (let is_leftmost_lane of [true, false]) { //relative to ref line direction
-                                    const odr_lane = is_leftmost_lane ? odr_lane_sec.lanes.get(Math.max(...lane_idxs)) : odr_lane_sec.lanes.get(Math.min(...lane_idxs));
-                                    let lane_outer_border_pts = [];
-                                    for (let sample_nr = 0; sample_nr <= (lane_sec_length / resolution); sample_nr++)
-                                        lane_outer_border_pts.push(odr_lane.get_outer_border_pt(odr_lane_sec.s0 + sample_nr * resolution));
-                                    lane_outer_border_pts.push(odr_lane.get_outer_border_pt(odr_lane_sec.s0 + lane_sec_length));
-                                    lane_outer_border_pts = rdp(lane_outer_border_pts, resolution);
-                                    if (is_leftmost_lane)
-                                        lane_outer_border_pts.reverse();
-                                    road_polygon_pts.push(...lane_outer_border_pts);
-                                }
-                                road_polygon_pts.push(road_polygon_pts[0]);
-
-                                const road_polygon_geom = new THREE.BufferGeometry().setFromPoints(road_polygon_pts.map(p => new THREE.Vector3(...p)));
-                                road_polygon_geom.setIndex(earcut(road_polygon_pts.flat(), null, 3));
-                                const road_polygon_mesh = new THREE.Mesh(road_polygon_geom, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: use_wireframe, transparent: true, opacity: 0.3 }));
-                                mesh_group.add(road_polygon_mesh);
-                            }
-
-                            for (let geom_s0 of get_std_map_keys(odr_road.geometries)) {
-                                const odr_geom = odr_road.geometries.get(geom_s0);
-                                bbox_to_odr_geom.set(odr_geom.bounding_box, odr_geom);
-                                odr_geom_to_odr_road_id.set(odr_geom, road_id);
-
-                                let ref_line_points = [];
-                                for (let sample_nr = 0; sample_nr <= (odr_geom.length / resolution); sample_nr++) {
-                                    const s = sample_nr * resolution + odr_geom.s0;
-                                    const ref_line_pt_2d = odr_geom.get_point(s, 0.0);
-                                    const elevation = odr_road.get_elevation(s);
-                                    ref_line_points.push([ref_line_pt_2d[0], ref_line_pt_2d[1], elevation]);
-                                }
-                                const last_ref_line_pt_2d = odr_geom.get_point(odr_geom.s0 + odr_geom.length, 0.0);
-                                ref_line_points.push([last_ref_line_pt_2d[0], last_ref_line_pt_2d[1], odr_road.get_elevation(odr_geom.s0 + odr_geom.length)]);
-
-                                ref_line_points = rdp(ref_line_points, resolution);
-                                const ref_line_geom = new THREE.BufferGeometry().setFromPoints(ref_line_points.map(p => new THREE.Vector3(...p)));
-                                let ref_line_line = new THREE.Line(ref_line_geom, ref_line_material);
-                                line_group.add(ref_line_line);
-
-                                odr_geom_to_three_line.set(odr_geom, ref_line_line);
-                            }
-                        }
-                        scene.add(line_group);
-                        scene.add(mesh_group);
-                    });
-                });
-            });
-        }
-
-        function init() {
-            load_odr_data(params.resolution, params.wireframe);
-            scene = new THREE.Scene();
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
-            camera.position.set(0, 0, 100);
-            camera.lookAt(0, 0, 0);
-            camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
-            controls = new THREE.MapControls(camera, renderer.domElement);
-
-            let helper = new THREE.GridHelper(500, 50, 0x0000ff, 0xffffff);
-            helper.geometry.rotateX(Math.PI / 2);
-            helper.position.y = 0;
-            helper.material.opacity = 0.25;
-            helper.material.transparent = true;
-            scene.add(helper);
-
-            let probe_point_geom = new THREE.SphereGeometry(0.1, 32, 32);
-            probe_point = new THREE.Mesh(probe_point_geom, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            scene.add(probe_point);
-
-            let probe_line_geom = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3));
-            probe_line = new THREE.Line(probe_line_geom, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            scene.add(probe_line);
-
-            raycaster = new THREE.Raycaster();
-            raycaster.params.Line.threshold = 0.1;
-            mouse = new THREE.Vector2();
-            line_group = new THREE.Group();
-            mesh_group = new THREE.Group();
-
-            window.addEventListener('resize', onWindowResize, false);
-            window.addEventListener('mousemove', onDocumentMouseMove, false);
-
-            gui = new dat.GUI();
-            gui.add(params, 'loadFile').name('Load xodr file');
-            gui.add(params, 'resolution', 0.01, 1.0).onFinishChange((val) => {
-                load_odr_data(params.resolution, params.wireframe);
-            });
-            gui.add(params, 'wireframe').onChange((val) => {
-                for (let mesh of mesh_group.children) {
-                    mesh.material.wireframe = params.wireframe;
-                    mesh.material.needsUpdate = true;
-                }
-            });
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function onDocumentMouseMove(event) {
-            event.preventDefault();
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-        }
-
-        function onFileLoad(files) {
-            xodr_file = files[0].name;
-            load_odr_data(params.resolution, params.wireframe);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            update();
-            renderer.render(scene, camera);
-        }
-
-        function update() {
-            raycaster.setFromCamera(mouse, camera);
-            const intersections = raycaster.intersectObjects(mesh_group.children);
-            if (intersections.length > 0) {
-                const intersec_pt = intersections[0].point;
-                probe_point.position.set(intersec_pt.x, intersec_pt.y, intersec_pt.z);
-
-                let nearest_ref_line_pt = null;
-                let nearest_s = null;
-
-                if (nearest_odr_geom) {
-                    odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material;
-                }
-
-                let nearest_dist = -1.0;
-                let nearest_odr_geoms = get_nearest_odr_geoms(intersec_pt.x, intersec_pt.y, 3);
-                for (let near_odr_geom of nearest_odr_geoms) {
-                    const s_proj = near_odr_geom.project(intersec_pt.x, intersec_pt.y);
-                    const near_odr_road = OpenDriveMap.roads.get(odr_geom_to_odr_road_id.get(near_odr_geom));
-                    const ref_line_pt = near_odr_road.get_refline_point(s_proj, 0.0);
-                    const new_dist = Math.sqrt(Math.pow(intersec_pt.x - ref_line_pt[0], 2) + Math.pow(intersec_pt.y - ref_line_pt[1], 2));
-                    if (new_dist < nearest_dist || nearest_dist < 0) {
-                        nearest_dist = new_dist;
-                        nearest_odr_geom = near_odr_geom;
-                        nearest_ref_line_pt = ref_line_pt;
-                        nearest_s = s_proj;
-                    }
-                }
-
-                const nearest_odr_road = OpenDriveMap.roads.get(odr_geom_to_odr_road_id.get(nearest_odr_geom));
-                const grad_vec = nearest_odr_geom.get_grad(nearest_s);
-                const side = Math.sign(grad_vec[0] * (intersec_pt.y - nearest_ref_line_pt[1]) - grad_vec[1] * (intersec_pt.x - nearest_ref_line_pt[0]));
-                const t_offs = side * nearest_dist;
-                const probe_point_reconstructed = nearest_odr_road.get_refline_point(nearest_s, t_offs);
-
-                probe_point.visible = true;
-                probe_line.visible = true;
-                probe_line.geometry.attributes.position.array.set([
-                    nearest_ref_line_pt[0], nearest_ref_line_pt[1], intersec_pt.z,
-                    probe_point_reconstructed[0], probe_point_reconstructed[1], intersec_pt.z]);
-                probe_line.geometry.attributes.position.needsUpdate = true;
-                probe_line.geometry.computeBoundingSphere();
-
-                odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material_selected;
-            } else {
-                probe_point.visible = false;
-                probe_line.visible = false;
-
-                if (nearest_odr_geom) {
-                    odr_geom_to_three_line.get(nearest_odr_geom).material = ref_line_material;
-                    nearest_odr_geom = null;
-                }
-            }
-        }
     </script>
 </body>
 

@@ -2,10 +2,13 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <string>
 
 namespace odr
 {
+
+class Road;
 
 template <typename T, size_t Dim, typename std::enable_if_t<(Dim > 1)> * = nullptr, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
 using Vec = std::array<T, Dim>;
@@ -34,7 +37,7 @@ enum class GeometryType
 
 struct RoadGeometry
 {
-    RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
+    RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type, std::shared_ptr<Road> road);
     virtual ~RoadGeometry();
 
     virtual void update() = 0;
@@ -43,14 +46,15 @@ struct RoadGeometry
     virtual double project(double x, double y) const = 0;
     virtual Vec2D  get_grad(double s) const = 0;
 
-    GeometryType type;
+    GeometryType          type;
+    std::shared_ptr<Road> road;
+    Box2D                 bounding_box;
 
     double s0;
     double x0;
     double y0;
     double hdg0;
     double length;
-    Box2D  bounding_box;
 };
 
 } // namespace odr

@@ -27,9 +27,13 @@ OpenDriveMap::OpenDriveMap(const std::string xodr_file)
     pugi::xpath_node_set roads = doc.select_nodes(".//road");
     for (pugi::xpath_node road_node : roads)
     {
+        /* make road */
         const double road_length = road_node.node().attribute("length").as_double();
         const int    road_id = road_node.node().attribute("id").as_int();
         const int    junction_id = road_node.node().attribute("junction").as_int();
+
+        std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id);
+        this->roads[road->id] = road;
 
         /* parse road geometries */
         std::map<double, std::shared_ptr<RoadGeometry>> geometries;
@@ -45,18 +49,18 @@ OpenDriveMap::OpenDriveMap(const std::string xodr_file)
             std::string    geometry_type = geometry_node.name();
             if (geometry_type == "line")
             {
-                geometries[s0] = std::make_shared<Line>(s0, x0, y0, hdg0, length);
+                road->geometries[s0] = std::make_shared<Line>(s0, x0, y0, hdg0, length, road);
             }
             else if (geometry_type == "spiral")
             {
                 double curv_start = geometry_node.attribute("curvStart").as_double();
                 double curv_end = geometry_node.attribute("curvEnd").as_double();
-                geometries[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                road->geometries[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end, road);
             }
             else if (geometry_type == "arc")
             {
                 double curvature = geometry_node.attribute("curvature").as_double();
-                geometries[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature);
+                road->geometries[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature, road);
             }
             else if (geometry_type == "paramPoly3")
             {
@@ -68,17 +72,13 @@ OpenDriveMap::OpenDriveMap(const std::string xodr_file)
                 double bV = geometry_node.attribute("bV").as_double();
                 double cV = geometry_node.attribute("cV").as_double();
                 double dV = geometry_node.attribute("dV").as_double();
-                geometries[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV);
+                road->geometries[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, road);
             }
             else
             {
                 std::cerr << "Could not parse " << geometry_type << std::endl;
             }
         }
-
-        /* make road from geometries */
-        std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id, geometries);
-        this->roads[road->id] = road;
 
         /* parse road elevation profiles */
         pugi::xpath_node_set elevation_nodes = road_node.node().select_nodes(".//elevationProfile//elevation");

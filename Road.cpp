@@ -17,9 +17,8 @@ double ElevationProfile::get_elevation(const double s) const
     return (a + b * ds + c * ds * ds + d * ds * ds * ds);
 }
 
-Road::Road(double length, int id, int junction,
-           std::map<double, std::shared_ptr<RoadGeometry>> geometries)
-    : length(length), id(id), junction(junction), geometries(geometries) {}
+Road::Road(double length, int id, int junction)
+    : length(length), id(id), junction(junction) {}
 
 void Road::add_lane_section(std::shared_ptr<LaneSection> lane_section)
 {
