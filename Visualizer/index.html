@@ -47,14 +47,16 @@
             load_file: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.4,
             refline: true,
+            refline_offs: false,
             fitView: fitView,
         };
 
         var colors = {
             lane: 0x72deff,
             outline: 0xffffff,
-            refline: [0xff0000, 0xff7400, 0xffc100],
-            probe_point: 0xf44336,
+            refline: 0xff7400,
+            refline_offs: 0x00ff00,
+            probe_line: 0xff0000,
         };
 
         var scene = new THREE.Scene();
@@ -69,15 +71,17 @@
         var controls = new THREE.MapControls(camera, renderer.domElement);
 
         var mesh_group = new THREE.Group();
-        var line_group = new THREE.Group();
-        var refline_group = new THREE.Group();
-        var disposable_objs = []
         scene.add(mesh_group);
+        var line_group = new THREE.Group();
         scene.add(line_group);
+        var refline_group = new THREE.Group();
         scene.add(refline_group);
+        var refline_offs_group = new THREE.Group();
+        scene.add(refline_offs_group);
+        var disposable_objs = []
 
-        var probe_point = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), new THREE.MeshBasicMaterial({ color: colors.probe_point }));
-        scene.add(probe_point);
+        var probe_line = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3)), new THREE.MeshBasicMaterial({ color: colors.probe_line }));
+        scene.add(probe_line);
 
         var mouse = new THREE.Vector2(), INTERSECTED;
         var raycaster = new THREE.Raycaster();
@@ -91,10 +95,14 @@
         gui.add(params, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
             load_odr_map(params, true)
         });
-        gui.add(params, 'refline').name("Show RefLine").onChange((val) => {
+        gui.add(params, 'fitView').name("Reset Camera");
+        var gui_show_folder = gui.addFolder('Show');
+        gui_show_folder.add(params, 'refline').name("RefLine").onChange((val) => {
             refline_group.visible = val;
         });
-        gui.add(params, 'fitView').name("Reset Camera");
+        gui_show_folder.add(params, 'refline_offs').name("Lane Offset").onChange((val) => {
+            refline_offs_group.visible = val;
+        });
 
         var ModuleOpenDrive = null;
         var OpenDriveMap = null;
@@ -102,7 +110,6 @@
             ModuleOpenDrive = Module;
             on_file_load(xodr_file, false);
         });
-
 
         function on_file_load(xodr_file, clear_map) {
             fetch(xodr_file).then((file_data) => {
@@ -169,18 +176,23 @@
                 }
                 mesh_group.add(road_group);
 
-                for (const [idx, [s0, geom]] of stdmapVals(road.geometries).entries()) {
-                    let s_vals = [];
-                    for (let s = s0; s < (s0 + geom.length); s += params.resolution)
-                        s_vals.push(s);
-                    s_vals.push(s0 + geom.length);
-                    const refl_pts = rdp(s_vals.map(s => [...geom.get_point(s, 0.0), road.get_elevation(s)]), params.resolution);
+                let s_vals = [];
+                for (let s = 0; s < road.length; s += params.resolution)
+                    s_vals.push(s);
+                s_vals.push(road.length);
+                for (const with_offset of [true, false]) {
+                    const refl_pts = rdp(s_vals.map(s => road.get_refline_point(s, 0.0, with_offset)), params.resolution);
                     const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
-                    const refline_material = new THREE.LineBasicMaterial({ color: colors.refline[idx % colors.refline.length], linewidth: 30 });
+                    const refline_material = new THREE.LineBasicMaterial({ color: with_offset ? colors.refline_offs : colors.refline });
                     const refline_line = new THREE.Line(refline_geom, refline_material);
-                    refline_group.add(refline_line);
+                    if (with_offset)
+                        refline_offs_group.add(refline_line);
+                    else
+                        refline_group.add(refline_line);
                     disposable_objs.push(refline_geom, refline_material);
                 }
+                refline_group.visible = params.refline;
+                refline_offs_group.visible = params.refline_offs;
             }
             fitView();
         }
@@ -232,18 +244,17 @@
                 const intersec_pt = intersects[0].point;
 
                 /* project interesected point onto reference line */
-                let proj_refl = { s: 0.0, dist_sqr: -1.0, geom_s0: 0.0 };
-                for (const [s0, geom] of stdmapVals(userData.road.geometries)) {
-                    const s_proj = geom.project(intersec_pt.x, intersec_pt.y);
-                    const refl_pt = userData.road.get_refline_point(s_proj, 0.0);
-                    const dist_sqr = Math.pow(refl_pt[0] - intersec_pt.x, 2.0) + Math.pow(refl_pt[1] - intersec_pt.y, 2.0);
-                    if (proj_refl.dist_sqr < 0 || dist_sqr < proj_refl.dist_sqr)
-                        proj_refl = { s: s_proj, dist_sqr: dist_sqr, geom_s0: s0 };
-                }
-                if (proj_refl.dist_sqr > 0) {
-                    const refl_pt = userData.road.get_refline_point(proj_refl.s, 0.0);
-                    probe_point.position.set(...refl_pt);
-                }
+                const s_proj = userData.road.project(intersec_pt.x, intersec_pt.y);
+                const refl_pt = userData.road.get_refline_point(s_proj, 0.0, false);
+
+                const grad_vec = userData.road.get_grad(s_proj);
+                const dist = Math.sqrt(Math.pow(intersec_pt.x - refl_pt[0], 2) + Math.pow(intersec_pt.y - refl_pt[1], 2) + Math.pow(intersec_pt.z - refl_pt[2], 2));
+                const t_offs = Math.sign(grad_vec[0] * (intersec_pt.y - refl_pt[1]) - grad_vec[1] * (intersec_pt.x - refl_pt[0])) * dist;
+                intersec_pt_reconstructed = userData.road.get_refline_point(s_proj, t_offs, false);
+
+                probe_line.geometry.attributes.position.array.set([...refl_pt, intersec_pt_reconstructed[0], intersec_pt_reconstructed[1], intersec_pt.z]);
+                probe_line.geometry.attributes.position.needsUpdate = true;
+                probe_line.geometry.computeBoundingSphere();
 
                 bottom_info.innerHTML = `
                         <table>
@@ -251,6 +262,7 @@
                             <tr><th>section s0</th><th>${userData.lane.lane_section.s0}</th></tr>
                             <tr><th>lane id</th><th>${userData.lane.id}</th></tr>
                             <tr><th>type</th><th>${userData.lane.type}</th></tr>
+                            <tr><th>s/t</th><th>[${s_proj.toFixed(2)}, ${t_offs.toFixed(2)}]</th>
                             <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
                         </table>`;
             }
