@@ -71,6 +71,7 @@
         var mesh_group = new THREE.Group();
         var line_group = new THREE.Group();
         var refline_group = new THREE.Group();
+        var disposable_objs = []
         scene.add(mesh_group);
         scene.add(line_group);
         scene.add(refline_group);
@@ -120,10 +121,13 @@
                 mesh_group.remove(...mesh_group.children);
                 line_group.remove(...line_group.children);
                 refline_group.remove(...refline_group.children);
+                for (let obj of disposable_objs)
+                    obj.dispose();
             }
             for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
                 const lane_secs = stdmapVals(road.lane_sections);
 
+                let road_group = new THREE.Group();
                 for (let idx = 0; idx < lane_secs.length; idx++) {
                     /* create lane polygons - presumes lane_section lanes are sorted on lane index */
                     let lanes_outer_border_pts = []; // 2d array
@@ -148,17 +152,22 @@
                         lane_polygon_pts.push(lane_polygon_pts[0]);
 
                         const lane_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
+                        const lane_material = new THREE.MeshBasicMaterial({ color: colors.lane, transparent: true, opacity: 0.3 });
                         lane_geom.setIndex(earcut(lane_polygon_pts.flat(), null, 3));
-                        let lane_polygon_mesh = new THREE.Mesh(lane_geom, new THREE.MeshBasicMaterial({ color: colors.lane, transparent: true, opacity: 0.5 }));
+                        let lane_polygon_mesh = new THREE.Mesh(lane_geom, lane_material);
                         lane_polygon_mesh.visible = false;
-                        lane_polygon_mesh.userData = { road: road, lane: lanes[idx - 1] };
-                        mesh_group.add(lane_polygon_mesh);
+                        lane_polygon_mesh.userData = { road: road, lane: lanes[idx - 1], mesh_group: road_group };
+                        road_group.add(lane_polygon_mesh);
 
                         const lane_outline_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
-                        const lane_outline_line = new THREE.Line(lane_outline_geom, new THREE.LineBasicMaterial({ color: colors.outline, transparent: true, opacity: 0.3 }));
+                        const lane_outline_material = new THREE.LineBasicMaterial({ color: colors.outline, transparent: true, opacity: 0.3 });
+                        const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
                         line_group.add(lane_outline_line);
+
+                        disposable_objs.push(lane_geom, lane_material, lane_outline_geom, lane_outline_material)
                     }
                 }
+                mesh_group.add(road_group);
 
                 for (const [idx, [s0, geom]] of stdmapVals(road.geometries).entries()) {
                     let s_vals = [];
@@ -167,8 +176,10 @@
                     s_vals.push(s0 + geom.length);
                     const refl_pts = rdp(s_vals.map(s => [...geom.get_point(s, 0.0), road.get_elevation(s)]), params.resolution);
                     const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
-                    const refline_line = new THREE.Line(refline_geom, new THREE.LineBasicMaterial({ color: colors.refline[idx % colors.refline.length], linewidth: 30 }));
+                    const refline_material = new THREE.LineBasicMaterial({ color: colors.refline[idx % colors.refline.length], linewidth: 30 });
+                    const refline_line = new THREE.Line(refline_geom, refline_material);
                     refline_group.add(refline_line);
+                    disposable_objs.push(refline_geom, refline_material);
                 }
             }
             fitView();
@@ -196,19 +207,22 @@
 
         function update() {
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(mesh_group.children);
+            const intersects = raycaster.intersectObjects(mesh_group.children, true);
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.visible = false;
+                        INTERSECTED.material.opacity = 0.3;
+                        INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = false);
                     }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.visible = true;
+                    INTERSECTED.material.opacity = 0.7;
+                    INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = true);
                     bottom_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.visible = false;
+                    INTERSECTED.material.opacity = 0.3;
+                    INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = false);
                 }
                 INTERSECTED = null;
                 bottom_info.style.display = "none";
