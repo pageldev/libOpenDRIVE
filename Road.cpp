@@ -31,10 +31,10 @@ void Road::add_lane_section(std::shared_ptr<LaneSection> lane_section)
     this->lane_sections[lane_section->s0] = lane_section;
 }
 
-Vec3D Road::get_refline_point(const double s, const double t) const
+Vec3D Road::get_refline_point(const double s, const double t, const bool with_offset) const
 {
     double offset = 0;
-    if (this->lane_offsets.size() > 0)
+    if (with_offset && this->lane_offsets.size() > 0)
     {
         std::map<double, std::shared_ptr<LaneOffset>>::const_iterator
             target_lane_offset_iter = this->lane_offsets.upper_bound(s);
@@ -74,6 +74,24 @@ double Road::get_elevation(const double s) const
     }
 
     return elev;
+}
+
+double Road::project(double x, double y) const
+{
+    double s = 0;
+    double min_dist_sqr = -1;
+    for (const std::pair<const double, std::shared_ptr<RoadGeometry>> &geom : geometries)
+    {
+        double const s_proj = geom.second->project(x, y);
+        const Vec3D  refl_pt = get_refline_point(s_proj, 0.0, false);
+        const double dist_sqr = get_dist_sqr(refl_pt, {x, y, refl_pt[2]});
+        if (min_dist_sqr < 0 || dist_sqr < min_dist_sqr)
+        {
+            min_dist_sqr = dist_sqr;
+            s = s_proj;
+        }
+    }
+    return s;
 }
 
 } // namespace odr

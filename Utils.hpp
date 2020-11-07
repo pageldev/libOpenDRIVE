@@ -18,7 +18,7 @@ int sign(T val)
 }
 
 template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
-constexpr T dist_sqr(const Vec<T, Dim> a, const Vec<T, Dim> b)
+constexpr T get_dist_sqr(const Vec<T, Dim> a, const Vec<T, Dim> b)
 {
     return std::inner_product(a.begin(), a.end(), b.begin(), T(0), std::plus<T>(), [](T a, T b) {T c = b-a; return c*c; });
 }

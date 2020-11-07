@@ -49,7 +49,7 @@ Vec3D Lane::get_outer_border_pt(const double s) const
     }
 
     t = (this->id < 0) ? -t : t;
-    return lane_section->road->get_refline_point(s, t);
+    return lane_section->road->get_refline_point(s, t, true);
 }
 
 LaneSection::LaneSection(double s0)

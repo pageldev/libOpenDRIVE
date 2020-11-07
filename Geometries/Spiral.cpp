@@ -72,7 +72,7 @@ Vec2D Spiral::get_point(double s, double t) const
 
 double Spiral::project(double x, double y) const
 {
-    std::function<double(double)> f_dist = [&](double s) { const Vec2D pt = this->get_point(s, 0.0); return dist_sqr(pt, {x,y}); };
+    std::function<double(double)> f_dist = [&](double s) { const Vec2D pt = this->get_point(s, 0.0); return get_dist_sqr(pt, {x,y}); };
     return golden_section_search(f_dist, s0, s0 + length, 1e-2);
 }
 
