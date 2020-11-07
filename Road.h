@@ -17,6 +17,7 @@ struct ElevationProfile
 {
     ElevationProfile(double s0, double a, double b, double c, double d);
     double get_elevation(const double s) const;
+    double get_grad(const double s) const;
 
     double s0, a, b, c, d;
 };
@@ -27,8 +28,9 @@ public:
     Road(double length, int id, int junction);
     void   add_lane_section(std::shared_ptr<LaneSection> lane_section);
     Vec3D  get_refline_point(const double s, const double t = 0, const bool with_offset = false) const;
-    double get_elevation(const double s) const;
+    double get_elevation(const double s, double *grad = nullptr) const;
     double project(double x, double y) const;
+    Vec3D  get_grad(const double s) const;
 
     int    id;
     double length, junction;

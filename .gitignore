@@ -1,3 +1,6 @@
 *.wasm
 *.xodr
+*.so
+settings.json
+build/
 Visualizer/src
