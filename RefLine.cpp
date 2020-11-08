@@ -20,25 +20,13 @@ double ElevationProfile::get_grad(double s) const
 
 Vec3D RefLine::get_point(double s, double t, double t_offset) const
 {
+    std::shared_ptr<RoadGeometry> geom = this->get_geometry(s);
+
     Vec2D pt_xy{0, 0};
-    if (this->geometries.size() > 0)
-    {
-        auto target_geom_iter = this->geometries.upper_bound(s);
-        if (target_geom_iter != geometries.begin())
-            target_geom_iter--;
-        pt_xy = target_geom_iter->second->get_point(s, t + t_offset);
-    }
+    if (geom)
+        pt_xy = geom->get_point(s, t + t_offset);
 
-    double elev = 0;
-    if (this->elevation_profiles.size() > 0)
-    {
-        auto target_elev_iter = this->elevation_profiles.upper_bound(s);
-        if (target_elev_iter != elevation_profiles.begin())
-            target_elev_iter--;
-        elev = target_elev_iter->second->get_elevation(s);
-    }
-
-    return Vec3D{pt_xy[0], pt_xy[1], elev};
+    return Vec3D{pt_xy[0], pt_xy[1], this->get_elevation(s)};
 }
 
 double RefLine::project(double x, double y) const
@@ -61,15 +49,30 @@ double RefLine::project(double x, double y) const
 
 Vec3D RefLine::get_grad(double s) const
 {
-    Vec2D d_xy{0, 0};
-    if (this->geometries.size() > 0)
-    {
-        auto target_geom_iter = this->geometries.upper_bound(s);
-        if (target_geom_iter != geometries.begin())
-            target_geom_iter--;
-        d_xy = target_geom_iter->second->get_grad(s);
-    }
+    std::shared_ptr<RoadGeometry> geom = this->get_geometry(s);
 
+    Vec2D d_xy{0, 0};
+    if (geom)
+        d_xy = geom->get_grad(s);
+
+    return Vec3D{d_xy[0], d_xy[1], get_elevation_grad(s)};
+}
+
+double RefLine::get_elevation(double s) const
+{
+    double elev = 0;
+    if (this->elevation_profiles.size() > 0)
+    {
+        auto target_elev_iter = this->elevation_profiles.upper_bound(s);
+        if (target_elev_iter != elevation_profiles.begin())
+            target_elev_iter--;
+        elev = target_elev_iter->second->get_elevation(s);
+    }
+    return elev;
+}
+
+double RefLine::get_elevation_grad(double s) const
+{
     double d_z = 0;
     if (this->elevation_profiles.size() > 0)
     {
@@ -78,8 +81,20 @@ Vec3D RefLine::get_grad(double s) const
             target_elev_iter--;
         d_z = target_elev_iter->second->get_grad(s);
     }
+    return d_z;
+}
 
-    return Vec3D{d_xy[0], d_xy[1], d_z};
+std::shared_ptr<RoadGeometry> RefLine::get_geometry(double s) const
+{
+    std::shared_ptr<RoadGeometry> geom = nullptr;
+    if (this->geometries.size() > 0)
+    {
+        auto target_geom_iter = this->geometries.upper_bound(s);
+        if (target_geom_iter != geometries.begin())
+            target_geom_iter--;
+        geom = target_geom_iter->second;
+    }
+    return geom;
 }
 
 } // namespace odr

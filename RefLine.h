@@ -20,9 +20,14 @@ struct ElevationProfile
 struct RefLine
 {
     RefLine() = default;
-    Vec3D  get_point(double s, double t = 0, double t_offset = 0) const;
-    Vec3D  get_grad(double s) const;
+    Vec3D get_point(double s, double t = 0, double t_offset = 0) const;
+    Vec3D get_grad(double s) const;
+
+    double get_elevation(double s) const;
+    double get_elevation_grad(double s) const;
     double project(double x, double y) const;
+
+    std::shared_ptr<RoadGeometry> get_geometry(double s) const;
 
     std::map<double, std::shared_ptr<RoadGeometry>>     geometries;
     std::map<double, std::shared_ptr<ElevationProfile>> elevation_profiles;

@@ -46,8 +46,9 @@
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.5,
-            refline: true,
-            refline_offs: false,
+            ref_line: true,
+            lane_offset: false,
+            geom_edges: false,
             fitView: fitView,
             speed: 0.1,
         };
@@ -56,8 +57,8 @@
             lane: 0xff0000,
             road: 0x00ff00,
             outline: 0xffffff,
-            refline: 0xff7400,
-            refline_offs: 0x00ff00,
+            ref_line: 0xff7400,
+            lane_offset: 0x00ff00,
             probe_line: 0xff0000,
         };
 
@@ -79,16 +80,20 @@
         var controls = new THREE.MapControls(camera, renderer.domElement);
 
         var mesh_group = new THREE.Group();
-        scene.add(mesh_group);
-        var line_group = new THREE.Group();
-        scene.add(line_group);
-        var refline_group = new THREE.Group();
-        scene.add(refline_group);
-        var refline_offs_group = new THREE.Group();
-        scene.add(refline_offs_group);
+        var outline_group = new THREE.Group();
+        var ref_line_group = new THREE.Group();
+        var basic_groups = [mesh_group, outline_group, ref_line_group];
+        scene.add(...basic_groups);
+
+        var lane_offset_group = new THREE.Group();
+        var odr_geom_edges_group = new THREE.Group();
+        var lazy_loaded_groups = [lane_offset_group, odr_geom_edges_group];
+        scene.add(...lazy_loaded_groups);
+
         var disposable_objs = []
 
-        var probe_line = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3)), new THREE.MeshBasicMaterial({ color: COLORS.probe_line }));
+        var probe_line = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3))
+            , new THREE.MeshBasicMaterial({ color: COLORS.probe_line }));
         scene.add(probe_line);
 
         var mouse = new THREE.Vector2(), INTERSECTED;
@@ -101,15 +106,22 @@
         var gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('Load xodr file');
         gui.add(PARAMS, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
-            load_odr_map(PARAMS, true, false);
+            load_odr_map(true, false);
         });
         gui.add(PARAMS, 'fitView').name("Reset Camera");
         var gui_show_folder = gui.addFolder('Show');
-        gui_show_folder.add(PARAMS, 'refline').name("RefLine").onChange((val) => {
-            refline_group.visible = val;
+        gui_show_folder.add(PARAMS, 'ref_line').name("ref_line").onChange((val) => {
+            ref_line_group.visible = val;
         });
-        gui_show_folder.add(PARAMS, 'refline_offs').name("Lane Offset").onChange((val) => {
-            refline_offs_group.visible = val;
+        gui_show_folder.add(PARAMS, 'lane_offset').name("Lane Offset").onChange((val) => {
+            if (lane_offset_group.children.length == 0)
+                add_lane_offsets();
+            lane_offset_group.visible = val;
+        });
+        gui_show_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
+            if (odr_geom_edges_group.children.length == 0)
+                add_odr_geom_edges();
+            odr_geom_edges_group.visible = val;
         });
 
         var ModuleOpenDrive = null;
@@ -126,17 +138,17 @@
                         ModuleOpenDrive['FS_unlink']('./data.xodr');
                     ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
                     OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr");
-                    load_odr_map(PARAMS, clear_map);
+                    load_odr_map(clear_map);
                 })
             });
         }
 
-        function load_odr_map(params, clear_map = true, fit_view = true) {
+        function load_odr_map(clear_map = true, fit_view = true) {
             if (clear_map) {
-                mesh_group.remove(...mesh_group.children);
-                line_group.remove(...line_group.children);
-                refline_group.remove(...refline_group.children);
-                refline_offs_group.remove(...refline_offs_group.children);
+                for (let group of basic_groups)
+                    group.remove(...group.children);
+                for (let group of lazy_loaded_groups)
+                    group.remove(...group.children);
                 for (let obj of disposable_objs)
                     obj.dispose();
             }
@@ -153,10 +165,10 @@
                     const lane_sec = lane_secs[idx][1];
                     for (const [lane_id, lane] of stdmapVals(lane_sec.lanes)) {
                         let s_vals = [];
-                        for (let s = lane_sec.s0; s < (lane_sec.s0 + lane_sec_len); s += params.resolution)
+                        for (let s = lane_sec.s0; s < (lane_sec.s0 + lane_sec_len); s += PARAMS.resolution)
                             s_vals.push(s);
                         s_vals.push(lane_sec.s0 + lane_sec_len);
-                        lanes_outer_border_pts.push(rdp(s_vals.map(s => lane.get_outer_border_pt(s)), params.resolution));
+                        lanes_outer_border_pts.push(rdp(s_vals.map(s => lane.get_outer_border_pt(s)), PARAMS.resolution));
                         if (lane_id != 0)
                             lanes.push(lane);
                     }
@@ -178,7 +190,7 @@
                         const lane_outline_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
                         const lane_outline_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
                         const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
-                        line_group.add(lane_outline_line);
+                        outline_group.add(lane_outline_line);
 
                         disposable_objs.push(lane_geom, lane_material, lane_outline_geom, lane_outline_material)
                     }
@@ -188,29 +200,69 @@
                 mesh_group.add(road_group);
 
                 let s_vals = [];
-                for (let s = 0; s < road.length; s += params.resolution)
+                for (let s = 0; s < road.length; s += PARAMS.resolution)
                     s_vals.push(s);
                 s_vals.push(road.length);
-                for (const with_offset of [true, false]) {
-                    const refl_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, with_offset ? road.get_lane_offset(s) : 0.0)), params.resolution);
-                    const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
-                    const refline_material = new THREE.LineBasicMaterial({ color: with_offset ? COLORS.refline_offs : COLORS.refline });
-                    const refline_line = new THREE.Line(refline_geom, refline_material);
-                    if (with_offset)
-                        refline_offs_group.add(refline_line);
-                    else
-                        refline_group.add(refline_line);
-                    disposable_objs.push(refline_geom, refline_material);
-                }
-                refline_group.visible = params.refline;
-                refline_offs_group.visible = params.refline_offs;
+                const refl_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, 0.0)), PARAMS.resolution);
+                const ref_line_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
+                const ref_line_material = new THREE.LineBasicMaterial({ color: COLORS.ref_line });
+                const ref_line_line = new THREE.Line(ref_line_geom, ref_line_material);
+                ref_line_group.add(ref_line_line);
+                disposable_objs.push(ref_line_geom, ref_line_material);
+                ref_line_group.visible = PARAMS.ref_line;
             }
+
+            if (PARAMS.lane_offset && (lane_offset_group.children.length == 0))
+                add_lane_offsets();
+            if (PARAMS.geom_edges && (odr_geom_edges_group.children.length == 0))
+                add_odr_geom_edges();
+
             if (fit_view)
                 fitView();
         }
 
+        function add_lane_offsets() {
+            for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
+                let s_vals = [];
+                for (let s = 0; s < road.length; s += PARAMS.resolution)
+                    s_vals.push(s);
+                s_vals.push(road.length);
+                const lane_offs_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, road.get_lane_offset(s))), PARAMS.resolution);
+                const lane_offs_geom = new THREE.BufferGeometry().setFromPoints(lane_offs_pts.map(p => new THREE.Vector3(...p)));
+                const lane_offs_material = new THREE.LineBasicMaterial({ color: COLORS.lane_offset });
+                const lane_offs_line = new THREE.Line(lane_offs_geom, lane_offs_material);
+                lane_offset_group.add(lane_offs_line);
+                disposable_objs.push(lane_offs_geom, lane_offs_material);
+            }
+            lane_offset_group.visible = PARAMS.lane_offset;
+        }
+
+        function add_odr_geom_edges() {
+            const side_len = 2.0;
+            const world_vec = new THREE.Vector3(0, 0, side_len);
+            for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
+                for (const [s0, odr_geom] of stdmapVals(road.ref_line.geometries)) {
+                    const pt0 = new THREE.Vector3(...odr_geom.get_point(odr_geom.s0, 0.0), road.ref_line.get_elevation(odr_geom.s0));
+                    let u_vec = new THREE.Vector3(...odr_geom.get_grad(odr_geom.s0), road.ref_line.get_elevation_grad(odr_geom.s0));
+                    u_vec.normalize().cross(world_vec).multiplyScalar(side_len);
+
+                    /* edge plane corner points */
+                    const c1 = (pt0.clone().add(u_vec)).add(world_vec);
+                    const c2 = (pt0.clone().add(u_vec)).sub(world_vec);
+                    const c3 = (pt0.clone().sub(u_vec)).add(world_vec);
+                    const c4 = (pt0.clone().sub(u_vec)).sub(world_vec);
+
+                    let geom = new THREE.BufferGeometry().setFromPoints([pt0, c1, c2, c3, c4]);
+                    geom.setIndex([0, 1, 2, 0, 2, 4, 0, 4, 3, 0, 3, 1]);
+                    let material = new THREE.MeshBasicMaterial({ color: COLORS.ref_line, side: THREE.DoubleSide, transparent: true, opacity: OPACITIES.lane_section });
+                    let mesh = new THREE.Mesh(geom, material);
+                    odr_geom_edges_group.add(mesh);
+                }
+            }
+        }
+
         function fitView() {
-            const bbox = new THREE.Box3().setFromObject(line_group);
+            const bbox = new THREE.Box3().setFromObject(outline_group);
             let center_pt = new THREE.Vector3();
             bbox.getCenter(center_pt);
 

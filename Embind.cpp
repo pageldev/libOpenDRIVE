@@ -136,7 +136,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .constructor<>()
         .function("get_point", &RefLine::get_point)
         .function("get_grad", &RefLine::get_grad)
+        .function("get_elevation", &RefLine::get_elevation)
+        .function("get_elevation_grad", &RefLine::get_elevation_grad)
         .function("project", &RefLine::project)
+        .function("get_geometry", &RefLine::get_geometry)
         .property("geometries", &RefLine::geometries)
         .property("elevation_profiles", &RefLine::elevation_profiles);
 
