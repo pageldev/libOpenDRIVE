@@ -19,6 +19,7 @@ class Road : public std::enable_shared_from_this<Road>
 public:
     Road(double length, int id, int junction);
     void add_lane_section(std::shared_ptr<LaneSection> lane_section);
+    double get_lane_offset(double s) const;
 
     int    id, junction;
     double length;

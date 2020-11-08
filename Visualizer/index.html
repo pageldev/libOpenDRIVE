@@ -36,22 +36,23 @@
     <script src="./src/libOpenDrive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script src="https://unpkg.com/earcut@2.2.2/dist/earcut.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
 
     <script>
         var xodr_file = './data.xodr';
         var bottom_info = document.getElementById('bottom_info');
 
-        var params = {
+        var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
-            resolution: 0.4,
+            resolution: 0.5,
             refline: true,
             refline_offs: false,
             fitView: fitView,
+            speed: 0.1,
         };
 
-        var colors = {
+        var COLORS = {
             lane: 0xff0000,
             road: 0x00ff00,
             outline: 0xffffff,
@@ -60,7 +61,7 @@
             probe_line: 0xff0000,
         };
 
-        var opacities = {
+        var OPACITIES = {
             lane: 0.7,
             lane_section: 0.3,
             road: 0.3,
@@ -87,7 +88,7 @@
         scene.add(refline_offs_group);
         var disposable_objs = []
 
-        var probe_line = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3)), new THREE.MeshBasicMaterial({ color: colors.probe_line }));
+        var probe_line = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(2 * 3), 3)), new THREE.MeshBasicMaterial({ color: COLORS.probe_line }));
         scene.add(probe_line);
 
         var mouse = new THREE.Vector2(), INTERSECTED;
@@ -98,16 +99,16 @@
         animate();
 
         var gui = new dat.GUI();
-        gui.add(params, 'load_file').name('Load xodr file');
-        gui.add(params, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
-            load_odr_map(params, true, false);
+        gui.add(PARAMS, 'load_file').name('Load xodr file');
+        gui.add(PARAMS, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
+            load_odr_map(PARAMS, true, false);
         });
-        gui.add(params, 'fitView').name("Reset Camera");
+        gui.add(PARAMS, 'fitView').name("Reset Camera");
         var gui_show_folder = gui.addFolder('Show');
-        gui_show_folder.add(params, 'refline').name("RefLine").onChange((val) => {
+        gui_show_folder.add(PARAMS, 'refline').name("RefLine").onChange((val) => {
             refline_group.visible = val;
         });
-        gui_show_folder.add(params, 'refline_offs').name("Lane Offset").onChange((val) => {
+        gui_show_folder.add(PARAMS, 'refline_offs').name("Lane Offset").onChange((val) => {
             refline_offs_group.visible = val;
         });
 
@@ -125,7 +126,7 @@
                         ModuleOpenDrive['FS_unlink']('./data.xodr');
                     ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
                     OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr");
-                    load_odr_map(params, clear_map);
+                    load_odr_map(PARAMS, clear_map);
                 })
             });
         }
@@ -135,6 +136,7 @@
                 mesh_group.remove(...mesh_group.children);
                 line_group.remove(...line_group.children);
                 refline_group.remove(...refline_group.children);
+                refline_offs_group.remove(...refline_offs_group.children);
                 for (let obj of disposable_objs)
                     obj.dispose();
             }
@@ -174,7 +176,7 @@
                         lane_sec_group.add(lane_polygon_mesh);
 
                         const lane_outline_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
-                        const lane_outline_material = new THREE.LineBasicMaterial({ color: colors.outline });
+                        const lane_outline_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
                         const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
                         line_group.add(lane_outline_line);
 
@@ -190,9 +192,9 @@
                     s_vals.push(s);
                 s_vals.push(road.length);
                 for (const with_offset of [true, false]) {
-                    const refl_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, 0.0)), params.resolution);
+                    const refl_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, with_offset ? road.get_lane_offset(s) : 0.0)), params.resolution);
                     const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
-                    const refline_material = new THREE.LineBasicMaterial({ color: with_offset ? colors.refline_offs : colors.refline });
+                    const refline_material = new THREE.LineBasicMaterial({ color: with_offset ? COLORS.refline_offs : COLORS.refline });
                     const refline_line = new THREE.Line(refline_geom, refline_material);
                     if (with_offset)
                         refline_offs_group.add(refline_line);
@@ -237,9 +239,9 @@
                     }
                     INTERSECTED = intersects[0].object;
                     INTERSECTED.userData.road_group.visible = true;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = opacities.road; n.material.color.set(colors.road); } });
-                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = opacities.lane_section; n.material.color.set(colors.lane); } });
-                    INTERSECTED.material.opacity = opacities.lane;
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); } });
+                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; n.material.color.set(COLORS.lane); } });
+                    INTERSECTED.material.opacity = OPACITIES.lane;
                     bottom_info.style.display = "block";
                 }
             } else {

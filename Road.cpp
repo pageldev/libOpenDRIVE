@@ -20,4 +20,17 @@ void Road::add_lane_section(std::shared_ptr<LaneSection> lane_section)
     this->lane_sections[lane_section->s0] = lane_section;
 }
 
+double Road::get_lane_offset(double s) const
+{
+    double offs = 0;
+    if (this->lane_offsets.size() > 0)
+    {
+        auto target_lane_offset_iter = this->lane_offsets.upper_bound(s);
+        if (target_lane_offset_iter != this->lane_offsets.begin())
+            target_lane_offset_iter--;
+        offs = target_lane_offset_iter->second->get_offset(s);
+    }
+    return offs;
+}
+
 } // namespace odr

@@ -48,15 +48,7 @@ Vec3D Lane::get_outer_border_pt(double s) const
 
     t = (this->id < 0) ? -t : t;
 
-    double t_offset = 0;
-    if (this->lane_section->road->lane_offsets.size() > 0)
-    {
-        auto target_lane_offset_iter = this->lane_section->road->lane_offsets.upper_bound(s);
-        if (target_lane_offset_iter != this->lane_section->road->lane_offsets.begin())
-            target_lane_offset_iter--;
-        t_offset = target_lane_offset_iter->second->get_offset(s);
-    }
-
+    const double t_offset = this->lane_section->road->get_lane_offset(s);
     return this->lane_section->road->ref_line->get_point(s, t, t_offset);
 }
 
