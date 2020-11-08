@@ -52,12 +52,19 @@
         };
 
         var colors = {
-            lane: 0x72deff,
+            lane: 0xff0000,
+            road: 0x00ff00,
             outline: 0xffffff,
             refline: 0xff7400,
             refline_offs: 0x00ff00,
             probe_line: 0xff0000,
         };
+
+        var opacities = {
+            lane: 0.7,
+            lane_section: 0.3,
+            road: 0.3,
+        }
 
         var scene = new THREE.Scene();
         var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -93,7 +100,7 @@
         var gui = new dat.GUI();
         gui.add(params, 'load_file').name('Load xodr file');
         gui.add(params, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
-            load_odr_map(params, true)
+            load_odr_map(params, true, false);
         });
         gui.add(params, 'fitView').name("Reset Camera");
         var gui_show_folder = gui.addFolder('Show');
@@ -123,7 +130,7 @@
             });
         }
 
-        function load_odr_map(params, clear_map) {
+        function load_odr_map(params, clear_map = true, fit_view = true) {
             if (clear_map) {
                 mesh_group.remove(...mesh_group.children);
                 line_group.remove(...line_group.children);
@@ -136,6 +143,7 @@
 
                 let road_group = new THREE.Group();
                 for (let idx = 0; idx < lane_secs.length; idx++) {
+                    let lane_sec_group = new THREE.Group();
                     /* create lane polygons - presumes lane_section lanes are sorted on lane index */
                     let lanes_outer_border_pts = []; // 2d array
                     let lanes = [];
@@ -159,21 +167,22 @@
                         lane_polygon_pts.push(lane_polygon_pts[0]);
 
                         const lane_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
-                        const lane_material = new THREE.MeshBasicMaterial({ color: colors.lane, transparent: true, opacity: 0.3 });
+                        const lane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0 });
                         lane_geom.setIndex(earcut(lane_polygon_pts.flat(), null, 3));
                         let lane_polygon_mesh = new THREE.Mesh(lane_geom, lane_material);
-                        lane_polygon_mesh.visible = false;
-                        lane_polygon_mesh.userData = { road: road, lane: lanes[idx - 1], mesh_group: road_group };
-                        road_group.add(lane_polygon_mesh);
+                        lane_polygon_mesh.userData = { road: road, lane: lanes[idx - 1], lane_sec_group: lane_sec_group, road_group: road_group };
+                        lane_sec_group.add(lane_polygon_mesh);
 
                         const lane_outline_geom = new THREE.BufferGeometry().setFromPoints(lane_polygon_pts.map(p => new THREE.Vector3(...p)));
-                        const lane_outline_material = new THREE.LineBasicMaterial({ color: colors.outline, transparent: true, opacity: 0.3 });
+                        const lane_outline_material = new THREE.LineBasicMaterial({ color: colors.outline });
                         const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
                         line_group.add(lane_outline_line);
 
                         disposable_objs.push(lane_geom, lane_material, lane_outline_geom, lane_outline_material)
                     }
+                    road_group.add(lane_sec_group);
                 }
+                road_group.visible = false;
                 mesh_group.add(road_group);
 
                 let s_vals = [];
@@ -194,7 +203,8 @@
                 refline_group.visible = params.refline;
                 refline_offs_group.visible = params.refline_offs;
             }
-            fitView();
+            if (fit_view)
+                fitView();
         }
 
         function fitView() {
@@ -223,22 +233,23 @@
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.material.opacity = 0.3;
-                        INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = false);
+                        INTERSECTED.userData.road_group.visible = false;
                     }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.material.opacity = 0.7;
-                    INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = true);
+                    INTERSECTED.userData.road_group.visible = true;
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = opacities.road; n.material.color.set(colors.road); } });
+                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = opacities.lane_section; n.material.color.set(colors.lane); } });
+                    INTERSECTED.material.opacity = opacities.lane;
                     bottom_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.material.opacity = 0.3;
-                    INTERSECTED.userData.mesh_group.children.forEach(m => m.visible = false);
+                    INTERSECTED.userData.road_group.visible = false;
                 }
                 INTERSECTED = null;
                 bottom_info.style.display = "none";
             }
+
             if (INTERSECTED) {
                 const userData = INTERSECTED.userData;
                 const intersec_pt = intersects[0].point;
