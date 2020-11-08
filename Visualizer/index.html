@@ -54,17 +54,18 @@
         };
 
         var COLORS = {
-            lane: 0xff0000,
-            road: 0x00ff00,
-            outline: 0xffffff,
-            ref_line: 0xff7400,
-            lane_offset: 0x00ff00,
+            lane: 0x0069c0,
+            lane_section: 0x42a5f5,
+            road: 0x80d6ff,
+            outline: 0x808080,
+            ref_line: 0xaab6fe,
+            lane_offset: 0x00701a,
             probe_line: 0xff0000,
         };
 
         var OPACITIES = {
-            lane: 0.7,
-            lane_section: 0.3,
+            lane: 0.6,
+            lane_section: 0.6,
             road: 0.3,
         }
 
@@ -292,7 +293,8 @@
                     INTERSECTED = intersects[0].object;
                     INTERSECTED.userData.road_group.visible = true;
                     INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); } });
-                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; n.material.color.set(COLORS.lane); } });
+                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; n.material.color.set(COLORS.lane_section); } });
+                    INTERSECTED.material.color.set(COLORS.lane);
                     INTERSECTED.material.opacity = OPACITIES.lane;
                     bottom_info.style.display = "block";
                 }
@@ -311,6 +313,7 @@
                 /* project interesected point onto reference line */
                 const s_proj = userData.road.ref_line.project(intersec_pt.x, intersec_pt.y);
                 const refl_pt = userData.road.ref_line.get_point(s_proj, 0.0, 0.0);
+                const geometry_type = userData.road.ref_line.get_geometry(s_proj)["$$"].ptrType.name;
 
                 const grad_vec = userData.road.ref_line.get_grad(s_proj);
                 const dist = Math.sqrt(Math.pow(intersec_pt.x - refl_pt[0], 2) + Math.pow(intersec_pt.y - refl_pt[1], 2) + Math.pow(intersec_pt.z - refl_pt[2], 2));
@@ -324,9 +327,10 @@
                 bottom_info.innerHTML = `
                         <table>
                             <tr><th>road id</th><th>${userData.road.id}</th></tr>
-                            <tr><th>section s0</th><th>${userData.lane.lane_section.s0}</th></tr>
+                            <tr><th>section s0</th><th>${userData.lane.lane_section.s0.toFixed(2)}</th></tr>
                             <tr><th>lane id</th><th>${userData.lane.id}</th></tr>
                             <tr><th>type</th><th>${userData.lane.type}</th></tr>
+                            <tr><th>geometry</th><th>${geometry_type.slice(0, -1)}</th></tr>
                             <tr><th>s/t</th><th>[${s_proj.toFixed(2)}, ${t_offs.toFixed(2)}]</th>
                             <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
                         </table>`;
