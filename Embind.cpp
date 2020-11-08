@@ -2,6 +2,7 @@
 #include "Geometries/RoadGeometry.h"
 #include "Lanes.h"
 #include "OpenDriveMap.h"
+#include "RefLine.h"
 #include "Road.h"
 
 #include <emscripten/bind.h>
@@ -130,18 +131,22 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_map<double, std::shared_ptr<LaneSection>>("map<double, shared_ptr<LaneSection>>");
     emscripten::register_map<double, std::shared_ptr<LaneOffset>>("map<double, shared_ptr<LaneOffset>>");
 
+    emscripten::class_<RefLine>("RefLine")
+        .smart_ptr<std::shared_ptr<RefLine>>("shared_ptr<RefLine>")
+        .constructor<>()
+        .function("get_point", &RefLine::get_point)
+        .function("get_grad", &RefLine::get_grad)
+        .function("project", &RefLine::project)
+        .property("geometries", &RefLine::geometries)
+        .property("elevation_profiles", &RefLine::elevation_profiles);
+
     emscripten::class_<Road>("Road")
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
         .constructor<double, int, int>()
-        .function("get_refline_point", &Road::get_refline_point)
-        .function("get_elevation", &Road::get_elevation, emscripten::allow_raw_pointers())
-        .function("project", &Road::project)
-        .function("get_grad", &Road::get_grad)
         .property("id", &Road::id)
         .property("length", &Road::length)
         .property("junction", &Road::junction)
-        .property("elevation_profiles", &Road::elevation_profiles)
-        .property("geometries", &Road::geometries)
+        .property("ref_line", &Road::ref_line)
         .property("lane_sections", &Road::lane_sections)
         .property("lane_offsets", &Road::lane_offsets);
 

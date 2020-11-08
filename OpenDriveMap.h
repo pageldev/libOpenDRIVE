@@ -12,7 +12,7 @@ namespace odr
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(const std::string xodr_file);
+    OpenDriveMap(std::string xodr_file);
 
     const std::string                    xodr_file;
     std::map<int, std::shared_ptr<Road>> roads;

@@ -181,7 +181,7 @@
                     s_vals.push(s);
                 s_vals.push(road.length);
                 for (const with_offset of [true, false]) {
-                    const refl_pts = rdp(s_vals.map(s => road.get_refline_point(s, 0.0, with_offset)), params.resolution);
+                    const refl_pts = rdp(s_vals.map(s => road.ref_line.get_point(s, 0.0, 0.0)), params.resolution);
                     const refline_geom = new THREE.BufferGeometry().setFromPoints(refl_pts.map(p => new THREE.Vector3(...p)));
                     const refline_material = new THREE.LineBasicMaterial({ color: with_offset ? colors.refline_offs : colors.refline });
                     const refline_line = new THREE.Line(refline_geom, refline_material);
@@ -244,13 +244,13 @@
                 const intersec_pt = intersects[0].point;
 
                 /* project interesected point onto reference line */
-                const s_proj = userData.road.project(intersec_pt.x, intersec_pt.y);
-                const refl_pt = userData.road.get_refline_point(s_proj, 0.0, false);
+                const s_proj = userData.road.ref_line.project(intersec_pt.x, intersec_pt.y);
+                const refl_pt = userData.road.ref_line.get_point(s_proj, 0.0, 0.0);
 
-                const grad_vec = userData.road.get_grad(s_proj);
+                const grad_vec = userData.road.ref_line.get_grad(s_proj);
                 const dist = Math.sqrt(Math.pow(intersec_pt.x - refl_pt[0], 2) + Math.pow(intersec_pt.y - refl_pt[1], 2) + Math.pow(intersec_pt.z - refl_pt[2], 2));
                 const t_offs = Math.sign(grad_vec[0] * (intersec_pt.y - refl_pt[1]) - grad_vec[1] * (intersec_pt.x - refl_pt[0])) * dist;
-                intersec_pt_reconstructed = userData.road.get_refline_point(s_proj, t_offs, false);
+                intersec_pt_reconstructed = userData.road.ref_line.get_point(s_proj, t_offs, 0.0);
 
                 probe_line.geometry.attributes.position.array.set([...refl_pt, intersec_pt_reconstructed[0], intersec_pt_reconstructed[1], intersec_pt.z]);
                 probe_line.geometry.attributes.position.needsUpdate = true;

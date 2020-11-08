@@ -46,15 +46,15 @@ struct RoadGeometry
     virtual double project(double x, double y) const = 0;
     virtual Vec2D  get_grad(double s) const = 0;
 
-    GeometryType          type;
-    std::shared_ptr<Road> road;
-    Box2D                 bounding_box;
-
     double s0;
     double x0;
     double y0;
     double hdg0;
     double length;
+
+    GeometryType          type;
+    std::shared_ptr<Road> road;
+    Box2D                 bounding_box;
 };
 
 } // namespace odr
