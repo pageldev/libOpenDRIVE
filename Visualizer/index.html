@@ -49,7 +49,7 @@
             ref_line: true,
             lane_offset: false,
             geom_edges: false,
-            fitView: fitView,
+            fitView: () => { fitView(outline_group); },
             speed: 0.1,
         };
 
@@ -101,6 +101,7 @@
         var raycaster = new THREE.Raycaster();
         window.addEventListener('resize', onWindowResize, false);
         window.addEventListener('mousemove', onDocumentMouseMove, false);
+        window.addEventListener('dblclick', onDocumentMouseClick, false);
 
         animate();
 
@@ -219,7 +220,7 @@
                 add_odr_geom_edges();
 
             if (fit_view)
-                fitView();
+                fitView(outline_group);
         }
 
         function add_lane_offsets() {
@@ -239,7 +240,7 @@
         }
 
         function add_odr_geom_edges() {
-            const side_len = 2.0;
+            const side_len = 1.0;
             const world_vec = new THREE.Vector3(0, 0, side_len);
             for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
                 for (const [s0, odr_geom] of stdmapVals(road.ref_line.geometries)) {
@@ -262,8 +263,8 @@
             }
         }
 
-        function fitView() {
-            const bbox = new THREE.Box3().setFromObject(outline_group);
+        function fitView(obj) {
+            const bbox = new THREE.Box3().setFromObject(obj);
             let center_pt = new THREE.Vector3();
             bbox.getCenter(center_pt);
 
@@ -347,6 +348,11 @@
             event.preventDefault();
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onDocumentMouseClick(event) {
+            if (INTERSECTED)
+                fitView(INTERSECTED);
         }
 
         function stdmapVals(std_map) {
