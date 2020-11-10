@@ -29,7 +29,6 @@ struct Lane;
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
-    void add_lane(std::shared_ptr<Lane> lane);
 
     double                               s0;
     std::shared_ptr<Road>                road;

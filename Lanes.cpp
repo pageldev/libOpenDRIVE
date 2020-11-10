@@ -49,22 +49,12 @@ Vec3D Lane::get_outer_border_pt(double s) const
     t = (this->id < 0) ? -t : t;
 
     const double t_offset = this->lane_section->road->get_lane_offset(s);
-    return this->lane_section->road->ref_line->get_point(s, t, t_offset);
+    return this->lane_section->road->get_xyz(s, t + t_offset, 0.0);
 }
 
 LaneSection::LaneSection(double s0)
     : s0(s0)
 {
-}
-
-void LaneSection::add_lane(std::shared_ptr<Lane> lane)
-{
-    if (lane->lane_section)
-    {
-        std::cerr << "Error - lane was already associated with a lane section" << std::endl;
-    }
-    lane->lane_section = shared_from_this();
-    this->lanes[lane->id] = lane;
 }
 
 } // namespace odr

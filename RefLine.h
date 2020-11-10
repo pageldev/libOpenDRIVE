@@ -11,7 +11,7 @@ namespace odr
 struct ElevationProfile
 {
     ElevationProfile(double s0, double a, double b, double c, double d);
-    double get_elevation(double s) const;
+    double get(double s) const;
     double get_grad(double s) const;
 
     double s0, a, b, c, d;
@@ -20,12 +20,11 @@ struct ElevationProfile
 struct RefLine
 {
     RefLine() = default;
-    Vec3D get_point(double s, double t = 0, double t_offset = 0) const;
+    Vec3D get_xyz(double s) const;
     Vec3D get_grad(double s) const;
 
-    double get_elevation(double s) const;
-    double get_elevation_grad(double s) const;
-    double project(double x, double y) const;
+    double get_z(double s) const;
+    double get_z_grad(double s) const;
 
     std::shared_ptr<RoadGeometry> get_geometry(double s) const;
 

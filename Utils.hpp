@@ -18,18 +18,55 @@ int sign(T val)
 }
 
 template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
-constexpr T get_dist_sqr(const Vec<T, Dim> a, const Vec<T, Dim> b)
+constexpr T euclDistance(const Vec<T, Dim> a, const Vec<T, Dim> b)
 {
     return std::inner_product(a.begin(), a.end(), b.begin(), T(0), std::plus<T>(), [](T a, T b) {T c = b-a; return c*c; });
 }
 
+template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+constexpr T squaredNorm(const Vec<T, Dim> v)
+{
+    return std::inner_product(v.begin(), v.end(), v.begin(), T(0));
+}
+
+template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+constexpr T norm(const Vec<T, Dim> v)
+{
+    return std::sqrt(squaredNorm<T, Dim>(v));
+}
+
+template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+constexpr Vec<T, Dim> normalize(const Vec<T, Dim> v)
+{
+    Vec<T, Dim> e_v;
+    const T     n = norm(v);
+    std::transform(v.begin(), v.end(), e_v.begin(), [&](const T &a) { return a / n; });
+    return e_v;
+}
+
 template <typename T, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
-Box2D get_bbox_for_s_values(const std::vector<T> &s_values, const std::function<Vec2D(T, T)> &get_point)
+constexpr Vec<T, 3> crossProduct(const Vec<T, 3> a, const Vec<T, 3> b)
+{
+    return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+}
+
+template <typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+constexpr Vec<T, Dim> MatVecMultiplication(const Mat<T, Dim> m, const Vec<T, Dim> v)
+{
+    Vec<T, Dim> res;
+    res.fill(T{0});
+    for (size_t idx = 0; idx < Dim * Dim; idx++)
+        res[idx / Dim] += ((double *)m.data())[idx] * v[idx % Dim];
+    return res;
+}
+
+template <typename T, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+Box2D get_bbox_for_s_values(const std::vector<T> &s_values, const std::function<Vec2D(T)> &get_xyz)
 {
     std::vector<Vec2D> points;
     points.reserve(s_values.size());
     for (const T &s_val : s_values)
-        points.push_back(get_point(s_val, T{0}));
+        points.push_back(get_xyz(s_val));
 
     auto iter_min_max_x = std::minmax_element(points.begin(), points.end(), [](const Vec2D &lhs, const Vec2D &rhs) { return lhs[0] < rhs[0]; });
     auto iter_min_max_y = std::minmax_element(points.begin(), points.end(), [](const Vec2D &lhs, const Vec2D &rhs) { return lhs[1] < rhs[1]; });

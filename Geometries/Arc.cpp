@@ -30,24 +30,18 @@ void Arc::update()
         }
     }
 
-    this->bounding_box = get_bbox_for_s_values<double>(s_extremas, std::bind(&Arc::get_point, this, std::placeholders::_1, std::placeholders::_2));
+    this->bounding_box = get_bbox_for_s_values<double>(s_extremas, std::bind(&Arc::get_xy, this, std::placeholders::_1));
 }
 
-Vec2D Arc::get_point(double s, double t) const
+Vec2D Arc::get_xy(double s) const
 {
     const double angle_at_s = (s - s0) * curvature - M_PI / 2;
     const double r = 1 / curvature;
-    const double xs = (r - t) * std::cos(angle_at_s);
-    const double ys = (r - t) * std::sin(angle_at_s) + r;
+    const double xs = r * std::cos(angle_at_s);
+    const double ys = r * std::sin(angle_at_s) + r;
     const double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
     const double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
     return Vec2D{xt, yt};
-}
-
-double Arc::project(double x, double y) const
-{
-    std::function<double(double)> f_dist = [&](double s) { const Vec2D pt = this->get_point(s, 0.0); return get_dist_sqr(pt, {x,y}); };
-    return golden_section_search(f_dist, s0, s0 + length, 1e-2);
 }
 
 Vec2D Arc::get_grad(double s) const

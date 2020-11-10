@@ -22,14 +22,9 @@ struct RoadGeometryWrapper : public emscripten::wrapper<RoadGeometry>
         return call<void>("update");
     }
 
-    virtual Vec2D get_point(double s, double t) const override
+    virtual Vec2D get_xy(double s) const override
     {
-        return call<Vec2D>("get_point", s, t);
-    }
-
-    virtual double project(double x, double y) const override
-    {
-        return call<double>("project", x, y);
+        return call<Vec2D>("get_xy", s);
     }
 
     virtual Vec2D get_grad(double s) const override
@@ -72,8 +67,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
         .allow_subclass<RoadGeometryWrapper>("RoadGeometryWrapper", emscripten::constructor<double, double, double, double, double, GeometryType, std::shared_ptr<Road>>())
         .function("update", &RoadGeometry::update, emscripten::pure_virtual())
-        .function("get_point", &RoadGeometry::get_point, emscripten::pure_virtual())
-        .function("project", &RoadGeometry::project, emscripten::pure_virtual())
+        .function("get_xy", &RoadGeometry::get_xy, emscripten::pure_virtual())
         .function("get_grad", &RoadGeometry::get_grad, emscripten::pure_virtual())
         .property("type", &RoadGeometry::type)
         .property("s0", &RoadGeometry::s0)
@@ -134,11 +128,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<RefLine>("RefLine")
         .smart_ptr<std::shared_ptr<RefLine>>("shared_ptr<RefLine>")
         .constructor<>()
-        .function("get_point", &RefLine::get_point)
+        .function("get_xyz", &RefLine::get_xyz)
         .function("get_grad", &RefLine::get_grad)
-        .function("get_elevation", &RefLine::get_elevation)
-        .function("get_elevation_grad", &RefLine::get_elevation_grad)
-        .function("project", &RefLine::project)
+        .function("get_z", &RefLine::get_z)
+        .function("get_z_grad", &RefLine::get_z_grad)
         .function("get_geometry", &RefLine::get_geometry)
         .property("geometries", &RefLine::geometries)
         .property("elevation_profiles", &RefLine::elevation_profiles);
@@ -146,6 +139,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<Road>("Road")
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
         .constructor<double, int, int>()
+        .function("get_xyz", &Road::get_xyz)
         .function("get_lane_offset", &Road::get_lane_offset)
         .property("id", &Road::id)
         .property("length", &Road::length)

@@ -112,7 +112,8 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         {
             double                       s0 = lane_section_node.node().attribute("s").as_double();
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
-            road->add_lane_section(lane_section);
+            lane_section->road = road;
+            road->lane_sections[lane_section->s0] = lane_section;
             for (pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane"))
             {
                 int                                          lane_id = lane_node.node().attribute("id").as_int();
@@ -127,7 +128,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                     double d = lane_width_node.node().attribute("d").as_double();
                     lane_widths[s_offset] = std::make_shared<LaneWidth>(s_offset, a, b, c, d);
                 }
-                lane_section->add_lane(std::make_shared<Lane>(lane_id, lane_type, lane_widths));
+                std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, lane_type, lane_widths);
+                lane->lane_section = lane_section;
+                lane_section->lanes[lane->id] = lane;
             }
         }
     }

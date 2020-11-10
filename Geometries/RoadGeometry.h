@@ -16,6 +16,11 @@ using Vec = std::array<T, Dim>;
 using Vec2D = Vec<double, 2>;
 using Vec3D = Vec<double, 3>;
 
+template <typename T, size_t Dim, typename std::enable_if_t<(Dim > 1)> * = nullptr, typename std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr>
+using Mat = std::array<std::array<T, Dim>, Dim>;
+
+using Mat3D = Mat<double, 3>;
+
 struct Box2D
 {
     Box2D();
@@ -42,9 +47,8 @@ struct RoadGeometry
 
     virtual void update() = 0;
 
-    virtual Vec2D  get_point(double s, double t = 0) const = 0;
-    virtual double project(double x, double y) const = 0;
-    virtual Vec2D  get_grad(double s) const = 0;
+    virtual Vec2D get_xy(double s) const = 0;
+    virtual Vec2D get_grad(double s) const = 0;
 
     double s0;
     double x0;

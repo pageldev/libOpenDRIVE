@@ -14,20 +14,14 @@ Line::Line(double s0, double x0, double y0, double hdg0, double length, std::sha
 
 void Line::update()
 {
-    this->bounding_box = get_bbox_for_s_values<double>({s0, s0 + length}, std::bind(&Line::get_point, this, std::placeholders::_1, std::placeholders::_2));
+    this->bounding_box = get_bbox_for_s_values<double>({s0, s0 + length}, std::bind(&Line::get_xy, this, std::placeholders::_1));
 }
 
-Vec2D Line::get_point(double s, double t) const
+Vec2D Line::get_xy(double s) const
 {
-    const double xt = (std::cos(hdg0) * (s - s0)) - (std::sin(hdg0) * t) + x0;
-    const double yt = (std::sin(hdg0) * (s - s0)) + (std::cos(hdg0) * t) + y0;
-    return Vec2D{xt, yt};
-}
-
-double Line::project(double x, double y) const
-{
-    const double s = std::cos(hdg0) * (x - x0) + std::sin(hdg0) * (y - y0) + s0;
-    return std::max(std::min(s, s0 + length), s0);
+    const double x = (std::cos(hdg0) * (s - s0)) + x0;
+    const double y = (std::sin(hdg0) * (s - s0)) + y0;
+    return Vec2D{x, y};
 }
 
 Vec2D Line::get_grad(double s) const

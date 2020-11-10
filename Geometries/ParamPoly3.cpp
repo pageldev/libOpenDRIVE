@@ -30,28 +30,20 @@ void ParamPoly3::update()
         s_extremas.push_back(s_extrema);
     }
 
-    this->bounding_box = get_bbox_for_s_values<double>(s_extremas, std::bind(&ParamPoly3::get_point, this, std::placeholders::_1, std::placeholders::_2));
+    this->bounding_box = get_bbox_for_s_values<double>(s_extremas, std::bind(&ParamPoly3::get_xy, this, std::placeholders::_1));
 }
 
-Vec2D ParamPoly3::get_point(double s, double t) const
+Vec2D ParamPoly3::get_xy(double s) const
 {
     const double p = (s - s0) / length;
     const double xs = aU + bU * p + cU * p * p + dU * p * p * p;
     const double ys = aV + bV * p + cV * p * p + dV * p * p * p;
     const double xs_dp = bU + 2 * cU * p + 3 * dU * p * p;
     const double ys_dp = bV + 2 * cV * p + 3 * dV * p * p;
-    const double x_offs = xs - ((t * ys_dp) / std::sqrt(xs_dp * xs_dp + ys_dp * ys_dp));
-    const double y_offs = ys + ((t * xs_dp) / std::sqrt(xs_dp * xs_dp + ys_dp * ys_dp));
-    const double xt = (std::cos(hdg0) * x_offs) - (std::sin(hdg0) * y_offs) + x0;
-    const double yt = (std::sin(hdg0) * x_offs) + (std::cos(hdg0) * y_offs) + y0;
+    const double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
+    const double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
 
     return Vec2D{xt, yt};
-}
-
-double ParamPoly3::project(double x, double y) const
-{
-    std::function<double(double)> f_dist = [&](double s) { const Vec2D pt = this->get_point(s, 0.0); return get_dist_sqr(pt, {x,y}); };
-    return golden_section_search(f_dist, s0, s0 + length, 1e-2);
 }
 
 Vec2D ParamPoly3::get_grad(double s) const
