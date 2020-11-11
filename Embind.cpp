@@ -127,11 +127,12 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<RefLine>("RefLine")
         .smart_ptr<std::shared_ptr<RefLine>>("shared_ptr<RefLine>")
-        .constructor<>()
+        .constructor<double>()
         .function("get_xyz", &RefLine::get_xyz)
         .function("get_grad", &RefLine::get_grad)
         .function("get_z", &RefLine::get_z)
         .function("get_z_grad", &RefLine::get_z_grad)
+        .function("match", &RefLine::match)
         .function("get_geometry", &RefLine::get_geometry)
         .property("geometries", &RefLine::geometries)
         .property("elevation_profiles", &RefLine::elevation_profiles);

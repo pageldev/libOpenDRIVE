@@ -18,6 +18,11 @@ double ElevationProfile::get_grad(double s) const
     return (b + 2 * c * s + 3 * d * s * s);
 }
 
+RefLine::RefLine(double length)
+    : length(length)
+{
+}
+
 Vec3D RefLine::get_xyz(double s) const
 {
     std::shared_ptr<RoadGeometry> geom = this->get_geometry(s);
@@ -38,6 +43,12 @@ Vec3D RefLine::get_grad(double s) const
         d_xy = geom->get_grad(s);
 
     return Vec3D{d_xy[0], d_xy[1], this->get_z_grad(s)};
+}
+
+double RefLine::match(double x, double y) const
+{
+    std::function<double(double)> f_dist = [&](const double s) { const Vec3D pt = this->get_xyz(s); return euclDistance(Vec2D{pt[0], pt[1]}, {x,y}); };
+    return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
 double RefLine::get_z(double s) const

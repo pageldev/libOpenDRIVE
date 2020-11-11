@@ -38,7 +38,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
         this->roads[road->id] = road;
 
         /* make ref_line - parse road geometries */
-        road->ref_line = std::make_shared<RefLine>();
+        road->ref_line = std::make_shared<RefLine>(road_length);
         pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
         for (pugi::xpath_node geometry_hdr_node : geometry_headers)
         {
