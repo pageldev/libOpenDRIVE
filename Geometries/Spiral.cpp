@@ -69,12 +69,11 @@ Vec2D Spiral::get_xy(double s) const
 
 Vec2D Spiral::get_grad(double s) const
 {
-    const double h1 = std::cos(hdg0);
-    const double h2 = std::sin(hdg0);
-    const double a = std::sqrt(M_PI / std::abs(c_dot));
-    const double dx = h1 * std::cos((M_PI * (s - s0 + s0_spiral) * (s - s0 + s0_spiral)) / (2 * a * a)) - h2 * std::sin((M_PI * (s - s0 + s0_spiral) * (s - s0 + s0_spiral)) / (2 * a * a));
-    const double dy = h2 * std::cos((M_PI * (s - s0 + s0_spiral) * (s - s0 + s0_spiral)) / (2 * a * a)) + h1 * std::sin((M_PI * (s - s0 + s0_spiral) * (s - s0 + s0_spiral)) / (2 * a * a));
-
+    double xs_spiral, ys_spiral, as_spiral;
+    odrSpiral(s - s0 + s0_spiral, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
+    const double hdg = as_spiral + hdg0 - a0_spiral;
+    const double dx = std::cos(hdg);
+    const double dy = std::sin(hdg);
     return {{dx, dy}};
 }
 
