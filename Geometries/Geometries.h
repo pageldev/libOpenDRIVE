@@ -4,3 +4,4 @@
 #include "Arc.h"
 #include "Spiral.h"
 #include "ParamPoly3.h"
+#include "CubicSpline.h"

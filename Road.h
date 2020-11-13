@@ -22,15 +22,15 @@ public:
     Vec3D get_xyz(double s, double t, double z) const;
     Mat3D get_transformation_matrix(double s) const;
 
-    double get_lane_offset(double s) const;
-
     int    id, junction;
     double length;
 
     std::shared_ptr<RefLine> ref_line;
 
     std::map<double, std::shared_ptr<LaneSection>> lane_sections;
-    std::map<double, std::shared_ptr<LaneOffset>>  lane_offsets;
+
+    CubicSpline lane_offset;
+    CubicSpline superelevation;
 };
 
 } // namespace odr

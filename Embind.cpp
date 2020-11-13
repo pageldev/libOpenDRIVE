@@ -57,6 +57,27 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("height", &Box2D::height)
         .property("center", &Box2D::center);
 
+    emscripten::class_<Poly3>("Poly3")
+        .smart_ptr<std::shared_ptr<Poly3>>("shared_ptr<Poly3>")
+        .constructor<double, double, double, double, double>()
+        .function("get", &Poly3::get)
+        .function("get_grad", &Poly3::get_grad)
+        .property("s0", &Poly3::s0)
+        .property("a", &Poly3::a)
+        .property("b", &Poly3::b)
+        .property("c", &Poly3::c)
+        .property("d", &Poly3::d);
+
+    emscripten::register_map<double, std::shared_ptr<Poly3>>("map<double, shared_ptr<Poly3>>");
+
+    emscripten::class_<CubicSpline>("CubicSpline")
+        .constructor<>()
+        .function("size", &CubicSpline::size)
+        .function("get", &CubicSpline::get)
+        .function("get_grad", &CubicSpline::get_grad)
+        .function("get_poly", &CubicSpline::get_poly)
+        .property("polys", &CubicSpline::polys);
+
     emscripten::enum_<GeometryType>("GeometryType")
         .value("Line", GeometryType::Line)
         .value("Spiral", GeometryType::Spiral)
@@ -104,12 +125,12 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Lane>("Lane")
         .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
-        .constructor<int, std::string, std::map<double, std::shared_ptr<LaneWidth>>>()
+        .constructor<int, std::string>()
         .function("get_outer_border_pt", &Lane::get_outer_border_pt)
         .property("id", &Lane::id)
         .property("type", &Lane::type)
         .property("lane_section", &Lane::lane_section)
-        .property("lane_widths", &Lane::lane_widths);
+        .property("lane_width", &Lane::lane_width);
 
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
 
@@ -120,34 +141,31 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("road", &LaneSection::road)
         .property("lanes", &LaneSection::lanes);
 
-    emscripten::register_map<double, std::shared_ptr<ElevationProfile>>("map<double, shared_ptr<ElevationProfile>>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<double, std::shared_ptr<LaneSection>>("map<double, shared_ptr<LaneSection>>");
-    emscripten::register_map<double, std::shared_ptr<LaneOffset>>("map<double, shared_ptr<LaneOffset>>");
 
     emscripten::class_<RefLine>("RefLine")
         .smart_ptr<std::shared_ptr<RefLine>>("shared_ptr<RefLine>")
         .constructor<double>()
         .function("get_xyz", &RefLine::get_xyz)
         .function("get_grad", &RefLine::get_grad)
-        .function("get_z", &RefLine::get_z)
-        .function("get_z_grad", &RefLine::get_z_grad)
         .function("match", &RefLine::match)
         .function("get_geometry", &RefLine::get_geometry)
-        .property("geometries", &RefLine::geometries)
-        .property("elevation_profiles", &RefLine::elevation_profiles);
+        .property("length", &RefLine::length)
+        .property("elevation_profile", &RefLine::elevation_profile)
+        .property("geometries", &RefLine::geometries);
 
     emscripten::class_<Road>("Road")
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
         .constructor<double, int, int>()
         .function("get_xyz", &Road::get_xyz)
-        .function("get_lane_offset", &Road::get_lane_offset)
         .property("id", &Road::id)
-        .property("length", &Road::length)
         .property("junction", &Road::junction)
+        .property("length", &Road::length)
         .property("ref_line", &Road::ref_line)
         .property("lane_sections", &Road::lane_sections)
-        .property("lane_offsets", &Road::lane_offsets);
+        .property("lane_offset", &Road::lane_offset)
+        .property("lane_offset", &Road::superelevation);
 
     emscripten::register_map<int, std::shared_ptr<Road>>("map<int, shared_ptr<Road>>");
 

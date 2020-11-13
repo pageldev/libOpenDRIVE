@@ -229,7 +229,7 @@
                 for (let s = 0; s < road.length; s += PARAMS.resolution)
                     s_vals.push(s);
                 s_vals.push(road.length);
-                const lane_offs_pts = rdp(s_vals.map(s => road.get_xyz(s, road.get_lane_offset(s), 0.0)), PARAMS.resolution);
+                const lane_offs_pts = rdp(s_vals.map(s => road.get_xyz(s, road.lane_offset.get(s), 0.0)), PARAMS.resolution);
                 const lane_offs_geom = new THREE.BufferGeometry().setFromPoints(lane_offs_pts.map(p => new THREE.Vector3(...p)));
                 const lane_offs_material = new THREE.LineBasicMaterial({ color: COLORS.lane_offset });
                 const lane_offs_line = new THREE.Line(lane_offs_geom, lane_offs_material);
@@ -244,8 +244,8 @@
             const world_vec = new THREE.Vector3(0, 0, side_len);
             for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
                 for (const [s0, odr_geom] of stdmapVals(road.ref_line.geometries)) {
-                    const pt0 = new THREE.Vector3(...odr_geom.get_xy(odr_geom.s0), road.ref_line.get_z(odr_geom.s0));
-                    let u_vec = new THREE.Vector3(...odr_geom.get_grad(odr_geom.s0), road.ref_line.get_z_grad(odr_geom.s0));
+                    const pt0 = new THREE.Vector3(...odr_geom.get_xy(odr_geom.s0), road.ref_line.elevation_profile.get(odr_geom.s0));
+                    let u_vec = new THREE.Vector3(...odr_geom.get_grad(odr_geom.s0), road.ref_line.elevation_profile.get_grad(odr_geom.s0));
                     u_vec.normalize().cross(world_vec).multiplyScalar(side_len);
 
                     /* edge plane corner points */
@@ -329,10 +329,8 @@
                         <table>
                             <tr><th>road id</th><th>${userData.road.id}</th></tr>
                             <tr><th>section s0</th><th>${userData.lane.lane_section.s0.toFixed(2)}</th></tr>
-                            <tr><th>lane id</th><th>${userData.lane.id}</th></tr>
-                            <tr><th>type</th><th>${userData.lane.type}</th></tr>
-                            <tr><th>geometry</th><th>${geometry_type.slice(0, -1)}</th></tr>
-                            <tr><th>s/t</th><th>[${s_proj.toFixed(2)}, ${t_offs.toFixed(2)}]</th>
+                            <tr><th>lane</th><th>${userData.lane.id} <span style="color:grey;">${userData.lane.type}</span></th></tr>
+                            <tr><th>s/t</th><th>[${s_proj.toFixed(2)}, ${t_offs.toFixed(2)}] <span style="color:grey;">${geometry_type.slice(0, -1)}</span></th>
                             <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
                         </table>`;
             }

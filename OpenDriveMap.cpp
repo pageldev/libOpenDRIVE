@@ -91,7 +91,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             double b = elevation_node.node().attribute("b").as_double();
             double c = elevation_node.node().attribute("c").as_double();
             double d = elevation_node.node().attribute("d").as_double();
-            road->ref_line->elevation_profiles[s0] = std::make_shared<ElevationProfile>(s0, a, b, c, d);
+            road->ref_line->elevation_profile.polys[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
         }
 
         /* parse lane offsets */
@@ -103,7 +103,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             double b = lane_offset_node.node().attribute("b").as_double();
             double c = lane_offset_node.node().attribute("c").as_double();
             double d = lane_offset_node.node().attribute("d").as_double();
-            road->lane_offsets[s0] = std::make_shared<LaneOffset>(s0, a, b, c, d);
+            road->lane_offset.polys[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
+        }
+
+        /* parse superelevation */
+        pugi::xpath_node_set superelevation_nodes = road_node.node().select_nodes(".//lateralProfile//superelevation");
+        for (pugi::xpath_node superelevation_node : superelevation_nodes)
+        {
+            double s0 = superelevation_node.node().attribute("s").as_double();
+            double a = superelevation_node.node().attribute("a").as_double();
+            double b = superelevation_node.node().attribute("b").as_double();
+            double c = superelevation_node.node().attribute("c").as_double();
+            double d = superelevation_node.node().attribute("d").as_double();
+            road->superelevation.polys[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
         }
 
         /* parse road lane sections and lanes */
@@ -114,11 +126,15 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
             lane_section->road = road;
             road->lane_sections[lane_section->s0] = lane_section;
+
             for (pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane"))
             {
-                int                                          lane_id = lane_node.node().attribute("id").as_int();
-                std::string                                  lane_type = lane_node.node().attribute("type").as_string();
-                std::map<double, std::shared_ptr<LaneWidth>> lane_widths;
+                int                   lane_id = lane_node.node().attribute("id").as_int();
+                std::string           lane_type = lane_node.node().attribute("type").as_string();
+                std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, lane_type);
+                lane->lane_section = lane_section;
+                lane_section->lanes[lane->id] = lane;
+
                 for (pugi::xpath_node lane_width_node : lane_node.node().select_nodes(".//width"))
                 {
                     double s_offset = lane_width_node.node().attribute("sOffset").as_double();
@@ -126,11 +142,8 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file)
                     double b = lane_width_node.node().attribute("b").as_double();
                     double c = lane_width_node.node().attribute("c").as_double();
                     double d = lane_width_node.node().attribute("d").as_double();
-                    lane_widths[s_offset] = std::make_shared<LaneWidth>(s_offset, a, b, c, d);
+                    lane->lane_width.polys[s_offset] = std::make_shared<Poly3>(s_offset, a, b, c, d);
                 }
-                std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, lane_type, lane_widths);
-                lane->lane_section = lane_section;
-                lane_section->lanes[lane->id] = lane;
             }
         }
     }
