@@ -155,7 +155,7 @@
                     obj.dispose();
             }
             for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
-                const lane_secs = stdmapVals(road.lane_sections);
+                const lane_secs = stdmapVals(road.s0_to_lanesection);
 
                 let road_group = new THREE.Group();
                 for (let idx = 0; idx < lane_secs.length; idx++) {
@@ -165,7 +165,7 @@
                     let lanes = [];
                     const lane_sec_len = (idx == lane_secs.length - 1) ? road.length - (lane_secs[idx][1]).s0 : (lane_secs[idx + 1][1]).s0 - (lane_secs[idx][1]).s0;
                     const lane_sec = lane_secs[idx][1];
-                    for (const [lane_id, lane] of stdmapVals(lane_sec.lanes)) {
+                    for (const [lane_id, lane] of stdmapVals(lane_sec.id_to_lane)) {
                         let s_vals = [];
                         for (let s = lane_sec.s0; s < (lane_sec.s0 + lane_sec_len); s += PARAMS.resolution)
                             s_vals.push(s);
@@ -243,7 +243,7 @@
             const side_len = 1.0;
             const world_vec = new THREE.Vector3(0, 0, side_len);
             for (const [road_id, road] of stdmapVals(OpenDriveMap.roads)) {
-                for (const [s0, odr_geom] of stdmapVals(road.ref_line.geometries)) {
+                for (const [s0, odr_geom] of stdmapVals(road.ref_line.s0_to_geometry)) {
                     const pt0 = new THREE.Vector3(...odr_geom.get_xy(odr_geom.s0), road.ref_line.elevation_profile.get(odr_geom.s0));
                     let u_vec = new THREE.Vector3(...odr_geom.get_grad(odr_geom.s0), road.ref_line.elevation_profile.get_grad(odr_geom.s0));
                     u_vec.normalize().cross(world_vec).multiplyScalar(side_len);

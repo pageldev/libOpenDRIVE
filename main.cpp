@@ -1,17 +1,18 @@
 #include "Lanes.h"
+#include "Math.hpp"
 #include "OpenDriveMap.h"
 #include "Road.h"
-#include "Math.hpp"
 
 #include <fstream>
-#include <iostream>
 #include <memory>
+#include <stdio.h>
+#include <vector>
 
 int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        std::cerr << "ERROR: too few arguments" << std::endl;
+        printf("ERROR: too few arguments\n");
         return -1;
     }
     odr::OpenDriveMap odr(argv[1]);
@@ -19,7 +20,7 @@ int main(int argc, char** argv)
     std::vector<odr::Vec3D> pts;
     for (std::shared_ptr<odr::Road> road : odr.get_roads())
     {
-        std::cout << "road: " << road->id << std::endl;
+        printf("road: %d\n", road->id);
         odr::LaneSectionSet lanesections = road->get_lanesections();
         for (auto lanesec_iter = lanesections.begin(); lanesec_iter != lanesections.end(); lanesec_iter++)
         {
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
             }
         }
     }
-    std::cout << "Finished\n";
+    printf("Finished\n");
 
     if (argc == 3)
     {
