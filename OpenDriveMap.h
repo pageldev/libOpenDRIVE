@@ -13,6 +13,7 @@ class OpenDriveMap
 {
 public:
     OpenDriveMap(std::string xodr_file);
+    RoadSet get_roads();
 
     const std::string                    xodr_file;
     std::map<int, std::shared_ptr<Road>> roads;

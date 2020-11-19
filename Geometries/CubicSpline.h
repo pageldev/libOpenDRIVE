@@ -4,7 +4,6 @@
 
 namespace odr
 {
-
 struct Poly3
 {
     Poly3(double s0, double a, double b, double c, double d);
@@ -22,10 +21,9 @@ struct CubicSpline
     double get(double s) const;
     double get_grad(double s) const;
 
-    // std::shared_ptr<Poly3> get_poly(double s);
     std::shared_ptr<const Poly3> get_poly(double s) const;
 
-    std::map<double /*s0*/, std::shared_ptr<Poly3>> polys;
+    std::map<double, std::shared_ptr<Poly3>> s0_to_poly;
 };
 
 } // namespace odr

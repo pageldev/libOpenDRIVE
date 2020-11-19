@@ -1,33 +1,43 @@
 #pragma once
 
-#include "Road.h"
+#include "Geometries/CubicSpline.h"
+#include "Utils.hpp"
 
 #include <map>
 #include <memory>
+#include <set>
 
 namespace odr
 {
-
+struct Road;
 struct Lane;
-
-struct LaneSection : public std::enable_shared_from_this<LaneSection>
-{
-    LaneSection(double s0);
-
-    double                               s0;
-    std::shared_ptr<Road>                road;
-    std::map<int, std::shared_ptr<Lane>> lanes;
-};
+struct LaneSection;
 
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, std::string type);
     Vec3D get_outer_border_pt(double s) const;
 
-    int                          id;
-    std::string                  type;
+    int         id;
+    std::string type;
+    CubicSpline lane_width;
+
     std::shared_ptr<LaneSection> lane_section;
-    CubicSpline                  lane_width;
 };
+
+using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::id>>;
+
+struct LaneSection : public std::enable_shared_from_this<LaneSection>
+{
+    LaneSection(double s0);
+    LaneSet get_lanes();
+
+    double                s0;
+    std::shared_ptr<Road> road;
+
+    std::map<int, std::shared_ptr<Lane>> id_to_lane;
+};
+
+using LaneSectionSet = std::set<std::shared_ptr<LaneSection>, SharedPtrCmp<LaneSection, double, &LaneSection::s0>>;
 
 } // namespace odr

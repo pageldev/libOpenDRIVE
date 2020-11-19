@@ -8,20 +8,23 @@
 
 namespace odr
 {
+struct RoadGeometry;
 
 struct RefLine
 {
     RefLine(double length);
+    RoadGeometrySet get_geometries();
 
-    Vec3D                         get_xyz(double s) const;
-    Vec3D                         get_grad(double s) const;
-    double                        match(double x, double y) const;
-    std::shared_ptr<RoadGeometry> get_geometry(double s) const;
+    std::shared_ptr<const RoadGeometry> get_geometry(double s) const;
+
+    Vec3D  get_xyz(double s) const;
+    Vec3D  get_grad(double s) const;
+    double match(double x, double y) const;
 
     double      length;
     CubicSpline elevation_profile;
 
-    std::map<double, std::shared_ptr<RoadGeometry>> geometries;
+    std::map<double, std::shared_ptr<RoadGeometry>> s0_to_geometry;
 };
 
 } // namespace odr
