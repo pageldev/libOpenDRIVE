@@ -1,15 +1,17 @@
 #pragma once
 
 #include "Geometries/CubicSpline.h"
+#include "Math.hpp"
 #include "Utils.hpp"
 
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 
 namespace odr
 {
-struct Road;
+class Road;
 struct Lane;
 struct LaneSection;
 

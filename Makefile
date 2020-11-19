@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++14 $(INCLUDE_DIRS)
+CFLAGS = -std=c++14 -Wall $(INCLUDE_DIRS)
 INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
 THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build

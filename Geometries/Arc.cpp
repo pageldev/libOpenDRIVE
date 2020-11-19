@@ -1,5 +1,5 @@
 #include "Arc.h"
-#include "Utils.hpp"
+#include "Math.hpp"
 
 #include <cmath>
 #include <functional>
@@ -7,9 +7,8 @@
 
 namespace odr
 {
-
-Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double curvature, std::shared_ptr<Road> road)
-    : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Arc, road), curvature(curvature)
+Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double curvature, std::shared_ptr<Road> road) :
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Arc, road), curvature(curvature)
 {
     this->update();
 }
@@ -23,7 +22,8 @@ void Arc::update()
     {
         for (int n = -n_border; n < n_border; n++)
         {
-            const double s_extrema = is_x ? -((-2 * curvature * s0 + 2 * hdg0 - 2 * M_PI * n + M_PI) / (2 * curvature)) : (curvature * s0 - hdg0 + M_PI * n) / (curvature);
+            const double s_extrema =
+                is_x ? -((-2 * curvature * s0 + 2 * hdg0 - 2 * M_PI * n + M_PI) / (2 * curvature)) : (curvature * s0 - hdg0 + M_PI * n) / (curvature);
             if (std::isnan(s_extrema) || s_extrema < s0 || s_extrema > (s0 + length))
                 continue;
             s_extremas.push_back(s_extrema);

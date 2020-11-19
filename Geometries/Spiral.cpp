@@ -1,6 +1,6 @@
 #include "Spiral.h"
 #include "Spiral/odrSpiral.h"
-#include "Utils.hpp"
+#include "Math.hpp"
 
 #include <algorithm>
 #include <array>
@@ -11,9 +11,8 @@
 
 namespace odr
 {
-
-Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end, std::shared_ptr<Road> road)
-    : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral, road), curv_start(curv_start), curv_end(curv_end)
+Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end, std::shared_ptr<Road> road) :
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral, road), curv_start(curv_start), curv_end(curv_end)
 {
     this->update();
 }
@@ -27,22 +26,31 @@ void Spiral::update()
     s0_spiral = curv_start / c_dot;
     odrSpiral(s0_spiral, c_dot, &x0_spiral, &y0_spiral, &a0_spiral);
 
-    const std::function<double(int)> f_s_x_extrema_1 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) - curv_start) / c_dot) + s0; };
-    const std::function<double(int)> f_s_x_extrema_2 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) + curv_start) / c_dot) + s0; };
-    const std::function<double(int)> f_s_y_extrema_1 = [&](const int n) { return (-(std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) + curv_start) / c_dot) + s0; };
-    const std::function<double(int)> f_s_y_extrema_2 = [&](const int n) { return ((std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) - curv_start) / c_dot) + s0; };
+    const std::function<double(int)> f_s_x_extrema_1 = [&](const int n) {
+        return ((std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) - curv_start) / c_dot) + s0;
+    };
+    const std::function<double(int)> f_s_x_extrema_2 = [&](const int n) {
+        return (-(std::sqrt(curv_start * curv_start + c_dot * (-2 * hdg0 - 2 * M_PI * n + M_PI)) + curv_start) / c_dot) + s0;
+    };
+    const std::function<double(int)> f_s_y_extrema_1 = [&](const int n) {
+        return (-(std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) + curv_start) / c_dot) + s0;
+    };
+    const std::function<double(int)> f_s_y_extrema_2 = [&](const int n) {
+        return ((std::sqrt(curv_start * curv_start + 2 * c_dot * (-hdg0 - M_PI * n)) - curv_start) / c_dot) + s0;
+    };
 
-    std::array<const std::function<double(int)> *, 2> f_s_extremas;
+    std::array<const std::function<double(int)>*, 2> f_s_extremas;
 
     std::vector<double> s_extremas{s0, s0 + length};
     for (bool is_x : {true, false})
     {
-        const double n_end = is_x ? (2 * curv_start * length + c_dot * length * length - M_PI) / (2 * M_PI) : (2 * curv_start * length + c_dot * length * length) / (2 * M_PI);
+        const double n_end = is_x ? (2 * curv_start * length + c_dot * length * length - M_PI) / (2 * M_PI)
+                                  : (2 * curv_start * length + c_dot * length * length) / (2 * M_PI);
         if (is_x)
             f_s_extremas = {&f_s_x_extrema_1, &f_s_x_extrema_2};
         else
             f_s_extremas = {&f_s_y_extrema_1, &f_s_y_extrema_2};
-        for (const std::function<double(int)> *f_s_extrema : f_s_extremas)
+        for (const std::function<double(int)>* f_s_extrema : f_s_extremas)
         {
             for (int n = std::floor(-std::abs(n_end)) - 1; n < std::ceil(std::abs(n_end)) + 1; n++)
             {

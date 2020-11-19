@@ -1,10 +1,10 @@
 #pragma once
 
-#include <array>
 #include <map>
 #include <memory>
-#include <string>
+#include <set>
 
+#include "../Math.hpp"
 #include "../Utils.hpp"
 
 namespace odr
