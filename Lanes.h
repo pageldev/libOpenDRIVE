@@ -32,7 +32,8 @@ using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::i
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
-    LaneSet get_lanes();
+    LaneSet               get_lanes();
+    std::map<int, double> get_lane_borders(double s) const;
 
     double                s0;
     std::shared_ptr<Road> road;
