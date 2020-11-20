@@ -2,6 +2,7 @@
 
 #include "Geometries/CubicSpline.h"
 #include "Geometries/RoadGeometry.h"
+#include "Math.hpp"
 
 #include <map>
 #include <memory>

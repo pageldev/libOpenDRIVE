@@ -1,7 +1,12 @@
 #include "Line.h"
 #include "Math.hpp"
+#include "RoadGeometry.h"
+#include "Utils.hpp"
 
+#include <array>
 #include <cmath>
+#include <functional>
+#include <vector>
 
 namespace odr
 {

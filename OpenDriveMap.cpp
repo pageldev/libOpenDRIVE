@@ -1,17 +1,18 @@
 #include "OpenDriveMap.h"
-#include "Geometries/Geometries.h"
+#include "Geometries/Arc.h"
+#include "Geometries/CubicSpline.h"
+#include "Geometries/Line.h"
+#include "Geometries/ParamPoly3.h"
+#include "Geometries/Spiral.h"
 #include "Lanes.h"
 #include "RefLine.h"
 #include "Road.h"
-#include "Math.hpp"
 
-#include "json11/json11.hpp"
 #include "pugixml/pugixml.hpp"
 
-#include <algorithm>
-#include <fstream>
 #include <iostream>
-#include <vector>
+#include <string>
+#include <utility>
 
 namespace odr
 {

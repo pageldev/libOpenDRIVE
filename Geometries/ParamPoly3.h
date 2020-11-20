@@ -4,6 +4,8 @@
 
 namespace odr
 {
+class Road;
+
 struct ParamPoly3 : public RoadGeometry
 {
     ParamPoly3(double                s0,

@@ -1,7 +1,9 @@
 #include "Road.h"
 #include "RefLine.h"
 
-#include <cstring>
+#include <array>
+#include <math.h>
+#include <utility>
 
 namespace odr
 {

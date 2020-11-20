@@ -1,7 +1,7 @@
 #include "RoadGeometry.h"
 
+#include <algorithm>
 #include <cmath>
-#include <cstdlib>
 
 namespace odr
 {

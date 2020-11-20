@@ -2,6 +2,8 @@
 #include "Road.h"
 
 #include <iterator>
+#include <stdexcept>
+#include <utility>
 
 namespace odr
 {

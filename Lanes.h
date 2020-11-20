@@ -12,7 +12,6 @@
 namespace odr
 {
 class Road;
-struct Lane;
 struct LaneSection;
 
 struct Lane : public std::enable_shared_from_this<Lane>

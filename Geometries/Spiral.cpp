@@ -1,12 +1,11 @@
 #include "Spiral.h"
-#include "Spiral/odrSpiral.h"
 #include "Math.hpp"
+#include "Spiral/odrSpiral.h"
+#include "Utils.hpp"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <functional>
-#include <limits>
 #include <vector>
 
 namespace odr

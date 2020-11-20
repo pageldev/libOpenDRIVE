@@ -1,8 +1,12 @@
 #include "Arc.h"
 #include "Math.hpp"
+#include "RoadGeometry.h"
+#include "Utils.hpp"
 
+#include <array>
 #include <cmath>
 #include <functional>
+#include <initializer_list>
 #include <vector>
 
 namespace odr

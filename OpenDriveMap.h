@@ -8,7 +8,6 @@
 
 namespace odr
 {
-
 class OpenDriveMap
 {
 public:

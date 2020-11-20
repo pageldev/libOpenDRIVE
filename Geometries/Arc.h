@@ -1,9 +1,14 @@
 #pragma once
 
+#include "Math.hpp"
 #include "RoadGeometry.h"
+
+#include <memory>
 
 namespace odr
 {
+class Road;
+
 struct Arc : public RoadGeometry
 {
     Arc(double s0, double x0, double y0, double hdg0, double length, double curvature, std::shared_ptr<Road> road);

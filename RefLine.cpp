@@ -1,6 +1,10 @@
 #include "RefLine.h"
 #include "Geometries/RoadGeometry.h"
 #include "Math.hpp"
+#include "Utils.hpp"
+
+#include <functional>
+#include <utility>
 
 namespace odr
 {

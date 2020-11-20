@@ -1,5 +1,7 @@
 #include "CubicSpline.h"
 
+#include <utility>
+
 namespace odr
 {
 Poly3::Poly3(double s0, double a, double b, double c, double d) : s0(s0), a(a), b(b), c(c), d(d) {}

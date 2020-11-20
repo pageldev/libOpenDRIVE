@@ -1,6 +1,8 @@
 #include "ParamPoly3.h"
 #include "Math.hpp"
+#include "Utils.hpp"
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <vector>
