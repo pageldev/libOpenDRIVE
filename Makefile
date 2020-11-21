@@ -29,7 +29,7 @@ wasm:
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(WASMFLAGS) -o $(BUILD_DIR)/libOpenDrive.$(LIB_SUFFIX) $(CPP_FILES) ./Thirdparty/pugixml/pugixml.cpp ./Thirdparty/json11/json11.cpp
 
-main: dir $(LIB)
+main: dir lib
 	$(CC) $(CFLAGS) -L$(BUILD_DIR) -lOpenDrive -o $(BUILD_DIR)/main main.cpp
 
 $(BUILD_DIR)/%.o: %.cpp

@@ -18,6 +18,7 @@ struct Poly3
 struct CubicSpline
 {
     CubicSpline() = default;
+    virtual ~CubicSpline() = default;
 
     size_t size() const;
     double get(double s) const;

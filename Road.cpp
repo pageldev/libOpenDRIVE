@@ -7,6 +7,26 @@
 
 namespace odr
 {
+double Crossfall::get_crossfall(double s, double t) const
+{
+    std::shared_ptr<const Poly3> poly = this->get_poly(s);
+    if (poly)
+    {
+        Side side = Side::Both;
+        if (this->sides.find(poly->s0) != this->sides.end())
+            side = this->sides.at(poly->s0);
+
+        if (t > 0 /*left*/ && side == Side::Right)
+            return 0;
+        else if (t < 0 /*right*/ && side == Side::Left)
+            return 0;
+
+        return poly->get(s) * -static_cast<double>(sign(t));
+    }
+
+    return 0;
+}
+
 Road::Road(double length, int id, int junction) : id(id), junction(junction), length(length) {}
 
 std::shared_ptr<LaneSection> Road::get_lanesection(double s)

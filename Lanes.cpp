@@ -7,7 +7,7 @@
 
 namespace odr
 {
-Lane::Lane(int id, std::string type) : id(id), type(type) {}
+Lane::Lane(int id, bool level, std::string type) : id(id), level(level), type(type) {}
 
 Vec3D Lane::get_outer_border_pt(double s) const
 {

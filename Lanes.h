@@ -16,14 +16,18 @@ struct LaneSection;
 
 struct Lane : public std::enable_shared_from_this<Lane>
 {
-    Lane(int id, std::string type);
+    Lane(int id, bool level, std::string type);
     Vec3D get_outer_border_pt(double s) const;
 
-    int         id;
+    int  id;
+    bool level = false;
+    int  predecessor = 0;
+    int  successor = 0;
+
     std::string type;
-    CubicSpline lane_width;
 
     std::shared_ptr<LaneSection> lane_section;
+    CubicSpline                  lane_width;
 };
 
 using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::id>>;
