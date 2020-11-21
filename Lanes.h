@@ -32,6 +32,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
     LaneSet               get_lanes();
+    std::shared_ptr<Lane> get_lane(double s, double t);
     std::map<int, double> get_lane_borders(double s) const;
 
     double                s0;

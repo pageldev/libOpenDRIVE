@@ -37,6 +37,26 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
+std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
+{
+    std::map<int, double> lane_id_to_outer_brdr = this->get_lane_borders(s);
+
+    for (auto iter = lane_id_to_outer_brdr.begin(); iter != lane_id_to_outer_brdr.begin(); iter++)
+    {
+        const int    lane_id = iter->first;
+        const double outer_brdr = iter->second;
+
+        if (lane_id == 0)
+            continue;
+        else if (lane_id < 0 && t >= outer_brdr && t < std::next(iter)->second)
+            return this->id_to_lane.at(lane_id);
+        else if (lane_id > 0 && t <= outer_brdr && t > std::prev(iter)->second)
+            return this->id_to_lane.at(lane_id);
+    }
+
+    return nullptr;
+}
+
 std::map<int, double> LaneSection::get_lane_borders(double s) const
 {
     auto id_lane_iter0 = this->id_to_lane.find(0);
