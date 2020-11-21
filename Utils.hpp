@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <map>
 #include <type_traits>
 #include <vector>
 
@@ -89,6 +90,34 @@ T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
         return 0.5 * (a + d);
 
     return 0.5 * (c + b);
+}
+
+inline bool get_lane_id_from_borders(double t, const std::map<int /*id*/, double /*outer brdr*/>& id_to_border, int& lane_id)
+{
+    /* returns false if point is out of road bounds - requires lane #0 to be present */
+    for (auto iter = id_to_border.begin(); iter != id_to_border.end(); iter++)
+    {
+        const int    cur_lane_id = iter->first;
+        const double outer_brdr = iter->second;
+
+        if (cur_lane_id == 0 && id_to_border.at(0) == t)
+        {
+            lane_id = 0;
+            return true;
+        }
+        else if (cur_lane_id < 0 && t >= outer_brdr && t < std::next(iter)->second)
+        {
+            lane_id = cur_lane_id;
+            return true;
+        }
+        else if (cur_lane_id > 0 && t <= outer_brdr && t > std::prev(iter)->second)
+        {
+            lane_id = cur_lane_id;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace odr

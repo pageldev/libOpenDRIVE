@@ -17,7 +17,7 @@ struct LaneSection;
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
-    Vec3D get_outer_border_pt(double s) const;
+    double get_outer_border(double s) const;
 
     int  id;
     bool level = false;

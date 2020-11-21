@@ -9,7 +9,7 @@ namespace odr
 {
 Lane::Lane(int id, bool level, std::string type) : id(id), level(level), type(type) {}
 
-Vec3D Lane::get_outer_border_pt(double s) const
+double Lane::get_outer_border(double s) const
 {
     double t = 0.0;
 
@@ -23,7 +23,7 @@ Vec3D Lane::get_outer_border_pt(double s) const
     t = (this->id < 0) ? -t : t;
 
     const double t_offset = this->lane_section->road->lane_offset.get(s);
-    return this->lane_section->road->get_xyz(s, t + t_offset, 0.0);
+    return t + t_offset;
 }
 
 LaneSection::LaneSection(double s0) : s0(s0) {}
@@ -37,22 +37,14 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
+/* returns nullptr if pt out of road bounds */
 std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
 {
     std::map<int, double> lane_id_to_outer_brdr = this->get_lane_borders(s);
 
-    for (auto iter = lane_id_to_outer_brdr.begin(); iter != lane_id_to_outer_brdr.begin(); iter++)
-    {
-        const int    lane_id = iter->first;
-        const double outer_brdr = iter->second;
-
-        if (lane_id == 0)
-            continue;
-        else if (lane_id < 0 && t >= outer_brdr && t < std::next(iter)->second)
-            return this->id_to_lane.at(lane_id);
-        else if (lane_id > 0 && t <= outer_brdr && t > std::prev(iter)->second)
-            return this->id_to_lane.at(lane_id);
-    }
+    int lane_id = 0;
+    if (get_lane_id_from_borders(t, lane_id_to_outer_brdr, lane_id))
+        return this->id_to_lane.at(lane_id);
 
     return nullptr;
 }
