@@ -21,15 +21,14 @@ RoadGeometrySet RefLine::get_geometries()
 
 std::shared_ptr<const RoadGeometry> RefLine::get_geometry(double s) const
 {
-    std::shared_ptr<const RoadGeometry> geom = nullptr;
     if (this->s0_to_geometry.size() > 0)
     {
         auto target_geom_iter = this->s0_to_geometry.upper_bound(s);
         if (target_geom_iter != s0_to_geometry.begin())
             target_geom_iter--;
-        geom = target_geom_iter->second;
+        return target_geom_iter->second;
     }
-    return geom;
+    return nullptr;
 }
 
 Vec3D RefLine::get_xyz(double s) const

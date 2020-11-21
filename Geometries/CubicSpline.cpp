@@ -34,15 +34,14 @@ double CubicSpline::get_grad(double s) const
 
 std::shared_ptr<const Poly3> CubicSpline::get_poly(double s) const
 {
-    std::shared_ptr<const Poly3> poly = nullptr;
     if (this->s0_to_poly.size() > 0)
     {
         auto target_poly_iter = this->s0_to_poly.upper_bound(s);
         if (target_poly_iter != this->s0_to_poly.begin())
             target_poly_iter--;
-        poly = target_poly_iter->second;
+        return target_poly_iter->second;
     }
-    return poly;
+    return nullptr;
 }
 
 } // namespace odr

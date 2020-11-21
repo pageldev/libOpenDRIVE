@@ -9,6 +9,27 @@ namespace odr
 {
 Road::Road(double length, int id, int junction) : id(id), junction(junction), length(length) {}
 
+std::shared_ptr<LaneSection> Road::get_lanesection(double s)
+{
+    if (this->s0_to_lanesection.size() > 0)
+    {
+        auto target_lane_sec_iter = this->s0_to_lanesection.upper_bound(s);
+        if (target_lane_sec_iter != this->s0_to_lanesection.begin())
+            target_lane_sec_iter--;
+        return target_lane_sec_iter->second;
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<Lane> Road::get_lane(double s, double t)
+{
+    std::shared_ptr<LaneSection> lanesection = this->get_lanesection(s);
+    if (!lanesection)
+        return nullptr;
+    return lanesection->get_lane(s, t);
+}
+
 LaneSectionSet Road::get_lanesections()
 {
     LaneSectionSet lanesections;
