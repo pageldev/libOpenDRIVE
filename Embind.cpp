@@ -1,4 +1,5 @@
 #ifdef __EMSCRIPTEN__
+    #include "Geometries/Geometries.h"
     #include "Geometries/RoadGeometry.h"
     #include "Lanes.h"
     #include "OpenDriveMap.h"
@@ -119,11 +120,13 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("lane_width", &Lane::lane_width);
 
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
+    emscripten::register_map<int, double>("map<int, double>");
 
     emscripten::class_<LaneSection>("LaneSection")
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
         .constructor<double>()
         .function("get_lanes", &LaneSection::get_lanes)
+        .function("get_lane_borders", &LaneSection::get_lane_borders)
         .property("s0", &LaneSection::s0)
         .property("road", &LaneSection::road)
         .property("id_to_lane", &LaneSection::id_to_lane);

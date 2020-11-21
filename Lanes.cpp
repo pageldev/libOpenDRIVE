@@ -49,7 +49,7 @@ std::map<int, double> LaneSection::get_lane_borders(double s) const
     auto id_lane_iter1 = std::next(id_lane_iter0);
     for (auto iter = id_lane_iter1; iter != this->id_to_lane.end(); iter++)
     {
-        const double lane_width = iter->second->lane_width.get(s);
+        const double lane_width = iter->second->lane_width.get(s - this->s0);
         id_to_outer_border[iter->first] = (iter == id_lane_iter1) ? lane_width : lane_width + id_to_outer_border.at(std::prev(iter)->first);
     }
 
@@ -57,9 +57,16 @@ std::map<int, double> LaneSection::get_lane_borders(double s) const
     std::map<int, std::shared_ptr<Lane>>::const_reverse_iterator r_id_lane_iter_1(id_lane_iter0);
     for (auto r_iter = r_id_lane_iter_1; r_iter != id_to_lane.rend(); r_iter++)
     {
-        const double lane_width = r_iter->second->lane_width.get(s);
-        id_to_outer_border[r_iter->first] = (r_iter == r_id_lane_iter_1) ? lane_width : lane_width + id_to_outer_border.at(std::prev(r_iter)->first);
+        const double lane_width = r_iter->second->lane_width.get(s - this->s0);
+        id_to_outer_border[r_iter->first] =
+            (r_iter == r_id_lane_iter_1) ? -lane_width : -lane_width + id_to_outer_border.at(std::prev(r_iter)->first);
     }
+
+    const double t_offset = this->road->lane_offset.get(s);
+    for (auto& id_border : id_to_outer_border)
+        id_border.second += t_offset;
+
+    id_to_outer_border[0] = t_offset;
 
     return id_to_outer_border;
 }
