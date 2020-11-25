@@ -28,6 +28,22 @@ double Lane::get_outer_border(double s) const
 
 LaneSection::LaneSection(double s0) : s0(s0) {}
 
+double LaneSection::get_length() const
+{
+    if (this->road && !this->road->s0_to_lanesection.empty())
+    {
+        const auto lane_sec_iter = this->road->s0_to_lanesection.find(this->s0);
+        if (lane_sec_iter != this->road->s0_to_lanesection.end())
+        {
+            const bool   is_last = (lane_sec_iter == std::prev(this->road->s0_to_lanesection.end()));
+            const double length = is_last ? this->road->length - this->s0 : std::next(lane_sec_iter)->first - this->s0;
+            return length;
+        }
+        return 0.0;
+    }
+    return 0.0;
+}
+
 LaneSet LaneSection::get_lanes()
 {
     LaneSet lanes;
