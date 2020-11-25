@@ -59,6 +59,7 @@ public:
     LaneSectionSet               get_lanesections();
 
     Vec3D get_xyz(double s, double t, double z) const;
+    Vec3D get_surface_pt(double s, double t);
     Mat3D get_transformation_matrix(double s) const;
 
     int    id;

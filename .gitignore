@@ -2,5 +2,7 @@
 *.xodr
 *.so
 settings.json
+compile_commands.json
+.vscode/
 build/
 Visualizer/src
