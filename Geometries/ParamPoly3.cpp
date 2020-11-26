@@ -9,21 +9,20 @@
 
 namespace odr
 {
-ParamPoly3::ParamPoly3(double                s0,
-                       double                x0,
-                       double                y0,
-                       double                hdg0,
-                       double                length,
-                       double                aU,
-                       double                bU,
-                       double                cU,
-                       double                dU,
-                       double                aV,
-                       double                bV,
-                       double                cV,
-                       double                dV,
-                       std::shared_ptr<Road> road) :
-    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::ParamPoly3, road),
+ParamPoly3::ParamPoly3(double s0,
+                       double x0,
+                       double y0,
+                       double hdg0,
+                       double length,
+                       double aU,
+                       double bU,
+                       double cU,
+                       double dU,
+                       double aV,
+                       double bV,
+                       double cV,
+                       double dV) :
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::ParamPoly3),
     aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV)
 {
     this->update();

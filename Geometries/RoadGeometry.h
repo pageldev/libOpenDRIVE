@@ -20,7 +20,7 @@ enum class GeometryType
 
 struct RoadGeometry
 {
-    RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type, std::shared_ptr<Road> road);
+    RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
     virtual ~RoadGeometry();
 
     virtual void update() = 0;
@@ -34,9 +34,8 @@ struct RoadGeometry
     double hdg0;
     double length;
 
-    GeometryType          type;
-    std::shared_ptr<Road> road;
-    Box2D                 bounding_box;
+    GeometryType type;
+    Box2D        bounding_box;
 };
 
 using RoadGeometrySet = std::set<std::shared_ptr<RoadGeometry>, SharedPtrCmp<RoadGeometry, double, &RoadGeometry::s0>>;

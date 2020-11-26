@@ -11,7 +11,7 @@ class Road;
 
 struct Spiral : public RoadGeometry
 {
-    Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end, std::shared_ptr<Road> road);
+    Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end);
     void update() override;
 
     Vec2D get_xy(double s) const override;

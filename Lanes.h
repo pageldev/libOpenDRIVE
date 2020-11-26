@@ -17,7 +17,6 @@ struct LaneSection;
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
-    double get_outer_border(double s) const;
 
     int  id;
     bool level = false;
@@ -25,9 +24,7 @@ struct Lane : public std::enable_shared_from_this<Lane>
     int  successor = 0;
 
     std::string type;
-
-    std::shared_ptr<LaneSection> lane_section;
-    CubicSpline                  lane_width;
+    CubicSpline lane_width;
 };
 
 using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::id>>;
@@ -35,14 +32,9 @@ using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::i
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
-    
-    double                get_length() const;
-    LaneSet               get_lanes();
-    std::shared_ptr<Lane> get_lane(double s, double t);
-    std::map<int, double> get_lane_borders(double s) const;
+    LaneSet get_lanes();
 
-    double                s0;
-    std::shared_ptr<Road> road;
+    double s0;
 
     std::map<int, std::shared_ptr<Lane>> id_to_lane;
 };

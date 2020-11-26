@@ -90,18 +90,18 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             std::string    geometry_type = geometry_node.name();
             if (geometry_type == "line")
             {
-                road->ref_line->s0_to_geometry[s0] = std::make_shared<Line>(s0, x0, y0, hdg0, length, road);
+                road->ref_line->s0_to_geometry[s0] = std::make_shared<Line>(s0, x0, y0, hdg0, length);
             }
             else if (geometry_type == "spiral")
             {
                 double curv_start = geometry_node.attribute("curvStart").as_double();
                 double curv_end = geometry_node.attribute("curvEnd").as_double();
-                road->ref_line->s0_to_geometry[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end, road);
+                road->ref_line->s0_to_geometry[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
             }
             else if (geometry_type == "arc")
             {
                 double curvature = geometry_node.attribute("curvature").as_double();
-                road->ref_line->s0_to_geometry[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature, road);
+                road->ref_line->s0_to_geometry[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature);
             }
             else if (geometry_type == "paramPoly3")
             {
@@ -113,7 +113,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 double bV = geometry_node.attribute("bV").as_double();
                 double cV = geometry_node.attribute("cV").as_double();
                 double dV = geometry_node.attribute("dV").as_double();
-                road->ref_line->s0_to_geometry[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, road);
+                road->ref_line->s0_to_geometry[s0] = std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV);
             }
             else
             {
@@ -177,7 +177,6 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             double s0 = lane_section_node.node().attribute("s").as_double();
 
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
-            lane_section->road = road;
             road->s0_to_lanesection[lane_section->s0] = lane_section;
 
             for (pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane"))
@@ -187,7 +186,6 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 bool        level = lane_node.node().attribute("level").as_bool();
 
                 std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, level, lane_type);
-                lane->lane_section = lane_section;
                 lane_section->id_to_lane[lane->id] = lane;
 
                 for (pugi::xpath_node lane_width_node : lane_node.node().select_nodes(".//width"))

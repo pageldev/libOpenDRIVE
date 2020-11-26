@@ -10,8 +10,8 @@
 
 namespace odr
 {
-Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end, std::shared_ptr<Road> road) :
-    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral, road), curv_start(curv_start), curv_end(curv_end)
+Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end) :
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral), curv_start(curv_start), curv_end(curv_end)
 {
     this->update();
 }

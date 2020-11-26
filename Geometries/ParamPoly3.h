@@ -8,20 +8,19 @@ class Road;
 
 struct ParamPoly3 : public RoadGeometry
 {
-    ParamPoly3(double                s0,
-               double                x0,
-               double                y0,
-               double                hdg0,
-               double                length,
-               double                aU,
-               double                bU,
-               double                cU,
-               double                dU,
-               double                aV,
-               double                bV,
-               double                cV,
-               double                dV,
-               std::shared_ptr<Road> road);
+    ParamPoly3(double s0,
+               double x0,
+               double y0,
+               double hdg0,
+               double length,
+               double aU,
+               double bU,
+               double cU,
+               double dU,
+               double aV,
+               double bV,
+               double cV,
+               double dV);
     void update() override;
 
     Vec2D get_xy(double s) const override;

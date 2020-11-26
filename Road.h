@@ -54,9 +54,12 @@ class Road : public std::enable_shared_from_this<Road>
 {
 public:
     Road(double length, int id, int junction);
-    std::shared_ptr<Lane>        get_lane(double s, double t);
+
     std::shared_ptr<LaneSection> get_lanesection(double s);
     LaneSectionSet               get_lanesections();
+
+    std::shared_ptr<Lane> get_lane(double s, double t);
+    std::map<int, double> get_lane_borders(double s);
 
     Vec3D get_xyz(double s, double t, double z) const;
     Vec3D get_surface_pt(double s, double t);
