@@ -207,12 +207,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
     }
 }
 
+ConstRoadSet OpenDriveMap::get_roads() const
+{
+    ConstRoadSet roads;
+    for (const auto& id_road : this->roads)
+        roads.insert(id_road.second);
+    return roads;
+}
+
 RoadSet OpenDriveMap::get_roads()
 {
     RoadSet roads;
     for (const auto& id_road : this->roads)
         roads.insert(id_road.second);
-
     return roads;
 }
 

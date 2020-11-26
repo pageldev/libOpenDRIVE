@@ -38,6 +38,7 @@ struct RoadGeometry
     Box2D        bounding_box;
 };
 
+using ConstRoadGeometrySet = std::set<std::shared_ptr<const RoadGeometry>, SharedPtrCmp<const RoadGeometry, double, &RoadGeometry::s0>>;
 using RoadGeometrySet = std::set<std::shared_ptr<RoadGeometry>, SharedPtrCmp<RoadGeometry, double, &RoadGeometry::s0>>;
 
 } // namespace odr

@@ -55,14 +55,19 @@ class Road : public std::enable_shared_from_this<Road>
 public:
     Road(double length, int id, int junction);
 
-    std::shared_ptr<LaneSection> get_lanesection(double s);
-    LaneSectionSet               get_lanesections();
+    ConstLaneSectionSet get_lanesections() const;
+    LaneSectionSet      get_lanesections();
 
-    std::shared_ptr<Lane> get_lane(double s, double t);
-    std::map<int, double> get_lane_borders(double s);
+    std::shared_ptr<const LaneSection> get_lanesection(double s) const;
+    std::shared_ptr<LaneSection>       get_lanesection(double s);
+
+    std::shared_ptr<const Lane> get_lane(double s, double t) const;
+    std::shared_ptr<Lane>       get_lane(double s, double t);
+
+    std::map<int, double> get_lane_borders(double s) const;
 
     Vec3D get_xyz(double s, double t, double z) const;
-    Vec3D get_surface_pt(double s, double t);
+    Vec3D get_surface_pt(double s, double t) const;
     Mat3D get_transformation_matrix(double s) const;
 
     int    id;
@@ -83,6 +88,7 @@ public:
     std::map<double, SpeedRecord>                  s0_to_speed;
 };
 
+using ConstRoadSet = std::set<std::shared_ptr<const Road>, SharedPtrCmp<const Road, int, &Road::id>>;
 using RoadSet = std::set<std::shared_ptr<Road>, SharedPtrCmp<Road, int, &Road::id>>;
 
 } // namespace odr

@@ -14,7 +14,9 @@ struct RoadGeometry;
 struct RefLine
 {
     RefLine(double length);
-    RoadGeometrySet get_geometries();
+
+    ConstRoadGeometrySet get_geometries() const;
+    RoadGeometrySet      get_geometries();
 
     std::shared_ptr<const RoadGeometry> get_geometry(double s) const;
 

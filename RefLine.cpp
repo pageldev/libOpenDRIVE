@@ -10,6 +10,15 @@ namespace odr
 {
 RefLine::RefLine(double length) : length(length) {}
 
+ConstRoadGeometrySet RefLine::get_geometries() const
+{
+    ConstRoadGeometrySet geometries;
+    for (const auto& s0_geometry : this->s0_to_geometry)
+        geometries.insert(s0_geometry.second);
+
+    return geometries;
+}
+
 RoadGeometrySet RefLine::get_geometries()
 {
     RoadGeometrySet geometries;

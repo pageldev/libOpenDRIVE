@@ -30,7 +30,25 @@ double Crossfall::get_crossfall(double s, double t) const
 
 Road::Road(double length, int id, int junction) : id(id), junction(junction), length(length) {}
 
-std::shared_ptr<LaneSection> Road::get_lanesection(double s)
+ConstLaneSectionSet Road::get_lanesections() const
+{
+    ConstLaneSectionSet lanesections;
+    for (const auto& s0_lansection : this->s0_to_lanesection)
+        lanesections.insert(s0_lansection.second);
+
+    return lanesections;
+}
+
+LaneSectionSet Road::get_lanesections()
+{
+    LaneSectionSet lanesections;
+    for (const auto& s0_lansection : this->s0_to_lanesection)
+        lanesections.insert(s0_lansection.second);
+
+    return lanesections;
+}
+
+std::shared_ptr<const LaneSection> Road::get_lanesection(double s) const
 {
     if (this->s0_to_lanesection.size() > 0)
     {
@@ -43,10 +61,16 @@ std::shared_ptr<LaneSection> Road::get_lanesection(double s)
     return nullptr;
 }
 
-std::shared_ptr<Lane> Road::get_lane(double s, double t)
+std::shared_ptr<LaneSection> Road::get_lanesection(double s)
 {
-    std::map<int, double>        id_to_border = this->get_lane_borders(s);
-    std::shared_ptr<LaneSection> lanesection = this->get_lanesection(s);
+    std::shared_ptr<LaneSection> lanesection = std::const_pointer_cast<LaneSection>(static_cast<const Road&>(*this).get_lanesection(s));
+    return lanesection;
+}
+
+std::shared_ptr<const Lane> Road::get_lane(double s, double t) const
+{
+    std::map<int, double>              id_to_border = this->get_lane_borders(s);
+    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
 
     for (auto iter = id_to_border.begin(); iter != id_to_border.end(); iter++)
     {
@@ -74,18 +98,15 @@ std::shared_ptr<Lane> Road::get_lane(double s, double t)
     return nullptr;
 }
 
-LaneSectionSet Road::get_lanesections()
+std::shared_ptr<Lane> Road::get_lane(double s, double t)
 {
-    LaneSectionSet lanesections;
-    for (const auto& s0_lansection : this->s0_to_lanesection)
-        lanesections.insert(s0_lansection.second);
-
-    return lanesections;
+    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const Road&>(*this).get_lane(s, t));
+    return lane;
 }
 
-std::map<int, double> Road::get_lane_borders(double s)
+std::map<int, double> Road::get_lane_borders(double s) const
 {
-    std::shared_ptr<LaneSection> lanesection = this->get_lanesection(s);
+    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
     if (!lanesection)
         return {};
 
@@ -129,9 +150,9 @@ Vec3D Road::get_xyz(double s, double t, double z) const
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, double t)
+Vec3D Road::get_surface_pt(double s, double t) const
 {
-    std::shared_ptr<LaneSection> lanesection = this->get_lanesection(s);
+    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
     if (!lanesection || t == 0)
         return this->get_xyz(s, t, 0.0);
 

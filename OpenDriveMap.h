@@ -12,7 +12,9 @@ class OpenDriveMap
 {
 public:
     OpenDriveMap(std::string xodr_file);
-    RoadSet get_roads();
+
+    ConstRoadSet get_roads() const;
+    RoadSet      get_roads();
 
     std::string xodr_file;
     std::string proj4;
