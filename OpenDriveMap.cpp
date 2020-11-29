@@ -177,6 +177,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             double s0 = lane_section_node.node().attribute("s").as_double();
 
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
+            lane_section->road = road;
             road->s0_to_lanesection[lane_section->s0] = lane_section;
 
             for (pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane"))

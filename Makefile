@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS)
+CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS) 
 INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
 THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build
@@ -28,7 +28,7 @@ wasm: dir $(OBJ_FILES)
 	cp $(BUILD_DIR)/libOpenDrive.* Visualizer/
 
 
-main: dir lib
+main: dir x64
 	$(CC) $(CFLAGS) -L$(BUILD_DIR) -lOpenDrive -o $(BUILD_DIR)/main main.cpp
 
 $(BUILD_DIR)/%.o: %.cpp

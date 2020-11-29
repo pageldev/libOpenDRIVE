@@ -21,11 +21,18 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
+    emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<int, std::shared_ptr<Road>>("map<int, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
     emscripten::register_map<double, std::shared_ptr<LaneSection>>("map<double, shared_ptr<LaneSection>>");
 
     /* classes */
+    emscripten::class_<RoadGeometry>("RoadGeometry")
+        .smart_ptr<std::shared_ptr<RoadGeometry>>("shared_ptr<RoadGeometry>")
+        .function("get_xy", &RoadGeometry::get_xy)
+        .function("get_grad", &RoadGeometry::get_grad)
+        .property("s0", &RoadGeometry::s0);
+
     emscripten::class_<CubicSpline>("CubicSpline")
         .constructor<>()
         .smart_ptr<std::shared_ptr<CubicSpline>>("shared_ptr<CubicSpline>")
@@ -39,11 +46,14 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_xyz", &RefLine::get_xyz)
         .function("get_grad", &RefLine::get_grad)
         .function("match", &RefLine::match)
-        .property("length", &RefLine::length);
+        .property("length", &RefLine::length)
+        .property("elevation_profile", &RefLine::elevation_profile)
+        .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
     emscripten::class_<LaneSection>("LaneSection")
         .constructor<double>()
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
+        .function("get_lane_vertices", &LaneSection::get_lane_vertices)
         .property("id_to_lane", &LaneSection::id_to_lane);
 
     emscripten::class_<LaneVertices>("LaneVertices")
@@ -51,7 +61,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("vertices", &LaneVertices::vertices)
         .property("indices", &LaneVertices::indices)
         .property("lane_id", &LaneVertices::lane_id)
-        .property("lansection_s0", &LaneVertices::lansection_s0);
+        .property("type", &LaneVertices::type);
 
     emscripten::class_<Road>("Road")
         .constructor<double, int, int>()
@@ -61,7 +71,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_lane_borders", &Road::get_lane_borders)
         .function("get_xyz", &Road::get_xyz)
         .function("get_surface_pt", &Road::get_surface_pt)
-        .function("get_lane_vertices", &Road::get_lane_vertices)
         .property("id", &Road::id)
         .property("junction", &Road::junction)
         .property("length", &Road::length)
