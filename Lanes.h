@@ -11,7 +11,17 @@
 
 namespace odr
 {
+class Road;
 struct LaneSection;
+
+struct LaneVertices
+{
+    std::vector<Vec3D>  vertices;
+    std::vector<size_t> indices;
+
+    int         lane_id;
+    std::string type;
+};
 
 struct Lane : public std::enable_shared_from_this<Lane>
 {
@@ -36,7 +46,10 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();
 
-    double s0;
+    std::vector<LaneVertices> get_lane_vertices(double resolution) const;
+
+    double              s0;
+    std::weak_ptr<Road> road;
 
     std::map<int, std::shared_ptr<Lane>> id_to_lane;
 };
