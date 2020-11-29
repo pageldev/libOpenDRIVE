@@ -92,4 +92,70 @@ T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
     return 0.5 * (c + b);
 }
 
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+void rdp(
+    const std::vector<Vec<T, Dim>>& points, const T epsilon, std::vector<Vec<T, Dim>>& out, size_t start_idx = 0, size_t step = 1, int _end_idx = -1)
+{
+    size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
+    size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
+
+    if ((last_idx + 1 - start_idx) < 2)
+        return;
+
+    /* find the point with the maximum distance from line BETWEEN start and end */
+    T      d_max(0);
+    size_t d_max_idx = 0;
+    for (size_t idx = start_idx + step; idx < last_idx; idx += step)
+    {
+        T dx = points.at(last_idx)[0] - points.at(start_idx)[0];
+        T dy = points.at(last_idx)[1] - points.at(start_idx)[1];
+
+        // Normalise
+        T mag = std::pow(std::pow(dx, 2.0) + std::pow(dy, 2.0), 0.5);
+        if (mag > 0.0)
+        {
+            dx /= mag;
+            dy /= mag;
+        }
+
+        const T pvx = points.at(idx)[0] - points.at(start_idx)[0];
+        const T pvy = points.at(idx)[1] - points.at(start_idx)[1];
+
+        // Get dot product (project pv onto normalized direction)
+        const T pvdot = dx * pvx + dy * pvy;
+
+        // Scale line direction vector
+        const T dsx = pvdot * dx;
+        const T dsy = pvdot * dy;
+
+        // Subtract this from pv
+        const T ax = pvx - dsx;
+        const T ay = pvy - dsy;
+
+        const T d = std::pow(std::pow(ax, 2.0) + std::pow(ay, 2.0), 0.5);
+        if (d > d_max)
+        {
+            d_max = d;
+            d_max_idx = idx;
+        }
+    }
+
+    if (d_max > epsilon)
+    {
+        std::vector<Vec<T, Dim>> rec_results_1;
+        rdp<T, Dim>(points, epsilon, rec_results_1, start_idx, step, d_max_idx + 1);
+        std::vector<Vec<T, Dim>> rec_results_2;
+        rdp<T, Dim>(points, epsilon, rec_results_2, d_max_idx, step, end_idx);
+
+        out.assign(rec_results_1.begin(), rec_results_1.end() - 1);
+        out.insert(out.end(), rec_results_2.begin(), rec_results_2.end());
+    }
+    else
+    {
+        out.clear();
+        out.push_back(points.at(start_idx));
+        out.push_back(points.at(last_idx));
+    }
+}
+
 } // namespace odr
