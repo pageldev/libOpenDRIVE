@@ -5,4 +5,4 @@ settings.json
 compile_commands.json
 .vscode/
 build/
-Visualizer/src
+Visualizer/libOpenDrive.js
