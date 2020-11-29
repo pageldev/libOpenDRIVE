@@ -1,8 +1,11 @@
 #include "Road.h"
 #include "RefLine.h"
 
+#include "earcut/earcut.hpp"
+
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <math.h>
 #include <utility>
 
@@ -240,6 +243,74 @@ Mat3D Road::get_transformation_matrix(double s) const
     const Mat3D trans_mat{{{e_t[0], e_z[0], p0[0]}, {e_t[1], e_z[1], p0[1]}, {e_t[2], e_z[2], p0[2]}}};
 
     return trans_mat;
+}
+
+std::vector<LaneVertices> Road::get_lane_vertices(double resolution) const
+{
+    std::vector<LaneVertices> lane_vertices_road;
+
+    auto ls_begin = this->s0_to_lanesection.begin();
+    auto ls_end = this->s0_to_lanesection.end();
+    for (auto s0_lanesec_iter = ls_begin; s0_lanesec_iter != ls_end; s0_lanesec_iter++)
+    {
+        std::shared_ptr<const LaneSection> lanesec = s0_lanesec_iter->second;
+
+        const double lanesec_s0 = lanesec->s0;
+        const bool   is_last = (s0_lanesec_iter == std::prev(ls_end));
+        const double lanesec_len = is_last ? this->length - lanesec_s0 : std::next(s0_lanesec_iter)->first - lanesec_s0;
+
+        const size_t num_s_vals = static_cast<size_t>(lanesec_len / resolution) + 1;
+        const size_t num_lanes = lanesec->id_to_lane.size();
+        const size_t num_samples = num_lanes * num_s_vals;
+
+        /*
+         * first store lane border points interleaved, e.g.
+         *  p0   p1   p3  p4     outer border pts lane #1 at
+         *  | -2 | -1 | 0 |   ->     start idx = 2
+         *  p5   p6   p7  p8         using step = 4
+         */
+        std::vector<Vec3D> all_lane_outer_brdr_pts;
+        all_lane_outer_brdr_pts.reserve(num_samples);
+        for (double s = lanesec_s0; s < lanesec_s0 + lanesec_len; s += resolution)
+        {
+            std::map<int, double> lane_borders = this->get_lane_borders(s);
+            if (lane_borders.size() != num_lanes)
+                throw std::runtime_error("unexpected number of lanes");
+            for (const auto& id_t_brdr : lane_borders)
+                all_lane_outer_brdr_pts.push_back(this->get_surface_pt(s, id_t_brdr.second));
+        }
+
+        /* extract and simplify lane border lines */
+        std::map<int, std::vector<Vec3D>> lane_outer_border_line;
+        for (size_t start_idx = 0; start_idx < num_lanes; start_idx++)
+        {
+            std::vector<Vec3D> simplified_outer_lane_border_pts;
+            rdp(all_lane_outer_brdr_pts, resolution, simplified_outer_lane_border_pts, start_idx, num_lanes);
+            const int lane_id = std::next(lanesec->id_to_lane.begin(), start_idx)->first;
+            lane_outer_border_line[lane_id] = simplified_outer_lane_border_pts;
+        }
+
+        /* assemble meshes */
+        for (auto id_pts_iter = lane_outer_border_line.begin(); id_pts_iter != lane_outer_border_line.end(); id_pts_iter++)
+        {
+            const int id = id_pts_iter->first;
+            if (id == 0)
+                continue;
+
+            std::vector<std::vector<Vec3D>> lane_outline;
+            lane_outline.push_back(std::vector<Vec3D>(id_pts_iter->second.rbegin(), id_pts_iter->second.rend()));
+            if (id < 0)
+                lane_outline.at(0).insert(lane_outline.at(0).end(), std::next(id_pts_iter)->second.begin(), std::next(id_pts_iter)->second.end());
+            else
+                lane_outline.at(0).insert(lane_outline.at(0).end(), std::prev(id_pts_iter)->second.begin(), std::prev(id_pts_iter)->second.end());
+            lane_outline.at(0).push_back(lane_outline.at(0).front());
+
+            std::vector<size_t> indices = mapbox::earcut<size_t>(lane_outline);
+            lane_vertices_road.push_back({lane_outline.at(0), indices, id, lanesec_s0});
+        }
+    }
+
+    return lane_vertices_road;
 }
 
 } // namespace odr

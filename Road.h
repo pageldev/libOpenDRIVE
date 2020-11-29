@@ -50,6 +50,15 @@ struct SpeedRecord
     std::string unit;
 };
 
+struct LaneVertices
+{
+    std::vector<Vec3D>  vertices;
+    std::vector<size_t> indices;
+
+    int    lane_id;
+    double lansection_s0;
+};
+
 class Road : public std::enable_shared_from_this<Road>
 {
 public:
@@ -69,6 +78,8 @@ public:
     Vec3D get_xyz(double s, double t, double z) const;
     Vec3D get_surface_pt(double s, double t) const;
     Mat3D get_transformation_matrix(double s) const;
+
+    std::vector<LaneVertices> get_lane_vertices(double resolution) const;
 
     int    id;
     int    junction;
