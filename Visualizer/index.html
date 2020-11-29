@@ -30,8 +30,7 @@
 
 <body>
     <div id="bottom_info"></div>
-    <input id="xodr_file_input" type="file" style="visibility:hidden"
-        onchange="on_file_load(this.files[0].name, true)" />
+    <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
     <script src="./utils.js"></script>
@@ -40,7 +39,6 @@
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
 
     <script>
-        var xodr_file = './data.xodr';
         var bottom_info = document.getElementById('bottom_info');
 
         var PARAMS = {
@@ -123,19 +121,27 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            on_file_load(xodr_file);
+            fetch("./data.xodr").then((file_data) => {
+                file_data.text().then((file_text) => {
+                    file_load(file_text, false);
+                });
+            });
         });
 
-        function on_file_load(xodr_file, clear_map) {
-            fetch(xodr_file).then((file_data) => {
-                file_data.text().then((file_text) => {
-                    if (clear_map)
-                        ModuleOpenDrive['FS_unlink']('./data.xodr');
-                    ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
-                    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr");
-                    load_odr_map(clear_map);
-                })
-            });
+        function file_load(file_text, clear_map) {
+            if (clear_map)
+                ModuleOpenDrive['FS_unlink']('./data.xodr');
+            ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
+            OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr");
+            load_odr_map(clear_map);
+        }
+
+        function on_file_select(file) {
+            let file_reader = new FileReader();
+            file_reader.onload = () => {
+                file_load(file_reader.result, true);
+            }
+            file_reader.readAsText(file);
         }
 
         function load_odr_map(clear_map = true, fit_view = true) {
