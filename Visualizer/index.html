@@ -158,7 +158,13 @@
                 let road_group = new THREE.Group();
                 for (let [s0, lanesec] of get_std_map_entries(road.s0_to_lanesection)) {
                     let lane_sec_group = new THREE.Group();
-                    const lanesec_vertices = get_std_vec_entries(lanesec.get_lane_vertices(PARAMS.resolution));
+                    let lanesec_vertices = null;
+                    try {
+                        lanesec_vertices = get_std_vec_entries(lanesec.get_lane_vertices(PARAMS.resolution));
+                    } catch (error) {
+                        console.log(`could not get lanesection vertices #${road_id}/${s0}`);
+                        continue;
+                    }
                     for (const lane_vertices of lanesec_vertices) {
                         const vertices = get_std_vec_entries(lane_vertices.vertices);
                         const indices = get_std_vec_entries(lane_vertices.indices);
