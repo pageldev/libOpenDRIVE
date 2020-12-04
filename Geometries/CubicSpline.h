@@ -11,6 +11,7 @@ struct Poly3
     Poly3(double s0, double a, double b, double c, double d);
     double get(double s) const;
     double get_grad(double s) const;
+    double get_max(std::pair<double, double> range) const;
 
     double s0, a, b, c, d;
 };
@@ -23,6 +24,7 @@ struct CubicSpline
     size_t size() const;
     double get(double s) const;
     double get_grad(double s) const;
+    double get_max(std::pair<double, double> range) const;
 
     std::shared_ptr<const Poly3> get_poly(double s) const;
 
