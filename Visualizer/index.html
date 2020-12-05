@@ -52,7 +52,8 @@
         var COLORS = {
             lane: 0x0069c0,
             lane_section: 0x42a5f5,
-            road: 0x80d6ff,
+            road: 0xffffff,
+            road_highlight: 0x80d6ff,
             outline: 0x808080,
             ref_line: 0xaab6fe,
             lane_offset: 0x00701a,
@@ -121,7 +122,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./data.xodr").then((file_data) => {
+            fetch("./aachen.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -172,7 +173,7 @@
                         /* lane mesh */
                         const lane_geom = new THREE.BufferGeometry().setFromPoints(vertices.map(p => new THREE.Vector3(...p)));
                         lane_geom.setIndex(indices, null, 3);
-                        const lane_material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0 });
+                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, transparent: true, opacity: OPACITIES.road });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
                         lane_mesh.userData = { road_id, lansection_s0: s0, lane_id: lane_vertices.lane_id, lane_type: lane_vertices.type, road, lane_sec_group, road_group };
                         lane_sec_group.add(lane_mesh);
@@ -185,7 +186,6 @@
                     }
                     road_group.add(lane_sec_group);
                 }
-                road_group.visible = false;
                 mesh_group.add(road_group);
 
                 /* ref line */
@@ -221,11 +221,12 @@
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.userData.road_group.visible = false;
+                        INTERSECTED.userData.road_group.renderOrder = 0;
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); n.material.depthTest = true; } });
                     }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.userData.road_group.visible = true;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); } });
+                    INTERSECTED.userData.road_group.renderOrder = 1;
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); n.material.depthTest = false; } });
                     INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; n.material.color.set(COLORS.lane_section); } });
                     INTERSECTED.material.color.set(COLORS.lane);
                     INTERSECTED.material.opacity = OPACITIES.lane;
@@ -233,7 +234,8 @@
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.userData.road_group.visible = false;
+                    INTERSECTED.userData.road_group.renderOrder = 0;
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); n.material.depthTest = true; } });
                 }
                 INTERSECTED = null;
                 bottom_info.style.display = "none";
