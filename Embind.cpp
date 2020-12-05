@@ -20,7 +20,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_map<int, double>("map<int, double>");
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
-    emscripten::register_map<int, LaneVertices>("map<LaneVertices>");
+    emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<int, std::shared_ptr<Road>>("map<int, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
