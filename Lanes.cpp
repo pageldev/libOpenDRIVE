@@ -86,13 +86,14 @@ std::map<int, LaneVertices> LaneSection::get_lane_vertices(double resolution) co
                 if ((idx + 1) % step_size == 0)
                     continue;
 
-                id_lane_vertices.second.indices.push_back(idx);
-                id_lane_vertices.second.indices.push_back(idx - step_size);
-                id_lane_vertices.second.indices.push_back(idx - step_size + 1);
+                /* make sure triangle face is pointing up */
+                std::vector<size_t> indices;
+                if (lane_id > 0)
+                    indices = std::vector<size_t>{idx, idx - step_size, idx - step_size + 1, idx, idx - step_size + 1, idx + 1};
+                else
+                    indices = std::vector<size_t>{idx, idx - step_size + 1, idx - step_size, idx, idx + 1, idx - step_size + 1};
 
-                id_lane_vertices.second.indices.push_back(idx);
-                id_lane_vertices.second.indices.push_back(idx - step_size + 1);
-                id_lane_vertices.second.indices.push_back(idx + 1);
+                id_lane_vertices.second.indices.insert(id_lane_vertices.second.indices.end(), indices.begin(), indices.end());
             }
 
             id_lane_vertices.second.lane_id = lane_id;
