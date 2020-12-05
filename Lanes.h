@@ -46,7 +46,7 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();
 
-    std::vector<LaneVertices> get_lane_vertices(double resolution) const;
+    std::map<int, LaneVertices> get_lane_vertices(double resolution) const;
 
     double              s0;
     std::weak_ptr<Road> road;
