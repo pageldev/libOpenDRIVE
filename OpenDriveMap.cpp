@@ -199,6 +199,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     lane->lane_width.s0_to_poly[s_offset] = std::make_shared<Poly3>(s_offset, a, b, c, d);
                 }
 
+                for (pugi::xpath_node lane_height_node : lane_node.node().select_nodes(".//height"))
+                {
+                    double s_offset = lane_height_node.node().attribute("sOffset").as_double();
+                    double inner = lane_height_node.node().attribute("inner").as_double();
+                    double outer = lane_height_node.node().attribute("outer").as_double();
+                    lane->s0_to_height_offset[s_offset] = HeightOffset{inner, outer};
+                }
+
                 if (pugi::xml_node node = lane_node.node().select_node(".//link/predecessor").node())
                     lane->predecessor = node.attribute("id").as_int();
                 if (pugi::xml_node node = lane_node.node().select_node(".//link/successor").node())

@@ -9,18 +9,18 @@
 
 namespace odr
 {
-double Crossfall::get_crossfall(double s, double t) const
+double Crossfall::get_crossfall(double s, bool on_left_side) const
 {
     std::shared_ptr<const Poly3> poly = this->get_poly(s);
     if (poly)
     {
-        Side side = Side::Both;
+        Side side = Side::Both; // applicable side of the road
         if (this->sides.find(poly->s0) != this->sides.end())
             side = this->sides.at(poly->s0);
 
-        if (t > 0 /*left*/ && side == Side::Right)
+        if (on_left_side && side == Side::Right)
             return 0;
-        else if (t < 0 /*right*/ && side == Side::Left)
+        else if (!on_left_side && side == Side::Left)
             return 0;
 
         return poly->get(s);

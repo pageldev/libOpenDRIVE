@@ -31,7 +31,7 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
-std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) const
+std::map<int, std::vector<Vec3D>> LaneSection::get_lane_outlines(double resolution) const
 {
     if (auto road_ptr = this->road.lock())
     {
@@ -43,64 +43,98 @@ std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) cons
         const double next_s0 = is_last ? road_ptr->length : std::next(s0_lanesec_iter)->first;
         const double lanesec_len = next_s0 - this->s0;
 
-        const size_t num_s_vals = static_cast<size_t>(lanesec_len / resolution) + 1;
-        const size_t num_lanes = this->id_to_lane.size();
-        const size_t num_samples = num_lanes * num_s_vals;
-
         std::vector<double> s_vals;
         for (double s = this->s0; s < this->s0 + lanesec_len; s += resolution)
             s_vals.push_back(s);
         s_vals.push_back(next_s0 - (1e-9));
 
-        /*
-         * first store lane border points interleaved, e.g.
-         *  p0   p1   p3  p4     outer border pts lane #1 at
-         *  | -2 | -1 | 0 |   ->     start idx = 2
-         *  p5   p6   p7  p8         using step = 4
-         */
-        std::vector<Vec3D> all_lane_outer_brdr_pts;
-        all_lane_outer_brdr_pts.reserve(num_samples);
+        std::map<int, std::vector<Vec3D>> lane_id_to_outer_brdr_line;
+        std::map<int, std::vector<Vec3D>> lane_id_to_inner_brdr_line;
         for (const double& s : s_vals)
         {
-            std::map<int, double> lane_borders = road_ptr->get_lane_borders(s);
-            if (lane_borders.size() != num_lanes)
-                throw std::runtime_error("unexpected number of lanes");
-            for (const auto& id_t_brdr : lane_borders)
-                all_lane_outer_brdr_pts.push_back(road_ptr->get_surface_pt(s, id_t_brdr.second));
+            const std::map<int, double> lane_borders = road_ptr->get_lane_borders(s);
+            for (auto id_brdr_iter = lane_borders.begin(); id_brdr_iter != lane_borders.end(); id_brdr_iter++)
+            {
+                const int lane_id = id_brdr_iter->first;
+                if (lane_id == 0)
+                    continue;
+
+                const double t_outer_brdr = id_brdr_iter->second;
+                const double t_inner_brdr = (lane_id > 0) ? std::prev(id_brdr_iter)->second : std::next(id_brdr_iter)->second;
+
+                double h_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * t_inner_brdr;
+                double h_outer_brdr = 0;
+                if (this->id_to_lane.at(lane_id)->level)
+                {
+                    const double superelev = road_ptr->superelevation.get(s); // cancel out superelevation
+                    h_outer_brdr = h_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
+                }
+                else
+                {
+                    h_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * t_outer_brdr;
+                }
+
+                if (this->id_to_lane.at(lane_id)->s0_to_height_offset.size() > 0)
+                {
+                    const std::map<double, HeightOffset>& height_offs = this->id_to_lane.at(lane_id)->s0_to_height_offset;
+                    auto                                  s0_height_offs_iter = height_offs.upper_bound(s - this->s0);
+                    if (s0_height_offs_iter != height_offs.begin())
+                        s0_height_offs_iter--;
+
+                    h_inner_brdr += s0_height_offs_iter->second.inner;
+                    h_outer_brdr += s0_height_offs_iter->second.outer;
+                }
+
+                lane_id_to_inner_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_inner_brdr, h_inner_brdr));
+                lane_id_to_outer_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_outer_brdr, h_outer_brdr));
+            }
         }
 
-        /* extract and simplify lane border lines */
-        std::map<int, std::vector<Vec3D>> lane_outer_border_line;
-        for (size_t start_idx = 0; start_idx < num_lanes; start_idx++)
+        std::map<int, std::vector<Vec3D>> lane_id_to_outline;
+        for (const auto& id_lane : this->id_to_lane)
         {
-            std::vector<Vec3D> simplified_outer_lane_border_pts;
-            rdp(all_lane_outer_brdr_pts, resolution, simplified_outer_lane_border_pts, start_idx, num_lanes);
-            const int lane_id = std::next(this->id_to_lane.begin(), start_idx)->first;
-            lane_outer_border_line[lane_id] = simplified_outer_lane_border_pts;
-        }
-
-        /* assemble meshes */
-        std::vector<LaneVertices> lane_vertices;
-        for (auto id_pts_iter = lane_outer_border_line.begin(); id_pts_iter != lane_outer_border_line.end(); id_pts_iter++)
-        {
-            const int id = id_pts_iter->first;
-            if (id == 0)
+            const int lane_id = id_lane.first;
+            if (lane_id == 0)
                 continue;
 
-            std::vector<std::vector<Vec3D>> lane_outline;
-            lane_outline.push_back(std::vector<Vec3D>(id_pts_iter->second.rbegin(), id_pts_iter->second.rend()));
-            if (id < 0)
-                lane_outline.at(0).insert(lane_outline.at(0).end(), std::next(id_pts_iter)->second.begin(), std::next(id_pts_iter)->second.end());
-            else
-                lane_outline.at(0).insert(lane_outline.at(0).end(), std::prev(id_pts_iter)->second.begin(), std::prev(id_pts_iter)->second.end());
-            lane_outline.at(0).push_back(lane_outline.at(0).front());
+            const std::vector<Vec3D>& inner_brdr_line = lane_id_to_inner_brdr_line.at(lane_id);
+            const std::vector<Vec3D>& outer_brdr_line = lane_id_to_outer_brdr_line.at(lane_id);
 
-            std::vector<size_t> indices = mapbox::earcut<size_t>(lane_outline);
-            lane_vertices.push_back({lane_outline.at(0), indices, id, this->id_to_lane.at(id)->type});
+            std::vector<Vec3D> simplified_inner_brdr_line;
+            rdp(inner_brdr_line, resolution, simplified_inner_brdr_line);
+
+            std::vector<Vec3D> simplified_outer_brdr_line;
+            rdp(outer_brdr_line, resolution, simplified_outer_brdr_line);
+
+            lane_id_to_outline[lane_id] = std::vector<Vec3D>(simplified_inner_brdr_line.rbegin(), simplified_inner_brdr_line.rend());
+            lane_id_to_outline.at(lane_id).insert(
+                lane_id_to_outline.at(lane_id).end(), simplified_outer_brdr_line.begin(), simplified_outer_brdr_line.end());
+            lane_id_to_outline.at(lane_id).push_back(simplified_inner_brdr_line.back());
         }
-        return lane_vertices;
+
+        return lane_id_to_outline;
     }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
     return {};
+}
+
+std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) const
+{
+    std::vector<LaneVertices>         lane_vertices;
+    std::map<int, std::vector<Vec3D>> lane_id_to_outline = this->get_lane_outlines(resolution);
+    for (const auto& id_outline : lane_id_to_outline)
+    {
+        const int                       lane_id = id_outline.first;
+        std::vector<std::vector<Vec3D>> lane_outline{id_outline.second};
+        std::vector<size_t>             indices = mapbox::earcut<size_t>(lane_outline);
+        lane_vertices.push_back({id_outline.second, indices, lane_id, this->id_to_lane.at(lane_id)->type});
+    }
+
+    return lane_vertices;
 }
 
 } // namespace odr

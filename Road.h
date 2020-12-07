@@ -23,7 +23,7 @@ struct Crossfall : public CubicSpline
     };
 
     Crossfall() = default;
-    double get_crossfall(double s, double t) const;
+    double get_crossfall(double s, bool on_left_side) const;
 
     std::map<double, Side> sides;
 };
