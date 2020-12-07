@@ -54,6 +54,9 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();
 
+    std::shared_ptr<const Lane> get_lane(double s, double t, double* t_outer_brdr = nullptr) const;
+    std::shared_ptr<Lane>       get_lane(double s, double t, double* t_outer_brdr = nullptr);
+
     std::map<int, std::vector<Vec3D>> get_lane_outlines(double resolution) const;
     std::vector<LaneVertices>         get_lane_vertices(double resolution) const;
 

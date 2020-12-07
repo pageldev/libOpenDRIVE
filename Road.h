@@ -61,8 +61,8 @@ public:
     std::shared_ptr<const LaneSection> get_lanesection(double s) const;
     std::shared_ptr<LaneSection>       get_lanesection(double s);
 
-    std::shared_ptr<const Lane> get_lane(double s, double t) const;
-    std::shared_ptr<Lane>       get_lane(double s, double t);
+    std::shared_ptr<const Lane> get_lane(double s, double t, double* t_outer_brdr = nullptr) const;
+    std::shared_ptr<Lane>       get_lane(double s, double t, double* t_outer_brdr = nullptr);
 
     std::map<int, double> get_lane_borders(double s) const;
 

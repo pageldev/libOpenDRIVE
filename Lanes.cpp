@@ -31,6 +31,56 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
+std::shared_ptr<const Lane> LaneSection::get_lane(double s, double t, double* t_outer_brdr) const
+{
+    if (auto road_ptr = this->road.lock())
+    {
+        double       cur_t = road_ptr->lane_offset.get(s);
+        const double dt = t - cur_t;
+        if (dt == 0)
+            return this->id_to_lane.at(0);
+
+        auto lane_iter = this->id_to_lane.find(0);
+        if (lane_iter == this->id_to_lane.end())
+            throw std::runtime_error("lane section does not have lane #0");
+
+        lane_iter = (dt > 0) ? std::next(lane_iter) : std::prev(lane_iter);
+
+        while ((dt > 0 && cur_t < t) || (dt < 0 && cur_t > t) || lane_iter != this->id_to_lane.end() || lane_iter != this->id_to_lane.begin())
+        {
+            if (dt > 0 && (cur_t >= t || lane_iter == this->id_to_lane.end()))
+                break;
+
+            if (dt < 0 && (cur_t <= t || lane_iter == this->id_to_lane.begin()))
+                break;
+
+            const double lane_width = lane_iter->second->lane_width.get(s - this->s0);
+            cur_t = (dt > 0) ? cur_t + lane_width : cur_t - lane_width;
+            lane_iter = (dt > 0) ? std::next(lane_iter) : std::prev(lane_iter);
+        }
+
+        if (lane_iter == this->id_to_lane.end())
+            lane_iter--;
+
+        if (t_outer_brdr)
+            *t_outer_brdr = cur_t;
+
+        return lane_iter->second;
+    }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<Lane> LaneSection::get_lane(double s, double t, double* t_outer_brdr)
+{
+    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const LaneSection&>(*this).get_lane(s, t, t_outer_brdr));
+    return lane;
+}
+
 std::map<int, std::vector<Vec3D>> LaneSection::get_lane_outlines(double resolution) const
 {
     if (auto road_ptr = this->road.lock())
@@ -62,16 +112,16 @@ std::map<int, std::vector<Vec3D>> LaneSection::get_lane_outlines(double resoluti
                 const double t_outer_brdr = id_brdr_iter->second;
                 const double t_inner_brdr = (lane_id > 0) ? std::prev(id_brdr_iter)->second : std::next(id_brdr_iter)->second;
 
-                double h_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * t_inner_brdr;
-                double h_outer_brdr = 0;
+                double z_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_inner_brdr);
+                double z_outer_brdr = 0;
                 if (this->id_to_lane.at(lane_id)->level)
                 {
                     const double superelev = road_ptr->superelevation.get(s); // cancel out superelevation
-                    h_outer_brdr = h_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
+                    z_outer_brdr = z_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
                 }
                 else
                 {
-                    h_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * t_outer_brdr;
+                    z_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_outer_brdr);
                 }
 
                 if (this->id_to_lane.at(lane_id)->s0_to_height_offset.size() > 0)
@@ -81,12 +131,12 @@ std::map<int, std::vector<Vec3D>> LaneSection::get_lane_outlines(double resoluti
                     if (s0_height_offs_iter != height_offs.begin())
                         s0_height_offs_iter--;
 
-                    h_inner_brdr += s0_height_offs_iter->second.inner;
-                    h_outer_brdr += s0_height_offs_iter->second.outer;
+                    z_inner_brdr += s0_height_offs_iter->second.inner;
+                    z_outer_brdr += s0_height_offs_iter->second.outer;
                 }
 
-                lane_id_to_inner_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_inner_brdr, h_inner_brdr));
-                lane_id_to_outer_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_outer_brdr, h_outer_brdr));
+                lane_id_to_inner_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_inner_brdr, z_inner_brdr));
+                lane_id_to_outer_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_outer_brdr, z_outer_brdr));
             }
         }
 

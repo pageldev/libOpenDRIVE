@@ -68,40 +68,21 @@ std::shared_ptr<LaneSection> Road::get_lanesection(double s)
     return lanesection;
 }
 
-std::shared_ptr<const Lane> Road::get_lane(double s, double t) const
+std::shared_ptr<const Lane> Road::get_lane(double s, double t, double* t_outer_brdr) const
 {
-    std::map<int, double>              id_to_border = this->get_lane_borders(s);
     std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
-
-    for (auto iter = id_to_border.begin(); iter != id_to_border.end(); iter++)
+    if (!lanesection)
     {
-        const int    lane_id = iter->first;
-        const double outer_brdr = iter->second;
-
-        if (lane_id == 0)
-        {
-            if (id_to_border.at(0) == t)
-            {
-                return lanesection->id_to_lane.at(0);
-            }
-            continue;
-        }
-        else if (lane_id < 0 && t >= outer_brdr && t < std::next(iter)->second)
-        {
-            return lanesection->id_to_lane.at(lane_id);
-        }
-        else if (lane_id > 0 && t <= outer_brdr && t > std::prev(iter)->second)
-        {
-            return lanesection->id_to_lane.at(lane_id);
-        }
+        printf("road #%d - could not get lane section for s %.2f\n", this->id, s);
+        return nullptr;
     }
 
-    return nullptr;
+    return lanesection->get_lane(s, t, t_outer_brdr);
 }
 
-std::shared_ptr<Lane> Road::get_lane(double s, double t)
+std::shared_ptr<Lane> Road::get_lane(double s, double t, double* t_outer_brdr)
 {
-    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const Road&>(*this).get_lane(s, t));
+    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const Road&>(*this).get_lane(s, t, t_outer_brdr));
     return lane;
 }
 
@@ -154,79 +135,38 @@ Vec3D Road::get_xyz(double s, double t, double z) const
 Vec3D Road::get_surface_pt(double s, double t) const
 {
     std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
-    if (!lanesection || t == 0)
-        return this->get_xyz(s, t, 0.0);
-
-    std::map<int, double> lane_id_to_outer_brdr = this->get_lane_borders(s);
-
-    /* adjust borders - center lane #0 at t=0 again */
-    const double          t_offset = lane_id_to_outer_brdr.at(0);
-    std::map<double, int> borders_adj;
-    for (const auto& lane_id_brdr : lane_id_to_outer_brdr)
+    if (!lanesection)
     {
-        borders_adj[lane_id_brdr.second - t_offset] = lane_id_brdr.first;
+        printf("road #%d - could not get lane section for s: %.2f\n", this->id, s);
+        return this->get_xyz(s, t, 0.0);
     }
 
-    /* at t lanes in interval [t0, t1] are covered for adjusted borders */
-    const double t_adj = t - t_offset;
-    const double t_min = borders_adj.begin()->first;
-    const double t_max = std::prev(borders_adj.end())->first;
-    const double t0 = std::max(std::min(std::min(t_adj, -t_offset), t_max), t_min);
-    const double t1 = std::max(std::min(std::max(t_adj, -t_offset), t_max), t_min);
-
-    /* get lane for t0 - can not be .end, but lane #0 */
-    auto iter0 = (t0 < 0) ? std::prev(borders_adj.upper_bound(t0)) : borders_adj.lower_bound(t0);
-
-    /* get lane AFTER lane for t1 - can not be .begin, but lane #0 */
-    auto iter1 = (t1 < 0) ? borders_adj.upper_bound(t1) : std::next(borders_adj.lower_bound(t1));
-
-    /* get overlaps of individual lanes for interval [t0, t1] */
-    std::map<int, double> lane_id_to_overlap;
-    if (iter0->second != 0 && iter0 == std::prev(iter1)) // t0 and t1 in same lane
+    double                      t_outer_brdr = 0;
+    std::shared_ptr<const Lane> lane = this->get_lane(s, t, &t_outer_brdr);
+    if (!lane)
     {
-        lane_id_to_overlap[iter0->second] = t1 - t0;
+        printf("road #%d - could not get lane for s: %.2f t: %.2f\n", this->id, s, t);
+        return this->get_xyz(s, t, 0.0);
+    }
+
+    if (lane->id == 0)
+        return this->get_xyz(s, t, 0.0);
+
+    double z_offs = 0;
+    if (lane->level)
+    {
+        const double lane_width = lane->lane_width.get(s - lanesection->s0);
+        const double t_inner_brdr = (lane->id > 0) ? t_outer_brdr - lane_width : t_outer_brdr + lane_width;
+        const double superelev = this->superelevation.get(s); // cancel out superelevation
+        const double h_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
+        z_offs = h_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
     }
     else
     {
-        /* get partial overlap for t0's lane |  t0==>|--->|0|    | */
-        if (iter0->second != 0)
-        {
-            double dt_0 = (t0 < 0) ? std::next(iter0)->first - t0 : iter0->first - t0;
-            lane_id_to_overlap[iter0->second] = dt_0;
-            iter0++;
-        }
-        /* get partial overlap for t1's lane |   |0|<---|<==t1 | */
-        if (std::prev(iter1)->second != 0)
-        {
-            double dt_1 = (t1 < 0) ? std::prev(iter1)->first - t1 : t1 - std::prev(iter1, 2)->first;
-            lane_id_to_overlap[std::prev(iter1)->second] = dt_1;
-            iter1--;
-        }
-        /* get overlap of fully covered lanes inbetween */
-        for (auto it = iter0; it != iter1; it++)
-        {
-            if (it->second == 0)
-                continue;
-            double dt = (it->second < 0) ? std::next(it)->first - it->first : it->first - std::prev(it)->first;
-            lane_id_to_overlap[it->second] = dt;
-        }
+        z_offs = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t);
     }
 
-    /* get effective overlap - by removing level planes - equals t if all non-level lanes */
-    double eff_overlap = 0;
-    for (const auto& lane_id_overlap : lane_id_to_overlap)
-    {
-        const bool is_level = lanesection->id_to_lane.at(lane_id_overlap.first)->level;
-        eff_overlap = is_level ? eff_overlap : eff_overlap + lane_id_overlap.second;
-    }
-    eff_overlap = eff_overlap * static_cast<double>(sign(t));
-
-    /* effectively remove superelevation and don't apply crossfall on level lanes */
-    const double superelevation = this->superelevation.get(s);
-    const double crossfall = this->crossfall.get_crossfall(s, t);
-    const double h = (t - eff_overlap) * std::tan(-superelevation) - std::tan(crossfall) * std::abs(eff_overlap);
-
-    return this->get_xyz(s, t, h);
+    return this->get_xyz(s, t, z_offs);
 }
 
 Mat3D Road::get_transformation_matrix(double s) const
