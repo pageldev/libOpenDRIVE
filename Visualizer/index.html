@@ -122,7 +122,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./aachen.xodr").then((file_data) => {
+            fetch("./data.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
