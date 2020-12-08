@@ -13,6 +13,7 @@ using Vec = std::array<T, Dim>;
 
 using Vec2D = Vec<double, 2>;
 using Vec3D = Vec<double, 3>;
+using Line3D = std::vector<Vec3D>;
 
 template<typename T, size_t Dim, typename std::enable_if_t<(Dim > 1)>* = nullptr, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 using Mat = std::array<std::array<T, Dim>, Dim>;

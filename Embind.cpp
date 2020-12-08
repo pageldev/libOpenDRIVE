@@ -21,7 +21,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
-    emscripten::register_map<int, std::vector<Vec3D>>("map<int, vector<Vec3D>>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<int, std::shared_ptr<Road>>("map<int, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
@@ -54,7 +53,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<LaneSection>("LaneSection")
         .constructor<double>()
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
-        .function("get_lane_outlines", &LaneSection::get_lane_outlines)
         .function("get_lane_vertices", &LaneSection::get_lane_vertices)
         .property("id_to_lane", &LaneSection::id_to_lane);
 
