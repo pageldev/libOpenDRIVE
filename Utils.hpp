@@ -107,32 +107,45 @@ void rdp(
     size_t d_max_idx = 0;
     for (size_t idx = start_idx + step; idx < last_idx; idx += step)
     {
-        T dx = points.at(last_idx)[0] - points.at(start_idx)[0];
-        T dy = points.at(last_idx)[1] - points.at(start_idx)[1];
+        std::array<T, Dim> delta;
+        for (size_t dim = 0; dim < Dim; dim++)
+            delta[dim] = points.at(last_idx)[dim] - points.at(start_idx)[dim];
 
         // Normalise
-        T mag = std::pow(std::pow(dx, 2.0) + std::pow(dy, 2.0), 0.5);
+        T mag(0);
+        for (size_t dim = 0; dim < Dim; dim++)
+            mag += std::pow(delta.at(dim), 2.0);
+        mag = std::sqrt(mag);
         if (mag > 0.0)
         {
-            dx /= mag;
-            dy /= mag;
+            for (size_t dim = 0; dim < Dim; dim++)
+                delta.at(dim) = delta.at(dim) / mag;
         }
 
-        const T pvx = points.at(idx)[0] - points.at(start_idx)[0];
-        const T pvy = points.at(idx)[1] - points.at(start_idx)[1];
+        std::array<T, Dim> pv;
+        for (size_t dim = 0; dim < Dim; dim++)
+            pv[dim] = points.at(idx)[dim] - points.at(start_idx)[dim];
 
         // Get dot product (project pv onto normalized direction)
-        const T pvdot = dx * pvx + dy * pvy;
+        T pvdot(0);
+        for (size_t dim = 0; dim < Dim; dim++)
+            pvdot += delta.at(dim) * pv.at(dim);
 
         // Scale line direction vector
-        const T dsx = pvdot * dx;
-        const T dsy = pvdot * dy;
+        std::array<T, Dim> ds;
+        for (size_t dim = 0; dim < Dim; dim++)
+            ds[dim] = pvdot * delta.at(dim);
 
         // Subtract this from pv
-        const T ax = pvx - dsx;
-        const T ay = pvy - dsy;
+        std::array<T, Dim> a;
+        for (size_t dim = 0; dim < Dim; dim++)
+            a[dim] = pv.at(dim) - ds.at(dim);
 
-        const T d = std::pow(std::pow(ax, 2.0) + std::pow(ay, 2.0), 0.5);
+        T d(0);
+        for (size_t dim = 0; dim < Dim; dim++)
+            d += std::pow(a.at(dim), 2.0);
+        d = std::sqrt(d);
+
         if (d > d_max)
         {
             d_max = d;
