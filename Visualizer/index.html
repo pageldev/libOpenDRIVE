@@ -46,14 +46,12 @@
             resolution: 0.3,
             ref_line: true,
             geom_edges: false,
+            spotlight: true,
             fitView: () => { fitView(outline_group); },
         };
 
         var COLORS = {
-            lane: 0x0069c0,
-            lane_section: 0x42a5f5,
             road: 0xffffff,
-            road_highlight: 0x80d6ff,
             outline: 0x808080,
             ref_line: 0xaab6fe,
             lane_offset: 0x00701a,
@@ -62,8 +60,9 @@
 
         var OPACITIES = {
             lane: 0.6,
-            lane_section: 0.6,
-            road: 0.3,
+            lane_section: 0.4,
+            road: 0.2,
+            road_highlight: 0.3,
         }
 
         var scene = new THREE.Scene();
@@ -71,7 +70,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 100000);
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
         camera.position.set(0, 0, 100);
         camera.lookAt(0, 0, 0);
         camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
@@ -103,13 +102,14 @@
         animate();
 
         var gui = new dat.GUI();
-        gui.add(PARAMS, 'load_file').name('Load xodr file');
-        gui.add(PARAMS, 'resolution', 0.01, 1.0).name("Resolution").onFinishChange((val) => {
+        gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
+        gui.add(PARAMS, 'resolution', 0.01, 1.0).name("📏 Resolution").onFinishChange((val) => {
             load_odr_map(true, false);
         });
+        gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
         gui.add(PARAMS, 'fitView').name("Reset Camera");
         var gui_show_folder = gui.addFolder('Show');
-        gui_show_folder.add(PARAMS, 'ref_line').name("ref_line").onChange((val) => {
+        gui_show_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
             ref_line_group.visible = val;
         });
         gui_show_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
@@ -211,7 +211,8 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            update();
+            if (PARAMS.spotlight)
+                update();
             renderer.render(scene, camera);
         }
 
@@ -222,20 +223,19 @@
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
                         INTERSECTED.userData.road_group.renderOrder = 0;
-                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); n.material.depthTest = true; } });
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.depthTest = true; } });
                     }
                     INTERSECTED = intersects[0].object;
                     INTERSECTED.userData.road_group.renderOrder = 1;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); n.material.depthTest = false; } });
-                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; n.material.color.set(COLORS.lane_section); } });
-                    INTERSECTED.material.color.set(COLORS.lane);
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road_highlight; n.material.depthTest = false; } });
+                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; } });
                     INTERSECTED.material.opacity = OPACITIES.lane;
                     bottom_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
                     INTERSECTED.userData.road_group.renderOrder = 0;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.color.set(COLORS.road); n.material.depthTest = true; } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.depthTest = true; } });
                 }
                 INTERSECTED = null;
                 bottom_info.style.display = "none";
