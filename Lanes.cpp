@@ -131,8 +131,20 @@ std::map<int, std::vector<Vec3D>> LaneSection::get_lane_outlines(double resoluti
                     if (s0_height_offs_iter != height_offs.begin())
                         s0_height_offs_iter--;
 
-                    z_inner_brdr += s0_height_offs_iter->second.inner;
-                    z_outer_brdr += s0_height_offs_iter->second.outer;
+                    const double inner_height = s0_height_offs_iter->second.inner;
+                    z_inner_brdr += inner_height;
+                    const double outer_height = s0_height_offs_iter->second.outer;
+                    z_outer_brdr += outer_height;
+
+                    if (std::next(s0_height_offs_iter) != height_offs.end())
+                    {
+                        /* if successive lane height entry available linearly interpolate */
+                        const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
+                        const double dh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
+                        z_inner_brdr += (dh_inner / ds) * (s - s0_height_offs_iter->first);
+                        const double dh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
+                        z_outer_brdr += (dh_outer / ds) * (s - s0_height_offs_iter->first);
+                    }
                 }
 
                 lane_id_to_inner_brdr_line[lane_id].push_back(road_ptr->get_xyz(s, t_inner_brdr, z_inner_brdr));
