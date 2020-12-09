@@ -2,15 +2,13 @@
 <html lang="en">
 
 <head>
+    <title>libOpenDRIVE Visualizer</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
         body {
             margin: 0;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
+            overflow: hidden;
         }
 
         table {
@@ -23,12 +21,13 @@
             text-align: left;
             font-family: monospace;
             display: block;
-            color: 0x8eacbb;
+            color: whitesmoke;
         }
     </style>
 </head>
 
 <body>
+    <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
     <div id="bottom_info"></div>
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
@@ -47,7 +46,7 @@
             ref_line: true,
             geom_edges: false,
             wireframe: false,
-            spotlight: false,
+            spotlight: true,
             fitView: () => { fitView(outline_group); },
         };
 
@@ -58,13 +57,14 @@
             lane_offset: 0x00701a,
             probe_line: 0xff0000,
             wireframe: 0x494949,
+            background: 0xaab6fe,
         };
 
         var scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xaab6fe);
-        var renderer = new THREE.WebGLRenderer({ antialias: true, precision: "mediump", powerPreference: "high-performance" });
+        scene.background = new THREE.Color(COLORS.background);
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        document.getElementById('ThreeJS').appendChild(renderer.domElement);
 
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
         camera.position.set(0, 0, 100);
@@ -273,7 +273,7 @@
                         <table>
                             <tr><th>road id</th><th>${userData.road_id}</th></tr>
                             <tr><th>section s0</th><th>${userData.lansection_s0.toFixed(2)}</th></tr>
-                            <tr><th>lane</th><th>${userData.lane_id} <span style="color:grey;">${userData.lane_type}</span></th></tr>
+                            <tr><th>lane</th><th>${userData.lane_id} <span style="color:gray;">${userData.lane_type}</span></th></tr>
                             <tr><th>s/t</th><th>[${s_proj.toFixed(2)}, ${t_offs.toFixed(2)}]</th>
                             <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
                         </table>`;
