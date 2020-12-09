@@ -140,9 +140,9 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                         /* if successive lane height entry available linearly interpolate */
                         const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
                         const double dh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
-                        z_inner_brdr += (dh_inner / ds) * (s - s0_height_offs_iter->first);
+                        z_inner_brdr += (dh_inner / ds) * (s - this->s0 - s0_height_offs_iter->first);
                         const double dh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
-                        z_outer_brdr += (dh_outer / ds) * (s - s0_height_offs_iter->first);
+                        z_outer_brdr += (dh_outer / ds) * (s - this->s0 - s0_height_offs_iter->first);
                     }
                 }
                 lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_xyz(s, t_outer_brdr, z_outer_brdr));
