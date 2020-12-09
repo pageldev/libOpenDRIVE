@@ -23,7 +23,7 @@
             text-align: left;
             font-family: monospace;
             display: block;
-            color: white;
+            color: 0x8eacbb;
         }
     </style>
 </head>
@@ -43,19 +43,21 @@
 
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
-            resolution: 0.3,
+            resolution: 0.5,
             ref_line: true,
             geom_edges: false,
-            spotlight: true,
+            wireframe: false,
+            spotlight: false,
             fitView: () => { fitView(outline_group); },
         };
 
         var COLORS = {
-            road: 0xffffff,
-            outline: 0x808080,
-            ref_line: 0xaab6fe,
+            road: 0xaeaeae,
+            outline: 0x757575,
+            ref_line: 0xffffff,
             lane_offset: 0x00701a,
             probe_line: 0xff0000,
+            wireframe: 0x494949,
         };
 
         var OPACITIES = {
@@ -66,7 +68,8 @@
         }
 
         var scene = new THREE.Scene();
-        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        scene.background = new THREE.Color(0xaab6fe);
+        var renderer = new THREE.WebGLRenderer({ antialias: true, precision: "mediump", powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -106,11 +109,21 @@
         gui.add(PARAMS, 'resolution', 0.01, 1.0).name("📏 Resolution").onFinishChange((val) => {
             load_odr_map(true, false);
         });
-        gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
+        gui.add(PARAMS, 'spotlight').name("🔦 Spotlight").onChange((val) => {
+            probe_line.visible = val;
+        });
         gui.add(PARAMS, 'fitView').name("Reset Camera");
-        var gui_show_folder = gui.addFolder('Show');
+        var gui_show_folder = gui.addFolder('View');
         gui_show_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
             ref_line_group.visible = val;
+        });
+        gui_show_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
+            mesh_group.traverse(n => {
+                if (n.material) {
+                    n.material.wireframe = val;
+                    n.material.color.set(val ? COLORS.wireframe : COLORS.road);
+                }
+            });
         });
         gui_show_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
             if (odr_geom_edges_group.children.length == 0)
@@ -173,14 +186,18 @@
                         /* lane mesh */
                         const lane_geom = new THREE.BufferGeometry().setFromPoints(vertices.map(p => new THREE.Vector3(...p)));
                         lane_geom.setIndex(indices, null, 3);
-                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, transparent: true, opacity: OPACITIES.road });
+                        const lane_material = new THREE.MeshBasicMaterial({ color: PARAMS.wireframe ? COLORS.wireframe : COLORS.road, wireframe: PARAMS.wireframe });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
-                        lane_mesh.userData = { road_id, lansection_s0: s0, lane_id: lane_vertices.lane_id, lane_type: lane_vertices.type, road, lane_sec_group, road_group };
                         lane_sec_group.add(lane_mesh);
 
                         /* lane outline */
                         const lane_outline_line = add_line(vertices, COLORS.outline);
                         outline_group.add(lane_outline_line);
+
+                        lane_mesh.userData = {
+                            road_id, lansection_s0: s0, lane_id: lane_vertices.lane_id, outline: lane_outline_line,
+                            lane_type: lane_vertices.type, road, lane_sec_group, road_group
+                        };
 
                         disposable_objs.push(lane_geom, lane_material, lane_outline_line.geometry, lane_outline_line.material);
                     }
@@ -222,20 +239,21 @@
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.userData.road_group.renderOrder = 0;
-                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.depthTest = true; } });
+                        INTERSECTED.userData.outline.renderOrder = 0;
+                        INTERSECTED.userData.outline.material.depthTest = true;
+                        INTERSECTED.userData.outline.material.color.set(COLORS.outline);
                     }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.userData.road_group.renderOrder = 1;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road_highlight; n.material.depthTest = false; } });
-                    INTERSECTED.userData.lane_sec_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.lane_section; } });
-                    INTERSECTED.material.opacity = OPACITIES.lane;
+                    INTERSECTED.userData.outline.renderOrder = 1;
+                    INTERSECTED.userData.outline.material.depthTest = false;
+                    INTERSECTED.userData.outline.material.color.set(0xec407a);
                     bottom_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.userData.road_group.renderOrder = 0;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.opacity = OPACITIES.road; n.material.depthTest = true; } });
+                    INTERSECTED.userData.outline.renderOrder = 0;
+                    INTERSECTED.userData.outline.material.depthTest = true;
+                    INTERSECTED.userData.outline.material.color.set(COLORS.outline);
                 }
                 INTERSECTED = null;
                 bottom_info.style.display = "none";
@@ -293,7 +311,7 @@
 
                     let geom = new THREE.BufferGeometry().setFromPoints([pt0, c1, c2, c3, c4]);
                     geom.setIndex([0, 1, 2, 0, 2, 4, 0, 4, 3, 0, 3, 1]);
-                    let material = new THREE.MeshBasicMaterial({ color: COLORS.ref_line, side: THREE.DoubleSide, transparent: true, opacity: OPACITIES.lane_section });
+                    let material = new THREE.MeshBasicMaterial({ color: COLORS.ref_line, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
                     let mesh = new THREE.Mesh(geom, material);
                     odr_geom_edges_group.add(mesh);
                 }
