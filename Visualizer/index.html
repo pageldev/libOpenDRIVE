@@ -46,7 +46,7 @@
             ref_line: true,
             geom_edges: false,
             wireframe: false,
-            spotlight: true,
+            spotlight: false,
             fitView: () => { fitView(outline_group); },
         };
 
@@ -181,10 +181,12 @@
                         lane_geom.setIndex(indices, null, 3);
                         const lane_material = new THREE.MeshBasicMaterial({ color: PARAMS.wireframe ? COLORS.wireframe : COLORS.road, wireframe: PARAMS.wireframe });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
+                        lane_mesh.matrixAutoUpdate = false;
                         lane_sec_group.add(lane_mesh);
 
                         /* lane outline */
                         const lane_outline_line = add_line(vertices, COLORS.outline);
+                        lane_mesh.matrixAutoUpdate = false;
                         outline_group.add(lane_outline_line);
 
                         lane_mesh.userData = {
