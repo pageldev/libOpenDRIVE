@@ -119,7 +119,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 {
                     std::string pRange_str = geometry_node.attribute("pRange").as_string();
                     std::transform(pRange_str.begin(), pRange_str.end(), pRange_str.begin(), [](unsigned char c) { return std::tolower(c); });
-                    if (pRange_str == "arcength")
+                    if (pRange_str == "arclength")
                         pRange_normalized = false;
                 }
                 road->ref_line->s0_to_geometry[s0] =
