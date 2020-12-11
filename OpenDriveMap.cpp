@@ -113,10 +113,15 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 double bV = geometry_node.attribute("bV").as_double();
                 double cV = geometry_node.attribute("cV").as_double();
                 double dV = geometry_node.attribute("dV").as_double();
-                
-                bool   pRange_normalized = true;
+
+                bool pRange_normalized = true;
                 if (geometry_node.attribute("pRange"))
-                    pRange_normalized = geometry_node.attribute("pRange").as_bool();
+                {
+                    std::string pRange_str = geometry_node.attribute("pRange").as_string();
+                    std::transform(pRange_str.begin(), pRange_str.end(), pRange_str.begin(), [](unsigned char c) { return std::tolower(c); });
+                    if (pRange_str == "arcength")
+                        pRange_normalized = false;
+                }
                 road->ref_line->s0_to_geometry[s0] =
                     std::make_shared<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, pRange_normalized);
             }
