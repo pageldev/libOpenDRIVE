@@ -1,8 +1,6 @@
 #include "Lanes.h"
 #include "Road.h"
 
-#include "earcut/earcut.hpp"
-
 #include <iterator>
 #include <stdexcept>
 #include <utility>
