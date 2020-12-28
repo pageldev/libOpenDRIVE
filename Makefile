@@ -1,4 +1,10 @@
-SHELL = /bin/sh
+.SUFFIXES:
+
+CC = g++
+CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS)
+INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
+THIRDPARTY_DIR = Thirdparty
+BUILD_DIR = build/x64
 
 CPP_FILES = \
 	OpenDriveMap.cpp \
@@ -16,18 +22,12 @@ CPP_FILES = \
 	Thirdparty/json11/json11.cpp
 
 OBJ_FILES = $(CPP_FILES:%.cpp=$(BUILD_DIR)/%.o)
-INCLUDE_DIRS = -I./ -I./Thirdparty
 
-CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS)
 
-.SECONDEXPANSION:
-x64: BUILD_DIR = build/x64
-x64: CC = g++
-x64: dir $$(OBJ_FILES)
-	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)/libOpenDrive.so $(OBJ_FILES)
-	$(CC) $(CFLAGS) -L$(BUILD_DIR) -lOpenDrive -o $(BUILD_DIR)/main main.cpp
+.PHONY: all
+all: $(BUILD_DIR)/libOpenDrive.so $(BUILD_DIR)/main
 
-wasm: BUILD_DIR = build/wasm
+.PHONY: wasm
 wasm: CC = emcc
 wasm: WASMFLAGS = --bind \
 		-s ENVIRONMENT=web \
@@ -36,23 +36,23 @@ wasm: WASMFLAGS = --bind \
 		-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' \
 		-s FORCE_FILESYSTEM=1 \
 		-s ALLOW_MEMORY_GROWTH=1
-wasm: dir $$(OBJ_FILES)
-	$(CC) $(CFLAGS) $(WASMFLAGS) -o $(BUILD_DIR)/libOpenDrive.js $(OBJ_FILES)
+wasm: $(BUILD_DIR)/libOpenDrive.js
 	cp $(BUILD_DIR)/libOpenDrive.* Visualizer/
 
-%.o: OBJ_FILE = $@
-%.o: CPP_FILE = $(OBJ_FILE:$(BUILD_DIR)/%.o=%.cpp)
-%.o: $(CPP_FILE)
-	$(CC) $(CFLAGS) -c -fPIC -o $(OBJ_FILE) $(CPP_FILE)
+$(BUILD_DIR)/libOpenDrive.so: $(OBJ_FILES)
+	$(CC) $(CFLAGS) -shared -o $@ $(OBJ_FILES)
 
-dir: DIRS = $(dir $(OBJ_FILES))
-dir:
-	mkdir -p $(DIRS)
+$(BUILD_DIR)/libOpenDrive.js: $(OBJ_FILES)
+	$(CC) $(CFLAGS) $(WASMFLAGS) -o $@ $(OBJ_FILES)
 
-.PHONY: dir
+$(BUILD_DIR)/main: $(OBJ_FILES) main.cpp
+	$(CC) $(CFLAGS) -o $@ $(OBJ_FILES) main.cpp
 
-clean:
-	rm -rf build
-	rm -f Visualizer/libOpenDrive*
+$(BUILD_DIR)/%.o: %.cpp
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -fPIC -o $@ $<
+
 
 .PHONY: clean
+clean:
+	rm -rf build
