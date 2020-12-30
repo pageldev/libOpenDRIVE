@@ -21,55 +21,55 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
     pugi::xml_document     doc;
     pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
     if (!result)
-        std::cerr << result.description() << std::endl;
+        printf("%s\n", result.description());
 
-    if (auto geoReference_node = doc.select_node("/OpenDRIVE/header/geoReference").node())
+    pugi::xml_node odr_node = doc.child("OpenDRIVE");
+
+    if (auto geoReference_node = odr_node.child("header").child("geoReference"))
         this->proj4 = geoReference_node.text().as_string();
 
-    pugi::xpath_node_set roads = doc.select_nodes("/OpenDRIVE/road");
-    for (pugi::xpath_node road_node : roads)
+    for (pugi::xml_node road_node : odr_node.children("road"))
     {
         /* make road */
         std::shared_ptr<Road> road = std::make_shared<Road>();
-        road->length = road_node.node().attribute("length").as_double();
-        road->id = road_node.node().attribute("id").as_string();
-        road->junction = road_node.node().attribute("junction").as_string();
-        road->name = road_node.node().attribute("name").as_string();
+        road->length = road_node.attribute("length").as_double();
+        road->id = road_node.attribute("id").as_string();
+        road->junction = road_node.attribute("junction").as_string();
+        road->name = road_node.attribute("name").as_string();
 
         this->roads[road->id] = road;
 
         /* parse road links */
         for (bool is_predecessor : {true, false})
         {
-            const std::string xpath = is_predecessor ? ".//link//predecessor" : ".//link//successor";
-            if (pugi::xml_node node = doc.select_node(xpath.c_str()).node())
+            pugi::xml_node road_link_node =
+                is_predecessor ? road_node.child("link").child("predecessor") : road_node.child("link").child("successor");
+            if (road_link_node)
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
-                link.elementId = node.child("elementId").text().as_string();
-                link.elementType = node.child("elementType").text().as_string();
-                link.contactPoint = node.child("contactPoint").text().as_string();
+                link.elementId = road_link_node.child("elementId").text().as_string();
+                link.elementType = road_link_node.child("elementType").text().as_string();
+                link.contactPoint = road_link_node.child("contactPoint").text().as_string();
             }
         }
 
         /* parse road neighbors */
-        pugi::xpath_node_set road_neighbor_nodes = road_node.node().select_nodes(".//link//neighbor");
-        for (pugi::xpath_node road_neighbor_node : road_neighbor_nodes)
+        for (pugi::xml_node road_neighbor_node : road_node.child("link").children("neighbor"))
         {
             RoadNeighbor road_neighbor;
-            road_neighbor.elementId = road_neighbor_node.node().attribute("elementId").as_string();
-            road_neighbor.side = road_neighbor_node.node().attribute("side").as_string();
-            road_neighbor.direction = road_neighbor_node.node().attribute("direction").as_string();
+            road_neighbor.elementId = road_neighbor_node.attribute("elementId").as_string();
+            road_neighbor.side = road_neighbor_node.attribute("side").as_string();
+            road_neighbor.direction = road_neighbor_node.attribute("direction").as_string();
             road->neighbors.push_back(road_neighbor);
         }
 
         /* parse road type and speed */
-        pugi::xpath_node_set road_type_nodes = road_node.node().select_nodes(".//type");
-        for (pugi::xpath_node road_type_node : road_type_nodes)
+        for (pugi::xml_node road_type_node : road_node.children("type"))
         {
-            double      s = road_type_node.node().attribute("s").as_double();
-            std::string type = road_type_node.node().attribute("type").as_string();
+            double      s = road_type_node.attribute("s").as_double();
+            std::string type = road_type_node.attribute("type").as_string();
             road->s0_to_type[s] = type;
-            if (pugi::xml_node node = road_type_node.node().child("speed"))
+            if (pugi::xml_node node = road_type_node.child("speed"))
             {
                 SpeedRecord speed_record;
                 speed_record.max = node.attribute("max").as_string();
@@ -80,15 +80,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
 
         /* make ref_line - parse road geometries */
         road->ref_line = std::make_shared<RefLine>(road->length);
-        pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
-        for (pugi::xpath_node geometry_hdr_node : geometry_headers)
+        for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
-            double         s0 = geometry_hdr_node.node().attribute("s").as_double();
-            double         x0 = geometry_hdr_node.node().attribute("x").as_double();
-            double         y0 = geometry_hdr_node.node().attribute("y").as_double();
-            double         hdg0 = geometry_hdr_node.node().attribute("hdg").as_double();
-            double         length = geometry_hdr_node.node().attribute("length").as_double();
-            pugi::xml_node geometry_node = geometry_hdr_node.node().first_child();
+            double         s0 = geometry_hdr_node.attribute("s").as_double();
+            double         x0 = geometry_hdr_node.attribute("x").as_double();
+            double         y0 = geometry_hdr_node.attribute("y").as_double();
+            double         hdg0 = geometry_hdr_node.attribute("hdg").as_double();
+            double         length = geometry_hdr_node.attribute("length").as_double();
+            pugi::xml_node geometry_node = geometry_hdr_node.first_child();
             std::string    geometry_type = geometry_node.name();
             if (geometry_type == "line")
             {
@@ -129,7 +128,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             }
             else
             {
-                std::cerr << "Could not parse " << geometry_type << std::endl;
+                printf("Could not parse %s\n", geometry_type.c_str());
             }
         }
 
@@ -141,7 +140,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         /* parse elevation profiles, lane offsets, superelevation */
         for (auto entry : cubic_spline_fields)
         {
-            pugi::xpath_node_set nodes = road_node.node().select_nodes(entry.first.c_str());
+            pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
             for (pugi::xpath_node node : nodes)
             {
                 double s0 = node.node().attribute("s").as_double();
@@ -154,17 +153,16 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         }
 
         /* parse crossfall - has extra attribute side */
-        pugi::xpath_node_set crossfall_nodes = road_node.node().select_nodes(".//lateralProfile//crossfall");
-        for (pugi::xpath_node crossfall_node : crossfall_nodes)
+        for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
         {
-            double s0 = crossfall_node.node().attribute("s").as_double();
-            double a = crossfall_node.node().attribute("a").as_double();
-            double b = crossfall_node.node().attribute("b").as_double();
-            double c = crossfall_node.node().attribute("c").as_double();
-            double d = crossfall_node.node().attribute("d").as_double();
+            double s0 = crossfall_node.attribute("s").as_double();
+            double a = crossfall_node.attribute("a").as_double();
+            double b = crossfall_node.attribute("b").as_double();
+            double c = crossfall_node.attribute("c").as_double();
+            double d = crossfall_node.attribute("d").as_double();
 
             road->crossfall.s0_to_poly[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
-            if (pugi::xml_attribute side = crossfall_node.node().attribute("side"))
+            if (pugi::xml_attribute side = crossfall_node.attribute("side"))
             {
                 std::string side_str = side.as_string();
                 std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -178,21 +176,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         }
 
         /* check for lateralProfile shape - not implemented yet */
-        pugi::xpath_node_set lateral_profile_shape_nodes = road_node.node().select_nodes(".//lateralProfile//shape");
-        if (lateral_profile_shape_nodes.size())
-            std::cerr << "Lateral Profile Shape not supported" << std::endl;
+        for (auto road_shape_node : road_node.child("lateralProfile").children("shape"))
+            printf("Lateral Profile Shape not supported\n");
 
         /* parse road lane sections and lanes */
-        pugi::xpath_node_set lane_section_nodes = road_node.node().select_nodes(".//lanes//laneSection");
-        for (pugi::xpath_node lane_section_node : lane_section_nodes)
+        for (pugi::xml_node lane_section_node : road_node.child("lanes").children("laneSection"))
         {
-            double s0 = lane_section_node.node().attribute("s").as_double();
+            double s0 = lane_section_node.attribute("s").as_double();
 
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
             lane_section->road = road;
             road->s0_to_lanesection[lane_section->s0] = lane_section;
 
-            for (pugi::xpath_node lane_node : lane_section_node.node().select_nodes(".//lane"))
+            for (pugi::xpath_node lane_node : lane_section_node.select_nodes(".//lane"))
             {
                 int         lane_id = lane_node.node().attribute("id").as_int();
                 std::string lane_type = lane_node.node().attribute("type").as_string();
@@ -201,27 +197,27 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, level, lane_type);
                 lane_section->id_to_lane[lane->id] = lane;
 
-                for (pugi::xpath_node lane_width_node : lane_node.node().select_nodes(".//width"))
+                for (pugi::xml_node lane_width_node : lane_node.node().children("width"))
                 {
-                    double s_offset = lane_width_node.node().attribute("sOffset").as_double();
-                    double a = lane_width_node.node().attribute("a").as_double();
-                    double b = lane_width_node.node().attribute("b").as_double();
-                    double c = lane_width_node.node().attribute("c").as_double();
-                    double d = lane_width_node.node().attribute("d").as_double();
+                    double s_offset = lane_width_node.attribute("sOffset").as_double();
+                    double a = lane_width_node.attribute("a").as_double();
+                    double b = lane_width_node.attribute("b").as_double();
+                    double c = lane_width_node.attribute("c").as_double();
+                    double d = lane_width_node.attribute("d").as_double();
                     lane->lane_width.s0_to_poly[s_offset] = std::make_shared<Poly3>(s_offset, a, b, c, d);
                 }
 
-                for (pugi::xpath_node lane_height_node : lane_node.node().select_nodes(".//height"))
+                for (pugi::xml_node lane_height_node : lane_node.node().children("height"))
                 {
-                    double s_offset = lane_height_node.node().attribute("sOffset").as_double();
-                    double inner = lane_height_node.node().attribute("inner").as_double();
-                    double outer = lane_height_node.node().attribute("outer").as_double();
+                    double s_offset = lane_height_node.attribute("sOffset").as_double();
+                    double inner = lane_height_node.attribute("inner").as_double();
+                    double outer = lane_height_node.attribute("outer").as_double();
                     lane->s0_to_height_offset[s_offset] = HeightOffset{inner, outer};
                 }
 
-                if (pugi::xml_node node = lane_node.node().select_node(".//link/predecessor").node())
+                if (pugi::xml_node node = lane_node.node().child("link").child("predecessor"))
                     lane->predecessor = node.attribute("id").as_int();
-                if (pugi::xml_node node = lane_node.node().select_node(".//link/successor").node())
+                if (pugi::xml_node node = lane_node.node().child("link").child("successor"))
                     lane->successor = node.attribute("id").as_int();
             }
         }
