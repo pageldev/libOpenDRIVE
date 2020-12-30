@@ -47,7 +47,7 @@
             geom_edges: false,
             wireframe: false,
             spotlight: false,
-            fitView: () => { fitView(outline_group); },
+            fitView: () => { fitView(ref_line_group); },
         };
 
         var COLORS = {
@@ -70,7 +70,9 @@
         camera.position.set(0, 0, 100);
         camera.lookAt(0, 0, 0);
         camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
+
         var controls = new THREE.MapControls(camera, renderer.domElement);
+        controls.addEventListener('change', () => { renderer.render(scene, camera) });
 
         var mesh_group = new THREE.Group();
         var ref_line_group = new THREE.Group();
@@ -95,11 +97,12 @@
         window.addEventListener('mousemove', onDocumentMouseMove, false);
         window.addEventListener('dblclick', onDocumentMouseClick, false);
 
+        renderer.render(scene, camera);
         animate();
 
         var gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-        gui.add(PARAMS, 'resolution', 0.01, 1.0).name("📏 Resolution").onFinishChange((val) => {
+        gui.add(PARAMS, 'resolution', 0.01, 10.0).name("📏 Resolution").onFinishChange((val) => {
             load_odr_map(true, false);
         });
         gui.add(PARAMS, 'spotlight').name("🔦 Spotlight").onChange((val) => {
@@ -161,6 +164,21 @@
 
             console.time('loading roads');
             const odr_roads = OpenDriveMap.roads;
+
+            for (let [road_id, road] of get_std_map_entries(odr_roads)) {
+                /* ref line */
+                let refl_pts = [];
+                for (let s = 0; s < road.length; s += PARAMS.resolution)
+                    refl_pts.push(road.ref_line.get_xyz(s));
+                refl_pts.push(road.ref_line.get_xyz(road.length));
+                const refline_line = add_line(refl_pts, COLORS.ref_line);
+                ref_line_group.add(refline_line);
+                disposable_objs.push(refline_line.geometry, refline_line.material);
+            }
+
+            if (fit_view)
+                fitView(ref_line_group);
+
             for (let [road_id, road] of get_std_map_entries(odr_roads)) {
                 let road_group = new THREE.Group();
                 for (let [s0, lanesec] of get_std_map_entries(road.s0_to_lanesection)) {
@@ -199,16 +217,6 @@
                     road_group.add(lane_sec_group);
                 }
                 mesh_group.add(road_group);
-
-                /* ref line */
-                let refl_pts = [];
-                for (let s = 0; s < road.length; s += PARAMS.resolution)
-                    refl_pts.push(road.ref_line.get_xyz(s));
-                refl_pts.push(road.ref_line.get_xyz(road.length));
-                const refline_line = add_line(refl_pts, COLORS.ref_line);
-                ref_line_group.add(refline_line);
-                disposable_objs.push(refline_line.geometry, refline_line.material);
-
             }
 
             console.timeEnd('loading roads');
@@ -217,15 +225,15 @@
             if (PARAMS.geom_edges && (odr_geom_edges_group.children.length == 0))
                 add_odr_geom_edges();
 
-            if (fit_view)
-                fitView(ref_line_group);
+            renderer.render(scene, camera);
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            if (PARAMS.spotlight)
+            if (PARAMS.spotlight) {
                 update();
-            renderer.render(scene, camera);
+                renderer.render(scene, camera);
+            }
         }
 
         function update() {
