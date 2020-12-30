@@ -20,9 +20,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_map<int, double>("map<int, double>");
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
+    emscripten::register_vector<std::string>("vector<string>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
-    emscripten::register_map<int, std::shared_ptr<Road>>("map<int, shared_ptr<Road>>");
+    emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
     emscripten::register_map<double, std::shared_ptr<LaneSection>>("map<double, shared_ptr<LaneSection>>");
 
@@ -64,7 +65,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("type", &LaneVertices::type);
 
     emscripten::class_<Road>("Road")
-        .constructor<double, int, int>()
+        .constructor<>()
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
         .function("get_lanesection", emscripten::select_const(&Road::get_lanesection))
         .function("get_lane_borders", &Road::get_lane_borders)
