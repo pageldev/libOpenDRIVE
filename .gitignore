@@ -6,5 +6,3 @@ compile_commands.json
 .vscode/
 build/
 Visualizer/libOpenDrive.js
-Thirdparty/odrSchema/*
-!Thirdparty/odrSchema/*.xsd

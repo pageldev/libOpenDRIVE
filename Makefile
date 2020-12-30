@@ -1,9 +1,9 @@
 .SUFFIXES:
 
 CC = g++
-XSD = xsd
 CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS)
-INCLUDE_DIRS = -I./ -I./Thirdparty
+INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
+THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build/x64
 
 CPP_FILES = \
@@ -22,8 +22,6 @@ CPP_FILES = \
 	Thirdparty/json11/json11.cpp
 
 OBJ_FILES = $(CPP_FILES:%.cpp=$(BUILD_DIR)/%.o)
-XSD_FILE = Thirdparty/odrSchema/OpenDRIVE_1.4H_Schema_Files.xsd
-XSD_CXX = $(XSD_FILE:%.xsd=%.cxx)
 
 
 .PHONY: all
@@ -41,14 +39,11 @@ wasm: WASMFLAGS = --bind \
 wasm: $(BUILD_DIR)/libOpenDrive.js
 	cp $(BUILD_DIR)/libOpenDrive.* Visualizer/
 
-$(BUILD_DIR)/libOpenDrive.so: $(OBJ_FILES) $(XSD_CXX)
-	$(CC) $(CFLAGS) -shared -o $@ $(OBJ_FILES) OpenDRIVE_1.4H_Schema_Files.cxx
+$(BUILD_DIR)/libOpenDrive.so: $(OBJ_FILES)
+	$(CC) $(CFLAGS) -shared -o $@ $(OBJ_FILES)
 
-$(BUILD_DIR)/libOpenDrive.js: $(OBJ_FILES) $(XSD_CXX)
-	$(CC) $(CFLAGS) $(WASMFLAGS) -o $@ $(OBJ_FILES) OpenDRIVE_1.4H_Schema_Files.cxx
-
-$(XSD_CXX): $(XSD_FILE)
-	$(XSD) cxx-tree --std c++11 --namespace-map '=odr' --generate-polymorphic --output-dir '$(dir $@)' $<
+$(BUILD_DIR)/libOpenDrive.js: $(OBJ_FILES)
+	$(CC) $(CFLAGS) $(WASMFLAGS) -o $@ $(OBJ_FILES)
 
 $(BUILD_DIR)/main: $(OBJ_FILES) main.cpp
 	$(CC) $(CFLAGS) -o $@ $(OBJ_FILES) main.cpp
@@ -61,4 +56,3 @@ $(BUILD_DIR)/%.o: %.cpp
 .PHONY: clean
 clean:
 	rm -rf build
-	rm -f $(dir $(XSD_CXX)){*.cxx,*.hxx}
