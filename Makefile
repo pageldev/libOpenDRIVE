@@ -42,8 +42,8 @@ wasm: $(BUILD_DIR)/libOpenDrive.js
 $(BUILD_DIR)/libOpenDrive.so: $(OBJ_FILES)
 	$(CC) $(CFLAGS) -shared -o $@ $(OBJ_FILES)
 
-$(BUILD_DIR)/libOpenDrive.js: $(OBJ_FILES)
-	$(CC) $(CFLAGS) $(WASMFLAGS) -o $@ $(OBJ_FILES)
+$(BUILD_DIR)/libOpenDrive.js: $(OBJ_FILES) Embind.cpp
+	$(CC) $(CFLAGS) $(WASMFLAGS) -o $@ $(OBJ_FILES) Embind.cpp
 
 $(BUILD_DIR)/main: $(OBJ_FILES) main.cpp
 	$(CC) $(CFLAGS) -o $@ $(OBJ_FILES) main.cpp
