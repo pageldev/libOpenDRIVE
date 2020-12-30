@@ -29,8 +29,6 @@ double Crossfall::get_crossfall(double s, bool on_left_side) const
     return 0;
 }
 
-Road::Road(double length, int id, int junction) : id(id), junction(junction), length(length) {}
-
 ConstLaneSectionSet Road::get_lanesections() const
 {
     ConstLaneSectionSet lanesections;
@@ -73,7 +71,7 @@ std::shared_ptr<const Lane> Road::get_lane(double s, double t, double* t_outer_b
     std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
     if (!lanesection)
     {
-        printf("road #%d - could not get lane section for s %.2f\n", this->id, s);
+        printf("road #%s - could not get lane section for s %.2f\n", this->id.c_str(), s);
         return nullptr;
     }
 
@@ -137,7 +135,7 @@ Vec3D Road::get_surface_pt(double s, double t) const
     std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
     if (!lanesection)
     {
-        printf("road #%d - could not get lane section for s: %.2f\n", this->id, s);
+        printf("road #%s - could not get lane section for s: %.2f\n", this->id.c_str(), s);
         return this->get_xyz(s, t, 0.0);
     }
 
@@ -145,7 +143,7 @@ Vec3D Road::get_surface_pt(double s, double t) const
     std::shared_ptr<const Lane> lane = this->get_lane(s, t, &t_outer_brdr);
     if (!lane)
     {
-        printf("road #%d - could not get lane for s: %.2f t: %.2f\n", this->id, s, t);
+        printf("road #%s - could not get lane for s: %.2f t: %.2f\n", this->id.c_str(), s, t);
         return this->get_xyz(s, t, 0.0);
     }
 
@@ -171,7 +169,7 @@ Vec3D Road::get_surface_pt(double s, double t) const
 
 Mat3D Road::get_transformation_matrix(double s) const
 {
-    const Vec3D s_vec = this->ref_line->get_grad(s);
+    const Vec3D  s_vec = this->ref_line->get_grad(s);
     const double superelevation = this->superelevation.get(s);
 
     const Vec3D e_t = normalize(Vec3D{-s_vec[1], s_vec[0], std::tan(superelevation) * -s_vec[1]});

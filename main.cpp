@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     std::vector<odr::Vec3D> pts;
     for (std::shared_ptr<odr::Road> road : odr.get_roads())
     {
-        printf("road: %d\n", road->id);
+        printf("road: %s\n", road->id.c_str());
         for (std::shared_ptr<odr::LaneSection> lanesec : road->get_lanesections())
         {
             std::vector<odr::LaneVertices> lane_vertices = lanesec->get_lane_vertices(0.1);

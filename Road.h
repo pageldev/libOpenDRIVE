@@ -30,30 +30,28 @@ struct Crossfall : public CubicSpline
 
 struct RoadLink
 {
-    int elementId = -1;
-
+    std::string elementId;
     std::string elementType;
     std::string contactPoint;
 };
 
 struct RoadNeighbor
 {
-    int elementId = -1;
-
+    std::string elementId;
     std::string side;
     std::string direction;
 };
 
 struct SpeedRecord
 {
-    double      max = -1;
+    std::string max;
     std::string unit;
 };
 
 class Road : public std::enable_shared_from_this<Road>
 {
 public:
-    Road(double length, int id, int junction);
+    Road() = default;
 
     ConstLaneSectionSet get_lanesections() const;
     LaneSectionSet      get_lanesections();
@@ -70,9 +68,10 @@ public:
     Vec3D get_surface_pt(double s, double t) const;
     Mat3D get_transformation_matrix(double s) const;
 
-    int    id;
-    int    junction;
-    double length;
+    double      length;
+    std::string id;
+    std::string junction;
+    std::string name;
 
     RoadLink                  predecessor;
     RoadLink                  successor;
@@ -88,7 +87,7 @@ public:
     std::map<double, SpeedRecord>                  s0_to_speed;
 };
 
-using ConstRoadSet = std::set<std::shared_ptr<const Road>, SharedPtrCmp<const Road, int, &Road::id>>;
-using RoadSet = std::set<std::shared_ptr<Road>, SharedPtrCmp<Road, int, &Road::id>>;
+using ConstRoadSet = std::set<std::shared_ptr<const Road>, SharedPtrCmp<const Road, std::string, &Road::id>>;
+using RoadSet = std::set<std::shared_ptr<Road>, SharedPtrCmp<Road, std::string, &Road::id>>;
 
 } // namespace odr

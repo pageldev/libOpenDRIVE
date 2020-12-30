@@ -23,17 +23,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
     if (!result)
         std::cerr << result.description() << std::endl;
 
-    this->proj4 = doc.select_node("/OpenDRIVE/header/geoReference").node().text().as_string();
+    if (auto geoReference_node = doc.select_node("/OpenDRIVE/header/geoReference").node())
+        this->proj4 = geoReference_node.text().as_string();
 
     pugi::xpath_node_set roads = doc.select_nodes("/OpenDRIVE/road");
     for (pugi::xpath_node road_node : roads)
     {
         /* make road */
-        const double road_length = road_node.node().attribute("length").as_double();
-        const int    road_id = road_node.node().attribute("id").as_int();
-        const int    junction_id = road_node.node().attribute("junction").as_int();
+        std::shared_ptr<Road> road = std::make_shared<Road>();
+        road->length = road_node.node().attribute("length").as_double();
+        road->id = road_node.node().attribute("id").as_string();
+        road->junction = road_node.node().attribute("junction").as_string();
+        road->name = road_node.node().attribute("name").as_string();
 
-        std::shared_ptr<Road> road = std::make_shared<Road>(road_length, road_id, junction_id);
         this->roads[road->id] = road;
 
         /* parse road links */
@@ -43,7 +45,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             if (pugi::xml_node node = doc.select_node(xpath.c_str()).node())
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
-                link.elementId = node.child("elementId").text().as_int();
+                link.elementId = node.child("elementId").text().as_string();
                 link.elementType = node.child("elementType").text().as_string();
                 link.contactPoint = node.child("contactPoint").text().as_string();
             }
@@ -54,7 +56,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         for (pugi::xpath_node road_neighbor_node : road_neighbor_nodes)
         {
             RoadNeighbor road_neighbor;
-            road_neighbor.elementId = road_neighbor_node.node().attribute("elementId").as_int();
+            road_neighbor.elementId = road_neighbor_node.node().attribute("elementId").as_string();
             road_neighbor.side = road_neighbor_node.node().attribute("side").as_string();
             road_neighbor.direction = road_neighbor_node.node().attribute("direction").as_string();
             road->neighbors.push_back(road_neighbor);
@@ -70,14 +72,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             if (pugi::xml_node node = road_type_node.node().child("speed"))
             {
                 SpeedRecord speed_record;
-                speed_record.max = node.attribute("max").as_double();
+                speed_record.max = node.attribute("max").as_string();
                 speed_record.unit = node.attribute("unit").as_string();
                 road->s0_to_speed[s] = speed_record;
             }
         }
 
         /* make ref_line - parse road geometries */
-        road->ref_line = std::make_shared<RefLine>(road_length);
+        road->ref_line = std::make_shared<RefLine>(road->length);
         pugi::xpath_node_set geometry_headers = road_node.node().select_nodes(".//planView//geometry");
         for (pugi::xpath_node geometry_hdr_node : geometry_headers)
         {

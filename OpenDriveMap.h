@@ -19,7 +19,7 @@ public:
     std::string xodr_file;
     std::string proj4;
 
-    std::map<int, std::shared_ptr<Road>> roads;
+    std::map<std::string, std::shared_ptr<Road>> roads;
 };
 
 } // namespace odr
