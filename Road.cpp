@@ -122,9 +122,9 @@ std::map<int, double> Road::get_lane_borders(double s) const
     return id_to_outer_border;
 }
 
-Vec3D Road::get_xyz(double s, double t, double z) const
+Vec3D Road::get_xyz(double s, double t, double z, bool with_superelevation) const
 {
-    const Mat3D trans_mat = this->get_transformation_matrix(s);
+    const Mat3D trans_mat = this->get_transformation_matrix(s, with_superelevation);
     const Vec3D xyz = MatVecMultiplication(trans_mat, Vec3D{t, z, 1});
 
     return xyz;
@@ -167,12 +167,12 @@ Vec3D Road::get_surface_pt(double s, double t) const
     return this->get_xyz(s, t, z_offs);
 }
 
-Mat3D Road::get_transformation_matrix(double s) const
+Mat3D Road::get_transformation_matrix(double s, bool with_superelevation) const
 {
     const Vec3D  s_vec = this->ref_line->get_grad(s);
-    const double superelevation = this->superelevation.get(s);
+    const double superelevation = with_superelevation ? this->superelevation.get(s) : 0;
 
-    const Vec3D e_t = normalize(Vec3D{-s_vec[1], s_vec[0], std::tan(superelevation) * -s_vec[1]});
+    const Vec3D e_t = normalize(Vec3D{-s_vec[1], s_vec[0], std::tan(superelevation) * std::abs(s_vec[1])});
     const Vec3D e_z = normalize(crossProduct(s_vec, e_t));
     const Vec3D p0 = this->ref_line->get_xyz(s);
 

@@ -64,9 +64,9 @@ public:
 
     std::map<int, double> get_lane_borders(double s) const;
 
-    Vec3D get_xyz(double s, double t, double z) const;
+    Vec3D get_xyz(double s, double t, double z, bool with_superelevation = true) const;
     Vec3D get_surface_pt(double s, double t) const;
-    Mat3D get_transformation_matrix(double s) const;
+    Mat3D get_transformation_matrix(double s, bool with_superelevation = true) const;
 
     double      length;
     std::string id;
