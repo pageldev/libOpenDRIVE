@@ -79,7 +79,7 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t, double* t_outer_
     return lane;
 }
 
-std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution) const
+std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     if (auto road_ptr = this->road.lock())
     {
@@ -109,19 +109,23 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                 const double t_outer_brdr = id_brdr_iter->second;
                 const double t_inner_brdr = (lane_id > 0) ? std::prev(id_brdr_iter)->second : std::next(id_brdr_iter)->second;
 
-                double z_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_inner_brdr);
-                double z_outer_brdr = 0;
-                if (this->id_to_lane.at(lane_id)->level)
+                double z_inner_brdr = 0.0;
+                double z_outer_brdr = 0.0;
+                if (with_lateralProfile)
                 {
-                    const double superelev = road_ptr->superelevation.get(s); // cancel out superelevation
-                    z_outer_brdr = z_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
-                }
-                else
-                {
-                    z_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_outer_brdr);
+                    z_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_inner_brdr);
+                    if (this->id_to_lane.at(lane_id)->level)
+                    {
+                        const double superelev = road_ptr->superelevation.get(s); // cancel out superelevation
+                        z_outer_brdr = z_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
+                    }
+                    else
+                    {
+                        z_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_outer_brdr);
+                    }
                 }
 
-                if (this->id_to_lane.at(lane_id)->s0_to_height_offset.size() > 0)
+                if (with_laneHeight && this->id_to_lane.at(lane_id)->s0_to_height_offset.size() > 0)
                 {
                     const std::map<double, HeightOffset>& height_offs = this->id_to_lane.at(lane_id)->s0_to_height_offset;
                     auto                                  s0_height_offs_iter = height_offs.upper_bound(s - this->s0);
@@ -143,8 +147,8 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                         z_outer_brdr += (dh_outer / ds) * (s - this->s0 - s0_height_offs_iter->first);
                     }
                 }
-                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_xyz(s, t_outer_brdr, z_outer_brdr));
-                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_xyz(s, t_inner_brdr, z_inner_brdr));
+                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_xyz(s, t_outer_brdr, z_outer_brdr, with_lateralProfile));
+                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_xyz(s, t_inner_brdr, z_inner_brdr, with_lateralProfile));
             }
         }
 
@@ -158,10 +162,12 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
     return {};
 }
 
-std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) const
+std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     std::vector<LaneVertices>                lanesection_vertices;
-    std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line = this->get_lane_border_lines(resolution);
+    std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line =
+        this->get_lane_border_lines(resolution, with_lateralProfile, with_laneHeight);
+
     for (auto& id_outer_inner_brdr_line : lane_id_to_outer_inner_brdr_line)
     {
         const int    lane_id = id_outer_inner_brdr_line.first;
