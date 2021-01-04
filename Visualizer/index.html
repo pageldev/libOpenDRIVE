@@ -17,7 +17,8 @@
 
         #bottom_info {
             position: absolute;
-            bottom: 0;
+            bottom: 1em;
+            left: 1em;
             text-align: left;
             font-family: monospace;
             display: block;
@@ -28,7 +29,7 @@
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-    <div id="bottom_info"></div>
+    <div id="bottom_info"><h2>Loading...</h2></div>
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
@@ -236,6 +237,7 @@
                 add_odr_geom_edges();
 
             renderer.render(scene, camera);
+            bottom_info.style.display = "none";
         }
 
         function animate() {
