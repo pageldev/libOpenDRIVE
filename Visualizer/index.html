@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>libOpenDRIVE Visualizer</title>
+    <title>OpenDRIVE Visualizer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -64,7 +64,7 @@
             wireframe: 0x494949,
             background: 0xaab6fe,
             lane_highlight: 0x0288d1,
-            road_highlight: 0x5eb8ff,
+            road_highlight: 0x9A9A9A,
         };
 
         var scene = new THREE.Scene();
@@ -103,7 +103,6 @@
         window.addEventListener('dblclick', onDocumentMouseClick, false);
 
         renderer.render(scene, camera);
-        animate();
 
         var gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
@@ -240,6 +239,7 @@
 
             renderer.render(scene, camera);
             bottom_info.style.display = "none";
+            animate();
         }
 
         function animate() {
@@ -255,16 +255,21 @@
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.material.color.set(COLORS.road);
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); n.material.depthTest = true; } });
+                        INTERSECTED.userData.road_group.renderOrder = 0;
                     }
                     INTERSECTED = intersects[0].object;
                     bottom_info.style.display = "block";
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); n.material.depthTest = false; } });
+                    INTERSECTED.userData.road_group.renderOrder = 1;
                     INTERSECTED.material.color.set(COLORS.lane_highlight);
+                    INTERSECTED.material.renderOrder = 2;
                     renderer.render(scene, camera);
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.material.color.set(COLORS.road);
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); n.material.depthTest = true; } });
+                    INTERSECTED.userData.road_group.renderOrder = 0;
                     renderer.render(scene, camera);
                 }
                 INTERSECTED = null;
