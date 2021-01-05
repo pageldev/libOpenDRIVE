@@ -29,7 +29,9 @@
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-    <div id="bottom_info"><h2>Loading...</h2></div>
+    <div id="bottom_info">
+        <h2>Loading...</h2>
+    </div>
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
@@ -136,7 +138,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./aachen.xodr").then((file_data) => {
+            fetch("./data.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -176,7 +178,11 @@
                 for (let s = 0; s < road.length; s += PARAMS.resolution)
                     refl_pts.push(road.ref_line.get_xyz(s));
                 refl_pts.push(road.ref_line.get_xyz(road.length));
+
                 const refline_line = add_line(refl_pts, COLORS.ref_line);
+                refline_line.renderOrder = 1;
+                refline_line.material.depthTest = false;
+
                 ref_line_group.add(refline_line);
                 disposable_objs.push(refline_line.geometry, refline_line.material);
             }
