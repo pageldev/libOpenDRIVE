@@ -2,6 +2,7 @@
 
 #include "Geometries/CubicSpline.h"
 #include "Lanes.h"
+#include "LaneSection.h"
 #include "Math.hpp"
 #include "Utils.hpp"
 

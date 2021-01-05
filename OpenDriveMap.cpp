@@ -5,6 +5,7 @@
 #include "Geometries/ParamPoly3.h"
 #include "Geometries/Spiral.h"
 #include "Lanes.h"
+#include "LaneSection.h"
 #include "RefLine.h"
 #include "Road.h"
 

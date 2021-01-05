@@ -1,6 +1,7 @@
 #ifdef __EMSCRIPTEN__
 
     #include "Lanes.h"
+    #include "LaneSection.h"
     #include "OpenDriveMap.h"
     #include "RefLine.h"
     #include "Road.h"

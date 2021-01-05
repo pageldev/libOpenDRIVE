@@ -9,6 +9,7 @@ BUILD_DIR = build/x64
 CPP_FILES = \
 	OpenDriveMap.cpp \
 	Lanes.cpp \
+	LaneSection.cpp \
 	RefLine.cpp \
 	Road.cpp \
 	Geometries/Arc.cpp \
