@@ -7,11 +7,6 @@ THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build/x64
 
 CPP_FILES = \
-	OpenDriveMap.cpp \
-	Lanes.cpp \
-	LaneSection.cpp \
-	RefLine.cpp \
-	Road.cpp \
 	Geometries/Arc.cpp \
 	Geometries/CubicSpline.cpp \
 	Geometries/Line.cpp \
@@ -19,8 +14,14 @@ CPP_FILES = \
 	Geometries/RoadGeometry.cpp \
 	Geometries/Spiral.cpp \
 	Geometries/Spiral/odrSpiral.cpp \
-	Thirdparty/pugixml/pugixml.cpp \
-	Thirdparty/json11/json11.cpp
+	Lanes.cpp \
+	LaneSection.cpp \
+	OpenDriveMap.cpp \
+	RefLine.cpp \
+	Road.cpp \
+	RoadMark.cpp \
+	Thirdparty/json11/json11.cpp \
+	Thirdparty/pugixml/pugixml.cpp 
 
 OBJ_FILES = $(CPP_FILES:%.cpp=$(BUILD_DIR)/%.o)
 

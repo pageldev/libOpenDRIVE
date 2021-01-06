@@ -2,6 +2,7 @@
 
 #include "Geometries/CubicSpline.h"
 #include "Math.hpp"
+#include "RoadMark.h"
 #include "Utils.hpp"
 
 #include <map>
@@ -16,32 +17,6 @@ struct HeightOffset
 {
     double inner;
     double outer;
-};
-
-struct RoadMarkLine
-{
-    double width;
-    double length;
-    double space;
-    double tOffset;
-    double sOffset;
-
-    std::string name;
-    std::string rule;
-};
-
-struct RoadMark
-{
-    double width;
-    double height;
-
-    std::string type;
-    std::string weight;
-    std::string color;
-    std::string material;
-    std::string laneChange;
-
-    std::vector<RoadMarkLine> lines;
 };
 
 struct Lane : public std::enable_shared_from_this<Lane>
