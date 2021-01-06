@@ -7,6 +7,7 @@
 #include <cmath>
 #include <functional>
 #include <map>
+#include <set>
 #include <type_traits>
 #include <vector>
 
@@ -28,6 +29,16 @@ struct SharedPtrCmp
 {
     bool operator()(const std::shared_ptr<C>& lhs, const std::shared_ptr<C>& rhs) const { return (*lhs).*member < (*rhs).*member; }
 };
+
+template<class K, class V>
+std::set<K> extract_keys(std::map<K, V> const& input_map)
+{
+    std::set<K> retval;
+    for (auto const& element : input_map)
+        retval.insert(element.first);
+
+    return retval;
+}
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 Box2D get_bbox_for_s_values(const std::vector<T>& s_values, const std::function<Vec2D(T)>& get_xyz)

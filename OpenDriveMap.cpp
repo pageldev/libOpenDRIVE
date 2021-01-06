@@ -149,7 +149,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 double b = node.node().attribute("b").as_double();
                 double c = node.node().attribute("c").as_double();
                 double d = node.node().attribute("d").as_double();
-                entry.second.s0_to_poly[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
+                entry.second.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
             }
         }
 
@@ -162,7 +162,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             double c = crossfall_node.attribute("c").as_double();
             double d = crossfall_node.attribute("d").as_double();
 
-            road->crossfall.s0_to_poly[s0] = std::make_shared<Poly3>(s0, a, b, c, d);
+            road->crossfall.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
             if (pugi::xml_attribute side = crossfall_node.attribute("side"))
             {
                 std::string side_str = side.as_string();
@@ -205,7 +205,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     double b = lane_width_node.attribute("b").as_double();
                     double c = lane_width_node.attribute("c").as_double();
                     double d = lane_width_node.attribute("d").as_double();
-                    lane->lane_width.s0_to_poly[s_offset] = std::make_shared<Poly3>(s_offset, a, b, c, d);
+                    lane->lane_width.s0_to_poly[s_offset] = Poly3(s_offset, a, b, c, d);
                 }
 
                 for (pugi::xml_node lane_height_node : lane_node.node().children("height"))
@@ -244,7 +244,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                             double line_width = line_width_0 < 0 ? line_width_1 : line_width_0;
 
                             std::string rule = roadmark_line_node.attribute("sOffset").as_string("none");
-                            
+
                             RoadMarkLine roadmark_line(line_width, length, space, tOffset, sOffset, name, rule);
                             roadmark_lines.push_back(roadmark_line);
                         }

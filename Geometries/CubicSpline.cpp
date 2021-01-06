@@ -1,4 +1,5 @@
 #include "CubicSpline.h"
+#include "Utils.hpp"
 
 #include <cmath>
 #include <utility>
@@ -41,22 +42,26 @@ double Poly3::get_max(std::pair<double, double> range) const
     return max_val;
 }
 
+void Poly3::negate()
+{
+    a = -a;
+    b = -b;
+    c = -c;
+    d = -d;
+}
+
 size_t CubicSpline::size() const { return this->s0_to_poly.size(); }
 
 double CubicSpline::get(double s) const
 {
-    std::shared_ptr<const Poly3> poly = this->get_poly(s);
-    if (poly)
-        return poly->get(s);
-    return 0;
+    const Poly3 poly = this->get_poly(s);
+    return poly.get(s);
 }
 
 double CubicSpline::get_grad(double s) const
 {
-    std::shared_ptr<const Poly3> poly = this->get_poly(s);
-    if (poly)
-        return poly->get_grad(s);
-    return 0;
+    const Poly3 poly = this->get_poly(s);
+    return poly.get_grad(s);
 }
 
 double CubicSpline::get_max(std::pair<double, double> range) const
@@ -68,7 +73,7 @@ double CubicSpline::get_max(std::pair<double, double> range) const
         const double upper_bound = (next_s0_poly == this->s0_to_poly.end()) ? range.second : next_s0_poly->first;
         const double lower_bound = (s0_poly_iter == this->s0_to_poly.begin()) ? range.first : s0_poly_iter->first;
 
-        max_vals.push_back(s0_poly_iter->second->get_max({lower_bound, upper_bound}));
+        max_vals.push_back(s0_poly_iter->second.get_max({lower_bound, upper_bound}));
     }
 
     const auto   max_iter = std::max_element(max_vals.begin(), max_vals.end());
@@ -76,7 +81,34 @@ double CubicSpline::get_max(std::pair<double, double> range) const
     return max_val;
 }
 
-std::shared_ptr<const Poly3> CubicSpline::get_poly(double s) const
+void CubicSpline::negate()
+{
+    for(auto& s0_poly : s0_to_poly)
+        s0_poly.second.negate();
+}
+
+CubicSpline CubicSpline::add(const CubicSpline& other) const
+{
+    std::set<double> s0_vals = extract_keys(this->s0_to_poly);
+    std::set<double> other_s0s = extract_keys(other.s0_to_poly);
+    s0_vals.insert(other_s0s.begin(), other_s0s.end());
+
+    CubicSpline retval;
+    for (const double& s0 : s0_vals)
+    {
+        const Poly3 this_poly = this->get_poly(s0);
+        const Poly3 other_poly = other.get_poly(s0);
+
+        double a = this_poly.a + other_poly.a;
+        double b = this_poly.b + other_poly.b;
+        double c = this_poly.c + other_poly.c;
+        double d = this_poly.d + other_poly.d;
+        retval.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
+    }
+    return retval;
+}
+
+Poly3 CubicSpline::get_poly(double s) const
 {
     if (this->s0_to_poly.size() > 0)
     {
@@ -85,7 +117,7 @@ std::shared_ptr<const Poly3> CubicSpline::get_poly(double s) const
             target_poly_iter--;
         return target_poly_iter->second;
     }
-    return nullptr;
+    return Poly3();
 }
 
 } // namespace odr
