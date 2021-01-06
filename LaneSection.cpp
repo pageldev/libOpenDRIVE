@@ -77,6 +77,46 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t, double* t_outer_
     return lane;
 }
 
+std::map<int, double> LaneSection::get_lane_borders(double s) const
+{
+    auto id_lane_iter0 = this->id_to_lane.find(0);
+    if (id_lane_iter0 == this->id_to_lane.end())
+        throw std::runtime_error("lane section does not have lane #0");
+
+    std::map<int, double> id_to_outer_border;
+
+    /* iterate from id #0 towards +inf */
+    auto id_lane_iter1 = std::next(id_lane_iter0);
+    for (auto iter = id_lane_iter1; iter != this->id_to_lane.end(); iter++)
+    {
+        const double lane_width = iter->second->lane_width.get(s - this->s0);
+        id_to_outer_border[iter->first] = (iter == id_lane_iter1) ? lane_width : lane_width + id_to_outer_border.at(std::prev(iter)->first);
+    }
+
+    /* iterate from id #0 towards -inf */
+    std::map<int, std::shared_ptr<Lane>>::const_reverse_iterator r_id_lane_iter_1(id_lane_iter0);
+    for (auto r_iter = r_id_lane_iter_1; r_iter != this->id_to_lane.rend(); r_iter++)
+    {
+        const double lane_width = r_iter->second->lane_width.get(s - this->s0);
+        id_to_outer_border[r_iter->first] =
+            (r_iter == r_id_lane_iter_1) ? -lane_width : -lane_width + id_to_outer_border.at(std::prev(r_iter)->first);
+    }
+
+    if (auto road_ptr = this->road.lock())
+    {
+        const double t_offset = road_ptr->lane_offset.get(s);
+        for (auto& id_border : id_to_outer_border)
+            id_border.second += t_offset;
+        id_to_outer_border[0] = t_offset;
+    }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
+    return id_to_outer_border;
+}
+
 std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     if (auto road_ptr = this->road.lock())
@@ -97,7 +137,7 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
         std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
         for (const double& s : s_vals)
         {
-            const std::map<int, double> lane_borders = road_ptr->get_lane_borders(s);
+            const std::map<int, double> lane_borders = this->get_lane_borders(s);
             for (auto id_brdr_iter = lane_borders.begin(); id_brdr_iter != lane_borders.end(); id_brdr_iter++)
             {
                 const int lane_id = id_brdr_iter->first;
