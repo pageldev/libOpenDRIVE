@@ -7,7 +7,7 @@
 
 namespace odr
 {
-Poly3::Poly3(double s_start, double a, double b, double c, double d) : s_start(s_start)
+Poly3::Poly3(double s_start, double a, double b, double c, double d)
 {
     /* s = s - s_start => resolve to polynomial form */
     this->a = a - b * s_start + c * s_start * s_start - d * s_start * s_start * s_start;
@@ -32,16 +32,14 @@ size_t CubicSpline::size() const { return this->s_start_to_poly.size(); }
 
 double CubicSpline::get(double s) const
 {
-    const double ds = s - s0;
-    const Poly3  poly = this->get_poly(ds);
-    return poly.get(ds);
+    const Poly3  poly = this->get_poly(s);
+    return poly.get(s);
 }
 
 double CubicSpline::get_grad(double s) const
 {
-    const double ds = s - s0;
-    const Poly3  poly = this->get_poly(ds);
-    return poly.get_grad(ds);
+    const Poly3  poly = this->get_poly(s);
+    return poly.get_grad(s);
 }
 
 CubicSpline CubicSpline::negate() const
@@ -69,7 +67,6 @@ CubicSpline CubicSpline::add(const CubicSpline& other) const
         res.b = this_poly.b + other_poly.b;
         res.c = this_poly.c + other_poly.c;
         res.d = this_poly.d + other_poly.d;
-        res.s_start = s_start;
         retval.s_start_to_poly[s_start] = res;
     }
     return retval;

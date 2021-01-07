@@ -13,16 +13,25 @@ double Crossfall::get_crossfall(double s, bool on_left_side) const
 {
     const Poly3 poly = this->get_poly(s);
 
-    Side side = Side::Both; // applicable side of the road
-    if (this->sides.find(poly.s_start) != this->sides.end())
-        side = this->sides.at(poly.s_start);
+    if (this->s_start_to_poly.size() > 0)
+    {
+        auto target_poly_iter = this->s_start_to_poly.upper_bound(s);
+        if (target_poly_iter != this->s_start_to_poly.begin())
+            target_poly_iter--;
 
-    if (on_left_side && side == Side::Right)
-        return 0;
-    else if (!on_left_side && side == Side::Left)
-        return 0;
+        Side side = Side::Both; // applicable side of the road
+        if (this->sides.find(target_poly_iter->first) != this->sides.end())
+            side = this->sides.at(target_poly_iter->first);
 
-    return poly.get(s);
+        if (on_left_side && side == Side::Right)
+            return 0;
+        else if (!on_left_side && side == Side::Left)
+            return 0;
+
+        return target_poly_iter->second.get(s);
+    }
+    
+    return 0;
 }
 
 ConstLaneSectionSet Road::get_lanesections() const
