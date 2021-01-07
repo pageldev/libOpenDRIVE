@@ -285,6 +285,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 else
                     r_iter->second->lane_border = std::prev(r_iter)->second->lane_border.add(r_iter->second->lane_width.negate());
             }
+
+            for (auto& id_lane : lane_section->id_to_lane)
+                id_lane.second->lane_border = id_lane.second->lane_border.add(road->lane_offset);
         }
     }
 }

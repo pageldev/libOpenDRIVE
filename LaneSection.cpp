@@ -84,21 +84,8 @@ std::map<int, double> LaneSection::get_lane_borders(double s) const
         throw std::runtime_error("lane section does not have lane #0");
 
     std::map<int, double> id_to_outer_border;
-
     for(const auto& id_lane : this->id_to_lane)
         id_to_outer_border[id_lane.first] = id_lane.second->lane_border.get(s);
-
-    if (auto road_ptr = this->road.lock())
-    {
-        const double t_offset = road_ptr->lane_offset.get(s);
-        for (auto& id_border : id_to_outer_border)
-            id_border.second += t_offset;
-        id_to_outer_border[0] = t_offset;
-    }
-    else
-    {
-        throw std::runtime_error("could not access parent road for lane section");
-    }
 
     return id_to_outer_border;
 }
