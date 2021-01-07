@@ -30,7 +30,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
 
     std::string type;
     CubicSpline lane_width;
-    CubicSpline lane_border;
+    CubicSpline outer_border;
+    CubicSpline inner_border;
 
     std::map<double, HeightOffset> s0_to_height_offset;
     std::map<double, RoadMark>     s0_to_roadmark;

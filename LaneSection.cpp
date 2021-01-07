@@ -85,7 +85,7 @@ std::map<int, double> LaneSection::get_lane_borders(double s) const
 
     std::map<int, double> id_to_outer_border;
     for(const auto& id_lane : this->id_to_lane)
-        id_to_outer_border[id_lane.first] = id_lane.second->lane_border.get(s);
+        id_to_outer_border[id_lane.first] = id_lane.second->outer_border.get(s);
 
     return id_to_outer_border;
 }

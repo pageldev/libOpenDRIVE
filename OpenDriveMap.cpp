@@ -271,9 +271,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             for (auto iter = id_lane_iter1; iter != lane_section->id_to_lane.end(); iter++)
             {
                 if (iter == id_lane_iter0)
-                    iter->second->lane_border = iter->second->lane_width;
+                {
+                    iter->second->outer_border = iter->second->lane_width;
+                }
                 else
-                    iter->second->lane_border = std::prev(iter)->second->lane_border.add(iter->second->lane_width);
+                {
+                    iter->second->inner_border = std::prev(iter)->second->outer_border;
+                    iter->second->outer_border = std::prev(iter)->second->outer_border.add(iter->second->lane_width);
+                }
             }
 
             /* iterate from id #0 towards -inf */
@@ -281,13 +286,21 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             for (auto r_iter = r_id_lane_iter_1; r_iter != lane_section->id_to_lane.rend(); r_iter++)
             {
                 if (r_iter == r_id_lane_iter_1)
-                    r_iter->second->lane_border = r_iter->second->lane_width.negate();
+                {
+                    r_iter->second->outer_border = r_iter->second->lane_width.negate();
+                }
                 else
-                    r_iter->second->lane_border = std::prev(r_iter)->second->lane_border.add(r_iter->second->lane_width.negate());
+                {
+                    r_iter->second->inner_border = std::prev(r_iter)->second->outer_border;
+                    r_iter->second->outer_border = std::prev(r_iter)->second->outer_border.add(r_iter->second->lane_width.negate());
+                }
             }
 
             for (auto& id_lane : lane_section->id_to_lane)
-                id_lane.second->lane_border = id_lane.second->lane_border.add(road->lane_offset);
+            {
+                id_lane.second->inner_border = id_lane.second->inner_border.add(road->lane_offset);
+                id_lane.second->outer_border = id_lane.second->outer_border.add(road->lane_offset);
+            }
         }
     }
 }
