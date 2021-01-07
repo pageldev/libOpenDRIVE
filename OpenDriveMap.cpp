@@ -206,6 +206,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     double c = lane_width_node.attribute("c").as_double();
                     double d = lane_width_node.attribute("d").as_double();
                     lane->lane_width.s_start_to_poly[s_start] = Poly3(s_start, a, b, c, d);
+                    lane->lane_width.s0 = lane_section->s0;
                 }
 
                 for (pugi::xml_node lane_height_node : lane_node.node().children("height"))
@@ -273,6 +274,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     iter->second->lane_border = iter->second->lane_width;
                 else
                     iter->second->lane_border = std::prev(iter)->second->lane_border.add(iter->second->lane_width);
+                iter->second->lane_border.s0 = lane_section->s0;
             }
 
             /* iterate from id #0 towards -inf */
@@ -283,6 +285,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     r_iter->second->lane_border = r_iter->second->lane_width.negate();
                 else
                     r_iter->second->lane_border = std::prev(r_iter)->second->lane_border.add(r_iter->second->lane_width.negate());
+                r_iter->second->lane_border.s0 = lane_section->s0;
             }
         }
     }

@@ -54,14 +54,16 @@ size_t CubicSpline::size() const { return this->s_start_to_poly.size(); }
 
 double CubicSpline::get(double s) const
 {
-    const Poly3 poly = this->get_poly(s);
-    return poly.get(s);
+    const double ds = s - s0;
+    const Poly3 poly = this->get_poly(ds);
+    return poly.get(ds);
 }
 
 double CubicSpline::get_grad(double s) const
 {
-    const Poly3 poly = this->get_poly(s);
-    return poly.get_grad(s);
+    const double ds = s - s0;
+    const Poly3 poly = this->get_poly(ds);
+    return poly.get_grad(ds);
 }
 
 double CubicSpline::get_max(std::pair<double, double> range) const

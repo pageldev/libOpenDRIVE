@@ -111,7 +111,7 @@ Vec3D Road::get_surface_pt(double s, double t) const
     double z_offs = 0;
     if (lane->level)
     {
-        const double lane_width = lane->lane_width.get(s - lanesection->s0);
+        const double lane_width = lane->lane_width.get(s);
         const double t_inner_brdr = (lane->id > 0) ? t_outer_brdr - lane_width : t_outer_brdr + lane_width;
         const double superelev = this->superelevation.get(s); // cancel out superelevation
         const double h_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
