@@ -168,6 +168,8 @@
             if (clear_map) {
                 for (let group of basic_groups)
                     group.remove(...group.children);
+                for (let group of lazy_loaded_groups)
+                    group.remove(...group.children);
                 for (let obj of disposable_objs)
                     obj.dispose();
             }
