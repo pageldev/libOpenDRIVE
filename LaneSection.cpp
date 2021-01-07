@@ -77,19 +77,6 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t, double* t_outer_
     return lane;
 }
 
-std::map<int, double> LaneSection::get_lane_borders(double s) const
-{
-    auto id_lane_iter0 = this->id_to_lane.find(0);
-    if (id_lane_iter0 == this->id_to_lane.end())
-        throw std::runtime_error("lane section does not have lane #0");
-
-    std::map<int, double> id_to_outer_border;
-    for(const auto& id_lane : this->id_to_lane)
-        id_to_outer_border[id_lane.first] = id_lane.second->outer_border.get(s);
-
-    return id_to_outer_border;
-}
-
 std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     if (auto road_ptr = this->road.lock())
@@ -111,14 +98,14 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
         for (const double& s : s_vals)
         {
             const std::map<int, double> lane_borders = this->get_lane_borders(s);
-            for (auto id_brdr_iter = lane_borders.begin(); id_brdr_iter != lane_borders.end(); id_brdr_iter++)
+            for(const auto& id_lane : this->id_to_lane)
             {
-                const int lane_id = id_brdr_iter->first;
+                const int lane_id = id_lane.first;
                 if (lane_id == 0)
                     continue;
 
-                const double t_outer_brdr = id_brdr_iter->second;
-                const double t_inner_brdr = (lane_id > 0) ? std::prev(id_brdr_iter)->second : std::next(id_brdr_iter)->second;
+                const double t_outer_brdr = id_lane.second->outer_border.get(s);
+                const double t_inner_brdr = id_lane.second->inner_border.get(s);
 
                 double z_inner_brdr = 0.0;
                 double z_outer_brdr = 0.0;
