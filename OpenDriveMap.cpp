@@ -144,35 +144,35 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
             pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
             for (pugi::xpath_node node : nodes)
             {
-                double s0 = node.node().attribute("s").as_double();
+                double s_start = node.node().attribute("s").as_double();
                 double a = node.node().attribute("a").as_double();
                 double b = node.node().attribute("b").as_double();
                 double c = node.node().attribute("c").as_double();
                 double d = node.node().attribute("d").as_double();
-                entry.second.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
+                entry.second.s_start_to_poly[s_start] = Poly3(s_start, a, b, c, d);
             }
         }
 
         /* parse crossfall - has extra attribute side */
         for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
         {
-            double s0 = crossfall_node.attribute("s").as_double();
+            double s_start = crossfall_node.attribute("s").as_double();
             double a = crossfall_node.attribute("a").as_double();
             double b = crossfall_node.attribute("b").as_double();
             double c = crossfall_node.attribute("c").as_double();
             double d = crossfall_node.attribute("d").as_double();
 
-            road->crossfall.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
+            road->crossfall.s_start_to_poly[s_start] = Poly3(s_start, a, b, c, d);
             if (pugi::xml_attribute side = crossfall_node.attribute("side"))
             {
                 std::string side_str = side.as_string();
                 std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
                 if (side_str == "left")
-                    road->crossfall.sides[s0] = Crossfall::Side::Left;
+                    road->crossfall.sides[s_start] = Crossfall::Side::Left;
                 else if (side_str == "right")
-                    road->crossfall.sides[s0] = Crossfall::Side::Right;
+                    road->crossfall.sides[s_start] = Crossfall::Side::Right;
                 else
-                    road->crossfall.sides[s0] = Crossfall::Side::Both;
+                    road->crossfall.sides[s_start] = Crossfall::Side::Both;
             }
         }
 
@@ -200,12 +200,12 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
 
                 for (pugi::xml_node lane_width_node : lane_node.node().children("width"))
                 {
-                    double s_offset = lane_width_node.attribute("sOffset").as_double();
+                    double s_start = lane_width_node.attribute("sOffset").as_double();
                     double a = lane_width_node.attribute("a").as_double();
                     double b = lane_width_node.attribute("b").as_double();
                     double c = lane_width_node.attribute("c").as_double();
                     double d = lane_width_node.attribute("d").as_double();
-                    lane->lane_width.s0_to_poly[s_offset] = Poly3(s_offset, a, b, c, d);
+                    lane->lane_width.s_start_to_poly[s_start] = Poly3(s_start, a, b, c, d);
                 }
 
                 for (pugi::xml_node lane_height_node : lane_node.node().children("height"))

@@ -18,7 +18,7 @@ struct Poly3
 
     void negate();
 
-    double s0, a, b, c, d;
+    double s_start, a, b, c, d;
 };
 
 struct CubicSpline
@@ -35,7 +35,7 @@ struct CubicSpline
     CubicSpline add(const CubicSpline& other) const;
     Poly3       get_poly(double s) const;
 
-    std::map<double, Poly3> s0_to_poly;
+    std::map<double, Poly3> s_start_to_poly;
 };
 
 } // namespace odr

@@ -14,8 +14,8 @@ double Crossfall::get_crossfall(double s, bool on_left_side) const
     const Poly3 poly = this->get_poly(s);
 
     Side side = Side::Both; // applicable side of the road
-    if (this->sides.find(poly.s0) != this->sides.end())
-        side = this->sides.at(poly.s0);
+    if (this->sides.find(poly.s_start) != this->sides.end())
+        side = this->sides.at(poly.s_start);
 
     if (on_left_side && side == Side::Right)
         return 0;
