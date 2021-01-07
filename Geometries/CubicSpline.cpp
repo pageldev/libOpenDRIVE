@@ -7,12 +7,18 @@
 
 namespace odr
 {
-Poly3::Poly3(double s_start, double a, double b, double c, double d) : s_start(s_start), a(a), b(b), c(c), d(d) {}
+Poly3::Poly3(double s_start, double a, double b, double c, double d) : s_start(s_start)
+{
+    this->a = a - b * s_start + c * s_start * s_start - d * s_start * s_start * s_start;
+    this->b = b - 2 * c * s_start + 3 * d * s_start * s_start;
+    this->c = c - 3 * d * s_start;
+    this->d = d;
+}
 
 double Poly3::get(double s) const
 {
-    const double ds = s - s_start;
-    return a + b * ds + c * ds * ds + d * ds * ds * ds;
+    // const double ds = s - s_start;
+    return a + b * s + c * s * s + d * s * s * s;
 }
 
 double Poly3::get_grad(double s) const { return b + 2 * c * s + 3 * d * s * s; }
@@ -55,14 +61,14 @@ size_t CubicSpline::size() const { return this->s_start_to_poly.size(); }
 double CubicSpline::get(double s) const
 {
     const double ds = s - s0;
-    const Poly3 poly = this->get_poly(ds);
+    const Poly3  poly = this->get_poly(ds);
     return poly.get(ds);
 }
 
 double CubicSpline::get_grad(double s) const
 {
     const double ds = s - s0;
-    const Poly3 poly = this->get_poly(ds);
+    const Poly3  poly = this->get_poly(ds);
     return poly.get_grad(ds);
 }
 
@@ -86,7 +92,7 @@ double CubicSpline::get_max(std::pair<double, double> range) const
 CubicSpline CubicSpline::negate() const
 {
     CubicSpline negated = *this;
-    for(auto& s0_poly : negated.s_start_to_poly)
+    for (auto& s0_poly : negated.s_start_to_poly)
         s0_poly.second.negate();
     return negated;
 }
@@ -103,11 +109,13 @@ CubicSpline CubicSpline::add(const CubicSpline& other) const
         const Poly3 this_poly = this->get_poly(s_start);
         const Poly3 other_poly = other.get_poly(s_start);
 
-        double a = this_poly.a + other_poly.a;
-        double b = this_poly.b + other_poly.b;
-        double c = this_poly.c + other_poly.c;
-        double d = this_poly.d + other_poly.d;
-        retval.s_start_to_poly[s_start] = Poly3(s_start, a, b, c, d);
+        Poly3 res;
+        res.a = this_poly.a + other_poly.a;
+        res.b = this_poly.b + other_poly.b;
+        res.c = this_poly.c + other_poly.c;
+        res.d = this_poly.d + other_poly.d;
+        res.s_start = s_start;
+        retval.s_start_to_poly[s_start] = res;
     }
     return retval;
 }
