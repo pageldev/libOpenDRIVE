@@ -9,12 +9,11 @@ namespace odr
 struct Poly3
 {
     Poly3() = default;
-    Poly3(double s0, double a, double b, double c, double d);
+    Poly3(double s_start, double a, double b, double c, double d);
     virtual ~Poly3() = default;
 
     double get(double s) const;
     double get_grad(double s) const;
-    double get_max(std::pair<double, double> range) const;
 
     void negate();
 
@@ -29,7 +28,6 @@ struct CubicSpline
     size_t size() const;
     double get(double s) const;
     double get_grad(double s) const;
-    double get_max(std::pair<double, double> range) const;
 
     CubicSpline negate() const;
     CubicSpline add(const CubicSpline& other) const;
