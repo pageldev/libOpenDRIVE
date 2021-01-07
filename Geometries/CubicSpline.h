@@ -31,8 +31,7 @@ struct CubicSpline
     double get_grad(double s) const;
     double get_max(std::pair<double, double> range) const;
 
-    void negate();
-
+    CubicSpline negate() const;
     CubicSpline add(const CubicSpline& other) const;
     Poly3       get_poly(double s) const;
 

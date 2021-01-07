@@ -81,10 +81,12 @@ double CubicSpline::get_max(std::pair<double, double> range) const
     return max_val;
 }
 
-void CubicSpline::negate()
+CubicSpline CubicSpline::negate() const
 {
-    for(auto& s0_poly : s0_to_poly)
+    CubicSpline negated = *this;
+    for(auto& s0_poly : negated.s0_to_poly)
         s0_poly.second.negate();
+    return negated;
 }
 
 CubicSpline CubicSpline::add(const CubicSpline& other) const

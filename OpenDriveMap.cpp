@@ -259,6 +259,31 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                 if (pugi::xml_node node = lane_node.node().child("link").child("successor"))
                     lane->successor = node.attribute("id").as_int();
             }
+
+            /* derive lane borders from lane widths */
+            auto id_lane_iter0 = lane_section->id_to_lane.find(0);
+            if (id_lane_iter0 == lane_section->id_to_lane.end())
+                throw std::runtime_error("lane section does not have lane #0");
+
+            /* iterate from id #0 towards +inf */
+            auto id_lane_iter1 = std::next(id_lane_iter0);
+            for (auto iter = id_lane_iter1; iter != lane_section->id_to_lane.end(); iter++)
+            {
+                if (iter == id_lane_iter0)
+                    iter->second->lane_border = iter->second->lane_width;
+                else
+                    iter->second->lane_border = std::prev(iter)->second->lane_border.add(iter->second->lane_width);
+            }
+
+            /* iterate from id #0 towards -inf */
+            std::map<int, std::shared_ptr<Lane>>::const_reverse_iterator r_id_lane_iter_1(id_lane_iter0);
+            for (auto r_iter = r_id_lane_iter_1; r_iter != lane_section->id_to_lane.rend(); r_iter++)
+            {
+                if (r_iter == r_id_lane_iter_1)
+                    r_iter->second->lane_border = r_iter->second->lane_width.negate();
+                else
+                    r_iter->second->lane_border = std::prev(r_iter)->second->lane_border.add(r_iter->second->lane_width.negate());
+            }
         }
     }
 }
