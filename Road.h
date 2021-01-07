@@ -67,7 +67,7 @@ public:
     Vec3D get_surface_pt(double s, double t) const;
     Mat3D get_transformation_matrix(double s, bool with_superelevation = true) const;
 
-    double      length;
+    double      length = 0;
     std::string id;
     std::string junction;
     std::string name;

@@ -23,7 +23,7 @@ struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
 
-    int  id;
+    int  id = 0;
     bool level = false;
     int  predecessor = 0;
     int  successor = 0;

@@ -17,12 +17,12 @@ struct Spiral : public RoadGeometry
     Vec2D get_xy(double s) const override;
     Vec2D get_grad(double s) const override;
 
-    double curv_start, curv_end;
-    double s_start, s_end;
-    double c_dot;
+    double curv_start = 0, curv_end = 0;
+    double s_start = 0, s_end = 0;
+    double c_dot = 0;
 
 private:
-    double s0_spiral, x0_spiral, y0_spiral, a0_spiral;
+    double s0_spiral = 0, x0_spiral = 0, y0_spiral = 0, a0_spiral = 0;
 };
 
 } // namespace odr

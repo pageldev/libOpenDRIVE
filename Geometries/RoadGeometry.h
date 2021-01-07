@@ -28,11 +28,11 @@ struct RoadGeometry
     virtual Vec2D get_xy(double s) const = 0;
     virtual Vec2D get_grad(double s) const = 0;
 
-    double s0;
-    double x0;
-    double y0;
-    double hdg0;
-    double length;
+    double s0 = 0;
+    double x0 = 0;
+    double y0 = 0;
+    double hdg0 = 0;
+    double length = 0;
 
     GeometryType type;
     Box2D        bounding_box;

@@ -24,7 +24,7 @@ struct RefLine
     Vec3D  get_grad(double s) const;
     double match(double x, double y) const;
 
-    double      length;
+    double      length = 0;
     CubicSpline elevation_profile;
 
     std::map<double, std::shared_ptr<RoadGeometry>> s0_to_geometry;

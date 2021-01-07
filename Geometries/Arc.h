@@ -17,7 +17,7 @@ struct Arc : public RoadGeometry
     Vec2D get_xy(double s) const override;
     Vec2D get_grad(double s) const override;
 
-    double curvature;
+    double curvature = 0;
 };
 
 } // namespace odr

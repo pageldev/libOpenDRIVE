@@ -18,7 +18,7 @@ struct Poly3
 
     void negate();
 
-    double s_start, a, b, c, d;
+    double s_start = 0, a = 0, b = 0, c = 0, d = 0;
 };
 
 struct CubicSpline

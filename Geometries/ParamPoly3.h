@@ -27,8 +27,8 @@ struct ParamPoly3 : public RoadGeometry
     Vec2D get_xy(double s) const override;
     Vec2D get_grad(double s) const override;
 
-    double aU, bU, cU, dU, aV, bV, cV, dV;
-    bool   pRange_normalized;
+    double aU = 0, bU = 0, cU = 0, dU = 0, aV = 0, bV = 0, cV = 0, dV = 0;
+    bool   pRange_normalized = true;
 };
 
 } // namespace odr
