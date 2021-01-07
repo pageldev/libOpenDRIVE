@@ -55,7 +55,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<LaneSection>("LaneSection")
         .constructor<double>()
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
-        .function("get_lane_borders", &LaneSection::get_lane_borders)
         .function("get_lane_vertices", &LaneSection::get_lane_vertices)
         .property("id_to_lane", &LaneSection::id_to_lane);
 

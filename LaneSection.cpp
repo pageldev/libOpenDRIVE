@@ -97,7 +97,6 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
         std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
         for (const double& s : s_vals)
         {
-            const std::map<int, double> lane_borders = this->get_lane_borders(s);
             for(const auto& id_lane : this->id_to_lane)
             {
                 const int lane_id = id_lane.first;
