@@ -30,7 +30,7 @@ double Crossfall::get_crossfall(double s, bool on_left_side) const
 
         return target_poly_iter->second.get(s);
     }
-    
+
     return 0;
 }
 
@@ -71,67 +71,12 @@ std::shared_ptr<LaneSection> Road::get_lanesection(double s)
     return lanesection;
 }
 
-std::shared_ptr<const Lane> Road::get_lane(double s, double t, double* t_outer_brdr) const
-{
-    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
-    if (!lanesection)
-    {
-        printf("road #%s - could not get lane section for s %.2f\n", this->id.c_str(), s);
-        return nullptr;
-    }
-
-    return lanesection->get_lane(s, t, t_outer_brdr);
-}
-
-std::shared_ptr<Lane> Road::get_lane(double s, double t, double* t_outer_brdr)
-{
-    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const Road&>(*this).get_lane(s, t, t_outer_brdr));
-    return lane;
-}
-
 Vec3D Road::get_xyz(double s, double t, double z, bool with_superelevation) const
 {
     const Mat3D trans_mat = this->get_transformation_matrix(s, with_superelevation);
     const Vec3D xyz = MatVecMultiplication(trans_mat, Vec3D{t, z, 1});
 
     return xyz;
-}
-
-Vec3D Road::get_surface_pt(double s, double t) const
-{
-    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
-    if (!lanesection)
-    {
-        printf("road #%s - could not get lane section for s: %.2f\n", this->id.c_str(), s);
-        return this->get_xyz(s, t, 0.0);
-    }
-
-    double                      t_outer_brdr = 0;
-    std::shared_ptr<const Lane> lane = this->get_lane(s, t, &t_outer_brdr);
-    if (!lane)
-    {
-        printf("road #%s - could not get lane for s: %.2f t: %.2f\n", this->id.c_str(), s, t);
-        return this->get_xyz(s, t, 0.0);
-    }
-
-    if (lane->id == 0)
-        return this->get_xyz(s, t, 0.0);
-
-    double z_offs = 0;
-    if (lane->level)
-    {
-        const double lane_width = lane->lane_width.get(s);
-        const double t_inner_brdr = (lane->id > 0) ? t_outer_brdr - lane_width : t_outer_brdr + lane_width;
-        const double superelev = this->superelevation.get(s); // cancel out superelevation
-        const double h_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
-        z_offs = h_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
-    }
-    else
-    {
-        z_offs = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t);
-    }
-
-    return this->get_xyz(s, t, z_offs);
 }
 
 Mat3D Road::get_transformation_matrix(double s, bool with_superelevation) const

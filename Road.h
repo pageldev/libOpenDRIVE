@@ -60,11 +60,7 @@ public:
     std::shared_ptr<const LaneSection> get_lanesection(double s) const;
     std::shared_ptr<LaneSection>       get_lanesection(double s);
 
-    std::shared_ptr<const Lane> get_lane(double s, double t, double* t_outer_brdr = nullptr) const;
-    std::shared_ptr<Lane>       get_lane(double s, double t, double* t_outer_brdr = nullptr);
-
     Vec3D get_xyz(double s, double t, double z, bool with_superelevation = true) const;
-    Vec3D get_surface_pt(double s, double t) const;
     Mat3D get_transformation_matrix(double s, bool with_superelevation = true) const;
 
     double      length = 0;

@@ -27,56 +27,6 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
-std::shared_ptr<const Lane> LaneSection::get_lane(double s, double t, double* t_outer_brdr) const
-{
-    if (auto road_ptr = this->road.lock())
-    {
-        double       cur_t = road_ptr->lane_offset.get(s);
-        const double dt = t - cur_t;
-        if (dt == 0)
-            return this->id_to_lane.at(0);
-
-        auto lane_iter = this->id_to_lane.find(0);
-        if (lane_iter == this->id_to_lane.end())
-            throw std::runtime_error("lane section does not have lane #0");
-
-        lane_iter = (dt > 0) ? std::next(lane_iter) : std::prev(lane_iter);
-
-        while ((dt > 0 && cur_t < t) || (dt < 0 && cur_t > t) || lane_iter != this->id_to_lane.end() || lane_iter != this->id_to_lane.begin())
-        {
-            if (dt > 0 && (cur_t >= t || lane_iter == this->id_to_lane.end()))
-                break;
-
-            if (dt < 0 && (cur_t <= t || lane_iter == this->id_to_lane.begin()))
-                break;
-
-            const double lane_width = lane_iter->second->lane_width.get(s - this->s0);
-            cur_t = (dt > 0) ? cur_t + lane_width : cur_t - lane_width;
-            lane_iter = (dt > 0) ? std::next(lane_iter) : std::prev(lane_iter);
-        }
-
-        if (lane_iter == this->id_to_lane.end())
-            lane_iter--;
-
-        if (t_outer_brdr)
-            *t_outer_brdr = cur_t;
-
-        return lane_iter->second;
-    }
-    else
-    {
-        throw std::runtime_error("could not access parent road for lane section");
-    }
-
-    return nullptr;
-}
-
-std::shared_ptr<Lane> LaneSection::get_lane(double s, double t, double* t_outer_brdr)
-{
-    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const LaneSection&>(*this).get_lane(s, t, t_outer_brdr));
-    return lane;
-}
-
 std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     if (auto road_ptr = this->road.lock())
