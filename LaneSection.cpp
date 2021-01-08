@@ -81,46 +81,8 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                 const double t_outer_brdr = id_lane.second->outer_border.get(s);
                 const double t_inner_brdr = id_lane.second->inner_border.get(s);
 
-                double z_inner_brdr = 0.0;
-                double z_outer_brdr = 0.0;
-                if (with_lateralProfile)
-                {
-                    z_inner_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_inner_brdr);
-                    if (this->id_to_lane.at(lane_id)->level)
-                    {
-                        const double superelev = road_ptr->superelevation.get(s); // cancel out superelevation
-                        z_outer_brdr = z_inner_brdr + std::tan(superelev) * (t_outer_brdr - t_inner_brdr);
-                    }
-                    else
-                    {
-                        z_outer_brdr = -std::tan(road_ptr->crossfall.get_crossfall(s, (lane_id > 0))) * std::abs(t_outer_brdr);
-                    }
-                }
-
-                if (with_laneHeight && this->id_to_lane.at(lane_id)->s0_to_height_offset.size() > 0)
-                {
-                    const std::map<double, HeightOffset>& height_offs = this->id_to_lane.at(lane_id)->s0_to_height_offset;
-                    auto                                  s0_height_offs_iter = height_offs.upper_bound(s - this->s0);
-                    if (s0_height_offs_iter != height_offs.begin())
-                        s0_height_offs_iter--;
-
-                    const double inner_height = s0_height_offs_iter->second.inner;
-                    z_inner_brdr += inner_height;
-                    const double outer_height = s0_height_offs_iter->second.outer;
-                    z_outer_brdr += outer_height;
-
-                    if (std::next(s0_height_offs_iter) != height_offs.end())
-                    {
-                        /* if successive lane height entry available linearly interpolate */
-                        const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
-                        const double dh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
-                        z_inner_brdr += (dh_inner / ds) * (s - this->s0 - s0_height_offs_iter->first);
-                        const double dh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
-                        z_outer_brdr += (dh_outer / ds) * (s - this->s0 - s0_height_offs_iter->first);
-                    }
-                }
-                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_xyz(s, t_outer_brdr, z_outer_brdr, with_lateralProfile));
-                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_xyz(s, t_inner_brdr, z_inner_brdr, with_lateralProfile));
+                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
+                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
             }
         }
 
