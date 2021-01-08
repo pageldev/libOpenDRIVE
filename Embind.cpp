@@ -52,9 +52,15 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
+    emscripten::class_<Lane>("Lane")
+        .constructor<int, bool, std::string>()
+        .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
+        .property("id", &Lane::id);
+
     emscripten::class_<LaneSection>("LaneSection")
         .constructor<double>()
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
+        .function("get_lane", emscripten::select_overload<std::shared_ptr<Lane>(double, double)>(&LaneSection::get_lane))
         .function("get_lane_vertices", &LaneSection::get_lane_vertices)
         .property("id_to_lane", &LaneSection::id_to_lane);
 
@@ -68,8 +74,9 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<Road>("Road")
         .constructor<>()
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
-        .function("get_lanesection", emscripten::select_const(&Road::get_lanesection))
+        .function("get_lanesection", emscripten::select_overload<std::shared_ptr<LaneSection>(double)>(&Road::get_lanesection))
         .function("get_xyz", &Road::get_xyz)
+        .function("get_surface_pt", &Road::get_surface_pt)
         .property("id", &Road::id)
         .property("junction", &Road::junction)
         .property("length", &Road::length)
