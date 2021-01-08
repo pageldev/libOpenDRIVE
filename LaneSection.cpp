@@ -27,6 +27,31 @@ LaneSet LaneSection::get_lanes()
     return lanes;
 }
 
+std::shared_ptr<const Lane> LaneSection::get_lane(double s, double t) const
+{
+    if (this->id_to_lane.at(0)->outer_border.get(s) == t) // exactly on lane #0
+        return id_to_lane.at(0);
+
+    std::map<double, int> outer_border_to_lane_id;
+    for (const auto& id_lane : id_to_lane)
+        outer_border_to_lane_id[id_lane.second->outer_border.get(s)] = id_lane.first;
+
+    auto target_iter = outer_border_to_lane_id.lower_bound(t);
+    if (target_iter == outer_border_to_lane_id.end()) // past upper boundary
+        target_iter--;
+
+    if (target_iter->second <= 0 && target_iter != outer_border_to_lane_id.begin() && t != target_iter->first)
+        target_iter--;
+
+    return this->id_to_lane.at(target_iter->second);
+}
+
+std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
+{
+    std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const LaneSection&>(*this).get_lane(s, t));
+    return lane;
+}
+
 std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
 {
     if (auto road_ptr = this->road.lock())
@@ -47,7 +72,7 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
         std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
         for (const double& s : s_vals)
         {
-            for(const auto& id_lane : this->id_to_lane)
+            for (const auto& id_lane : this->id_to_lane)
             {
                 const int lane_id = id_lane.first;
                 if (lane_id == 0)

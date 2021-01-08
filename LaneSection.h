@@ -30,6 +30,9 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();
 
+    std::shared_ptr<const Lane> get_lane(double s, double t) const;
+    std::shared_ptr<Lane>       get_lane(double s, double t);
+
     std::map<int, std::pair<Line3D, Line3D>>
                               get_lane_border_lines(double resolution, bool with_lateralProfile = true, bool with_laneHeight = true) const;
     std::vector<LaneVertices> get_lane_vertices(double resolution, bool with_lateralProfile = true, bool with_laneHeight = true) const;
