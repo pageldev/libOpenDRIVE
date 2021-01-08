@@ -93,4 +93,58 @@ Mat3D Road::get_transformation_matrix(double s, bool with_superelevation) const
     return trans_mat;
 }
 
+Vec3D Road::get_surface_pt(double s, double t) const
+{
+    std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
+    if (!lanesection)
+    {
+        printf("road #%s - could not get lane section for s: %.2f\n", this->id.c_str(), s);
+        return this->get_xyz(s, t, 0.0);
+    }
+
+    std::shared_ptr<const Lane> lane = lanesection->get_lane(s, t);
+
+    const double t_inner_brdr = lane->inner_border.get(s);
+    double       z_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
+    double       z_t = 0;
+    if (lane->level)
+    {
+        const double superelev = this->superelevation.get(s); // cancel out superelevation
+        z_t = z_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
+    }
+    else
+    {
+        z_t = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t);
+    }
+
+    if (true && lane->s0_to_height_offset.size() > 0)
+    {
+        const std::map<double, HeightOffset>& height_offs = lane->s0_to_height_offset;
+
+        auto s0_height_offs_iter = height_offs.upper_bound(s - lanesection->s0);
+        if (s0_height_offs_iter != height_offs.begin())
+            s0_height_offs_iter--;
+
+        const double t_outer_brdr = lane->outer_border.get(s);
+        const double inner_height = s0_height_offs_iter->second.inner;
+        const double outer_height = s0_height_offs_iter->second.outer;
+        const double p_t = (t - t_inner_brdr) / (t_outer_brdr - t_inner_brdr);
+        z_t += p_t * (outer_height - inner_height) + inner_height;
+
+        if (std::next(s0_height_offs_iter) != height_offs.end())
+        {
+            /* if successive lane height entry available linearly interpolate */
+            const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
+            const double dh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
+            const double dz_inner = (dh_inner / ds) * (s - lanesection->s0 - s0_height_offs_iter->first);
+            const double dh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
+            const double dz_outer = (dh_outer / ds) * (s - lanesection->s0 - s0_height_offs_iter->first);
+
+            z_t += p_t * (dz_outer - dz_inner) + dz_inner;
+        }
+    }
+
+    return this->get_xyz(s, t, z_t, true);
+}
+
 } // namespace odr
