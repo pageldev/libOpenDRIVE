@@ -81,8 +81,10 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                 const double t_outer_brdr = id_lane.second->outer_border.get(s);
                 const double t_inner_brdr = id_lane.second->inner_border.get(s);
 
-                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
-                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
+                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(
+                    road_ptr->get_surface_pt(s, t_outer_brdr, with_lateralProfile, with_laneHeight));
+                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(
+                    road_ptr->get_surface_pt(s, t_inner_brdr, with_lateralProfile, with_laneHeight));
             }
         }
 

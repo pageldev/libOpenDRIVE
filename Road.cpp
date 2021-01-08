@@ -93,7 +93,7 @@ Mat3D Road::get_transformation_matrix(double s, bool with_superelevation) const
     return trans_mat;
 }
 
-Vec3D Road::get_surface_pt(double s, double t) const
+Vec3D Road::get_surface_pt(double s, double t, bool with_lateralProfile, bool with_laneHeight) const
 {
     std::shared_ptr<const LaneSection> lanesection = this->get_lanesection(s);
     if (!lanesection)
@@ -105,19 +105,23 @@ Vec3D Road::get_surface_pt(double s, double t) const
     std::shared_ptr<const Lane> lane = lanesection->get_lane(s, t);
 
     const double t_inner_brdr = lane->inner_border.get(s);
-    double       z_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
     double       z_t = 0;
-    if (lane->level)
+
+    if (with_lateralProfile)
     {
-        const double superelev = this->superelevation.get(s); // cancel out superelevation
-        z_t = z_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
-    }
-    else
-    {
-        z_t = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t);
+        const double z_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t_inner_brdr);
+        if (lane->level)
+        {
+            const double superelev = this->superelevation.get(s); // cancel out superelevation
+            z_t = z_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
+        }
+        else
+        {
+            z_t = -std::tan(this->crossfall.get_crossfall(s, (lane->id > 0))) * std::abs(t);
+        }
     }
 
-    if (true && lane->s0_to_height_offset.size() > 0)
+    if (with_laneHeight && lane->s0_to_height_offset.size() > 0)
     {
         const std::map<double, HeightOffset>& height_offs = lane->s0_to_height_offset;
 
@@ -144,7 +148,7 @@ Vec3D Road::get_surface_pt(double s, double t) const
         }
     }
 
-    return this->get_xyz(s, t, z_t, true);
+    return this->get_xyz(s, t, z_t, with_lateralProfile);
 }
 
 } // namespace odr
