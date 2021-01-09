@@ -83,7 +83,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("lane_offset", &Road::lane_offset)
         .property("lane_offset", &Road::superelevation)
         .property("ref_line", &Road::ref_line)
-        .property("s0_to_lanesection", &Road::s0_to_lanesection);
+        .property("s_to_lanesection", &Road::s_to_lanesection);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string>()

@@ -69,13 +69,13 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         {
             double      s = road_type_node.attribute("s").as_double();
             std::string type = road_type_node.attribute("type").as_string();
-            road->s0_to_type[s] = type;
+            road->s_to_type[s] = type;
             if (pugi::xml_node node = road_type_node.child("speed"))
             {
                 SpeedRecord speed_record;
                 speed_record.max = node.attribute("max").as_string();
                 speed_record.unit = node.attribute("unit").as_string();
-                road->s0_to_speed[s] = speed_record;
+                road->s_to_speed[s] = speed_record;
             }
         }
 
@@ -188,7 +188,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
 
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
             lane_section->road = road;
-            road->s0_to_lanesection[lane_section->s0] = lane_section;
+            road->s_to_lanesection[lane_section->s0] = lane_section;
 
             for (pugi::xpath_node lane_node : lane_section_node.select_nodes(".//lane"))
             {
@@ -214,7 +214,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     double s_offset = lane_height_node.attribute("sOffset").as_double();
                     double inner = lane_height_node.attribute("inner").as_double();
                     double outer = lane_height_node.attribute("outer").as_double();
-                    lane->s0_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
+                    lane->s_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
                 }
 
                 for (pugi::xml_node roadmark_node : lane_node.node().children("roadMark"))
@@ -252,7 +252,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     }
                     RoadMark roadmark(width, height, type, weight, color, material, laneChange);
                     roadmark.lines = roadmark_lines;
-                    lane->s0_to_roadmark[s_offset] = roadmark;
+                    lane->s_to_roadmark[s0 + s_offset] = roadmark;
                 }
 
                 if (pugi::xml_node node = lane_node.node().child("link").child("predecessor"))

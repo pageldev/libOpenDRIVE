@@ -23,6 +23,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
 
+    std::vector<Vec3D> get_road_mark_polygons() const;
+
     int  id = 0;
     bool level = false;
     int  predecessor = 0;
@@ -33,8 +35,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
     CubicSpline outer_border;
     CubicSpline inner_border;
 
-    std::map<double, HeightOffset> s0_to_height_offset;
-    std::map<double, RoadMark>     s0_to_roadmark;
+    std::map<double, HeightOffset> s_to_height_offset;
+    std::map<double, RoadMark>     s_to_roadmark;
 };
 
 using ConstLaneSet = std::set<std::shared_ptr<const Lane>, SharedPtrCmp<const Lane, int, &Lane::id>>;

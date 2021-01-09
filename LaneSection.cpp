@@ -56,12 +56,12 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
 {
     if (auto road_ptr = this->road.lock())
     {
-        auto s0_lanesec_iter = road_ptr->s0_to_lanesection.find(this->s0);
-        if (s0_lanesec_iter == road_ptr->s0_to_lanesection.end())
+        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
+        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
             throw std::runtime_error("road associated with wrong lane section");
 
-        const bool   is_last = (s0_lanesec_iter == std::prev(road_ptr->s0_to_lanesection.end()));
-        const double next_s0 = is_last ? road_ptr->length : std::next(s0_lanesec_iter)->first;
+        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
+        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
         const double lanesec_len = next_s0 - this->s0;
 
         std::vector<double> s_vals;

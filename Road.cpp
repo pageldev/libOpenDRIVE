@@ -37,8 +37,8 @@ double Crossfall::get_crossfall(double s, bool on_left_side) const
 ConstLaneSectionSet Road::get_lanesections() const
 {
     ConstLaneSectionSet lanesections;
-    for (const auto& s0_lansection : this->s0_to_lanesection)
-        lanesections.insert(s0_lansection.second);
+    for (const auto& s_lansection : this->s_to_lanesection)
+        lanesections.insert(s_lansection.second);
 
     return lanesections;
 }
@@ -46,18 +46,18 @@ ConstLaneSectionSet Road::get_lanesections() const
 LaneSectionSet Road::get_lanesections()
 {
     LaneSectionSet lanesections;
-    for (const auto& s0_lansection : this->s0_to_lanesection)
-        lanesections.insert(s0_lansection.second);
+    for (const auto& s_lansection : this->s_to_lanesection)
+        lanesections.insert(s_lansection.second);
 
     return lanesections;
 }
 
 std::shared_ptr<const LaneSection> Road::get_lanesection(double s) const
 {
-    if (this->s0_to_lanesection.size() > 0)
+    if (this->s_to_lanesection.size() > 0)
     {
-        auto target_lane_sec_iter = this->s0_to_lanesection.upper_bound(s);
-        if (target_lane_sec_iter != this->s0_to_lanesection.begin())
+        auto target_lane_sec_iter = this->s_to_lanesection.upper_bound(s);
+        if (target_lane_sec_iter != this->s_to_lanesection.begin())
             target_lane_sec_iter--;
         return target_lane_sec_iter->second;
     }
@@ -121,9 +121,9 @@ Vec3D Road::get_surface_pt(double s, double t, bool with_lateralProfile, bool wi
         }
     }
 
-    if (with_laneHeight && lane->s0_to_height_offset.size() > 0)
+    if (with_laneHeight && lane->s_to_height_offset.size() > 0)
     {
-        const std::map<double, HeightOffset>& height_offs = lane->s0_to_height_offset;
+        const std::map<double, HeightOffset>& height_offs = lane->s_to_height_offset;
 
         auto s0_height_offs_iter = height_offs.upper_bound(s);
         if (s0_height_offs_iter != height_offs.begin())
