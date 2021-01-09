@@ -17,7 +17,7 @@
 
 namespace odr
 {
-OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
+OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight) : xodr_file(xodr_file)
 {
     pugi::xml_document     doc;
     pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
@@ -134,9 +134,10 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         }
 
         std::map<std::string /*x path query*/, CubicSpline&> cubic_spline_fields{
-            {".//elevationProfile//elevation", road->ref_line->elevation_profile},
-            {".//lanes//laneOffset", road->lane_offset},
-            {".//lateralProfile//superelevation", road->superelevation}};
+            {".//elevationProfile//elevation", road->ref_line->elevation_profile}, {".//lanes//laneOffset", road->lane_offset}};
+
+        if (with_lateralProfile)
+            cubic_spline_fields.insert({".//lateralProfile//superelevation", road->superelevation});
 
         /* parse elevation profiles, lane offsets, superelevation */
         for (auto entry : cubic_spline_fields)
@@ -154,32 +155,35 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
         }
 
         /* parse crossfall - has extra attribute side */
-        for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
+        if (with_lateralProfile)
         {
-            double s_start = crossfall_node.attribute("s").as_double();
-            double a = crossfall_node.attribute("a").as_double();
-            double b = crossfall_node.attribute("b").as_double();
-            double c = crossfall_node.attribute("c").as_double();
-            double d = crossfall_node.attribute("d").as_double();
-
-            Poly3 crossfall_poly(s_start, a, b, c, d);
-            road->crossfall.s_start_to_poly[s_start] = crossfall_poly;
-            if (pugi::xml_attribute side = crossfall_node.attribute("side"))
+            for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
             {
-                std::string side_str = side.as_string();
-                std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
-                if (side_str == "left")
-                    road->crossfall.sides[s_start] = Crossfall::Side::Left;
-                else if (side_str == "right")
-                    road->crossfall.sides[s_start] = Crossfall::Side::Right;
-                else
-                    road->crossfall.sides[s_start] = Crossfall::Side::Both;
-            }
-        }
+                double s_start = crossfall_node.attribute("s").as_double();
+                double a = crossfall_node.attribute("a").as_double();
+                double b = crossfall_node.attribute("b").as_double();
+                double c = crossfall_node.attribute("c").as_double();
+                double d = crossfall_node.attribute("d").as_double();
 
-        /* check for lateralProfile shape - not implemented yet */
-        for (auto road_shape_node : road_node.child("lateralProfile").children("shape"))
-            printf("Lateral Profile Shape not supported\n");
+                Poly3 crossfall_poly(s_start, a, b, c, d);
+                road->crossfall.s_start_to_poly[s_start] = crossfall_poly;
+                if (pugi::xml_attribute side = crossfall_node.attribute("side"))
+                {
+                    std::string side_str = side.as_string();
+                    std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
+                    if (side_str == "left")
+                        road->crossfall.sides[s_start] = Crossfall::Side::Left;
+                    else if (side_str == "right")
+                        road->crossfall.sides[s_start] = Crossfall::Side::Right;
+                    else
+                        road->crossfall.sides[s_start] = Crossfall::Side::Both;
+                }
+            }
+
+            /* check for lateralProfile shape - not implemented yet */
+            for (auto road_shape_node : road_node.child("lateralProfile").children("shape"))
+                printf("Lateral Profile Shape not supported\n");
+        }
 
         /* parse road lane sections and lanes */
         for (pugi::xml_node lane_section_node : road_node.child("lanes").children("laneSection"))
@@ -209,12 +213,15 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     lane->lane_width.s_start_to_poly[s0 + s_start] = Poly3(s0 + s_start, a, b, c, d);
                 }
 
-                for (pugi::xml_node lane_height_node : lane_node.node().children("height"))
+                if (with_laneHeight)
                 {
-                    double s_offset = lane_height_node.attribute("sOffset").as_double();
-                    double inner = lane_height_node.attribute("inner").as_double();
-                    double outer = lane_height_node.attribute("outer").as_double();
-                    lane->s_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
+                    for (pugi::xml_node lane_height_node : lane_node.node().children("height"))
+                    {
+                        double s_offset = lane_height_node.attribute("sOffset").as_double();
+                        double inner = lane_height_node.attribute("inner").as_double();
+                        double outer = lane_height_node.attribute("outer").as_double();
+                        lane->s_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
+                    }
                 }
 
                 for (pugi::xml_node roadmark_node : lane_node.node().children("roadMark"))

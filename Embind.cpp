@@ -92,7 +92,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("s_to_lanesection", &Road::s_to_lanesection);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
-        .constructor<std::string>()
+        .constructor<std::string, bool, bool>()
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads);
 }

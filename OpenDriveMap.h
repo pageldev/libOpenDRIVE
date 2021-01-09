@@ -11,7 +11,7 @@ namespace odr
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(std::string xodr_file);
+    OpenDriveMap(std::string xodr_file, bool with_lateralProfile = true, bool with_laneHeight = true);
 
     ConstRoadSet get_roads() const;
     RoadSet      get_roads();
