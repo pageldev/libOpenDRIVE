@@ -60,9 +60,9 @@ public:
     std::shared_ptr<const LaneSection> get_lanesection(double s) const;
     std::shared_ptr<LaneSection>       get_lanesection(double s);
 
-    Vec3D get_xyz(double s, double t, double z) const;
-    Mat3D get_transformation_matrix(double s) const;
+    Vec3D get_xyz(double s, double t, double h) const;
     Vec3D get_surface_pt(double s, double t) const;
+    Mat3D get_transformation_matrix(double s) const;
 
     double      length = 0;
     std::string id;
