@@ -12,6 +12,9 @@ namespace odr
 struct Lane;
 struct RoadMark;
 
+const double ROADMARK_WEIGHT_STANDARD_WIDTH = 0.12;
+const double ROADMARK_WEIGHT_BOLD_WIDTH = 0.25;
+
 struct RoadMarksLine
 {
     RoadMarksLine() = default;
