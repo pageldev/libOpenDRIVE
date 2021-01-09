@@ -23,8 +23,6 @@ struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
 
-    std::vector<Vec3D> get_road_mark_polygons() const;
-
     int  id = 0;
     bool level = false;
     int  predecessor = 0;

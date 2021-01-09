@@ -37,6 +37,9 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
                               get_lane_border_lines(double resolution, bool with_lateralProfile = true, bool with_laneHeight = true) const;
     std::vector<LaneVertices> get_lane_vertices(double resolution, bool with_lateralProfile = true, bool with_laneHeight = true) const;
 
+    std::vector<std::vector<Vec3D>> get_roadmark_polygons(int lane_id, double resolution) const;
+    std::vector<std::vector<Vec3D>> get_roadmark_polygons(double resolution) const;
+
     double              s0 = 0;
     std::weak_ptr<Road> road;
 

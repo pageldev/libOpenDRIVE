@@ -136,4 +136,61 @@ std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution, bool
     return lanesection_vertices;
 }
 
+std::vector<std::vector<Vec3D>> LaneSection::get_roadmark_polygons(int lane_id, double resolution) const
+{
+    if (auto road_ptr = this->road.lock())
+    {
+        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
+        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
+            throw std::runtime_error("road associated with wrong lane section");
+
+        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
+        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
+
+        std::vector<std::vector<Vec3D>> roadmark_polygons;
+        const auto&                     lane = this->id_to_lane.at(lane_id);
+        for (auto s_roadmark_iter = lane->s_to_roadmark.begin(); s_roadmark_iter != lane->s_to_roadmark.end(); s_roadmark_iter++)
+        {
+            const bool   is_last = (s_roadmark_iter == std::prev(lane->s_to_roadmark.end()));
+            const double next_s_roadmark = is_last ? next_s0 : std::next(s_roadmark_iter)->first;
+
+            std::vector<double> s_vals;
+            for (double s = s_roadmark_iter->first; s < next_s_roadmark; s += resolution)
+                s_vals.push_back(s);
+            s_vals.push_back(next_s0);
+
+            const RoadMark& roadmark = s_roadmark_iter->second;
+            if (roadmark.lines.empty())
+            {
+                std::vector<Vec3D> roadmark_polygon;
+                for (const double& s : s_vals)
+                    roadmark_polygon.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.1));
+                for (auto r_iter = s_vals.rbegin(); r_iter != s_vals.rend(); r_iter++)
+                    roadmark_polygon.push_back(road_ptr->get_surface_pt(*r_iter, lane->outer_border.get(*r_iter) + 0.1));
+                roadmark_polygons.push_back(roadmark_polygon);
+            }
+        }
+
+        return roadmark_polygons;
+    }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
+    return {};
+}
+
+std::vector<std::vector<Vec3D>> LaneSection::get_roadmark_polygons(double resolution) const
+{
+    std::vector<std::vector<Vec3D>> roadmark_polygons;
+    for (const auto& id_lane : this->id_to_lane)
+    {
+        std::vector<std::vector<Vec3D>> lane_roadmarks = this->get_roadmark_polygons(id_lane.first, resolution);
+        roadmark_polygons.insert(roadmark_polygons.end(), lane_roadmarks.begin(), lane_roadmarks.end());
+    }
+
+    return roadmark_polygons;
+}
+
 } // namespace odr
