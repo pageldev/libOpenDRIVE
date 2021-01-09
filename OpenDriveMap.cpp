@@ -226,7 +226,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
 
                 for (pugi::xml_node roadmark_node : lane_node.node().children("roadMark"))
                 {
-                    double s_offset = roadmark_node.attribute("sOffset").as_double(0);
+                    double sOffsetRoadMark = roadmark_node.attribute("sOffset").as_double(0);
                     double width = roadmark_node.attribute("width").as_double(-1);
                     double height = roadmark_node.attribute("height").as_double(0);
 
@@ -236,30 +236,29 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                     std::string material = roadmark_node.attribute("material").as_string("standard");
                     std::string laneChange = roadmark_node.attribute("laneChange").as_string("both");
 
-                    std::vector<odr::RoadMarkLine> roadmark_lines;
+                    RoadMark roadmark(width, height, sOffsetRoadMark, type, weight, color, material, laneChange);
+
                     if (pugi::xml_node roadmark_type_node = roadmark_node.child("type"))
                     {
                         std::string name = roadmark_type_node.attribute("name").as_string("");
                         double      line_width_1 = roadmark_type_node.attribute("width").as_double(-1);
 
-                        for (pugi::xml_node roadmark_line_node : roadmark_type_node.children("line"))
+                        for (pugi::xml_node roadmarks_line_node : roadmark_type_node.children("line"))
                         {
-                            double length = roadmark_line_node.attribute("length").as_double(0);
-                            double space = roadmark_line_node.attribute("space").as_double(0);
-                            double tOffset = roadmark_line_node.attribute("tOffset").as_double(0);
-                            double sOffset = roadmark_line_node.attribute("sOffset").as_double(0);
-                            double line_width_0 = roadmark_line_node.attribute("width").as_double(-1);
+                            double length = roadmarks_line_node.attribute("length").as_double(0);
+                            double space = roadmarks_line_node.attribute("space").as_double(0);
+                            double tOffset = roadmarks_line_node.attribute("tOffset").as_double(0);
+                            double sOffsetRoadMarksLine = roadmarks_line_node.attribute("sOffset").as_double(0);
+                            double line_width_0 = roadmarks_line_node.attribute("width").as_double(-1);
                             double line_width = line_width_0 < 0 ? line_width_1 : line_width_0;
 
-                            std::string rule = roadmark_line_node.attribute("sOffset").as_string("none");
+                            std::string rule = roadmarks_line_node.attribute("rule").as_string("none");
 
-                            RoadMarkLine roadmark_line(line_width, length, space, tOffset, sOffset, name, rule);
-                            roadmark_lines.push_back(roadmark_line);
+                            RoadMarksLine roadmarks_line(line_width, length, space, tOffset, sOffsetRoadMarksLine, name, rule);
+                            roadmark.s_to_roadmarks_line[s0 + sOffsetRoadMark + sOffsetRoadMarksLine] = roadmarks_line;
                         }
                     }
-                    RoadMark roadmark(width, height, type, weight, color, material, laneChange);
-                    roadmark.lines = roadmark_lines;
-                    lane->s_to_roadmark[s0 + s_offset] = roadmark;
+                    lane->s_to_roadmark[s0 + sOffsetRoadMark] = roadmark;
                 }
 
                 if (pugi::xml_node node = lane_node.node().child("link").child("predecessor"))

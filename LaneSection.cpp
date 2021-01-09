@@ -156,42 +156,32 @@ std::vector<RoadMarkPolygon> LaneSection::get_roadmark_polygons(int lane_id, dou
 
         const double s_end = this->get_end();
         const auto&  lane = this->id_to_lane.at(lane_id);
-        for (auto s_roadmark_iter = lane->s_to_roadmark.begin(); s_roadmark_iter != lane->s_to_roadmark.end(); s_roadmark_iter++)
+
+        for (auto s_roadmarks_iter = lane->s_to_roadmark.begin(); s_roadmarks_iter != lane->s_to_roadmark.end(); s_roadmarks_iter++)
         {
-            const bool   is_last = (s_roadmark_iter == std::prev(lane->s_to_roadmark.end()));
-            const double next_s = is_last ? s_end : std::next(s_roadmark_iter)->first;
+            const bool   is_last = (s_roadmarks_iter == std::prev(lane->s_to_roadmark.end()));
+            const double s_end_roadmark = is_last ? s_end : std::next(s_roadmarks_iter)->first;
 
-            const RoadMark& roadmark = s_roadmark_iter->second;
-            if (roadmark.lines.empty())
-            {
-                std::vector<double> s_vals;
-                for (double s = s_roadmark_iter->first; s < next_s; s += resolution)
-                    s_vals.push_back(s);
-                s_vals.push_back(next_s);
-
-                RoadMarkPolygon roadmark_polygon;
-                const double    width = roadmark.width > 0 ? roadmark.width : 0.2;
-                for (const double& s : s_vals)
-                    roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.5 * width));
-                for (auto r_iter = s_vals.rbegin(); r_iter != s_vals.rend(); r_iter++)
-                    roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(*r_iter, lane->outer_border.get(*r_iter) + 0.5 * width));
-                roadmark_polygons.push_back(roadmark_polygon);
-            }
+            const RoadMark& roadmark = s_roadmarks_iter->second;
+            if (roadmark.s_to_roadmarks_line.size() == 0) {}
             else
             {
-                for (const RoadMarkLine& roadmark_line : roadmark.lines)
+                /* multiple parallel roadmarks possible */
+                for (const auto& s_roadmarks_line : roadmark.s_to_roadmarks_line)
                 {
-                    for (double s_start_roadmark = s_roadmark_iter->first + roadmark_line.sOffset; s_start_roadmark < next_s;
-                         s_start_roadmark += roadmark_line.length)
+                    const RoadMarksLine& roadmarks_line = s_roadmarks_line.second;
+                    for (double s_start_single_roadmark = s_roadmarks_line.first; s_start_single_roadmark < s_end_roadmark;
+                         s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
                     {
-                        const double        s_end_roadmark = s_start_roadmark + (roadmark_line.length - roadmark_line.space);
+                        const double s_end_single_roadmark = s_start_single_roadmark + roadmarks_line.length;
+
                         std::vector<double> s_vals;
-                        for (double s = s_start_roadmark; s < s_end_roadmark; s += resolution)
+                        for (double s = s_start_single_roadmark; s < s_end_single_roadmark; s += resolution)
                             s_vals.push_back(s);
-                        s_vals.push_back(s_end_roadmark);
+                        s_vals.push_back(s_end_single_roadmark);
 
                         RoadMarkPolygon roadmark_polygon;
-                        const double    width = roadmark_line.width > 0 ? roadmark_line.width : 0.2;
+                        const double    width = roadmarks_line.width > 0 ? roadmarks_line.width : 0.2;
                         for (const double& s : s_vals)
                             roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.5 * width));
                         for (auto r_iter = s_vals.rbegin(); r_iter != s_vals.rend(); r_iter++)
