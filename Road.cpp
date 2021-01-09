@@ -125,7 +125,7 @@ Vec3D Road::get_surface_pt(double s, double t, bool with_lateralProfile, bool wi
     {
         const std::map<double, HeightOffset>& height_offs = lane->s0_to_height_offset;
 
-        auto s0_height_offs_iter = height_offs.upper_bound(s - lanesection->s0);
+        auto s0_height_offs_iter = height_offs.upper_bound(s);
         if (s0_height_offs_iter != height_offs.begin())
             s0_height_offs_iter--;
 

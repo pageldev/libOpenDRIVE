@@ -214,7 +214,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file) : xodr_file(xodr_file)
                     double s_offset = lane_height_node.attribute("sOffset").as_double();
                     double inner = lane_height_node.attribute("inner").as_double();
                     double outer = lane_height_node.attribute("outer").as_double();
-                    lane->s0_to_height_offset[s_offset] = HeightOffset{inner, outer};
+                    lane->s0_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
                 }
 
                 for (pugi::xml_node roadmark_node : lane_node.node().children("roadMark"))
