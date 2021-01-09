@@ -137,9 +137,9 @@ Vec3D Road::get_surface_pt(double s, double t) const
             /* if successive lane height entry available linearly interpolate */
             const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
             const double d_lh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
-            const double dh_inner = (d_lh_inner / ds) * (s - lanesection->s0 - s0_height_offs_iter->first);
+            const double dh_inner = (d_lh_inner / ds) * (s - s0_height_offs_iter->first);
             const double d_lh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
-            const double dh_outer = (d_lh_outer / ds) * (s - lanesection->s0 - s0_height_offs_iter->first);
+            const double dh_outer = (d_lh_outer / ds) * (s - s0_height_offs_iter->first);
 
             h_t += p_t * (dh_outer - dh_inner) + dh_inner;
         }
