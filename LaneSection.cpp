@@ -52,7 +52,7 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
     return lane;
 }
 
-std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution, bool with_lateralProfile, bool with_laneHeight) const
+std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution) const
 {
     if (auto road_ptr = this->road.lock())
     {
@@ -62,12 +62,11 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
 
         const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
         const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
-        const double lanesec_len = next_s0 - this->s0;
 
         std::vector<double> s_vals;
-        for (double s = this->s0; s < this->s0 + lanesec_len; s += resolution)
+        for (double s = this->s0; s < next_s0; s += resolution)
             s_vals.push_back(s);
-        s_vals.push_back(next_s0 - (1e-9));
+        s_vals.push_back(next_s0);
 
         std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
         for (const double& s : s_vals)
@@ -81,10 +80,8 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
                 const double t_outer_brdr = id_lane.second->outer_border.get(s);
                 const double t_inner_brdr = id_lane.second->inner_border.get(s);
 
-                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(
-                    road_ptr->get_surface_pt(s, t_outer_brdr, with_lateralProfile, with_laneHeight));
-                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(
-                    road_ptr->get_surface_pt(s, t_inner_brdr, with_lateralProfile, with_laneHeight));
+                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
+                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
             }
         }
 
@@ -98,11 +95,10 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
     return {};
 }
 
-std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution, bool with_lateralProfile, bool with_laneHeight) const
+std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) const
 {
     std::vector<LaneVertices>                lanesection_vertices;
-    std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line =
-        this->get_lane_border_lines(resolution, with_lateralProfile, with_laneHeight);
+    std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line = this->get_lane_border_lines(resolution);
 
     for (auto& id_outer_inner_brdr_line : lane_id_to_outer_inner_brdr_line)
     {
