@@ -20,10 +20,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<double>("vector<double>");
     emscripten::register_map<int, double>("map<int, double>");
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
-    emscripten::register_vector<std::vector<Vec3D>>("vector<vector<Vec3D>>");
     emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<std::string>("vector<string>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
+    emscripten::register_vector<RoadMarkPolygon>("vector<RoadMarkPolygon>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
@@ -53,6 +53,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
+    emscripten::class_<RoadMarkPolygon>("RoadMarkPolygon")
+        .constructor<>()
+        .property("outline", &RoadMarkPolygon::outline);
+
     emscripten::class_<Lane>("Lane")
         .constructor<int, bool, std::string>()
         .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
@@ -63,7 +67,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
         .function("get_lane", emscripten::select_overload<std::shared_ptr<Lane>(double, double)>(&LaneSection::get_lane))
         .function("get_lane_vertices", &LaneSection::get_lane_vertices)
-        .function("get_roadmark_polygons", emscripten::select_overload<std::vector<std::vector<Vec3D>>(double)const>(&LaneSection::get_roadmark_polygons))
+        .function("get_roadmark_polygons", emscripten::select_overload<std::vector<RoadMarkPolygon>(double)const>(&LaneSection::get_roadmark_polygons))
         .property("id_to_lane", &LaneSection::id_to_lane);
 
     emscripten::class_<LaneVertices>("LaneVertices")

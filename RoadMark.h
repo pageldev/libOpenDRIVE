@@ -43,4 +43,9 @@ struct RoadMark
     std::vector<RoadMarkLine> lines;
 };
 
+struct RoadMarkPolygon
+{
+    std::vector<Vec3D> outline;
+};
+
 } // namespace odr

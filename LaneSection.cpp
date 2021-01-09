@@ -9,6 +9,27 @@ namespace odr
 {
 LaneSection::LaneSection(double s0) : s0(s0) {}
 
+double LaneSection::get_end() const
+{
+    if (auto road_ptr = this->road.lock())
+    {
+        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
+        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
+            throw std::runtime_error("road associated with wrong lane section");
+
+        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
+        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
+
+        return next_s0;
+    }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
+    return 0;
+}
+
 ConstLaneSet LaneSection::get_lanes() const
 {
     ConstLaneSet lanes;
@@ -56,17 +77,12 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
 {
     if (auto road_ptr = this->road.lock())
     {
-        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
-        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
-            throw std::runtime_error("road associated with wrong lane section");
-
-        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
-        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
+        const double s_end = this->get_end();
 
         std::vector<double> s_vals;
-        for (double s = this->s0; s < next_s0; s += resolution)
+        for (double s = this->s0; s < s_end; s += resolution)
             s_vals.push_back(s);
-        s_vals.push_back(next_s0);
+        s_vals.push_back(s_end);
 
         std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
         for (const double& s : s_vals)
@@ -132,38 +148,57 @@ std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) cons
     return lanesection_vertices;
 }
 
-std::vector<std::vector<Vec3D>> LaneSection::get_roadmark_polygons(int lane_id, double resolution) const
+std::vector<RoadMarkPolygon> LaneSection::get_roadmark_polygons(int lane_id, double resolution) const
 {
     if (auto road_ptr = this->road.lock())
     {
-        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
-        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
-            throw std::runtime_error("road associated with wrong lane section");
+        std::vector<RoadMarkPolygon> roadmark_polygons;
 
-        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
-        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
-
-        std::vector<std::vector<Vec3D>> roadmark_polygons;
-        const auto&                     lane = this->id_to_lane.at(lane_id);
+        const double s_end = this->get_end();
+        const auto&  lane = this->id_to_lane.at(lane_id);
         for (auto s_roadmark_iter = lane->s_to_roadmark.begin(); s_roadmark_iter != lane->s_to_roadmark.end(); s_roadmark_iter++)
         {
             const bool   is_last = (s_roadmark_iter == std::prev(lane->s_to_roadmark.end()));
-            const double next_s_roadmark = is_last ? next_s0 : std::next(s_roadmark_iter)->first;
-
-            std::vector<double> s_vals;
-            for (double s = s_roadmark_iter->first; s < next_s_roadmark; s += resolution)
-                s_vals.push_back(s);
-            s_vals.push_back(next_s0);
+            const double next_s = is_last ? s_end : std::next(s_roadmark_iter)->first;
 
             const RoadMark& roadmark = s_roadmark_iter->second;
             if (roadmark.lines.empty())
             {
-                std::vector<Vec3D> roadmark_polygon;
+                std::vector<double> s_vals;
+                for (double s = s_roadmark_iter->first; s < next_s; s += resolution)
+                    s_vals.push_back(s);
+                s_vals.push_back(next_s);
+
+                RoadMarkPolygon roadmark_polygon;
+                const double    width = roadmark.width > 0 ? roadmark.width : 0.2;
                 for (const double& s : s_vals)
-                    roadmark_polygon.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.1));
+                    roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.5 * width));
                 for (auto r_iter = s_vals.rbegin(); r_iter != s_vals.rend(); r_iter++)
-                    roadmark_polygon.push_back(road_ptr->get_surface_pt(*r_iter, lane->outer_border.get(*r_iter) + 0.1));
+                    roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(*r_iter, lane->outer_border.get(*r_iter) + 0.5 * width));
                 roadmark_polygons.push_back(roadmark_polygon);
+            }
+            else
+            {
+                for (const RoadMarkLine& roadmark_line : roadmark.lines)
+                {
+                    for (double s_start_roadmark = s_roadmark_iter->first + roadmark_line.sOffset; s_start_roadmark < next_s;
+                         s_start_roadmark += roadmark_line.length)
+                    {
+                        const double        s_end_roadmark = s_start_roadmark + (roadmark_line.length - roadmark_line.space);
+                        std::vector<double> s_vals;
+                        for (double s = s_start_roadmark; s < s_end_roadmark; s += resolution)
+                            s_vals.push_back(s);
+                        s_vals.push_back(s_end_roadmark);
+
+                        RoadMarkPolygon roadmark_polygon;
+                        const double    width = roadmark_line.width > 0 ? roadmark_line.width : 0.2;
+                        for (const double& s : s_vals)
+                            roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) - 0.5 * width));
+                        for (auto r_iter = s_vals.rbegin(); r_iter != s_vals.rend(); r_iter++)
+                            roadmark_polygon.outline.push_back(road_ptr->get_surface_pt(*r_iter, lane->outer_border.get(*r_iter) + 0.5 * width));
+                        roadmark_polygons.push_back(roadmark_polygon);
+                    }
+                }
             }
         }
 
@@ -177,12 +212,12 @@ std::vector<std::vector<Vec3D>> LaneSection::get_roadmark_polygons(int lane_id, 
     return {};
 }
 
-std::vector<std::vector<Vec3D>> LaneSection::get_roadmark_polygons(double resolution) const
+std::vector<RoadMarkPolygon> LaneSection::get_roadmark_polygons(double resolution) const
 {
-    std::vector<std::vector<Vec3D>> roadmark_polygons;
+    std::vector<RoadMarkPolygon> roadmark_polygons;
     for (const auto& id_lane : this->id_to_lane)
     {
-        std::vector<std::vector<Vec3D>> lane_roadmarks = this->get_roadmark_polygons(id_lane.first, resolution);
+        std::vector<RoadMarkPolygon> lane_roadmarks = this->get_roadmark_polygons(id_lane.first, resolution);
         roadmark_polygons.insert(roadmark_polygons.end(), lane_roadmarks.begin(), lane_roadmarks.end());
     }
 

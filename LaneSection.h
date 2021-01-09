@@ -27,6 +27,8 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
 
+    double get_end() const;
+
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();
 
@@ -36,8 +38,8 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     std::map<int, std::pair<Line3D, Line3D>> get_lane_border_lines(double resolution) const;
     std::vector<LaneVertices>                get_lane_vertices(double resolution) const;
 
-    std::vector<std::vector<Vec3D>> get_roadmark_polygons(int lane_id, double resolution) const;
-    std::vector<std::vector<Vec3D>> get_roadmark_polygons(double resolution) const;
+    std::vector<RoadMarkPolygon> get_roadmark_polygons(int lane_id, double resolution) const;
+    std::vector<RoadMarkPolygon> get_roadmark_polygons(double resolution) const;
 
     double              s0 = 0;
     std::weak_ptr<Road> road;
