@@ -159,8 +159,8 @@ std::vector<RoadMarkPolygon> LaneSection::get_roadmark_polygons(int lane_id, dou
 
         for (auto s_roadmarks_iter = lane->s_to_roadmark.begin(); s_roadmarks_iter != lane->s_to_roadmark.end(); s_roadmarks_iter++)
         {
-            const bool   is_last = (s_roadmarks_iter == std::prev(lane->s_to_roadmark.end()));
-            const double s_end_roadmark = is_last ? s_end : std::next(s_roadmarks_iter)->first;
+            const bool is_last = (s_roadmarks_iter == std::prev(lane->s_to_roadmark.end()));
+            double     s_end_roadmark = is_last ? s_end : std::min(s_end, std::next(s_roadmarks_iter)->first);
 
             const RoadMark& roadmark = s_roadmarks_iter->second;
 
@@ -192,7 +192,7 @@ std::vector<RoadMarkPolygon> LaneSection::get_roadmark_polygons(int lane_id, dou
                     for (double s_start_single_roadmark = s_roadmarks_line.first; s_start_single_roadmark < s_end_roadmark;
                          s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
                     {
-                        const double s_end_single_roadmark = s_start_single_roadmark + roadmarks_line.length;
+                        const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmarks_line.length);
 
                         std::vector<double> s_vals;
                         for (double s = s_start_single_roadmark; s < s_end_single_roadmark; s += resolution)
