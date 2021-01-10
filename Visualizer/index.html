@@ -15,7 +15,7 @@
             border-spacing: 0.5em 0;
         }
 
-        #bottom_info {
+        .bottom_info {
             position: absolute;
             bottom: 1em;
             left: 1em;
@@ -29,9 +29,10 @@
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-    <div id="bottom_info">
+    <div class="bottom_info" id="spotlight_info">
         <h2>Loading...</h2>
     </div>
+    
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
@@ -41,7 +42,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
 
     <script>
-        var bottom_info = document.getElementById('bottom_info');
+        var spotlight_info = document.getElementById('spotlight_info');
 
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
@@ -278,7 +279,7 @@
                 add_odr_geom_edges();
 
             renderer.render(scene, camera);
-            bottom_info.style.display = "none";
+            spotlight_info.style.display = "none";
             animate();
         }
 
@@ -298,7 +299,7 @@
                         INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); n.material.depthTest = true; } });
                     }
                     INTERSECTED = intersects[0].object;
-                    bottom_info.style.display = "block";
+                    spotlight_info.style.display = "block";
                     INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); n.material.depthTest = false; } });
                     INTERSECTED.material.color.set(COLORS.lane_highlight);
                     renderer.render(scene, camera);
@@ -309,7 +310,7 @@
                     renderer.render(scene, camera);
                 }
                 INTERSECTED = null;
-                bottom_info.style.display = "none";
+                spotlight_info.style.display = "none";
             }
 
             if (INTERSECTED) {
@@ -324,7 +325,7 @@
                 const dist = Math.sqrt(Math.pow(intersec_pt.x - refl_pt[0], 2) + Math.pow(intersec_pt.y - refl_pt[1], 2) + Math.pow(intersec_pt.z - refl_pt[2], 2));
                 const t_offs = Math.sign(grad_vec[0] * (intersec_pt.y - refl_pt[1]) - grad_vec[1] * (intersec_pt.x - refl_pt[0])) * dist;
 
-                bottom_info.innerHTML = `
+                spotlight_info.innerHTML = `
                         <table>
                             <tr><th>road id</th><th>${userData.road_id}</th></tr>
                             <tr><th>section s0</th><th>${userData.lansection_s0.toFixed(2)}</th></tr>
