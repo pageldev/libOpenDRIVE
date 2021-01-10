@@ -73,35 +73,29 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
     return lane;
 }
 
-std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(double resolution) const
+LaneLines LaneSection::get_lane_lines(int lane_id, double resolution) const
 {
     if (auto road_ptr = this->road.lock())
     {
         const double s_end = this->get_end();
+        const auto&  lane = this->id_to_lane.at(lane_id);
 
         std::vector<double> s_vals;
         for (double s = this->s0; s < s_end; s += resolution)
             s_vals.push_back(s);
         s_vals.push_back(s_end);
 
-        std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line;
+        LaneLines lane_lines{lane};
         for (const double& s : s_vals)
         {
-            for (const auto& id_lane : this->id_to_lane)
-            {
-                const int lane_id = id_lane.first;
-                if (lane_id == 0)
-                    continue;
+            const double t_inner_brdr = lane->inner_border.get(s);
+            const double t_outer_brdr = lane->outer_border.get(s);
 
-                const double t_outer_brdr = id_lane.second->outer_border.get(s);
-                const double t_inner_brdr = id_lane.second->inner_border.get(s);
-
-                lane_id_to_outer_inner_brdr_line[lane_id].first.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
-                lane_id_to_outer_inner_brdr_line[lane_id].second.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
-            }
+            lane_lines.innner_border.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
+            lane_lines.outer_border.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
         }
 
-        return lane_id_to_outer_inner_brdr_line;
+        return lane_lines;
     }
     else
     {
@@ -111,41 +105,16 @@ std::map<int, std::pair<Line3D, Line3D>> LaneSection::get_lane_border_lines(doub
     return {};
 }
 
-std::vector<LaneVertices> LaneSection::get_lane_vertices(double resolution) const
+std::vector<LaneLines> LaneSection::get_lane_lines(double resolution) const
 {
-    std::vector<LaneVertices>                lanesection_vertices;
-    std::map<int, std::pair<Line3D, Line3D>> lane_id_to_outer_inner_brdr_line = this->get_lane_border_lines(resolution);
-
-    for (auto& id_outer_inner_brdr_line : lane_id_to_outer_inner_brdr_line)
+    std::vector<LaneLines> lane_lines;
+    for (const auto& id_lane : this->id_to_lane)
     {
-        const int    lane_id = id_outer_inner_brdr_line.first;
-        LaneVertices lane_vertices;
-        lane_vertices.lane_id = lane_id;
-        lane_vertices.type = this->id_to_lane.at(lane_id)->type;
-
-        Line3D& outer_brdr_line = id_outer_inner_brdr_line.second.first;
-        Line3D& inner_brdr_line = id_outer_inner_brdr_line.second.second;
-        if (outer_brdr_line.size() != inner_brdr_line.size())
-            throw std::runtime_error("outer and inner border line should have equal number of points");
-
-        lane_vertices.vertices = outer_brdr_line;
-        lane_vertices.vertices.insert(lane_vertices.vertices.end(), inner_brdr_line.rbegin(), inner_brdr_line.rend());
-
-        const size_t num_pts = lane_vertices.vertices.size();
-        for (size_t l_idx = 1, r_idx = num_pts - 2; l_idx < (num_pts >> 1); l_idx++, r_idx--)
-        {
-            std::vector<size_t> indicies_patch;
-            if (lane_id > 0) // make sure triangle normal is facing "up"
-                indicies_patch = {l_idx, l_idx - 1, r_idx + 1, r_idx, l_idx, r_idx + 1};
-            else
-                indicies_patch = {l_idx, r_idx + 1, l_idx - 1, r_idx, r_idx + 1, l_idx};
-            lane_vertices.indices.insert(lane_vertices.indices.end(), indicies_patch.begin(), indicies_patch.end());
-        }
-
-        lanesection_vertices.push_back(lane_vertices);
+        LaneLines single_lane_lines = this->get_lane_lines(id_lane.first, resolution);
+        lane_lines.push_back(single_lane_lines);
     }
 
-    return lanesection_vertices;
+    return lane_lines;
 }
 
 std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double resolution) const
@@ -250,14 +219,14 @@ std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double r
 
 std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(double resolution) const
 {
-    std::vector<RoadMarkLines> roadmark_polygons;
+    std::vector<RoadMarkLines> roadmark_lines;
     for (const auto& id_lane : this->id_to_lane)
     {
         std::vector<RoadMarkLines> lane_roadmarks = this->get_roadmark_lines(id_lane.first, resolution);
-        roadmark_polygons.insert(roadmark_polygons.end(), lane_roadmarks.begin(), lane_roadmarks.end());
+        roadmark_lines.insert(roadmark_lines.end(), lane_roadmarks.begin(), lane_roadmarks.end());
     }
 
-    return roadmark_polygons;
+    return roadmark_lines;
 }
 
 } // namespace odr
