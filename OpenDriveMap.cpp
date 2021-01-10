@@ -236,7 +236,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                     std::string material = roadmark_node.attribute("material").as_string("standard");
                     std::string laneChange = roadmark_node.attribute("laneChange").as_string("both");
 
-                    RoadMark roadmark(width, height, sOffsetRoadMark, type, weight, color, material, laneChange);
+                    RoadMark roadmark{width, height, sOffsetRoadMark, type, weight, color, material, laneChange};
 
                     if (pugi::xml_node roadmark_type_node = roadmark_node.child("type"))
                     {
@@ -254,7 +254,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
 
                             std::string rule = roadmarks_line_node.attribute("rule").as_string("none");
 
-                            RoadMarksLine roadmarks_line(line_width, length, space, tOffset, sOffsetRoadMarksLine, name, rule);
+                            RoadMark::RoadMarksLine roadmarks_line{line_width, length, space, tOffset, sOffsetRoadMarksLine, name, rule};
                             roadmark.s_to_roadmarks_line[s0 + sOffsetRoadMark + sOffsetRoadMarksLine] = roadmarks_line;
                         }
                     }

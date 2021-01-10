@@ -1,10 +1,11 @@
 #ifdef __EMSCRIPTEN__
 
-    #include "Lanes.h"
     #include "LaneSection.h"
+    #include "Lanes.h"
     #include "OpenDriveMap.h"
     #include "RefLine.h"
     #include "Road.h"
+    #include "Utils.hpp"
 
     #include <emscripten/bind.h>
 
@@ -22,8 +23,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<std::string>("vector<string>");
+    emscripten::register_vector<std::vector<Vec3D>>("vector<vector<Vec3D>>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
-    emscripten::register_vector<RoadMarkPolygon>("vector<RoadMarkPolygon>");
+    emscripten::register_vector<Mesh3D>("vector<Mesh3D>");
+    emscripten::register_vector<RoadMarkLines>("vector<RoadMarkLines>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
@@ -53,9 +56,25 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
-    emscripten::class_<RoadMarkPolygon>("RoadMarkPolygon")
-        .constructor<>()
-        .property("outline", &RoadMarkPolygon::outline);
+    emscripten::class_<Mesh3D>("Mesh3D")
+        .property("vertices", &Mesh3D::vertices)
+        .property("indices", &Mesh3D::indices);
+
+    emscripten::class_<RoadMarkLines>("RoadMarkLines")
+        .function("generate_meshes", &RoadMarkLines::generate_meshes)
+        .property("lane_id", &RoadMarkLines::lane_id)
+        .property("width", &RoadMarkLines::width)
+        .property("length", &RoadMarkLines::length)
+        .property("space", &RoadMarkLines::space)
+        .property("height", &RoadMarkLines::height)
+        .property("name", &RoadMarkLines::name)
+        .property("rule", &RoadMarkLines::rule)
+        .property("type", &RoadMarkLines::type)
+        .property("weight", &RoadMarkLines::weight)
+        .property("color", &RoadMarkLines::color)
+        .property("material", &RoadMarkLines::material)
+        .property("laneChange", &RoadMarkLines::laneChange)
+        .property("lines", &RoadMarkLines::lines);
 
     emscripten::class_<Lane>("Lane")
         .constructor<int, bool, std::string>()
@@ -67,7 +86,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
         .function("get_lane", emscripten::select_overload<std::shared_ptr<Lane>(double, double)>(&LaneSection::get_lane))
         .function("get_lane_vertices", &LaneSection::get_lane_vertices)
-        .function("get_roadmark_polygons", emscripten::select_overload<std::vector<RoadMarkPolygon>(double)const>(&LaneSection::get_roadmark_polygons))
+        .function("get_roadmark_lines", emscripten::select_overload<std::vector<RoadMarkLines>(double) const>(&LaneSection::get_roadmark_lines))
         .property("id_to_lane", &LaneSection::id_to_lane);
 
     emscripten::class_<LaneVertices>("LaneVertices")

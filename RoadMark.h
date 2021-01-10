@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math.hpp"
+#include "Utils.hpp"
 
 #include <map>
 #include <memory>
@@ -15,32 +16,23 @@ struct RoadMark;
 const double ROADMARK_WEIGHT_STANDARD_WIDTH = 0.12;
 const double ROADMARK_WEIGHT_BOLD_WIDTH = 0.25;
 
-struct RoadMarksLine
-{
-    RoadMarksLine() = default;
-    RoadMarksLine(double width, double length, double space, double tOffset, double sOffset, std::string name, std::string rule);
-
-    double width = -1;
-    double length = 0;
-    double space = 0;
-    double tOffset = 0;
-    double sOffset = 0;
-
-    std::string name;
-    std::string rule;
-};
-
 struct RoadMark
 {
+    struct RoadMarksLine
+    {
+        RoadMarksLine() = default;
+
+        double width = -1;
+        double length = 0;
+        double space = 0;
+        double tOffset = 0;
+        double sOffset = 0;
+
+        std::string name;
+        std::string rule;
+    };
+
     RoadMark() = default;
-    RoadMark(double      width,
-             double      height,
-             double      sOffset,
-             std::string type,
-             std::string weight,
-             std::string color,
-             std::string material,
-             std::string laneChange);
 
     double width = -1;
     double height = 0;
@@ -55,9 +47,27 @@ struct RoadMark
     std::map<double, RoadMarksLine> s_to_roadmarks_line;
 };
 
-struct RoadMarkPolygon
+struct RoadMarkLines
 {
-    std::vector<Vec3D> outline;
+    RoadMarkLines() = default;
+    std::vector<Mesh3D> generate_meshes() const;
+
+    int lane_id = 0;
+
+    double width = -1;
+    double length = 0;
+    double space = 0;
+    double height = 0;
+
+    std::string name;
+    std::string rule;
+    std::string type;
+    std::string weight;
+    std::string color;
+    std::string material;
+    std::string laneChange;
+
+    std::vector<Line3D> lines;
 };
 
 } // namespace odr

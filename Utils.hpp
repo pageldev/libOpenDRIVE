@@ -13,6 +13,12 @@
 
 namespace odr
 {
+struct Mesh3D
+{
+    std::vector<Vec3D>  vertices;
+    std::vector<size_t> indices;
+};
+
 struct Box2D
 {
     Box2D();
@@ -38,6 +44,26 @@ std::set<K> extract_keys(std::map<K, V> const& input_map)
         retval.insert(element.first);
 
     return retval;
+}
+
+inline Mesh3D generate_mesh_from_borders(const Line3D& inner_border, const Line3D& outer_border)
+{
+    Mesh3D out_mesh;
+
+    if (inner_border.size() != outer_border.size())
+        throw std::runtime_error("outer and inner border line should have equal number of points");
+
+    out_mesh.vertices = outer_border;
+    out_mesh.vertices.insert(out_mesh.vertices.end(), inner_border.rbegin(), inner_border.rend());
+
+    const size_t num_pts = out_mesh.vertices.size();
+    for (size_t l_idx = 1, r_idx = num_pts - 2; l_idx < (num_pts >> 1); l_idx++, r_idx--)
+    {
+        std::vector<size_t> indicies_patch = {l_idx, l_idx - 1, r_idx + 1, r_idx, l_idx, r_idx + 1};
+        out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
+    }
+
+    return out_mesh;
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
