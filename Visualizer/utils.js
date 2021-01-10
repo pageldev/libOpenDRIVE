@@ -16,10 +16,10 @@ function get_std_map_entries(std_map) {
     return map_entries;
 }
 
-function get_std_vec_entries(std_vec, delete_vec = false) {
-    let entries = [];
+function get_std_vec_entries(std_vec, delete_vec = false, ArrayType = null) {
+    let entries = ArrayType ? new ArrayType(std_vec.size()) : new Array(std_vec.size());
     for (let idx = 0; idx < std_vec.size(); idx++)
-        entries.push(std_vec.get(idx));
+        entries[idx] = std_vec.get(idx);
     if (delete_vec)
         std_vec.delete();
     return entries;
