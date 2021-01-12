@@ -13,6 +13,8 @@
 
 namespace odr
 {
+class Road;
+
 struct HeightOffset
 {
     double inner;
@@ -22,6 +24,7 @@ struct HeightOffset
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
+    Vec3D get_surface_pt(double s, double t) const;
 
     int  id = 0;
     bool level = false;
@@ -35,6 +38,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
 
     std::map<double, HeightOffset> s_to_height_offset;
     std::map<double, RoadMark>     s_to_roadmark;
+
+    std::weak_ptr<Road> road;
 };
 
 struct LaneLines

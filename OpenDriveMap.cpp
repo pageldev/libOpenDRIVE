@@ -201,6 +201,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 bool        level = lane_node.node().attribute("level").as_bool();
 
                 std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, level, lane_type);
+                lane->road = road;
                 lane_section->id_to_lane[lane->id] = lane;
 
                 for (pugi::xml_node lane_width_node : lane_node.node().children("width"))

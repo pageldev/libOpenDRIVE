@@ -2,6 +2,7 @@
 #include "Road.h"
 
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 
@@ -20,7 +21,7 @@ double LaneSection::get_end() const
         const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
         const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
 
-        return next_s0;
+        return next_s0 - std::numeric_limits<double>::min();
     }
     else
     {
@@ -91,8 +92,8 @@ LaneLines LaneSection::get_lane_lines(int lane_id, double resolution) const
             const double t_inner_brdr = lane->inner_border.get(s);
             const double t_outer_brdr = lane->outer_border.get(s);
 
-            lane_lines.innner_border.push_back(road_ptr->get_surface_pt(s, t_inner_brdr));
-            lane_lines.outer_border.push_back(road_ptr->get_surface_pt(s, t_outer_brdr));
+            lane_lines.innner_border.push_back(lane->get_surface_pt(s, t_inner_brdr));
+            lane_lines.outer_border.push_back(lane->get_surface_pt(s, t_outer_brdr));
         }
 
         return lane_lines;
@@ -131,7 +132,7 @@ std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double r
             const RoadMark& roadmark = s_roadmarks_iter->second;
 
             const bool is_last = (s_roadmarks_iter == std::prev(lane->s_to_roadmark.end()));
-            double     s_end_roadmark = is_last ? s_end : std::min(s_end, std::next(s_roadmarks_iter)->first);
+            double     s_end_roadmark = is_last ? s_end : std::min(s_end, std::next(s_roadmarks_iter)->first - std::numeric_limits<double>::min());
             double     width = roadmark.weight == "bold" ? ROADMARK_WEIGHT_BOLD_WIDTH : ROADMARK_WEIGHT_STANDARD_WIDTH;
 
             if (roadmark.s_to_roadmarks_line.size() == 0)
@@ -159,7 +160,7 @@ std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double r
 
                 Line3D line;
                 for (const double& s : s_vals)
-                    line.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s)));
+                    line.push_back(lane->get_surface_pt(s, lane->outer_border.get(s)));
                 roadmark_lines.lines.push_back(std::move(line));
 
                 out_roadmarks.push_back(std::move(roadmark_lines));
@@ -198,7 +199,7 @@ std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double r
 
                         Line3D line;
                         for (const double& s : s_vals)
-                            line.push_back(road_ptr->get_surface_pt(s, lane->outer_border.get(s) + roadmarks_line.tOffset));
+                            line.push_back(lane->get_surface_pt(s, lane->outer_border.get(s) + roadmarks_line.tOffset));
                         roadmark_lines.lines.push_back(std::move(line));
                     }
 
