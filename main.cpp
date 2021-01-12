@@ -23,9 +23,9 @@ int main(int argc, char** argv)
         printf("road: %s\n", road->id.c_str());
         for (std::shared_ptr<odr::LaneSection> lanesec : road->get_lanesections())
         {
-            std::vector<odr::LaneVertices> lane_vertices = lanesec->get_lane_vertices(0.1);
-            for (const auto& lane_vertice : lane_vertices)
-                pts.insert(pts.end(), lane_vertice.vertices.begin(), lane_vertice.vertices.end());
+            std::vector<odr::LaneLines> lane_lines = lanesec->get_lane_lines(0.1);
+            for (const auto& lane_line : lane_lines)
+                pts.insert(pts.end(), lane_line.outer_border.begin(), lane_line.outer_border.end());
         }
     }
     printf("Finished\n");
