@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <stddef.h>
+#include <vector>
 
 namespace odr
 {
@@ -14,6 +15,8 @@ struct Poly3
 
     double get(double s) const;
     double get_grad(double s) const;
+
+    std::vector<double> approximate_linear(double eps, double s0, double s1) const;
 
     void negate();
 

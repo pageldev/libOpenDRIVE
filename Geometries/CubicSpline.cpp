@@ -20,6 +20,26 @@ double Poly3::get(double s) const { return a + b * s + c * s * s + d * s * s * s
 
 double Poly3::get_grad(double s) const { return b + 2 * c * s + 3 * d * s * s; }
 
+std::vector<double> Poly3::approximate_linear(double eps, double s0, double s1) const
+{
+    if (d == 0 && c == 0)
+        return {s0, s1};
+
+    double s = s0;
+
+    std::vector<double> s_vals;
+    while (s < s1)
+    {
+        s_vals.push_back(s);
+        if (c != 0)
+            s += std::sqrt(std::abs(eps / c));
+        else
+            s += eps;
+    }
+    s_vals.push_back(s1);
+    return s_vals;
+}
+
 void Poly3::negate()
 {
     a = -a;
@@ -32,13 +52,13 @@ size_t CubicSpline::size() const { return this->s_start_to_poly.size(); }
 
 double CubicSpline::get(double s) const
 {
-    const Poly3  poly = this->get_poly(s);
+    const Poly3 poly = this->get_poly(s);
     return poly.get(s);
 }
 
 double CubicSpline::get_grad(double s) const
 {
-    const Poly3  poly = this->get_poly(s);
+    const Poly3 poly = this->get_poly(s);
     return poly.get_grad(s);
 }
 
