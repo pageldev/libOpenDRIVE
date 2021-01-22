@@ -24,6 +24,8 @@ struct RefLine
     Vec3D  get_grad(double s) const;
     double match(double x, double y) const;
 
+    std::vector<double> approximate_linear(double eps) const;
+
     double      length = 0;
     CubicSpline elevation_profile;
 

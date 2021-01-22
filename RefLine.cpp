@@ -71,4 +71,22 @@ double RefLine::match(double x, double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
+std::vector<double> RefLine::approximate_linear(double eps) const
+{
+    std::vector<double> s_vals;
+
+    for (auto s0_geom_iter = this->s0_to_geometry.begin(); s0_geom_iter != this->s0_to_geometry.end(); s0_geom_iter++)
+    {
+        const std::vector<double> s_vals_geom = s0_geom_iter->second->approximate_linear(eps);
+        if (s_vals_geom.size() < 2)
+            throw std::runtime_error("expected at least two sample points");
+        s_vals.insert(s_vals.end(), s_vals_geom.begin(), s_vals_geom.end());
+
+        if (std::next(s0_geom_iter) != this->s0_to_geometry.end())
+            s_vals.pop_back();
+    }
+
+    return s_vals;
+}
+
 } // namespace odr
