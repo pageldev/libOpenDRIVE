@@ -23,8 +23,6 @@ struct RoadGeometry
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
     virtual ~RoadGeometry();
 
-    virtual void update() = 0;
-
     virtual Vec2D get_xy(double s) const = 0;
     virtual Vec2D get_grad(double s) const = 0;
 
@@ -35,7 +33,6 @@ struct RoadGeometry
     double length = 0;
 
     GeometryType type;
-    Box2D        bounding_box;
 };
 
 using ConstRoadGeometrySet = std::set<std::shared_ptr<const RoadGeometry>, SharedPtrCmp<const RoadGeometry, double, &RoadGeometry::s0>>;

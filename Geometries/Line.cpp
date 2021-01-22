@@ -10,12 +10,7 @@
 
 namespace odr
 {
-Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Line)
-{
-    this->update();
-}
-
-void Line::update() { this->bounding_box = get_bbox_for_s_values<double>({s0, s0 + length}, std::bind(&Line::get_xy, this, std::placeholders::_1)); }
+Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Line) {}
 
 Vec2D Line::get_xy(double s) const
 {

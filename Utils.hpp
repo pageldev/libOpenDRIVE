@@ -19,17 +19,6 @@ struct Mesh3D
     std::vector<size_t> indices;
 };
 
-struct Box2D
-{
-    Box2D();
-    Box2D(Vec2D min, Vec2D max);
-    double get_distance(const Vec2D& pt);
-
-    Vec2D  min, max;
-    Vec2D  center;
-    double width, height;
-};
-
 template<class C, class T, T C::*member>
 struct SharedPtrCmp
 {
@@ -65,23 +54,6 @@ inline Mesh3D generate_mesh_from_borders(const Line3D& inner_border, const Line3
 
     return out_mesh;
 }
-
-template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-Box2D get_bbox_for_s_values(const std::vector<T>& s_values, const std::function<Vec2D(T)>& get_xyz)
-{
-    std::vector<Vec2D> points;
-    points.reserve(s_values.size());
-    for (const T& s_val : s_values)
-        points.push_back(get_xyz(s_val));
-
-    auto iter_min_max_x = std::minmax_element(points.begin(), points.end(), [](const Vec2D& lhs, const Vec2D& rhs) { return lhs[0] < rhs[0]; });
-    auto iter_min_max_y = std::minmax_element(points.begin(), points.end(), [](const Vec2D& lhs, const Vec2D& rhs) { return lhs[1] < rhs[1]; });
-
-    Vec2D min = {iter_min_max_x.first->at(0), iter_min_max_y.first->at(1)};
-    Vec2D max = {iter_min_max_x.second->at(0), iter_min_max_y.second->at(1)};
-
-    return Box2D(min, max);
-};
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)

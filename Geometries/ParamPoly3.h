@@ -22,7 +22,6 @@ struct ParamPoly3 : public RoadGeometry
                double cV,
                double dV,
                bool   pRange_normalized = true);
-    void update() override;
 
     Vec2D get_xy(double s) const override;
     Vec2D get_grad(double s) const override;
