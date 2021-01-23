@@ -20,23 +20,28 @@ double Poly3::get(double s) const { return a + b * s + c * s * s + d * s * s * s
 
 double Poly3::get_grad(double s) const { return b + 2 * c * s + 3 * d * s * s; }
 
-std::vector<double> Poly3::approximate_linear(double eps, double s0, double s1) const
+std::vector<double> Poly3::approximate_linear(double eps, double s_start, double s_end) const
 {
-    if (d == 0 && c == 0)
-        return {s0, s1};
+    if (s_start == s_end)
+        return {};
 
-    double s = s0;
+    if (d == 0 && c == 0)
+        return {s_start, s_end};
+
+    double s = s_start;
 
     std::vector<double> s_vals;
-    while (s < s1)
+    while (s < s_end)
     {
         s_vals.push_back(s);
-        if (c != 0)
-            s += std::sqrt(std::abs(eps / c));
-        else
-            s += eps;
+        s = (c != 0) ? s + std::sqrt(std::abs(eps / c)) : s + eps;
     }
-    s_vals.push_back(s1);
+
+    if ((s_end - s_vals.back()) < 1e-9)
+        s_vals.back() = s_end;
+    else
+        s_vals.push_back(s_end);
+
     return s_vals;
 }
 
@@ -102,6 +107,35 @@ Poly3 CubicSpline::get_poly(double s) const
         return target_poly_iter->second;
     }
     return Poly3();
+}
+
+std::vector<double> CubicSpline::approximate_linear(double eps, double s_start, double s_end) const
+{
+    if ((s_start == s_end) || this->s_start_to_poly.empty())
+        return {};
+
+    auto s_end_poly_iter = this->s_start_to_poly.lower_bound(s_end);
+    auto s_start_poly_iter = this->s_start_to_poly.upper_bound(s_start);
+    if (s_start_poly_iter != this->s_start_to_poly.begin())
+        s_start_poly_iter--;
+
+    std::vector<double> s_vals;
+    for (auto s_poly_iter = s_start_poly_iter; s_poly_iter != s_end_poly_iter; s_poly_iter++)
+    {
+        const double s_start_poly = std::max(s_poly_iter->first, s_start);
+        const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_end_poly_iter)->first, s_end);
+
+        const std::vector<double> s_vals_poly = s_poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
+        if (s_vals_poly.size() < 2)
+            throw std::runtime_error("expected at least two sample points");
+
+        if (std::next(s_poly_iter) != s_end_poly_iter)
+            s_vals_poly.pop_back();
+
+        s_vals.insert(s_vals.begin(), s_vals_poly.begin(), s_vals_poly.end());
+    }
+
+    return s_vals;
 }
 
 } // namespace odr

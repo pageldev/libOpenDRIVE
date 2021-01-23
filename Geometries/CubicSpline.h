@@ -16,7 +16,7 @@ struct Poly3
     double get(double s) const;
     double get_grad(double s) const;
 
-    std::vector<double> approximate_linear(double eps, double s0, double s1) const;
+    std::vector<double> approximate_linear(double eps, double s_start, double s_end) const;
 
     void negate();
 
@@ -35,6 +35,8 @@ struct CubicSpline
     CubicSpline negate() const;
     CubicSpline add(const CubicSpline& other) const;
     Poly3       get_poly(double s) const;
+
+    std::vector<double> approximate_linear(double eps, double s_start, double s_end) const;
 
     std::map<double, Poly3> s_start_to_poly;
 };
