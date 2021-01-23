@@ -67,25 +67,6 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
     const Vec2D pC = {(cU / 3) + 2 * pB[0] - pA[0], (cU / 3) + 2 * pB[1] - pA[1]};
     const Vec2D pD = {dU + 3 * pC[0] - 3 * pB[0] + pA[0], dV + 3 * pC[1] - 3 * pB[1] + pA[1]};
 
-    /* modified f_cubic with different t values for segments */
-    auto f_cubic_t_123 = [&](const double& t1, const double& t2, const double& t3) -> Vec2D {
-        const double px = (1 - t3) * ((1 - t2) * ((1 - t1) * pA[0] + t1 * pB[0]) + t2 * ((1 - t1) * pB[0] + t1 * pC[0])) +
-                          t3 * ((1 - t2) * ((1 - t1) * pB[0] + t1 * pC[0]) + t2 * ((1 - t1) * pC[0] + t1 * pD[0]));
-        const double py = (1 - t3) * ((1 - t2) * ((1 - t1) * pA[1] + t1 * pB[1]) + t2 * ((1 - t1) * pB[1] + t1 * pC[1])) +
-                          t3 * ((1 - t2) * ((1 - t1) * pB[1] + t1 * pC[1]) + t2 * ((1 - t1) * pC[1] + t1 * pD[1]));
-        return {px, py};
-    };
-
-    auto approximate_linear_quad = [](const Vec2D& pA, const Vec2D& pB, const Vec2D& pC, double eps) -> std::vector<double> {
-        const Vec2D  param_c = {pA[0] - 2 * pB[0] + pC[0], pA[1] - 2 * pB[1] + pC[1]};
-        const double step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
-
-        std::vector<double> p_vals;
-        for (double p = 0; p < 1.0; p += step_size)
-            p_vals.push_back(p);
-        return p_vals;
-    };
-
     /* approximate cubic bezier by splitting into quadratic ones */
     const double seg_size = std::pow(eps / ((1.0 / 54.0) * std::sqrt(dU * dU + dV * dV)), (1.0 / 3.0));
 
@@ -101,20 +82,18 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
         /* get sub-cubic bezier for interval */
         const double& p0 = seg_intrvl.at(0);
         const double& p1 = seg_intrvl.at(1);
-        const Vec2D   pA_sub = f_cubic_t_123(p0, p0, p0);
-        const Vec2D   pB_sub = f_cubic_t_123(p0, p0, p1);
-        const Vec2D   pC_sub = f_cubic_t_123(p0, p1, p1);
-        const Vec2D   pD_sub = f_cubic_t_123(p1, p1, p1);
+
+        const std::array<Vec2D, 4> c_pts_sub = subdivide_cubic_bezier(p0, p1, {pA, pB, pC, pD});
 
         /* approximate sub-cubic bezier by two quadratic ones */
-        const Vec2D pB_quad_0 = {(1.0 - 0.75) * pA_sub[0] + 0.75 * pB_sub[0], (1.0 - 0.75) * pA_sub[1] + 0.75 * pB_sub[1]};
-        const Vec2D pB_quad_1 = {(1.0 - 0.75) * pD_sub[0] + 0.75 * pC_sub[0], (1.0 - 0.75) * pD_sub[1] + 0.75 * pC_sub[1]};
+        const Vec2D pB_quad_0 = {(1.0 - 0.75) * c_pts_sub[0][0] + 0.75 * c_pts_sub[1][0], (1.0 - 0.75) * c_pts_sub[0][1] + 0.75 * c_pts_sub[1][1]};
+        const Vec2D pB_quad_1 = {(1.0 - 0.75) * c_pts_sub[3][0] + 0.75 * c_pts_sub[2][0], (1.0 - 0.75) * c_pts_sub[3][1] + 0.75 * c_pts_sub[2][1]};
         const Vec2D pM_quad = {(1.0 - 0.5) * pB_quad_0[0] + 0.5 * pB_quad_1[0], (1.0 - 0.5) * pB_quad_0[1] + 0.5 * pB_quad_1[1]};
 
         /* linear approximate the two quadratic bezier */
-        for (const double& p_sub : approximate_linear_quad(pA_sub, pB_quad_0, pM_quad, eps))
+        for (const double& p_sub : approximate_linear_quad_bezier({c_pts_sub[0], pB_quad_0, pM_quad}, eps))
             p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
-        for (const double& p_sub : approximate_linear_quad(pM_quad, pB_quad_1, pD_sub, eps))
+        for (const double& p_sub : approximate_linear_quad_bezier({pM_quad, pB_quad_1, c_pts_sub[3]}, eps))
             p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
     }
     p_vals.push_back(1.0);
