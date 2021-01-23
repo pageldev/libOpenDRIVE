@@ -71,20 +71,32 @@ double RefLine::match(double x, double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
-std::vector<double> RefLine::approximate_linear(double eps) const
+std::vector<double> RefLine::approximate_linear(double eps, double s_start, double s_end) const
 {
-    std::vector<double> s_vals;
+    if ((s_start == s_end) || this->s0_to_geometry.empty())
+        return {};
 
-    for (auto s0_geom_iter = this->s0_to_geometry.begin(); s0_geom_iter != this->s0_to_geometry.end(); s0_geom_iter++)
+    auto s_end_geom_iter = this->s0_to_geometry.lower_bound(s_end);
+    auto s_start_geom_iter = this->s0_to_geometry.upper_bound(s_start);
+    if (s_start_geom_iter != s0_to_geometry.begin())
+        s_start_geom_iter--;
+
+    std::vector<double> s_vals{s_start};
+    for (auto s0_geom_iter = s_start_geom_iter; s0_geom_iter != s_end_geom_iter; s0_geom_iter++)
     {
         const std::vector<double> s_vals_geom = s0_geom_iter->second->approximate_linear(eps);
         if (s_vals_geom.size() < 2)
             throw std::runtime_error("expected at least two sample points");
-        s_vals.insert(s_vals.end(), s_vals_geom.begin(), s_vals_geom.end());
+        for (const double& s : s_vals_geom)
+        {
+            if (s > s_start && s < s_end)
+                s_vals.push_back(s);
+        }
 
-        if (std::next(s0_geom_iter) != this->s0_to_geometry.end())
+        if (std::next(s0_geom_iter) != s_end_geom_iter)
             s_vals.pop_back();
     }
+    s_vals.push_back(s_end);
 
     return s_vals;
 }
