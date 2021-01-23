@@ -26,6 +26,54 @@ int sign(T val)
     return (T(0) < val) - (val < T(0));
 }
 
+template<typename T, size_t Dim, typename BinaryOperation, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> operation(const Vec<T, Dim>& a, const Vec<T, Dim>& b, BinaryOperation op)
+{
+    Vec<T, Dim> res;
+    for (size_t idx = 0; idx < Dim; idx++)
+        res[idx] = op(a[idx], b[idx]);
+    return res;
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> add(const Vec<T, Dim>& a, const Vec<T, Dim>& b)
+{
+    return operation<T, Dim, std::plus<T>>(a, b, std::plus<T>());
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> sub(const Vec<T, Dim>& a, const Vec<T, Dim>& b)
+{
+    return operation<T, Dim, std::minus<T>>(a, b, std::minus<T>());
+}
+
+template<typename T, size_t Dim, typename BinaryOperation, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> operation(const T& scalar, const Vec<T, Dim>& a, BinaryOperation op)
+{
+    Vec<T, Dim> res;
+    for (size_t idx = 0; idx < Dim; idx++)
+        res[idx] = op(scalar, a[idx]);
+    return res;
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> add(const T& scalar, const Vec<T, Dim>& a)
+{
+    return operation<T, Dim, std::plus<T>>(scalar, a, std::plus<T>());
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> sub(const T& scalar, const Vec<T, Dim>& a)
+{
+    return operation<T, Dim, std::minus<T>>(scalar, a, std::minus<T>());
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Vec<T, Dim> mut(const T& scalar, const Vec<T, Dim>& a)
+{
+    return operation<T, Dim, std::multiplies<T>>(scalar, a, std::multiplies<T>());
+}
+
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 constexpr T euclDistance(const Vec<T, Dim> a, const Vec<T, Dim> b)
 {
