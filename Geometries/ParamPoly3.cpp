@@ -73,7 +73,10 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
     std::vector<std::array<double, 2>> seg_intervals;
     for (double p = 0; p < 1.0; p += seg_size)
         seg_intervals.push_back({p, std::min(p + seg_size, 1.0)});
-    if (seg_intervals.back().at(1) != 1.0)
+    
+    if (1.0 - (seg_intervals.back().at(1)) < 1e-6)
+        seg_intervals.back().at(1) = 1.0;
+    else
         seg_intervals.push_back({seg_intervals.back().at(1), 1.0});
 
     std::vector<double> p_vals;
@@ -93,8 +96,10 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
         /* linear approximate the two quadratic bezier */
         for (const double& p_sub : approximate_linear_quad_bezier({c_pts_sub[0], pB_quad_0, pM_quad}, eps))
             p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
+        p_vals.pop_back();
         for (const double& p_sub : approximate_linear_quad_bezier({pM_quad, pB_quad_1, c_pts_sub[3]}, eps))
             p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
+        p_vals.pop_back();
     }
     p_vals.push_back(1.0);
 
