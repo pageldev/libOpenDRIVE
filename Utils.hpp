@@ -180,4 +180,39 @@ void rdp(
     }
 }
 
+std::array<Vec2D, 4> inline subdivide_cubic_bezier(double p_start, double p_end, const std::array<Vec2D, 4>& ctrl_pts)
+{
+    /* modified f_cubic allowing different p values for segments */
+    auto f_cubic_p123 = [&](const double& p1, const double& p2, const double& p3) -> Vec2D {
+        const double px =
+            (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][0] + p1 * ctrl_pts[1][0]) + p2 * ((1 - p1) * ctrl_pts[1][0] + p1 * ctrl_pts[2][0])) +
+            p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][0] + p1 * ctrl_pts[2][0]) + p2 * ((1 - p1) * ctrl_pts[2][0] + p1 * ctrl_pts[3][0]));
+        const double py =
+            (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][1] + p1 * ctrl_pts[1][1]) + p2 * ((1 - p1) * ctrl_pts[1][1] + p1 * ctrl_pts[2][1])) +
+            p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][1] + p1 * ctrl_pts[2][1]) + p2 * ((1 - p1) * ctrl_pts[2][1] + p1 * ctrl_pts[3][1]));
+        return {px, py};
+    };
+
+    std::array<Vec2D, 4> ctrl_pts_sub;
+    ctrl_pts_sub[0] = f_cubic_p123(p_start, p_start, p_start);
+    ctrl_pts_sub[1] = f_cubic_p123(p_start, p_start, p_end);
+    ctrl_pts_sub[2] = f_cubic_p123(p_start, p_end, p_end);
+    ctrl_pts_sub[3] = f_cubic_p123(p_end, p_end, p_end);
+
+    return ctrl_pts_sub;
+}
+
+std::vector<double> inline approximate_linear_quad_bezier(const std::array<Vec2D, 3>& ctrl_pts, double eps)
+{
+    const Vec2D  param_c = {ctrl_pts[0][0] - 2 * ctrl_pts[1][0] + ctrl_pts[2][0], ctrl_pts[0][1] - 2 * ctrl_pts[1][1] + ctrl_pts[2][1]};
+    const double step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
+
+    std::vector<double> p_vals;
+    for (double p = 0; p < 1.0; p += step_size)
+        p_vals.push_back(p);
+    p_vals.push_back(1.0);
+
+    return p_vals;
+}
+
 } // namespace odr
