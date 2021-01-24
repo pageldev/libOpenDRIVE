@@ -180,20 +180,22 @@ void rdp(
     }
 }
 
-std::array<Vec2D, 4> inline subdivide_cubic_bezier(double p_start, double p_end, const std::array<Vec2D, 4>& ctrl_pts)
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std::array<Vec<T, Dim>, 4>& ctrl_pts)
 {
     /* modified f_cubic allowing different p values for segments */
-    auto f_cubic_p123 = [&](const double& p1, const double& p2, const double& p3) -> Vec2D {
-        const double px =
-            (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][0] + p1 * ctrl_pts[1][0]) + p2 * ((1 - p1) * ctrl_pts[1][0] + p1 * ctrl_pts[2][0])) +
-            p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][0] + p1 * ctrl_pts[2][0]) + p2 * ((1 - p1) * ctrl_pts[2][0] + p1 * ctrl_pts[3][0]));
-        const double py =
-            (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][1] + p1 * ctrl_pts[1][1]) + p2 * ((1 - p1) * ctrl_pts[1][1] + p1 * ctrl_pts[2][1])) +
-            p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][1] + p1 * ctrl_pts[2][1]) + p2 * ((1 - p1) * ctrl_pts[2][1] + p1 * ctrl_pts[3][1]));
-        return {px, py};
+    auto f_cubic_p123 = [&](const T& p1, const T& p2, const T& p3) -> Vec<T, Dim> {
+        Vec<T, Dim> out;
+        for (size_t dim = 0; dim < Dim; dim++)
+        {
+            out[dim] =
+                (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][dim] + p1 * ctrl_pts[1][dim]) + p2 * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim])) +
+                p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim]) + p2 * ((1 - p1) * ctrl_pts[2][dim] + p1 * ctrl_pts[3][dim]));
+        }
+        return out;
     };
 
-    std::array<Vec2D, 4> ctrl_pts_sub;
+    std::array<Vec<T, Dim>, 4> ctrl_pts_sub;
     ctrl_pts_sub[0] = f_cubic_p123(p_start, p_start, p_start);
     ctrl_pts_sub[1] = f_cubic_p123(p_start, p_start, p_end);
     ctrl_pts_sub[2] = f_cubic_p123(p_start, p_end, p_end);
@@ -202,15 +204,20 @@ std::array<Vec2D, 4> inline subdivide_cubic_bezier(double p_start, double p_end,
     return ctrl_pts_sub;
 }
 
-std::vector<double> inline approximate_linear_quad_bezier(const std::array<Vec2D, 3>& ctrl_pts, double eps)
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, T eps)
 {
-    const Vec2D  param_c = {ctrl_pts[0][0] - 2 * ctrl_pts[1][0] + ctrl_pts[2][0], ctrl_pts[0][1] - 2 * ctrl_pts[1][1] + ctrl_pts[2][1]};
-    const double step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
+    Vec<T, Dim> param_c;
+    for (size_t dim = 0; dim < Dim; dim++)
+        param_c[dim] = ctrl_pts[0][dim] - 2 * ctrl_pts[1][dim] + ctrl_pts[2][dim];
 
-    std::vector<double> p_vals;
-    for (double p = 0; p < 1.0; p += step_size)
+    const T step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
+
+    std::vector<T> p_vals;
+    for (T p = 0; p < 1; p += step_size)
         p_vals.push_back(p);
-    p_vals.push_back(1.0);
+    if (p_vals.back() != 1)
+        p_vals.push_back(1);
 
     return p_vals;
 }
