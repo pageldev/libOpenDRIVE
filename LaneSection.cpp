@@ -1,4 +1,5 @@
 #include "LaneSection.h"
+#include "RefLine.h"
 #include "Road.h"
 
 #include <iterator>
@@ -72,50 +73,6 @@ std::shared_ptr<Lane> LaneSection::get_lane(double s, double t)
 {
     std::shared_ptr<Lane> lane = std::const_pointer_cast<Lane>(static_cast<const LaneSection&>(*this).get_lane(s, t));
     return lane;
-}
-
-LaneLines LaneSection::get_lane_lines(int lane_id, double resolution) const
-{
-    if (auto road_ptr = this->road.lock())
-    {
-        const double s_end = this->get_end();
-        const auto&  lane = this->id_to_lane.at(lane_id);
-
-        std::vector<double> s_vals;
-        for (double s = this->s0; s < s_end; s += resolution)
-            s_vals.push_back(s);
-        s_vals.push_back(s_end);
-
-        LaneLines lane_lines{lane};
-        for (const double& s : s_vals)
-        {
-            const double t_inner_brdr = lane->inner_border.get(s);
-            const double t_outer_brdr = lane->outer_border.get(s);
-
-            lane_lines.innner_border.push_back(lane->get_surface_pt(s, t_inner_brdr));
-            lane_lines.outer_border.push_back(lane->get_surface_pt(s, t_outer_brdr));
-        }
-
-        return lane_lines;
-    }
-    else
-    {
-        throw std::runtime_error("could not access parent road for lane section");
-    }
-
-    return {};
-}
-
-std::vector<LaneLines> LaneSection::get_lane_lines(double resolution) const
-{
-    std::vector<LaneLines> lane_lines;
-    for (const auto& id_lane : this->id_to_lane)
-    {
-        LaneLines single_lane_lines = this->get_lane_lines(id_lane.first, resolution);
-        lane_lines.push_back(single_lane_lines);
-    }
-
-    return lane_lines;
 }
 
 std::vector<RoadMarkLines> LaneSection::get_roadmark_lines(int lane_id, double resolution) const

@@ -1,6 +1,7 @@
 #include "Lanes.h"
 #include "Math.hpp"
 #include "OpenDriveMap.h"
+#include "RefLine.h"
 #include "Road.h"
 
 #include <fstream>
@@ -20,12 +21,14 @@ int main(int argc, char** argv)
     std::vector<odr::Vec3D> pts;
     for (std::shared_ptr<odr::Road> road : odr.get_roads())
     {
-        printf("road: %s\n", road->id.c_str());
+        printf("road: %s, length: %.2f\n", road->id.c_str(), road->length);
         for (std::shared_ptr<odr::LaneSection> lanesec : road->get_lanesections())
         {
-            std::vector<odr::LaneLines> lane_lines = lanesec->get_lane_lines(0.1);
-            for (const auto& lane_line : lane_lines)
-                pts.insert(pts.end(), lane_line.outer_border.begin(), lane_line.outer_border.end());
+            for (std::shared_ptr<odr::Lane> lane : lanesec->get_lanes())
+            {
+                auto lane_mesh = lane->get_mesh(lanesec->s0, lanesec->get_end(), 0.1);
+                pts.insert(pts.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
+            }
         }
     }
     printf("Finished\n");

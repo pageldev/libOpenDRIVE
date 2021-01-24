@@ -26,7 +26,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<std::vector<Vec3D>>("vector<vector<Vec3D>>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
     emscripten::register_vector<Mesh3D>("vector<Mesh3D>");
-    emscripten::register_vector<LaneLines>("vector<LaneLines>");
     emscripten::register_vector<RoadMarkLines>("vector<RoadMarkLines>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
@@ -81,21 +80,17 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .constructor<int, bool, std::string>()
         .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
         .function("get_surface_pt", &Lane::get_surface_pt)
+        .function("get_mesh", &Lane::get_mesh)
         .property("id", &Lane::id)
         .property("type", &Lane::type);
-
-    emscripten::class_<LaneLines>("LaneLines")
-        .function("generate_mesh", &LaneLines::generate_mesh)
-        .property("lane", &LaneLines::lane)
-        .property("innner_border", &LaneLines::innner_border)
-        .property("outer_border", &LaneLines::outer_border);
 
     emscripten::class_<LaneSection>("LaneSection")
         .constructor<double>()
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
+        .function("get_end", &LaneSection::get_end)
         .function("get_lane", emscripten::select_overload<std::shared_ptr<Lane>(double, double)>(&LaneSection::get_lane))
-        .function("get_lane_lines", emscripten::select_overload<LaneLines(int, double) const>(&LaneSection::get_lane_lines))
         .function("get_roadmark_lines", emscripten::select_overload<std::vector<RoadMarkLines>(int, double) const>(&LaneSection::get_roadmark_lines))
+        .property("s0", &LaneSection::s0)
         .property("id_to_lane", &LaneSection::id_to_lane);
 
     emscripten::class_<LaneVertices>("LaneVertices")

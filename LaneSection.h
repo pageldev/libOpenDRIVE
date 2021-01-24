@@ -35,9 +35,6 @@ struct LaneSection : public std::enable_shared_from_this<LaneSection>
     std::shared_ptr<const Lane> get_lane(double s, double t) const;
     std::shared_ptr<Lane>       get_lane(double s, double t);
 
-    LaneLines              get_lane_lines(int lane_id, double resolution) const;
-    std::vector<LaneLines> get_lane_lines(double resolution) const;
-
     std::vector<RoadMarkLines> get_roadmark_lines(int lane_id, double resolution) const;
     std::vector<RoadMarkLines> get_roadmark_lines(double resolution) const;
 

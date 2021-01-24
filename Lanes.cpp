@@ -1,4 +1,5 @@
 #include "Lanes.h"
+#include "RefLine.h"
 #include "Road.h"
 #include "Utils.hpp"
 
@@ -61,6 +62,52 @@ Vec3D Lane::get_surface_pt(double s, double t) const
     return {};
 }
 
-Mesh3D LaneLines::generate_mesh() const { return generate_mesh_from_borders(this->innner_border, this->outer_border); }
+std::set<double> Lane::approximate_linear(double eps, double s_start, double s_end, bool outer) const
+{
+    if (auto road_ptr = this->road.lock())
+    {
+        std::set<double> s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
+        return s_vals;
+    }
+    else
+    {
+        throw std::runtime_error("could not access parent road for lane section");
+    }
+
+    return {};
+}
+
+Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool outer) const
+{
+    std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end, outer);
+
+    Line3D border_line;
+    for (const double& s : s_vals)
+    {
+        const double t = outer ? this->outer_border.get(s) : this->inner_border.get(s);
+        border_line.push_back(this->get_surface_pt(s, t));
+    }
+
+    return border_line;
+}
+
+Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
+{
+    std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end, true);
+    std::set<double> s_vals_inner = this->approximate_linear(eps, s_start, s_end, true);
+    s_vals.insert(s_vals_inner.begin(), s_vals_inner.end());
+
+    Line3D inner_border_line;
+    Line3D outer_border_line;
+    for (const double& s : s_vals)
+    {
+        const double t_inner_brdr = this->inner_border.get(s);
+        const double t_outer_brdr = this->outer_border.get(s);
+        inner_border_line.push_back(this->get_surface_pt(s, t_inner_brdr));
+        outer_border_line.push_back(this->get_surface_pt(s, t_outer_brdr));
+    }
+
+    return generate_mesh_from_borders(inner_border_line, outer_border_line);
+}
 
 } // namespace odr
