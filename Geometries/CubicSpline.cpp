@@ -166,7 +166,7 @@ std::set<double> CubicSpline::approximate_linear(double eps, double s_start, dou
     for (auto s_poly_iter = s_start_poly_iter; s_poly_iter != s_end_poly_iter; s_poly_iter++)
     {
         const double s_start_poly = std::max(s_poly_iter->first, s_start);
-        const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_end_poly_iter)->first, s_end);
+        const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_poly_iter)->first, s_end);
 
         std::set<double> s_vals_poly = s_poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
         if (s_vals_poly.size() < 2)
