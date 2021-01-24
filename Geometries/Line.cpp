@@ -21,6 +21,6 @@ Vec2D Line::get_xy(double s) const
 
 Vec2D Line::get_grad(double s) const { return {{std::cos(hdg0), std::sin(hdg0)}}; }
 
-std::vector<double> Line::approximate_linear(double eps) const { return {s0, s0 + length}; }
+std::set<double> Line::approximate_linear(double eps) const { return {s0, s0 + length}; }
 
 } // namespace odr

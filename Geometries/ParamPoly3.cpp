@@ -59,7 +59,7 @@ Vec2D ParamPoly3::get_grad(double s) const
     return {{dx, dy}};
 }
 
-std::vector<double> ParamPoly3::approximate_linear(double eps) const
+std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
     /* get control points */
     const Vec2D pA = {aU, aV};
@@ -73,7 +73,7 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
     std::vector<std::array<double, 2>> seg_intervals;
     for (double p = 0; p < 1.0; p += seg_size)
         seg_intervals.push_back({p, std::min(p + seg_size, 1.0)});
-    
+
     if (1.0 - (seg_intervals.back().at(1)) < 1e-6)
         seg_intervals.back().at(1) = 1.0;
     else
@@ -103,9 +103,11 @@ std::vector<double> ParamPoly3::approximate_linear(double eps) const
     }
     p_vals.push_back(1.0);
 
-    for (double& p : p_vals)
-        p = p * length + s0;
-    return p_vals;
+    std::set<double> s_vals;
+    for (const double& p : p_vals)
+        s_vals.insert(p * length + s0);
+
+    return s_vals;
 }
 
 } // namespace odr

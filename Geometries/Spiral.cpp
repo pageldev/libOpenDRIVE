@@ -41,13 +41,13 @@ Vec2D Spiral::get_grad(double s) const
     return {{dx, dy}};
 }
 
-std::vector<double> Spiral::approximate_linear(double eps) const
+std::set<double> Spiral::approximate_linear(double eps) const
 {
     // TODO: properly implement
-    std::vector<double> s_vals;
+    std::set<double> s_vals;
     for (double s = s0; s < (s0 + length); s += (10 * eps))
-        s_vals.push_back(s);
-    s_vals.push_back(s0 + length);
+        s_vals.insert(s);
+    s_vals.insert(s0 + length);
 
     return s_vals;
 }

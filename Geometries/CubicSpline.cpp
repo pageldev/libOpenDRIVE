@@ -2,6 +2,7 @@
 #include "Utils.hpp"
 
 #include <cmath>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -38,7 +39,7 @@ double Poly3::get_max(double s_start, double s_end) const
     return this->get(s_start);
 }
 
-std::vector<double> Poly3::approximate_linear(double eps, double s_start, double s_end) const
+std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_end) const
 {
     if (s_start == s_end)
         return {};
@@ -60,7 +61,8 @@ std::vector<double> Poly3::approximate_linear(double eps, double s_start, double
     else
         s_vals.push_back(s_end);
 
-    return s_vals;
+    std::set<double> s_vals_set(s_vals.begin(), s_vals.end());
+    return s_vals_set;
 }
 
 void Poly3::negate()
@@ -144,13 +146,13 @@ double CubicSpline::get_max(double s_start, double s_end) const
         const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_end_poly_iter)->first, s_end);
         max_poly_vals.push_back(s_poly_iter->second.get_max(s_start_poly, s_end_poly));
     }
-    
+
     const auto   max_iter = std::max_element(max_poly_vals.begin(), max_poly_vals.end());
     const double max_val = (max_iter == max_poly_vals.end()) ? 0 : *max_iter;
     return max_val;
 }
 
-std::vector<double> CubicSpline::approximate_linear(double eps, double s_start, double s_end) const
+std::set<double> CubicSpline::approximate_linear(double eps, double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s0_to_poly.empty())
         return {};
@@ -160,20 +162,17 @@ std::vector<double> CubicSpline::approximate_linear(double eps, double s_start, 
     if (s_start_poly_iter != this->s0_to_poly.begin())
         s_start_poly_iter--;
 
-    std::vector<double> s_vals;
+    std::set<double> s_vals;
     for (auto s_poly_iter = s_start_poly_iter; s_poly_iter != s_end_poly_iter; s_poly_iter++)
     {
         const double s_start_poly = std::max(s_poly_iter->first, s_start);
         const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_end_poly_iter)->first, s_end);
 
-        std::vector<double> s_vals_poly = s_poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
+        std::set<double> s_vals_poly = s_poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
         if (s_vals_poly.size() < 2)
             throw std::runtime_error("expected at least two sample points");
 
-        if (std::next(s_poly_iter) != s_end_poly_iter)
-            s_vals_poly.pop_back();
-
-        s_vals.insert(s_vals.begin(), s_vals_poly.begin(), s_vals_poly.end());
+        s_vals.insert(s_vals_poly.begin(), s_vals_poly.end());
     }
 
     return s_vals;

@@ -26,7 +26,7 @@ struct RoadGeometry
     virtual Vec2D get_xy(double s) const = 0;
     virtual Vec2D get_grad(double s) const = 0;
 
-    virtual std::vector<double> approximate_linear(double eps) const = 0;
+    virtual std::set<double> approximate_linear(double eps) const = 0;
 
     double s0 = 0;
     double x0 = 0;

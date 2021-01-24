@@ -3,7 +3,7 @@
 #include <map>
 #include <memory>
 #include <stddef.h>
-#include <vector>
+#include <set>
 
 namespace odr
 {
@@ -17,7 +17,7 @@ struct Poly3
     double get_grad(double s) const;
     double get_max(double s_start, double s_end) const;
 
-    std::vector<double> approximate_linear(double eps, double s_start, double s_end) const;
+    std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 
     void negate();
 
@@ -38,7 +38,7 @@ struct CubicSpline
     Poly3       get_poly(double s) const;
     double      get_max(double s_start, double s_end) const;
 
-    std::vector<double> approximate_linear(double eps, double s_start, double s_end) const;
+    std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 
     std::map<double, Poly3> s0_to_poly;
 };
