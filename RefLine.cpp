@@ -93,8 +93,15 @@ std::set<double> RefLine::approximate_linear(double eps, double s_start, double 
                 s_vals.insert(s);
         }
     }
-    s_vals.insert(s_end);
 
+    std::set<double> s_vals_elevation = this->elevation_profile.approximate_linear(eps, s_start, s_end);
+    for (const double& s : s_vals_elevation)
+    {
+        if (s > s_start && s < s_end)
+            s_vals.insert(s);
+    }
+
+    s_vals.insert(s_end);
     return s_vals;
 }
 

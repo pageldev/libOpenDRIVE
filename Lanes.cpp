@@ -67,6 +67,7 @@ std::set<double> Lane::approximate_linear(double eps, double s_start, double s_e
     if (auto road_ptr = this->road.lock())
     {
         std::set<double> s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
+
         return s_vals;
     }
     else
