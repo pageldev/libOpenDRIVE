@@ -71,6 +71,14 @@ double RefLine::match(double x, double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
+Line3D RefLine::get_line(double s_start, double s_end, double eps) const
+{
+    Line3D out_line;
+    for (const double& s : this->approximate_linear(eps, s_start, s_end))
+        out_line.push_back(this->get_xyz(s));
+    return out_line;
+}
+
 std::set<double> RefLine::approximate_linear(double eps, double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s0_to_geometry.empty())
