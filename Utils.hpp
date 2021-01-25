@@ -181,6 +181,24 @@ void rdp(
 }
 
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+std::array<Vec<T, Dim>, 4> get_control_points_cubic_bezier(const Vec<T, Dim>& a, const Vec<T, Dim>& b, const Vec<T, Dim>& c, const Vec<T, Dim>& d)
+{
+    std::array<Vec<T, Dim>, 4> ctrl_pts;
+    ctrl_pts[0] = a;
+
+    for (size_t dim = 0; dim < Dim; dim++)
+        ctrl_pts[1][dim] = (b[dim] / 3) + a[dim];
+
+    for (size_t dim = 0; dim < Dim; dim++)
+        ctrl_pts[2][dim] = (c[dim] / 3) + 2 * ctrl_pts[1][dim] - ctrl_pts[0][dim];
+
+    for (size_t dim = 0; dim < Dim; dim++)
+        ctrl_pts[3][dim] = d[dim] + 3 * ctrl_pts[2][dim] - 3 * ctrl_pts[1][dim] + ctrl_pts[0][dim];
+
+    return ctrl_pts;
+}
+
+template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std::array<Vec<T, Dim>, 4>& ctrl_pts)
 {
     /* modified f_cubic allowing different p values for segments */
@@ -189,7 +207,8 @@ std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std:
         for (size_t dim = 0; dim < Dim; dim++)
         {
             out[dim] =
-                (1 - p3) * ((1 - p2) * ((1 - p1) * ctrl_pts[0][dim] + p1 * ctrl_pts[1][dim]) + p2 * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim])) +
+                (1 - p3) *
+                    ((1 - p2) * ((1 - p1) * ctrl_pts[0][dim] + p1 * ctrl_pts[1][dim]) + p2 * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim])) +
                 p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim]) + p2 * ((1 - p1) * ctrl_pts[2][dim] + p1 * ctrl_pts[3][dim]));
         }
         return out;
