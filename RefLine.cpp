@@ -71,10 +71,22 @@ double RefLine::match(double x, double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
-Line3D RefLine::get_line(double s_start, double s_end, double eps) const
+Line3D RefLine::get_line(double s_start, double s_end, double eps, bool fixed_sample_dist) const
 {
+    std::set<double> s_vals;
+    if (fixed_sample_dist)
+    {
+        for (double s = s_start; s < s_end; s += eps)
+            s_vals.insert(s);
+        s_vals.insert(s_end);
+    }
+    else
+    {
+        s_vals = this->approximate_linear(eps, s_start, s_end);
+    }
+
     Line3D out_line;
-    for (const double& s : this->approximate_linear(eps, s_start, s_end))
+    for (const double& s : s_vals)
         out_line.push_back(this->get_xyz(s));
     return out_line;
 }
