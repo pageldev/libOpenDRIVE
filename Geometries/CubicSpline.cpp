@@ -69,41 +69,8 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
         const double b_p = -3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_0 * s_1 - 2 * c * s_0 * s_0 + 2 * c * s_0 * s_1 - b * s_0 + b * s_1;
         const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
-        /* approximate cubic bezier by splitting into quadratic ones */
-        std::array<Vec1D, 4> ctrl_pts = get_control_points_cubic_bezier<double, 1>({a_p}, {b_p}, {c_p}, {d_p});
-        const double         seg_size = std::pow(eps / ((1.0 / 54.0) * std::abs(d_p)), (1.0 / 3.0));
-
-        std::vector<std::array<double, 2>> seg_intervals;
-        for (double p = 0; p < 1.0; p += seg_size)
-            seg_intervals.push_back({p, std::min(p + seg_size, 1.0)});
-
-        if (1.0 - (seg_intervals.back().at(1)) < 1e-6)
-            seg_intervals.back().at(1) = 1.0;
-        else
-            seg_intervals.push_back({seg_intervals.back().at(1), 1.0});
-
-        std::vector<double> p_vals;
-        for (const std::array<double, 2>& seg_intrvl : seg_intervals)
-        {
-            /* get sub-cubic bezier for interval */
-            const double& p0 = seg_intrvl.at(0);
-            const double& p1 = seg_intrvl.at(1);
-
-            const std::array<Vec1D, 4> c_pts_sub = subdivide_cubic_bezier<double, 1>(p0, p1, ctrl_pts);
-
-            /* approximate sub-cubic bezier by two quadratic ones */
-            const Vec1D pB_quad_0 = {(1.0 - 0.75) * c_pts_sub[0][0] + 0.75 * c_pts_sub[1][0]};
-            const Vec1D pB_quad_1 = {(1.0 - 0.75) * c_pts_sub[3][0] + 0.75 * c_pts_sub[2][0]};
-            const Vec1D pM_quad = {(1.0 - 0.5) * pB_quad_0[0] + 0.5 * pB_quad_1[0]};
-
-            /* linear approximate the two quadratic bezier */
-            for (const double& p_sub : approximate_linear_quad_bezier<double, 1>({c_pts_sub[0], pB_quad_0, pM_quad}, eps))
-                p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
-            p_vals.pop_back();
-            for (const double& p_sub : approximate_linear_quad_bezier<double, 1>({pM_quad, pB_quad_1, c_pts_sub[3]}, eps))
-                p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
-            p_vals.pop_back();
-        }
+        const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
+        const std::set<double>  p_vals = approximate_linear_cubic_bezier(coefficients, eps);
 
         s_vals.push_back(s_start);
         for (const double& p : p_vals)

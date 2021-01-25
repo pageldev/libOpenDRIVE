@@ -61,47 +61,13 @@ Vec2D ParamPoly3::get_grad(double s) const
 
 std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
-    /* approximate cubic bezier by splitting into quadratic ones */
-    std::array<Vec2D, 4> ctrl_pts = get_control_points_cubic_bezier<double, 2>({aU, aV}, {bU, bV}, {cU, cV}, {dU, dV});
-    const double         seg_size = std::pow(eps / ((1.0 / 54.0) * std::sqrt(dU * dU + dV * dV)), (1.0 / 3.0));
-
-    std::vector<std::array<double, 2>> seg_intervals;
-    for (double p = 0; p < 1.0; p += seg_size)
-        seg_intervals.push_back({p, std::min(p + seg_size, 1.0)});
-
-    if (1.0 - (seg_intervals.back().at(1)) < 1e-6)
-        seg_intervals.back().at(1) = 1.0;
-    else
-        seg_intervals.push_back({seg_intervals.back().at(1), 1.0});
-
-    std::vector<double> p_vals;
-    for (const std::array<double, 2>& seg_intrvl : seg_intervals)
-    {
-        /* get sub-cubic bezier for interval */
-        const double& p0 = seg_intrvl.at(0);
-        const double& p1 = seg_intrvl.at(1);
-
-        const std::array<Vec2D, 4> c_pts_sub = subdivide_cubic_bezier<double, 2>(p0, p1, ctrl_pts);
-
-        /* approximate sub-cubic bezier by two quadratic ones */
-        const Vec2D pB_quad_0 = {(1.0 - 0.75) * c_pts_sub[0][0] + 0.75 * c_pts_sub[1][0], (1.0 - 0.75) * c_pts_sub[0][1] + 0.75 * c_pts_sub[1][1]};
-        const Vec2D pB_quad_1 = {(1.0 - 0.75) * c_pts_sub[3][0] + 0.75 * c_pts_sub[2][0], (1.0 - 0.75) * c_pts_sub[3][1] + 0.75 * c_pts_sub[2][1]};
-        const Vec2D pM_quad = {(1.0 - 0.5) * pB_quad_0[0] + 0.5 * pB_quad_1[0], (1.0 - 0.5) * pB_quad_0[1] + 0.5 * pB_quad_1[1]};
-
-        /* linear approximate the two quadratic bezier */
-        for (const double& p_sub : approximate_linear_quad_bezier<double, 2>({c_pts_sub[0], pB_quad_0, pM_quad}, eps))
-            p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
-        p_vals.pop_back();
-        for (const double& p_sub : approximate_linear_quad_bezier<double, 2>({pM_quad, pB_quad_1, c_pts_sub[3]}, eps))
-            p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
-        p_vals.pop_back();
-    }
-    p_vals.push_back(1.0);
+    std::array<Vec2D, 4> coefficients = {{{aU, aV}, {bU, bV}, {cU, cV}, {dU, dV}}};
+    std::set<double> p_vals = approximate_linear_cubic_bezier<double, 2>(coefficients, eps);
 
     std::set<double> s_vals;
     for (const double& p : p_vals)
         s_vals.insert(p * length + s0);
-
+    
     return s_vals;
 }
 
