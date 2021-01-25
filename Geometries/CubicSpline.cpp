@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -47,16 +48,69 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
     if (d == 0 && c == 0)
         return {s_start, s_end};
 
-    double s = s_start;
-
     std::vector<double> s_vals;
-    while (s < s_end)
+    if (d == 0 && c != 0)
     {
-        s_vals.push_back(s);
-        s = (c != 0) ? s + std::sqrt(std::abs(eps / c)) : s + eps;
+        double s = s_start;
+        while (s < s_end)
+        {
+            s_vals.push_back(s);
+            s = (c != 0) ? s + std::sqrt(std::abs(eps / c)) : s + eps;
+        }
+    }
+    else
+    {
+        /* transform to parametric form */
+        const double& s_0 = s_start;
+        const double& s_1 = s_end;
+        const double  d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3 * d * s_0 * s_1 * s_1 + 3 * d * s_0 * s_0 * s_1;
+        const double  c_p =
+            3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_1 * s_1 - 6 * d * s_0 * s_0 * s_1 + c * s_0 * s_0 + c * s_1 * s_1 - 2 * c * s_0 * s_1;
+        const double b_p = -3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_0 * s_1 - 2 * c * s_0 * s_0 + 2 * c * s_0 * s_1 - b * s_0 + b * s_1;
+        const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
+
+        /* approximate cubic bezier by splitting into quadratic ones */
+        std::array<Vec1D, 4> ctrl_pts = get_control_points_cubic_bezier<double, 1>({a_p}, {b_p}, {c_p}, {d_p});
+        const double         seg_size = std::pow(eps / ((1.0 / 54.0) * std::abs(d_p)), (1.0 / 3.0));
+
+        std::vector<std::array<double, 2>> seg_intervals;
+        for (double p = 0; p < 1.0; p += seg_size)
+            seg_intervals.push_back({p, std::min(p + seg_size, 1.0)});
+
+        if (1.0 - (seg_intervals.back().at(1)) < 1e-6)
+            seg_intervals.back().at(1) = 1.0;
+        else
+            seg_intervals.push_back({seg_intervals.back().at(1), 1.0});
+
+        std::vector<double> p_vals;
+        for (const std::array<double, 2>& seg_intrvl : seg_intervals)
+        {
+            /* get sub-cubic bezier for interval */
+            const double& p0 = seg_intrvl.at(0);
+            const double& p1 = seg_intrvl.at(1);
+
+            const std::array<Vec1D, 4> c_pts_sub = subdivide_cubic_bezier<double, 1>(p0, p1, ctrl_pts);
+
+            /* approximate sub-cubic bezier by two quadratic ones */
+            const Vec1D pB_quad_0 = {(1.0 - 0.75) * c_pts_sub[0][0] + 0.75 * c_pts_sub[1][0]};
+            const Vec1D pB_quad_1 = {(1.0 - 0.75) * c_pts_sub[3][0] + 0.75 * c_pts_sub[2][0]};
+            const Vec1D pM_quad = {(1.0 - 0.5) * pB_quad_0[0] + 0.5 * pB_quad_1[0]};
+
+            /* linear approximate the two quadratic bezier */
+            for (const double& p_sub : approximate_linear_quad_bezier<double, 1>({c_pts_sub[0], pB_quad_0, pM_quad}, eps))
+                p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
+            p_vals.pop_back();
+            for (const double& p_sub : approximate_linear_quad_bezier<double, 1>({pM_quad, pB_quad_1, c_pts_sub[3]}, eps))
+                p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
+            p_vals.pop_back();
+        }
+
+        s_vals.push_back(s_start);
+        for (const double& p : p_vals)
+            s_vals.push_back(p * (s_end - s_start) + s_start);
     }
 
-    if ((s_end - s_vals.back()) < 1e-9)
+    if ((s_end - s_vals.back()) < 1e-9 && (s_vals.size() != 1))
         s_vals.back() = s_end;
     else
         s_vals.push_back(s_end);
@@ -143,7 +197,7 @@ double CubicSpline::get_max(double s_start, double s_end) const
     for (auto s_poly_iter = s_start_poly_iter; s_poly_iter != s_end_poly_iter; s_poly_iter++)
     {
         const double s_start_poly = std::max(s_poly_iter->first, s_start);
-        const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_end_poly_iter)->first, s_end);
+        const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_poly_iter)->first, s_end);
         max_poly_vals.push_back(s_poly_iter->second.get_max(s_start_poly, s_end_poly));
     }
 
@@ -170,7 +224,11 @@ std::set<double> CubicSpline::approximate_linear(double eps, double s_start, dou
 
         std::set<double> s_vals_poly = s_poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
         if (s_vals_poly.size() < 2)
-            throw std::runtime_error("expected at least two sample points");
+        {
+            std::string err_msg = std::string("expected at least two sample points, got ") + std::to_string(s_vals_poly.size()) +
+                                  std::string(" for [") + std::to_string(s_start_poly) + ' ' + std::to_string(s_end_poly) + ']';
+            throw std::runtime_error(err_msg);
+        }
 
         s_vals.insert(s_vals_poly.begin(), s_vals_poly.end());
     }
