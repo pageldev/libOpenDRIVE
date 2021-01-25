@@ -89,7 +89,7 @@ std::set<double> RefLine::approximate_linear(double eps, double s_start, double 
     if (s_start_geom_iter != s0_to_geometry.begin())
         s_start_geom_iter--;
 
-    std::set<double> s_vals{s_start};
+    std::vector<double> s_vals{s_start};
     for (auto s0_geom_iter = s_start_geom_iter; s0_geom_iter != s_end_geom_iter; s0_geom_iter++)
     {
         const std::set<double> s_vals_geom = s0_geom_iter->second->approximate_linear(eps);
@@ -98,19 +98,23 @@ std::set<double> RefLine::approximate_linear(double eps, double s_start, double 
         for (const double& s : s_vals_geom)
         {
             if (s > s_start && s < s_end)
-                s_vals.insert(s);
+                s_vals.push_back(s);
         }
+        if (std::next(s0_geom_iter) != s_end_geom_iter)
+            s_vals.pop_back();
     }
 
     std::set<double> s_vals_elevation = this->elevation_profile.approximate_linear(eps, s_start, s_end);
     for (const double& s : s_vals_elevation)
     {
         if (s > s_start && s < s_end)
-            s_vals.insert(s);
+            s_vals.push_back(s);
     }
 
-    s_vals.insert(s_end);
-    return s_vals;
+    s_vals.push_back(s_end);
+
+    std::set<double> s_vals_set(s_vals.begin(), s_vals.end());
+    return s_vals_set;
 }
 
 } // namespace odr
