@@ -25,10 +25,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
     Vec3D  get_surface_pt(double s, double t) const;
-    Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true) const;
-    Mesh3D get_mesh(double s_start, double s_end, double eps) const;
-
-    std::set<double> approximate_linear(double eps, double s_start, double s_end, bool outer) const;
+    Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true, bool fixed_sample_dist = false) const;
+    Mesh3D get_mesh(double s_start, double s_end, double eps, bool fixed_sample_dist = false) const;
 
     int  id = 0;
     bool level = false;
