@@ -15,6 +15,13 @@
             border-spacing: 0.5em 0;
         }
 
+        .popup_info {
+            text-align: left;
+            font-family: monospace;
+            display: block;
+            color: whitesmoke;
+        }
+
         .bottom_info {
             position: absolute;
             bottom: 1em;
@@ -25,14 +32,13 @@
             color: whitesmoke;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 </head>
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-    <div class="bottom_info" id="spotlight_info">
-        <h2>Loading...</h2>
-    </div>
-    
+    <div class="bottom_info" id="spotlight_info"></div>
+
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
@@ -40,13 +46,15 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
     <script>
         var spotlight_info = document.getElementById('spotlight_info');
 
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
-            resolution: 0.5,
+            detail: 0.3,
+            resolution: 0.3,
             ref_line: true,
             roadmarkings: true,
             geom_edges: false,
@@ -69,6 +77,18 @@
             lane_highlight: 0x0288d1,
             road_highlight: 0x9A9A9A,
         };
+
+        const notyf = new Notyf({
+            duration: 3000,
+            position: { x: 'right', y: 'bottom' },
+            types: [
+                {
+                    type: 'info',
+                    background: '#4FC3F7',
+                    icon: false
+                }
+            ]
+        });
 
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(COLORS.background);
@@ -111,7 +131,9 @@
 
         var gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-        gui.add(PARAMS, 'resolution', 0.01, 2.0).name("📏 Resolution").onFinishChange((val) => {
+        gui.add(PARAMS, 'detail', { Low: 1.0, Medium: 0.3, High: 0.03 } ).name('📏  Detail').onChange((val) => {
+            PARAMS.resolution = Number(PARAMS.detail);
+            console.log(PARAMS.resolution);
             load_odr_map(true, false);
         });
         gui.add(PARAMS, 'spotlight').name("🔦 Spotlight").onChange((val) => {
@@ -188,15 +210,12 @@
                     obj.dispose();
             }
 
-            console.time('loading roads');
+            const t0 = performance.now();
             const odr_roads = OpenDriveMap.roads;
 
             for (let [road_id, road] of get_std_map_entries(odr_roads)) {
                 /* ref line */
-                let refl_pts = [];
-                for (let s = 0; s < road.length; s += PARAMS.resolution)
-                    refl_pts.push(road.ref_line.get_xyz(s));
-                refl_pts.push(road.ref_line.get_xyz(road.length));
+                let refl_pts = get_std_vec_entries(road.ref_line.get_line(0.0, road.length, PARAMS.resolution, false), true)
                 const refline_line = add_line(refl_pts, COLORS.ref_line);
                 refline_line.material.depthTest = false;
                 ref_line_group.add(refline_line);
@@ -213,8 +232,7 @@
                     let lane_sec_group = new THREE.Group();
                     for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
                         /* lane mesh */
-                        const lane_lines = lanesec.get_lane_lines(lane_id, PARAMS.resolution);
-                        const raw_lane_mesh = lane_lines.generate_mesh();
+                        const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), PARAMS.resolution, false);
                         const lane_mesh_vertices = get_std_vec_entries(raw_lane_mesh.vertices);
                         const lane_mesh_indices = get_std_vec_entries(raw_lane_mesh.indices, false, Uint32Array);
 
@@ -237,34 +255,6 @@
                         lane_outline_line.matrixAutoUpdate = false;
                         disposable_objs.push(lane_outline_line.geometry, lane_outline_line.material);
                         outline_group.add(lane_outline_line);
-
-                        /* roadmarks */
-                        for (const roadmark_lines of get_std_vec_entries(lanesec.get_roadmark_lines(lane_id, PARAMS.resolution))) {
-                            for (const raw_roadmark_mesh of get_std_vec_entries(roadmark_lines.generate_meshes())) {
-                                const roadmark_mesh_vertices = get_std_vec_entries(raw_roadmark_mesh.vertices);
-                                const roadmark_mesh_indices = get_std_vec_entries(raw_roadmark_mesh.indices, false, Uint32Array);
-
-                                const roadmark_geom = new THREE.BufferGeometry().setFromPoints(roadmark_mesh_vertices.map(p => new THREE.Vector3(...p)));
-                                roadmark_geom.setIndex(new THREE.BufferAttribute(roadmark_mesh_indices, 1));
-                                const roadmark_material = new THREE.MeshBasicMaterial({ color: PARAMS.wireframe ? COLORS.wireframe : COLORS.roadmark, wireframe: PARAMS.wireframe, side: THREE.DoubleSide, depthTest: false });
-                                const roadmark_mesh = new THREE.Mesh(roadmark_geom, roadmark_material);
-
-                                roadmark_mesh.userData = {
-                                    road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group
-                                };
-
-                                roadmark_mesh.matrixAutoUpdate = false;
-                                disposable_objs.push(roadmark_geom, roadmark_material);
-                                roadmark_group.add(roadmark_mesh);
-
-                                /* roadmark outline */
-                                const roadmark_outline_line = add_line(roadmark_mesh_vertices, COLORS.outline);
-                                roadmark_outline_line.material.depthTest = false;
-                                roadmark_outline_line.matrixAutoUpdate = false;
-                                disposable_objs.push(roadmark_outline_line.geometry, roadmark_outline_line.material);
-                                roadmark_group.add(roadmark_outline_line);
-                            }
-                        }
                     }
 
                     road_group.add(lane_sec_group);
@@ -272,7 +262,7 @@
                 road_mesh_group.add(road_group);
             }
 
-            console.timeEnd('loading roads');
+            const t1 = performance.now();
             console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
 
             if (PARAMS.geom_edges && (odr_geom_edges_group.children.length == 0))
@@ -281,6 +271,17 @@
             renderer.render(scene, camera);
             spotlight_info.style.display = "none";
             animate();
+
+            const info_msg = `
+                <div class=popup_info>
+                <h3>Finished loading</h3>
+                <table>
+                    <tr><th>Time</th><th>${((t1 - t0) / 1e3).toFixed(2)}s</th></tr>
+                    <tr><th>Num Roads</th><th>${odr_roads.size()}</th></tr>
+                    <tr><th>Num Vertices</th><th>${renderer.info.render.triangles}</th></tr>
+                </table>
+                </div>`;
+            notyf.open({ type: 'info', message: info_msg });
         }
 
         function animate() {
