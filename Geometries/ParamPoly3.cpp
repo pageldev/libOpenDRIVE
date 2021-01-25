@@ -61,14 +61,9 @@ Vec2D ParamPoly3::get_grad(double s) const
 
 std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
-    /* get control points */
-    const Vec2D pA = {aU, aV};
-    const Vec2D pB = {(bU / 3) + aU, (bV / 3) + aV};
-    const Vec2D pC = {(cU / 3) + 2 * pB[0] - pA[0], (cU / 3) + 2 * pB[1] - pA[1]};
-    const Vec2D pD = {dU + 3 * pC[0] - 3 * pB[0] + pA[0], dV + 3 * pC[1] - 3 * pB[1] + pA[1]};
-
     /* approximate cubic bezier by splitting into quadratic ones */
-    const double seg_size = std::pow(eps / ((1.0 / 54.0) * std::sqrt(dU * dU + dV * dV)), (1.0 / 3.0));
+    std::array<Vec2D, 4> ctrl_pts = get_control_points_cubic_bezier<double, 2>({aU, aV}, {bU, bV}, {cU, cV}, {dU, dV});
+    const double         seg_size = std::pow(eps / ((1.0 / 54.0) * std::sqrt(dU * dU + dV * dV)), (1.0 / 3.0));
 
     std::vector<std::array<double, 2>> seg_intervals;
     for (double p = 0; p < 1.0; p += seg_size)
@@ -86,7 +81,7 @@ std::set<double> ParamPoly3::approximate_linear(double eps) const
         const double& p0 = seg_intrvl.at(0);
         const double& p1 = seg_intrvl.at(1);
 
-        const std::array<Vec2D, 4> c_pts_sub = subdivide_cubic_bezier<double, 2>(p0, p1, {pA, pB, pC, pD});
+        const std::array<Vec2D, 4> c_pts_sub = subdivide_cubic_bezier<double, 2>(p0, p1, ctrl_pts);
 
         /* approximate sub-cubic bezier by two quadratic ones */
         const Vec2D pB_quad_0 = {(1.0 - 0.75) * c_pts_sub[0][0] + 0.75 * c_pts_sub[1][0], (1.0 - 0.75) * c_pts_sub[0][1] + 0.75 * c_pts_sub[1][1]};
