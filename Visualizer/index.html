@@ -56,7 +56,6 @@
             detail: 0.3,
             resolution: 0.3,
             ref_line: true,
-            roadmarkings: true,
             geom_edges: false,
             wireframe: false,
             spotlight: true,
@@ -68,7 +67,6 @@
 
         var COLORS = {
             road: 0xaeaeae,
-            roadmark: 0xffffff,
             outline: 0x757575,
             ref_line: 0xffffff,
             lane_offset: 0x00701a,
@@ -142,10 +140,6 @@
         var gui_show_folder = gui.addFolder('View');
         gui_show_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
             ref_line_group.visible = val;
-            renderer.render(scene, camera);
-        });
-        gui_show_folder.add(PARAMS, 'roadmarkings').name("Road Markings").onChange((val) => {
-            roadmark_group.visible = val;
             renderer.render(scene, camera);
         });
         gui_show_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
