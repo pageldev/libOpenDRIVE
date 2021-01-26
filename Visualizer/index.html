@@ -232,7 +232,7 @@
 
                         const lane_geom = new THREE.BufferGeometry().setFromPoints(lane_mesh_vertices.map(p => new THREE.Vector3(...p)));
                         lane_geom.setIndex(new THREE.BufferAttribute(lane_mesh_indices, 1));
-                        const lane_material = new THREE.MeshBasicMaterial({ color: PARAMS.wireframe ? COLORS.wireframe : COLORS.road, wireframe: PARAMS.wireframe, side: THREE.DoubleSide });
+                        const lane_material = new THREE.MeshBasicMaterial({ color: PARAMS.wireframe ? COLORS.wireframe : COLORS.road, wireframe: PARAMS.wireframe });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
 
                         lane_mesh.userData = {
