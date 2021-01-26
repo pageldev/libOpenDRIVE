@@ -70,7 +70,7 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
         const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
         const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
-        const std::set<double>  p_vals = approximate_linear_cubic_bezier(coefficients, eps);
+        const std::set<double>     p_vals = approximate_linear_cubic_bezier(coefficients, eps);
 
         s_vals.push_back(s_start);
         for (const double& p : p_vals)
@@ -118,9 +118,9 @@ CubicSpline CubicSpline::negate() const
 
 CubicSpline CubicSpline::add(const CubicSpline& other) const
 {
-    std::set<double> s0_vals = extract_keys(this->s0_to_poly);
-    std::set<double> other_s0s = extract_keys(other.s0_to_poly);
-    s0_vals.insert(other_s0s.begin(), other_s0s.end());
+    std::vector<double> s0_vals = extract_keys(this->s0_to_poly);
+    std::vector<double> other_s0s = extract_keys(other.s0_to_poly);
+    s0_vals.insert(s0_vals.end(), other_s0s.begin(), other_s0s.end());
 
     CubicSpline retval;
     for (const double& s0 : s0_vals)

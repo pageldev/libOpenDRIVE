@@ -26,12 +26,10 @@ struct SharedPtrCmp
 };
 
 template<class K, class V>
-std::set<K> extract_keys(std::map<K, V> const& input_map)
+std::vector<K> extract_keys(std::map<K, V> const& input_map)
 {
-    std::set<K> retval;
-    for (auto const& element : input_map)
-        retval.insert(element.first);
-
+    std::vector<K> retval;
+    std::transform(input_map.begin(), input_map.end(), std::inserter(retval, retval.end()), [](auto pair) { return pair.first; });
     return retval;
 }
 
