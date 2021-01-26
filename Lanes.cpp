@@ -156,6 +156,8 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, bool fixed_sampl
         outer_border_line.push_back(this->get_surface_pt(s, t_outer_brdr));
     }
 
+    if(this->id > 0)
+        return generate_mesh_from_borders(outer_border_line, inner_border_line);
     return generate_mesh_from_borders(inner_border_line, outer_border_line);
 }
 

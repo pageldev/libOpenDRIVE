@@ -33,15 +33,15 @@ std::vector<K> extract_keys(std::map<K, V> const& input_map)
     return retval;
 }
 
-inline Mesh3D generate_mesh_from_borders(const Line3D& inner_border, const Line3D& outer_border)
+inline Mesh3D generate_mesh_from_borders(const Line3D& border_a, const Line3D& border_b)
 {
     Mesh3D out_mesh;
 
-    if (inner_border.size() != outer_border.size())
+    if (border_a.size() != border_b.size())
         throw std::runtime_error("outer and inner border line should have equal number of points");
 
-    out_mesh.vertices = outer_border;
-    out_mesh.vertices.insert(out_mesh.vertices.end(), inner_border.rbegin(), inner_border.rend());
+    out_mesh.vertices = border_a;
+    out_mesh.vertices.insert(out_mesh.vertices.end(), border_b.rbegin(), border_b.rend());
 
     const size_t num_pts = out_mesh.vertices.size();
     for (size_t l_idx = 1, r_idx = num_pts - 2; l_idx < (num_pts >> 1); l_idx++, r_idx--)

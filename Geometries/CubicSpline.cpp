@@ -147,7 +147,7 @@ Poly3 CubicSpline::get_poly(double s) const
             target_poly_iter--;
         return target_poly_iter->second;
     }
-    return Poly3();
+    return Poly3{};
 }
 
 double CubicSpline::get_max(double s_start, double s_end) const
