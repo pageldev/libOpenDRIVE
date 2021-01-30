@@ -38,8 +38,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
     CubicSpline outer_border;
     CubicSpline inner_border;
 
-    std::map<double, HeightOffset> s_to_height_offset;
-    std::map<double, RoadMark>     s_to_roadmark;
+    std::map<double, HeightOffset>  s_to_height_offset;
+    std::map<double, RoadMarkGroup> s_to_roadmark_group;
 
     std::weak_ptr<Road> road;
 };

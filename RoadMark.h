@@ -10,29 +10,26 @@
 
 namespace odr
 {
-struct Lane;
-struct RoadMark;
-
 const double ROADMARK_WEIGHT_STANDARD_WIDTH = 0.12;
 const double ROADMARK_WEIGHT_BOLD_WIDTH = 0.25;
 
-struct RoadMark
+struct RoadMarksLine
 {
-    struct RoadMarksLine
-    {
-        RoadMarksLine() = default;
+    RoadMarksLine() = default;
 
-        double width = -1;
-        double length = 0;
-        double space = 0;
-        double tOffset = 0;
-        double sOffset = 0;
+    double width = -1;
+    double length = 0;
+    double space = 0;
+    double tOffset = 0;
+    double sOffset = 0;
 
-        std::string name;
-        std::string rule;
-    };
+    std::string name;
+    std::string rule;
+};
 
-    RoadMark() = default;
+struct RoadMarkGroup
+{
+    RoadMarkGroup() = default;
 
     double width = -1;
     double height = 0;
@@ -47,27 +44,13 @@ struct RoadMark
     std::map<double, RoadMarksLine> s_to_roadmarks_line;
 };
 
-struct RoadMarkLines
+struct RoadMark
 {
-    RoadMarkLines() = default;
-    std::vector<Mesh3D> generate_meshes() const;
+    RoadMark() = default;
 
-    int lane_id = 0;
-
-    double width = -1;
-    double length = 0;
-    double space = 0;
-    double height = 0;
-
-    std::string name;
-    std::string rule;
-    std::string type;
-    std::string weight;
-    std::string color;
-    std::string material;
-    std::string laneChange;
-
-    std::vector<Line3D> lines;
+    double s_start = 0;
+    double s_end = 0;
+    double width = 0;
 };
 
 } // namespace odr
