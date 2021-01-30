@@ -82,9 +82,12 @@ Vec3D Road::get_xyz(double s, double t, double h) const
 Mat3D Road::get_transformation_matrix(double s) const
 {
     const Vec3D  s_vec = this->ref_line->get_grad(s);
-    const double superelevation = this->superelevation.get(s);
-
-    const Vec3D e_t = normalize(Vec3D{-s_vec[1], s_vec[0], std::tan(superelevation) * std::abs(s_vec[1])});
+    const double theta = this->superelevation.get(s);
+    
+    const Vec3D e_s = normalize(s_vec);
+    const Vec3D e_t = normalize(Vec3D{std::cos(theta) * -e_s[1] + std::sin(theta) * -e_s[2] * e_s[0],
+                                      std::cos(theta) * e_s[0] + std::sin(theta) * -e_s[2] * e_s[1],
+                                      std::sin(theta) * (e_s[0] * e_s[0] + e_s[1] * e_s[1])});
     const Vec3D e_h = normalize(crossProduct(s_vec, e_t));
     const Vec3D p0 = this->ref_line->get_xyz(s);
 
