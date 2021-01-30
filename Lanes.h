@@ -28,6 +28,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
     Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true, bool fixed_sample_dist = false) const;
     Mesh3D get_mesh(double s_start, double s_end, double eps, bool fixed_sample_dist = false) const;
 
+    std::vector<RoadMark> get_roadmarks(double s_start, double s_end) const;
+
     int  id = 0;
     bool level = false;
     int  predecessor = 0;

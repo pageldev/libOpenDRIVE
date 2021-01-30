@@ -26,7 +26,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<std::vector<Vec3D>>("vector<vector<Vec3D>>");
     emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
     emscripten::register_vector<Mesh3D>("vector<Mesh3D>");
-    emscripten::register_vector<RoadMarkLines>("vector<RoadMarkLines>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
@@ -61,22 +60,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("vertices", &Mesh3D::vertices)
         .property("indices", &Mesh3D::indices);
 
-    emscripten::class_<RoadMarkLines>("RoadMarkLines")
-        .function("generate_meshes", &RoadMarkLines::generate_meshes)
-        .property("lane_id", &RoadMarkLines::lane_id)
-        .property("width", &RoadMarkLines::width)
-        .property("length", &RoadMarkLines::length)
-        .property("space", &RoadMarkLines::space)
-        .property("height", &RoadMarkLines::height)
-        .property("name", &RoadMarkLines::name)
-        .property("rule", &RoadMarkLines::rule)
-        .property("type", &RoadMarkLines::type)
-        .property("weight", &RoadMarkLines::weight)
-        .property("color", &RoadMarkLines::color)
-        .property("material", &RoadMarkLines::material)
-        .property("laneChange", &RoadMarkLines::laneChange)
-        .property("lines", &RoadMarkLines::lines);
-
     emscripten::class_<Lane>("Lane")
         .constructor<int, bool, std::string>()
         .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
@@ -90,7 +73,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<LaneSection>>("shared_ptr<LaneSection>")
         .function("get_end", &LaneSection::get_end)
         .function("get_lane", emscripten::select_overload<std::shared_ptr<Lane>(double, double)>(&LaneSection::get_lane))
-        .function("get_roadmark_lines", emscripten::select_overload<std::vector<RoadMarkLines>(int, double) const>(&LaneSection::get_roadmark_lines))
         .property("s0", &LaneSection::s0)
         .property("id_to_lane", &LaneSection::id_to_lane);
 

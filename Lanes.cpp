@@ -156,9 +156,55 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, bool fixed_sampl
         outer_border_line.push_back(this->get_surface_pt(s, t_outer_brdr));
     }
 
-    if(this->id > 0)
+    if (this->id > 0)
         return generate_mesh_from_borders(outer_border_line, inner_border_line);
     return generate_mesh_from_borders(inner_border_line, outer_border_line);
+}
+
+std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
+{
+    if ((s_start == s_end) || this->s_to_roadmark_group.empty())
+        return {};
+
+    auto s_end_rm_iter = this->s_to_roadmark_group.lower_bound(s_end);
+    auto s_start_rm_iter = this->s_to_roadmark_group.upper_bound(s_start);
+    if (s_start_rm_iter != this->s_to_roadmark_group.begin())
+        s_start_rm_iter--;
+
+    std::vector<RoadMark> roadmarks;
+    for (auto s_rm_iter = s_start_rm_iter; s_rm_iter != s_end_rm_iter; s_rm_iter++)
+    {
+        const RoadMarkGroup& roadmark_group = s_rm_iter->second;
+
+        const double s_start_roadmark_group = std::max(s_rm_iter->first, s_start);
+        const double s_end_roadmark_group = (std::next(s_rm_iter) == s_end_rm_iter) ? s_end : std::min(std::next(s_rm_iter)->first, s_end);
+
+        double width = roadmark_group.weight == "bold" ? ROADMARK_WEIGHT_BOLD_WIDTH : ROADMARK_WEIGHT_STANDARD_WIDTH;
+        if (roadmark_group.s_to_roadmarks_line.size() == 0)
+        {
+            if (roadmark_group.width > 0)
+                width = roadmark_group.width;
+            roadmarks.push_back({s_start_roadmark_group, s_end_roadmark_group, width});
+        }
+        else
+        {
+            for (const auto& s_roadmarks_line : roadmark_group.s_to_roadmarks_line)
+            {
+                const RoadMarksLine& roadmarks_line = s_roadmarks_line.second;
+                if (roadmarks_line.width > 0)
+                    width = roadmarks_line.width;
+
+                for (double s_start_single_roadmark = s_roadmarks_line.first; s_start_single_roadmark < s_end_roadmark_group;
+                     s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
+                {
+                    const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmarks_line.length);
+                    roadmarks.push_back({s_start_single_roadmark, s_end_single_roadmark, width});
+                }
+            }
+        }
+    }
+
+    return roadmarks;
 }
 
 } // namespace odr
