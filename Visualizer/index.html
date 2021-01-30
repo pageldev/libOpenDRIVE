@@ -68,10 +68,10 @@
         var COLORS = {
             road: 0xaeaeae,
             outline: 0xae52d4,
-            ref_line: 0xffffff,
+            ref_line: 0x69f0ae,
             background: 0x111215,
             lane_highlight: 0x0288d1,
-            road_highlight: 0x9A9A9A,
+            road_highlight: 0xffffff,
         };
 
         const notyf = new Notyf({
@@ -164,7 +164,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./eva.xodr").then((file_data) => {
+            fetch("./data.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -246,6 +246,21 @@
                         lane_outline_line.matrixAutoUpdate = false;
                         disposable_objs.push(lane_outline_line.geometry, lane_outline_line.material);
                         outline_group.add(lane_outline_line);
+
+                        /* roadmarks */
+                        for (const roadmark of get_std_vec_entries(lane.get_roadmarks(lanesec.s0, lanesec.get_end()))) {
+                            const raw_roadmark_mesh = lane.get_roadmark_mesh(roadmark, PARAMS.resolution * 0.5);
+                            const roadmark_mesh_vertices = read_std_vec_vertices(raw_roadmark_mesh.vertices, true);
+                            const roadmark_geom = new THREE.BufferGeometry();
+                            roadmark_geom.setAttribute('position', new THREE.BufferAttribute(roadmark_mesh_vertices, 3));
+                            const roadmark_mesh_indices = get_std_vec_entries(raw_roadmark_mesh.indices, true, Uint32Array);
+                            roadmark_geom.setIndex(new THREE.BufferAttribute(roadmark_mesh_indices, 1));
+                            const roadmark_material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                            const roadmark_mesh = new THREE.Mesh(roadmark_geom, roadmark_material);
+                            roadmark_mesh.matrixAutoUpdate = false;
+                            disposable_objs.push(roadmark_geom, roadmark_material);
+                            scene.add(roadmark_mesh);
+                        }
                     }
 
                     road_group.add(lane_sec_group);

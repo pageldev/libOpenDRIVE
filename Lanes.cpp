@@ -57,6 +57,28 @@ Vec3D Lane::get_surface_pt(double s, double t) const
     return road_ptr->get_xyz(s, t, h_t);
 }
 
+std::set<double> Lane::approximate_border_linear(double s_start, double s_end, double eps, bool outer) const
+{
+    auto road_ptr = this->road.lock();
+    if (!road_ptr)
+        throw std::runtime_error("could not access parent road for lane section");
+
+    std::set<double> s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
+
+    const CubicSpline& border = outer ? this->outer_border : this->inner_border;
+    std::set<double>   s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
+    s_vals.insert(s_vals_brdr.begin(), s_vals_brdr.end());
+
+    std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
+    s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
+
+    const double     t_max = this->outer_border.get_max(s_start, s_end);
+    std::set<double> s_vals_superelev = road_ptr->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
+    s_vals.insert(s_vals_superelev.begin(), s_vals_superelev.end());
+
+    return s_vals;
+}
+
 Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool outer, bool fixed_sample_dist) const
 {
     auto road_ptr = this->road.lock();
@@ -73,18 +95,7 @@ Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool oute
     }
     else
     {
-        s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
-
-        const CubicSpline& border = outer ? this->outer_border : this->inner_border;
-        std::set<double>   s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
-        s_vals.insert(s_vals_brdr.begin(), s_vals_brdr.end());
-
-        std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
-        s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
-
-        const double     t_max = this->outer_border.get_max(s_start, s_end);
-        std::set<double> s_vals_superelev = road_ptr->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
-        s_vals.insert(s_vals_superelev.begin(), s_vals_superelev.end());
+        s_vals = this->approximate_border_linear(s_start, s_end, eps, outer);
     }
 
     Line3D border_line;
@@ -197,6 +208,22 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
     }
 
     return roadmarks;
+}
+
+Mesh3D Lane::get_roadmark_mesh(const RoadMark& roadmark, double eps) const
+{
+    const std::set<double> s_vals = this->approximate_border_linear(roadmark.s_start, roadmark.s_end, eps, true);
+
+    Line3D edge_a, edge_b;
+    for (const double& s : s_vals)
+    {
+        const double t_edge_a = this->outer_border.get(s) + roadmark.width * 0.5 + roadmark.t_offset;
+        const double t_edge_b = t_edge_a - roadmark.width;
+        edge_a.push_back(this->get_surface_pt(s, t_edge_a));
+        edge_b.push_back(this->get_surface_pt(s, t_edge_b));
+    }
+
+    return generate_mesh_from_borders(edge_a, edge_b);
 }
 
 } // namespace odr
