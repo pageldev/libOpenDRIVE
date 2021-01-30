@@ -13,23 +13,18 @@ LaneSection::LaneSection(double s0) : s0(s0) {}
 
 double LaneSection::get_end() const
 {
-    if (auto road_ptr = this->road.lock())
-    {
-        auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
-        if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
-            throw std::runtime_error("road associated with wrong lane section");
-
-        const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
-        const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
-
-        return next_s0 - std::numeric_limits<double>::min();
-    }
-    else
-    {
+    auto road_ptr = this->road.lock();
+    if (!road_ptr)
         throw std::runtime_error("could not access parent road for lane section");
-    }
 
-    return 0;
+    auto s_lanesec_iter = road_ptr->s_to_lanesection.find(this->s0);
+    if (s_lanesec_iter == road_ptr->s_to_lanesection.end())
+        throw std::runtime_error("road associated with wrong lane section");
+
+    const bool   is_last = (s_lanesec_iter == std::prev(road_ptr->s_to_lanesection.end()));
+    const double next_s0 = is_last ? road_ptr->length : std::next(s_lanesec_iter)->first;
+
+    return next_s0 - std::numeric_limits<double>::min();
 }
 
 ConstLaneSet LaneSection::get_lanes() const

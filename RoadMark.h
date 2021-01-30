@@ -20,8 +20,8 @@ struct RoadMarksLine
     double width = -1;
     double length = 0;
     double space = 0;
-    double tOffset = 0;
-    double sOffset = 0;
+    double t_offset = 0;
+    double s_offset = 0;
 
     std::string name;
     std::string rule;
@@ -33,7 +33,7 @@ struct RoadMarkGroup
 
     double width = -1;
     double height = 0;
-    double sOffset = 0;
+    double s_offset = 0;
 
     std::string type;
     std::string weight;
