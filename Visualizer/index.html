@@ -220,19 +220,20 @@
             for (const [road_id, road] of get_std_map_entries(odr_roads)) {
                 let road_group = new THREE.Group();
                 for (const [s0, lanesec] of get_std_map_entries(road.s_to_lanesection)) {
-
                     let lane_sec_group = new THREE.Group();
                     for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
                         /* lane mesh */
                         const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), PARAMS.resolution, false);
                         const lane_mesh_vertices = read_std_vec_vertices(raw_lane_mesh.vertices, true);
+                        const uv_vals = get_std_vec_entries(raw_lane_mesh.uvs, false);
 
                         const lane_geom = new THREE.BufferGeometry();
+                        lane_geom.setIndex(get_std_vec_entries(raw_lane_mesh.indices, true));
                         lane_geom.setAttribute('position', new THREE.BufferAttribute(lane_mesh_vertices, 3));
-                        const lane_mesh_indices = get_std_vec_entries(raw_lane_mesh.indices, true, Uint32Array);
-                        lane_geom.setIndex(new THREE.BufferAttribute(lane_mesh_indices, 1));
+                        lane_geom.setAttribute('uv', new THREE.Float32BufferAttribute(uv_vals.flat(), 2));
                         const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe, transparent: !PARAMS.wireframe, opacity: 0.3, visible: true });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
+
                         lane_mesh.matrixAutoUpdate = false;
                         disposable_objs.push(lane_geom, lane_material);
                         lane_sec_group.add(lane_mesh);
@@ -240,27 +241,6 @@
                         lane_mesh.userData = {
                             road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group
                         };
-
-                        /* lane outline */
-                        const lane_outline_line = add_line(lane_mesh_vertices, COLORS.outline);
-                        lane_outline_line.matrixAutoUpdate = false;
-                        disposable_objs.push(lane_outline_line.geometry, lane_outline_line.material);
-                        outline_group.add(lane_outline_line);
-
-                        /* roadmarks */
-                        for (const roadmark of get_std_vec_entries(lane.get_roadmarks(lanesec.s0, lanesec.get_end()))) {
-                            const raw_roadmark_mesh = lane.get_roadmark_mesh(roadmark, PARAMS.resolution * 0.5);
-                            const roadmark_mesh_vertices = read_std_vec_vertices(raw_roadmark_mesh.vertices, true);
-                            const roadmark_geom = new THREE.BufferGeometry();
-                            roadmark_geom.setAttribute('position', new THREE.BufferAttribute(roadmark_mesh_vertices, 3));
-                            const roadmark_mesh_indices = get_std_vec_entries(raw_roadmark_mesh.indices, true, Uint32Array);
-                            roadmark_geom.setIndex(new THREE.BufferAttribute(roadmark_mesh_indices, 1));
-                            const roadmark_material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                            const roadmark_mesh = new THREE.Mesh(roadmark_geom, roadmark_material);
-                            roadmark_mesh.matrixAutoUpdate = false;
-                            disposable_objs.push(roadmark_geom, roadmark_material);
-                            scene.add(roadmark_mesh);
-                        }
                     }
 
                     road_group.add(lane_sec_group);
