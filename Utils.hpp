@@ -17,6 +17,7 @@ struct Mesh3D
 {
     std::vector<Vec3D>  vertices;
     std::vector<size_t> indices;
+    std::vector<Vec2D>  uvs;
 };
 
 template<class C, class T, T C::*member>
@@ -31,26 +32,6 @@ std::vector<K> extract_keys(std::map<K, V> const& input_map)
     std::vector<K> retval;
     std::transform(input_map.begin(), input_map.end(), std::inserter(retval, retval.end()), [](auto pair) { return pair.first; });
     return retval;
-}
-
-inline Mesh3D generate_mesh_from_borders(const Line3D& border_a, const Line3D& border_b)
-{
-    Mesh3D out_mesh;
-
-    if (border_a.size() != border_b.size())
-        throw std::runtime_error("outer and inner border line should have equal number of points");
-
-    out_mesh.vertices = border_a;
-    out_mesh.vertices.insert(out_mesh.vertices.end(), border_b.rbegin(), border_b.rend());
-
-    const size_t num_pts = out_mesh.vertices.size();
-    for (size_t l_idx = 1, r_idx = num_pts - 2; l_idx < (num_pts >> 1); l_idx++, r_idx--)
-    {
-        std::vector<size_t> indicies_patch = {l_idx, l_idx - 1, r_idx + 1, r_idx, l_idx, r_idx + 1};
-        out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
-    }
-
-    return out_mesh;
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>

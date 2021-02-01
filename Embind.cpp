@@ -20,6 +20,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
     emscripten::register_map<int, double>("map<int, double>");
+    emscripten::register_vector<Vec2D>("vector<Vec2D>");
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
     emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<std::string>("vector<string>");
@@ -44,7 +45,8 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .smart_ptr<std::shared_ptr<CubicSpline>>("shared_ptr<CubicSpline>")
         .function("size", &CubicSpline::size)
         .function("get", &CubicSpline::get)
-        .function("get_grad", &CubicSpline::get_grad);
+        .function("get_grad", &CubicSpline::get_grad)
+        .function("get_max", &CubicSpline::get_max);
 
     emscripten::class_<RefLine>("RefLine")
         .constructor<double>()
@@ -57,7 +59,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
-    emscripten::class_<Mesh3D>("Mesh3D").property("vertices", &Mesh3D::vertices).property("indices", &Mesh3D::indices);
+    emscripten::class_<Mesh3D>("Mesh3D")
+        .property("vertices", &Mesh3D::vertices)
+        .property("indices", &Mesh3D::indices)
+        .property("uvs", &Mesh3D::uvs);
 
     emscripten::class_<RoadMark>("RoadMark")
         .property("s_start", &RoadMark::s_start)
@@ -72,6 +77,8 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_mesh", &Lane::get_mesh)
         .function("get_roadmarks", &Lane::get_roadmarks)
         .function("get_roadmark_mesh", &Lane::get_roadmark_mesh)
+        .property("inner_border", &Lane::inner_border)
+        .property("outer_border", &Lane::outer_border)
         .property("id", &Lane::id)
         .property("type", &Lane::type);
 
