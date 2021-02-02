@@ -42,7 +42,6 @@
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script src="./libOpenDrive.js"></script>
-    <script src="./utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.115.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
@@ -67,10 +66,11 @@
         var COLORS = {
             road: 0xaeaeae,
             outline: 0x757575,
-            ref_line: 0xffffff,
+            ref_line: 0x69f0ae,
             background: 0xaab6fe,
             lane_highlight: 0x0288d1,
             road_highlight: 0x9A9A9A,
+            outline_highlight: 0xc158dc,
         };
 
         const notyf = new Notyf({
@@ -95,7 +95,7 @@
         var road_mesh_group = new THREE.Group();
         var outline_group = new THREE.Group();
         var odr_geom_edges_group = new THREE.Group();
-        var groups = [ref_line_group, road_mesh_group, outline_group, odr_geom_edges_group];
+        var groups = [road_mesh_group, ref_line_group, outline_group, odr_geom_edges_group];
         scene.add(...groups);
 
         var INTERSECTED;
@@ -183,6 +183,7 @@
                 const refline_material = new THREE.LineBasicMaterial({ color: COLORS.ref_line });
                 const refline_line = new THREE.Line(refline_geom, refline_material);
                 refline_line.matrixAutoUpdate = false;
+                refline_line.renderOrder = 10;
 
                 ref_line_group.add(refline_line);
                 disposable_objs.push(refline_line.geometry, refline_line.material);
@@ -204,13 +205,12 @@
                         const lane_geom = new THREE.BufferGeometry();
                         lane_geom.setIndex(get_std_vec_entries(raw_lane_mesh.indices, true));
                         lane_geom.setAttribute('position', lane_mesh_vertices);
-                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe });
+                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe, polygonOffset: true, polygonOffsetFactor: 50, polygonOffsetUnits: 1 });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
                         lane_mesh.matrixAutoUpdate = false;
 
                         lane_sec_group.add(lane_mesh);
                         disposable_objs.push(lane_geom);
-                        lane_mesh.userData = { road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group };
 
                         /* lane outline */
                         const lane_outline_geom = new THREE.BufferGeometry();
@@ -222,9 +222,12 @@
                         const lane_outline_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
                         const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
                         lane_outline_line.matrixAutoUpdate = false;
+                        lane_outline_line.renderOrder = 9;
 
                         outline_group.add(lane_outline_line);
                         disposable_objs.push(lane_outline_geom, lane_outline_material);
+
+                        lane_mesh.userData = { road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group, lane_outline_line };
 
                         lane.delete();
                     }
@@ -267,17 +270,24 @@
             const intersects = raycaster.intersectObjects([road_mesh_group], true);
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
-                    if (INTERSECTED)
-                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); } });
+                    if (INTERSECTED) {
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 50; n.material.color.set(COLORS.road); } });
+                        INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline);
+                        INTERSECTED.userData.lane_outline_line.material.depthTest = true;
+                    }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 30; n.material.color.set(COLORS.road_highlight); } });
+                    INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline_highlight);
+                    INTERSECTED.userData.lane_outline_line.material.depthTest = false;
                     INTERSECTED.material.color.set(COLORS.lane_highlight);
                     renderer.render(scene, camera);
                     spotlight_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 50; n.material.color.set(COLORS.road); } });
+                    INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline);
+                    INTERSECTED.userData.lane_outline_line.material.depthTest = true;
                     renderer.render(scene, camera);
                 }
                 INTERSECTED = null;
