@@ -61,8 +61,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<Mesh3D>("Mesh3D")
         .property("vertices", &Mesh3D::vertices)
-        .property("indices", &Mesh3D::indices)
-        .property("uvs", &Mesh3D::uvs);
+        .property("indices", &Mesh3D::indices);
 
     emscripten::class_<RoadMark>("RoadMark")
         .property("s_start", &RoadMark::s_start)

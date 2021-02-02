@@ -153,10 +153,8 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, bool fixed_sampl
     {
         const double t_inner_brdr = this->inner_border.get(s);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr));
-        out_mesh.uvs.push_back({s, 0});
         const double t_outer_brdr = this->outer_border.get(s);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr));
-        out_mesh.uvs.push_back({s, this->lane_width.get(s)});
     }
 
     const size_t num_pts = out_mesh.vertices.size();
