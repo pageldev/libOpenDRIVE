@@ -53,7 +53,6 @@
 
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
-            detail: 0.3,
             resolution: 0.3,
             ref_line: true,
             geom_edges: false,
@@ -67,56 +66,40 @@
 
         var COLORS = {
             road: 0xaeaeae,
-            outline: 0xae52d4,
-            ref_line: 0x69f0ae,
-            background: 0x111215,
+            outline: 0x757575,
+            ref_line: 0xffffff,
+            background: 0xaab6fe,
             lane_highlight: 0x0288d1,
-            road_highlight: 0xffffff,
+            road_highlight: 0x9A9A9A,
         };
 
         const notyf = new Notyf({
             duration: 3000,
             position: { x: 'right', y: 'bottom' },
-            types: [
-                {
-                    type: 'info',
-                    background: '#607d8b',
-                    icon: false
-                }
-            ]
+            types: [{ type: 'info', background: '#607d8b', icon: false }]
         });
 
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(COLORS.background);
-        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        var renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('ThreeJS').appendChild(renderer.domElement);
 
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
-        camera.lookAt(0, 0, 0);
         camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
-
         var controls = new THREE.MapControls(camera, renderer.domElement);
         controls.addEventListener('change', () => { renderer.render(scene, camera) });
 
-        var ref_line_group = new THREE.Group();
-        ref_line_group.renderOrder = 3;
-        var outline_group = new THREE.Group();
-        outline_group.renderOrder = 2;
-        var roadmark_group = new THREE.Group();
-        roadmark_group.renderOrder = 1;
-        var road_mesh_group = new THREE.Group();
-        var basic_groups = [ref_line_group, outline_group, roadmark_group, road_mesh_group];
-        scene.add(...basic_groups);
-
-        var odr_geom_edges_group = new THREE.Group();
-        var lazy_loaded_groups = [odr_geom_edges_group];
-        scene.add(...lazy_loaded_groups);
-
         var disposable_objs = [];
+        var ref_line_group = new THREE.Group();
+        var road_mesh_group = new THREE.Group();
+        var outline_group = new THREE.Group();
+        var odr_geom_edges_group = new THREE.Group();
+        var groups = [ref_line_group, road_mesh_group, outline_group, odr_geom_edges_group];
+        scene.add(...groups);
 
-        var mouse = new THREE.Vector2();
         var INTERSECTED;
+        var mouse = new THREE.Vector2();
         var raycaster = new THREE.Raycaster();
         window.addEventListener('resize', onWindowResize, false);
         window.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -126,39 +109,30 @@
 
         var gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-        gui.add(PARAMS, 'detail', { Low: 1.0, Medium: 0.3, High: 0.03 }).name('📏  Detail').onChange((val) => {
-            PARAMS.resolution = Number(PARAMS.detail);
-            console.log(PARAMS.resolution);
-            load_odr_map(true, false);
-        });
-        gui.add(PARAMS, 'spotlight').name("🔦 Spotlight").onChange((val) => {
-        });
+        gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.03 }).name('📏  Detail').onChange((val) => { load_odr_map(true, false); });
+        gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
         gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
-        var gui_show_folder = gui.addFolder('View');
-        gui_show_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
+
+        var gui_view_folder = gui.addFolder('View');
+        gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
             ref_line_group.visible = val;
             renderer.render(scene, camera);
         });
-        gui_show_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
-            road_mesh_group.traverse(n => {
-                if (n.material) {
-                    n.material.wireframe = val;
-                    n.material.transparent = !val;
-                    n.material.color.set(COLORS.road);
-                }
-            });
+        gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
+            road_mesh_group.traverse(n => { if (n.material) { n.material.wireframe = val } });
             renderer.render(scene, camera);
         });
-        gui_show_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
+        gui_view_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
             if (odr_geom_edges_group.children.length == 0)
                 add_odr_geom_edges();
             odr_geom_edges_group.visible = val;
             renderer.render(scene, camera);
         });
-        var attributes_folder = gui.addFolder('Load Attributes');
-        attributes_folder.add(PARAMS, 'lateralProfile').name("Lateral Profile");
-        attributes_folder.add(PARAMS, 'laneHeight').name("Lane Height");
-        attributes_folder.add(PARAMS, 'reload_map').name("Reload Map");
+
+        var gui_attributes_folder = gui.addFolder('Load Attributes');
+        gui_attributes_folder.add(PARAMS, 'lateralProfile').name("Lateral Profile");
+        gui_attributes_folder.add(PARAMS, 'laneHeight').name("Lane Height");
+        gui_attributes_folder.add(PARAMS, 'reload_map').name("Reload Map");
 
         var ModuleOpenDrive = null;
         var OpenDriveMap = null;
@@ -181,9 +155,7 @@
 
         function on_file_select(file) {
             let file_reader = new FileReader();
-            file_reader.onload = () => {
-                file_load(file_reader.result, true);
-            }
+            file_reader.onload = () => { file_load(file_reader.result, true); }
             file_reader.readAsText(file);
         }
 
@@ -193,25 +165,28 @@
         }
 
         function load_odr_map(clear_map = true, fit_view = true) {
+            const t0 = performance.now();
             if (clear_map) {
-                for (let group of basic_groups)
-                    group.remove(...group.children);
-                for (let group of lazy_loaded_groups)
+                for (let group of groups)
                     group.remove(...group.children);
                 for (let obj of disposable_objs)
                     obj.dispose();
             }
 
-            const t0 = performance.now();
             const odr_roads = OpenDriveMap.roads;
 
-            for (let [road_id, road] of get_std_map_entries(odr_roads)) {
-                /* ref line */
-                let refl_verts = read_std_vec_vertices(road.ref_line.get_line(0.0, road.length, PARAMS.resolution, false), true);
-                const refline_line = add_line(refl_verts, COLORS.ref_line);
-                refline_line.material.depthTest = false;
+            /* ref lines */
+            for (const [road_id, road] of get_std_map_entries(odr_roads)) {
+                const refline_vertices = get_std_vec_vertices(road.ref_line.get_line(0.0, road.length, Number(PARAMS.resolution), false), true);
+                const refline_geom = new THREE.BufferGeometry();
+                refline_geom.setAttribute('position', new THREE.BufferAttribute(refline_vertices, 3));
+                const refline_material = new THREE.LineBasicMaterial({ color: COLORS.ref_line });
+                const refline_line = new THREE.Line(refline_geom, refline_material);
+                refline_line.matrixAutoUpdate = false;
+
                 ref_line_group.add(refline_line);
                 disposable_objs.push(refline_line.geometry, refline_line.material);
+                road.delete();
             }
 
             if (fit_view)
@@ -223,41 +198,47 @@
                     let lane_sec_group = new THREE.Group();
                     for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
                         /* lane mesh */
-                        const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), PARAMS.resolution, false);
-                        const lane_mesh_vertices = read_std_vec_vertices(raw_lane_mesh.vertices, true);
-                        const uv_vals = get_std_vec_entries(raw_lane_mesh.uvs, false);
+                        const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), Number(PARAMS.resolution), false);
+                        const lane_mesh_vertices = new THREE.BufferAttribute(get_std_vec_vertices(raw_lane_mesh.vertices, true), 3);
 
                         const lane_geom = new THREE.BufferGeometry();
                         lane_geom.setIndex(get_std_vec_entries(raw_lane_mesh.indices, true));
-                        lane_geom.setAttribute('position', new THREE.BufferAttribute(lane_mesh_vertices, 3));
-                        lane_geom.setAttribute('uv', new THREE.Float32BufferAttribute(uv_vals.flat(), 2));
-                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe, transparent: !PARAMS.wireframe, opacity: 0.3, visible: true });
+                        lane_geom.setAttribute('position', lane_mesh_vertices);
+                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
-
                         lane_mesh.matrixAutoUpdate = false;
-                        disposable_objs.push(lane_geom, lane_material);
+
                         lane_sec_group.add(lane_mesh);
+                        disposable_objs.push(lane_geom);
+                        lane_mesh.userData = { road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group };
 
-                        lane_mesh.userData = {
-                            road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group
-                        };
+                        /* lane outline */
+                        const lane_outline_geom = new THREE.BufferGeometry();
+                        let lane_outline_indices = Array.from(Array(lane_mesh_vertices.count).keys()).filter(n => n % 2 == 0);
+                        lane_outline_indices.push.apply(lane_outline_indices, Array.from(Array(lane_mesh_vertices.count).keys()).filter(n => n % 2).reverse());
+                        lane_outline_indices.push(0);
+                        lane_outline_geom.setIndex(lane_outline_indices);
+                        lane_outline_geom.setAttribute('position', lane_mesh_vertices);
+                        const lane_outline_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
+                        const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
+                        lane_outline_line.matrixAutoUpdate = false;
+
+                        outline_group.add(lane_outline_line);
+                        disposable_objs.push(lane_outline_geom, lane_outline_material);
+
+                        lane.delete();
                     }
-
                     road_group.add(lane_sec_group);
+                    lanesec.delete();
                 }
                 road_mesh_group.add(road_group);
             }
 
-            const t1 = performance.now();
-            console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
-
             if (PARAMS.geom_edges && (odr_geom_edges_group.children.length == 0))
                 add_odr_geom_edges();
 
-            renderer.render(scene, camera);
-            spotlight_info.style.display = "none";
-            animate();
-
+            const t1 = performance.now();
+            console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
             const info_msg = `
                 <div class=popup_info>
                 <h3>Finished loading</h3>
@@ -268,6 +249,10 @@
                 </table>
                 </div>`;
             notyf.open({ type: 'info', message: info_msg });
+
+            renderer.render(scene, camera);
+            spotlight_info.style.display = "none";
+            animate();
         }
 
         function animate() {
@@ -282,19 +267,17 @@
             const intersects = raycaster.intersectObjects([road_mesh_group], true);
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
-                    if (INTERSECTED) {
-                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); n.material.opacity = 0.3; } });
-                    }
+                    if (INTERSECTED)
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); } });
                     INTERSECTED = intersects[0].object;
-                    spotlight_info.style.display = "block";
                     INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road_highlight); } });
                     INTERSECTED.material.color.set(COLORS.lane_highlight);
-                    INTERSECTED.material.opacity = 0.8;
                     renderer.render(scene, camera);
+                    spotlight_info.style.display = "block";
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); n.material.opacity = 0.3; } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.color.set(COLORS.road); } });
                     renderer.render(scene, camera);
                 }
                 INTERSECTED = null;
@@ -322,14 +305,6 @@
                             <tr><th>world</th><th>[${intersec_pt.x.toFixed(2)}, ${intersec_pt.y.toFixed(2)}, ${intersec_pt.z.toFixed(2)}]</th></tr>
                         </table>`;
             }
-        }
-
-        function add_line(vertices, color) {
-            const line_geom = new THREE.BufferGeometry();
-            line_geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-            const line_material = new THREE.LineBasicMaterial({ color: color });
-            const line_line = new THREE.Line(line_geom, line_material);
-            return line_line;
         }
 
         function add_odr_geom_edges() {
@@ -385,6 +360,43 @@
         function onDocumentMouseDbClick(event) {
             if (INTERSECTED)
                 fitView(INTERSECTED);
+        }
+
+        function get_std_map_keys(std_map, delete_map = false) {
+            let map_keys = [];
+            const map_keys_vec = std_map.keys();
+            for (let idx = 0; idx < map_keys_vec.size(); idx++)
+                map_keys.push(map_keys_vec.get(idx));
+            map_keys_vec.delete();
+            if (delete_map)
+                std_map.delete();
+            return map_keys;
+        }
+
+        function get_std_map_entries(std_map) {
+            let map_entries = [];
+            for (let key of get_std_map_keys(std_map))
+                map_entries.push([key, std_map.get(key)]);
+            return map_entries;
+        }
+
+        function get_std_vec_entries(std_vec, delete_vec = false, ArrayType = null, elem_size = 1) {
+            let entries = ArrayType ? new ArrayType(std_vec.size()) : new Array(std_vec.size());
+            for (let idx = 0; idx < std_vec.size(); idx++)
+                entries[idx] = std_vec.get(idx);
+            if (delete_vec)
+                std_vec.delete();
+            return entries;
+        }
+
+        function get_std_vec_vertices(std_vec, delete_afterwards = false) {
+            const num_verts = std_vec.size() * 3;
+            let entries = new Float32Array(num_verts);
+            for (let v_idx = 0; v_idx < num_verts; v_idx++)
+                entries[v_idx] = std_vec.get(parseInt(v_idx / 3))[v_idx % 3];
+            if (delete_afterwards)
+                std_vec.delete();
+            return entries;
         }
     </script>
 </body>
