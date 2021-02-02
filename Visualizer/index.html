@@ -61,6 +61,7 @@
             lateralProfile: true,
             laneHeight: true,
             reload_map: () => { reload_odr_map(); },
+            selected_road_id: null,
         };
 
         var COLORS = {
@@ -95,9 +96,9 @@
         var disposable_objs = [];
         var ref_line_group = new THREE.Group();
         var road_mesh_group = new THREE.Group();
-        var outline_group = new THREE.Group();
+        var lane_outline_group = new THREE.Group();
         var odr_geom_edges_group = new THREE.Group();
-        var groups = [road_mesh_group, ref_line_group, outline_group, odr_geom_edges_group];
+        var groups = [road_mesh_group, ref_line_group, lane_outline_group, odr_geom_edges_group];
         scene.add(...groups);
 
         var INTERSECTED;
@@ -106,6 +107,7 @@
         window.addEventListener('resize', onWindowResize, false);
         window.addEventListener('mousemove', onDocumentMouseMove, false);
         window.addEventListener('dblclick', onDocumentMouseDbClick, false);
+        window.addEventListener('keyup', onDocumentKeyup, false);
 
         const light = new THREE.DirectionalLight(0xffffff, 1, 100);
         light.position.set(0, 0, 1);
@@ -192,6 +194,7 @@
                 const refline_line = new THREE.Line(refline_geom, refline_material);
                 refline_line.matrixAutoUpdate = false;
                 refline_line.renderOrder = 10;
+                refline_line.userData = { road_id };
 
                 ref_line_group.add(refline_line);
                 disposable_objs.push(refline_line.geometry, refline_line.material);
@@ -241,8 +244,9 @@
                         const lane_outline_line = new THREE.Line(lane_outline_geom, lane_outline_material);
                         lane_outline_line.matrixAutoUpdate = false;
                         lane_outline_line.renderOrder = 9;
+                        lane_outline_line.userData = { road_id };
 
-                        outline_group.add(lane_outline_line);
+                        lane_outline_group.add(lane_outline_line);
                         disposable_objs.push(lane_outline_geom, lane_outline_material);
 
                         lane_mesh.userData = { road_id, lansection_s0: s0, lane_id, lane_type: lane.type, road, lane_sec_group, road_group, lane_outline_line };
@@ -388,6 +392,23 @@
         function onDocumentMouseDbClick(event) {
             if (INTERSECTED)
                 fitView(INTERSECTED);
+        }
+
+        function onDocumentKeyup(event) {
+            if (event.code === 'Space') {
+                if (PARAMS.selected_road_id) {
+                    PARAMS.selected_road_id = null;
+                    for (let group of groups)
+                        group.traverse(n => { if (n.userData.road_id) { n.visible = true; } });
+                    renderer.render(scene, camera);
+                } else if (INTERSECTED) {
+                    PARAMS.selected_road_id = INTERSECTED.userData.road_id;
+                    for (let group of groups)
+                        group.traverse(n => { if (n.userData.road_id && n.userData.road_id != PARAMS.selected_road_id) { n.visible = false; } });
+                    notyf.open({ type: 'info', message: `<div class=popup_info>Selected road #${PARAMS.selected_road_id}<br>Press SPACE again to unselect</div>` });
+                    renderer.render(scene, camera);
+                }
+            }
         }
 
         function get_std_map_keys(std_map, delete_map = false) {
