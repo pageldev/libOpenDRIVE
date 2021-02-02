@@ -82,6 +82,8 @@
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(COLORS.background);
         var renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.BasicShadowMap;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('ThreeJS').appendChild(renderer.domElement);
 
@@ -105,6 +107,11 @@
         window.addEventListener('mousemove', onDocumentMouseMove, false);
         window.addEventListener('dblclick', onDocumentMouseDbClick, false);
 
+        const light = new THREE.DirectionalLight(0xffffff, 1, 100);
+        light.position.set(0, 0, 1);
+        light.castShadow = true;
+        scene.add(light);
+
         renderer.render(scene, camera);
 
         var gui = new dat.GUI();
@@ -119,6 +126,7 @@
             renderer.render(scene, camera);
         });
         gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
+            light.intensity = Number(!val);
             road_mesh_group.traverse(n => { if (n.material) { n.material.wireframe = val } });
             renderer.render(scene, camera);
         });
@@ -205,8 +213,18 @@
                         const lane_geom = new THREE.BufferGeometry();
                         lane_geom.setIndex(get_std_vec_entries(raw_lane_mesh.indices, true));
                         lane_geom.setAttribute('position', lane_mesh_vertices);
-                        const lane_material = new THREE.MeshBasicMaterial({ color: COLORS.road, wireframe: PARAMS.wireframe, polygonOffset: true, polygonOffsetFactor: 50, polygonOffsetUnits: 1 });
+                        lane_geom.computeVertexNormals();
+                        const lane_material = new THREE.MeshPhongMaterial({
+                            color: COLORS.road,
+                            wireframe: PARAMS.wireframe,
+                            polygonOffset: true,
+                            polygonOffsetFactor: 20,
+                            polygonOffsetUnits: 1,
+                            shininess: 5,
+                            flatShading: true
+                        });
                         const lane_mesh = new THREE.Mesh(lane_geom, lane_material);
+                        lane_mesh.receiveShadow = true;
                         lane_mesh.matrixAutoUpdate = false;
 
                         lane_sec_group.add(lane_mesh);
@@ -271,12 +289,12 @@
             if (intersects.length > 0) {
                 if (INTERSECTED != intersects[0].object) {
                     if (INTERSECTED) {
-                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 50; n.material.color.set(COLORS.road); } });
+                        INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 20; n.material.color.set(COLORS.road); } });
                         INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline);
                         INTERSECTED.userData.lane_outline_line.material.depthTest = true;
                     }
                     INTERSECTED = intersects[0].object;
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 30; n.material.color.set(COLORS.road_highlight); } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 10; n.material.color.set(COLORS.road_highlight); } });
                     INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline_highlight);
                     INTERSECTED.userData.lane_outline_line.material.depthTest = false;
                     INTERSECTED.material.color.set(COLORS.lane_highlight);
@@ -285,7 +303,7 @@
                 }
             } else {
                 if (INTERSECTED) {
-                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 50; n.material.color.set(COLORS.road); } });
+                    INTERSECTED.userData.road_group.traverse(n => { if (n.material) { n.material.polygonOffsetFactor = 20; n.material.color.set(COLORS.road); } });
                     INTERSECTED.userData.lane_outline_line.material.color.set(COLORS.outline);
                     INTERSECTED.userData.lane_outline_line.material.depthTest = true;
                     renderer.render(scene, camera);
