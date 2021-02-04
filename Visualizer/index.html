@@ -158,7 +158,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./data.xodr").then((file_data) => {
+            fetch("./kempten.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -199,7 +199,8 @@
             for (const [road_id, road] of get_std_map_entries(odr_roads)) {
                 const refl_pts_std_vec = road.ref_line.get_line(0.0, road.length, Number(PARAMS.resolution), false);
                 const refl_pts = get_std_vec_entries(refl_pts_std_vec, true).map(v => [v[0], v[1], v[2]]);
-                refl_vertices.push.apply(refl_vertices, refl_pts.flat());
+                for(let pt of refl_pts)
+                    refl_vertices.push(...pt);
                 for (let idx = index_offset; idx < index_offset + refl_pts.length - 1; idx++)
                     refl_indices.push(idx, idx + 1);
                 index_offset += refl_pts.length;
@@ -223,10 +224,12 @@
                     for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
                         const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), Number(PARAMS.resolution), false);
                         const lane_mesh_vertices = get_std_vec_entries(raw_lane_mesh.vertices, true).map(v => [v[0], v[1], v[2]]);
-                        mesh_vertices.push.apply(mesh_vertices, lane_mesh_vertices.flat());
+                        for (let vert of lane_mesh_vertices)
+                            mesh_vertices.push(...vert);
                         const index_offset = (mesh_index_offsets.length == 0) ? 0 : mesh_index_offsets[mesh_index_offsets.length - 1];
                         const lane_mesh_indices = get_std_vec_entries(raw_lane_mesh.indices, true).map(i => i + index_offset);
-                        mesh_indices.push.apply(mesh_indices, lane_mesh_indices);
+                        for (let idx of lane_mesh_indices)
+                            mesh_indices.push(idx);
                         mesh_index_offsets.push(index_offset + lane_mesh_vertices.length);
                         lane.delete();
                     }
