@@ -128,7 +128,7 @@
 
         const gui = new dat.GUI();
         gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-        gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.03 }).name('📏  Detail').onChange((val) => { load_odr_map(true, false); });
+        gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.02 }).name('📏  Detail').onChange((val) => { load_odr_map(true, false); });
         gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
         gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
 
@@ -158,7 +158,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./kempten.xodr").then((file_data) => {
+            fetch("./data.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -199,7 +199,7 @@
             for (const [road_id, road] of get_std_map_entries(odr_roads)) {
                 const refl_pts_std_vec = road.ref_line.get_line(0.0, road.length, Number(PARAMS.resolution), false);
                 const refl_pts = get_std_vec_entries(refl_pts_std_vec, true).map(v => [v[0], v[1], v[2]]);
-                for(let pt of refl_pts)
+                for (let pt of refl_pts)
                     refl_vertices.push(...pt);
                 for (let idx = index_offset; idx < index_offset + refl_pts.length - 1; idx++)
                     refl_indices.push(idx, idx + 1);
@@ -218,7 +218,7 @@
                 fitView(refline_lines);
 
             /* lane geometries */
-            let mesh_vertices = [], mesh_indices = [], mesh_index_offsets = [];
+            let mesh_vertices = [], mesh_indices = [], mesh_index_offsets = [0];
             for (const [road_id, road] of get_std_map_entries(odr_roads)) {
                 for (const [s0, lanesec] of get_std_map_entries(road.s_to_lanesection)) {
                     for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
@@ -226,7 +226,7 @@
                         const lane_mesh_vertices = get_std_vec_entries(raw_lane_mesh.vertices, true).map(v => [v[0], v[1], v[2]]);
                         for (let vert of lane_mesh_vertices)
                             mesh_vertices.push(...vert);
-                        const index_offset = (mesh_index_offsets.length == 0) ? 0 : mesh_index_offsets[mesh_index_offsets.length - 1];
+                        const index_offset = mesh_index_offsets[mesh_index_offsets.length - 1];
                         const lane_mesh_indices = get_std_vec_entries(raw_lane_mesh.indices, true).map(i => i + index_offset);
                         for (let idx of lane_mesh_indices)
                             mesh_indices.push(idx);
@@ -240,12 +240,15 @@
 
             /* lane outline lines */
             let outline_indices = [];
-            for (let i = 0; i < mesh_index_offsets.length; i++) {
-                const end_idx = (i + 1) == mesh_index_offsets.length ? mesh_index_offsets.length : mesh_index_offsets[i + 1];
-                for (let j = mesh_index_offsets[i]; j < end_idx - 2; j += 2)
+            for (let i = 0; i < mesh_index_offsets.length - 1; i++) {
+                const start_idx = mesh_index_offsets[i];
+                const end_idx = mesh_index_offsets[i + 1];
+                for (let j = start_idx; j < end_idx - 2; j += 2)
                     outline_indices.push(j, j + 2);
-                for (let j = mesh_index_offsets[i] + 1; j < end_idx - 1; j += 2)
+                for (let j = start_idx + 1; j < end_idx - 2; j += 2)
                     outline_indices.push(j, j + 2);
+                outline_indices.push(start_idx, start_idx + 1);
+                outline_indices.push(end_idx - 2, end_idx - 1);
             }
             const outlines_geom = new THREE.BufferGeometry();
             outlines_geom.setAttribute('position', new THREE.Float32BufferAttribute(mesh_vertices, 3));
