@@ -54,7 +54,7 @@
             ref_line: true,
             geom_edges: false,
             wireframe: false,
-            spotlight: false,
+            spotlight: true,
             fitView: () => { fitView(ref_line_group); },
             lateralProfile: true,
             laneHeight: true,
@@ -93,6 +93,7 @@
 
         var refline_lines;
         var road_network_mesh;
+        var road_network_foo;
         var lane_outline_lines;
 
         var spotlight_info = document.getElementById('spotlight_info');
@@ -158,7 +159,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./data.xodr").then((file_data) => {
+            fetch("./CulDeSac.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -195,81 +196,38 @@
             const odr_roads = OpenDriveMap.roads;
 
             /* reflines */
-            let refl_vertices = [], refl_indices = [], index_offset = 0;
-            for (const [road_id, road] of get_std_map_entries(odr_roads)) {
-                const refl_pts_std_vec = road.ref_line.get_line(0.0, road.length, Number(PARAMS.resolution), false);
-                const refl_pts = get_std_vec_entries(refl_pts_std_vec, true).map(v => [v[0], v[1], v[2]]);
-                for (let pt of refl_pts)
-                    refl_vertices.push(...pt);
-                for (let idx = index_offset; idx < index_offset + refl_pts.length - 1; idx++)
-                    refl_indices.push(idx, idx + 1);
-                index_offset += refl_pts.length;
-                road.delete();
-            }
             const reflines_geom = new THREE.BufferGeometry();
-            reflines_geom.setAttribute('position', new THREE.Float32BufferAttribute(refl_vertices, 3));
-            reflines_geom.setIndex(refl_indices);
+            const odr_refline_segments = OpenDriveMap.get_refline_segments(PARAMS.resolution);
+            reflines_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_refline_segments.vertices).flat(), 3));
+            reflines_geom.setIndex(get_std_vec_entries(odr_refline_segments.indices, true));
             refline_lines = new THREE.LineSegments(reflines_geom, refline_material);
             refline_lines.renderOrder = 10;
             disposable_objs.push(reflines_geom);
             scene.add(refline_lines);
 
-            if (fit_view)
-                fitView(refline_lines);
-
-            /* lane geometries */
-            let mesh_vertices = [], mesh_indices = [], mesh_index_offsets = [0];
-            for (const [road_id, road] of get_std_map_entries(odr_roads)) {
-                for (const [s0, lanesec] of get_std_map_entries(road.s_to_lanesection)) {
-                    for (const [lane_id, lane] of get_std_map_entries(lanesec.id_to_lane)) {
-                        const raw_lane_mesh = lane.get_mesh(lanesec.s0, lanesec.get_end(), Number(PARAMS.resolution), false);
-                        const lane_mesh_vertices = get_std_vec_entries(raw_lane_mesh.vertices, true).map(v => [v[0], v[1], v[2]]);
-                        for (let vert of lane_mesh_vertices)
-                            mesh_vertices.push(...vert);
-                        const index_offset = mesh_index_offsets[mesh_index_offsets.length - 1];
-                        const lane_mesh_indices = get_std_vec_entries(raw_lane_mesh.indices, true).map(i => i + index_offset);
-                        for (let idx of lane_mesh_indices)
-                            mesh_indices.push(idx);
-                        mesh_index_offsets.push(index_offset + lane_mesh_vertices.length);
-                        lane.delete();
-                    }
-                    lanesec.delete();
-                }
-                road.delete();
-            }
-
-            /* lane outline lines */
-            let outline_indices = [];
-            for (let i = 0; i < mesh_index_offsets.length - 1; i++) {
-                const start_idx = mesh_index_offsets[i];
-                const end_idx = mesh_index_offsets[i + 1];
-                for (let j = start_idx; j < end_idx - 2; j += 2)
-                    outline_indices.push(j, j + 2);
-                for (let j = start_idx + 1; j < end_idx - 2; j += 2)
-                    outline_indices.push(j, j + 2);
-                outline_indices.push(start_idx, start_idx + 1);
-                outline_indices.push(end_idx - 2, end_idx - 1);
-            }
-            const outlines_geom = new THREE.BufferGeometry();
-            outlines_geom.setAttribute('position', new THREE.Float32BufferAttribute(mesh_vertices, 3));
-            outlines_geom.setIndex(outline_indices);
-            lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
-            lane_outline_lines.renderOrder = 9;
-            disposable_objs.push(outlines_geom);
-            scene.add(lane_outline_lines);
-
             /* road network mesh */
             const road_network_geom = new THREE.BufferGeometry();
-            road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(mesh_vertices, 3));
-            road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(mesh_vertices.length), 3));
-            for (let idx = 0; idx < road_network_geom.attributes.color.count; idx++)
-                road_network_geom.attributes.color.setXYZ(idx, ((COLORS.road & 0xff0000) >>> 16) / 255.0, ((COLORS.road & 0xff00) >>> 8) / 255.0, (COLORS.road & 0xff) / 255.0);
-            road_network_geom.setIndex(mesh_indices);
-            road_network_geom.computeVertexNormals();
+            const odr_road_network_mesh = OpenDriveMap.get_mesh(PARAMS.resolution);
+            road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
+            road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
+            road_network_geom.attributes.color.array.fill(0.68);
+            road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
             road_network_mesh = new THREE.Mesh(road_network_geom, road_network_material);
             road_network_mesh.receiveShadow = true;
+            road_network_mesh.userData = { odr_road_network_mesh };
             disposable_objs.push(road_network_geom);
             scene.add(road_network_mesh);
+
+            /* lane outline */
+            const outlines_geom = new THREE.BufferGeometry();
+            outlines_geom.setAttribute('position', road_network_geom.attributes.position);
+            outlines_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.get_lane_outline_indices(), true));
+            lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
+            lane_outline_lines.renderOrder = 9;
+            scene.add(lane_outline_lines);
+
+            if (fit_view)
+                fitView(refline_lines);
 
             const t1 = performance.now();
             console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
@@ -298,7 +256,9 @@
 
         function update() {
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(road_network_mesh, true);
+            const intersects = raycaster.intersectObjects([road_network_mesh], true);
+            if (intersects.length > 0) {
+            }
         }
 
         function fitView(obj) {
