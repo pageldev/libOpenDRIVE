@@ -93,7 +93,6 @@
 
         var refline_lines;
         var road_network_mesh;
-        var road_network_foo;
         var lane_outline_lines;
 
         var spotlight_info = document.getElementById('spotlight_info');
@@ -119,7 +118,9 @@
         camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
 
         const controls = new THREE.MapControls(camera, renderer.domElement);
+        controls.addEventListener('start', () => { PARAMS.spotlight = false; });
         controls.addEventListener('change', () => { renderer.render(scene, camera) });
+        controls.addEventListener('end', () => { PARAMS.spotlight = true; });
 
         const light = new THREE.DirectionalLight(0xffffff, 1, 100);
         light.position.set(0, 0, 1);
@@ -159,7 +160,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./CulDeSac.xodr").then((file_data) => {
+            fetch("./data.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -213,6 +214,7 @@
             road_network_geom.attributes.color.array.fill(0.68);
             road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
             road_network_mesh = new THREE.Mesh(road_network_geom, road_network_material);
+            road_network_mesh.renderOrder = 0;
             road_network_mesh.receiveShadow = true;
             road_network_mesh.userData = { odr_road_network_mesh };
             disposable_objs.push(road_network_geom);
@@ -250,14 +252,27 @@
         function animate() {
             requestAnimationFrame(animate);
             if (PARAMS.spotlight) {
-                update();
-            }
-        }
-
-        function update() {
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects([road_network_mesh], true);
-            if (intersects.length > 0) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects([road_network_mesh], true);
+                if (intersects.length > 0) {
+                    const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(intersects[0].face.b);
+                    if (!INTERSECTED || INTERSECTED[0] != lane_vert_idx_interval[0]) {
+                        if (INTERSECTED) {
+                            road_network_mesh.geometry.attributes.color.array.fill(0.68, INTERSECTED[0] * 3, INTERSECTED[1] * 3);
+                        }
+                        INTERSECTED = lane_vert_idx_interval;
+                        road_network_mesh.geometry.attributes.color.array.fill(0.9, INTERSECTED[0] * 3, INTERSECTED[1] * 3);
+                        road_network_mesh.geometry.attributes.color.needsUpdate = true;
+                        renderer.render(scene, camera);
+                    }
+                } else {
+                    if (INTERSECTED) {
+                        road_network_mesh.geometry.attributes.color.array.fill(0.68, INTERSECTED[0] * 3, INTERSECTED[1] * 3);
+                        road_network_mesh.geometry.attributes.color.needsUpdate = true;
+                        renderer.render(scene, camera);
+                    }
+                    INTERSECTED = null;
+                }
             }
         }
 
