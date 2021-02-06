@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Road.h"
+#include "RoadNetworkMesh.h"
 
 #include <map>
 #include <memory>
@@ -15,6 +16,9 @@ public:
 
     ConstRoadSet get_roads() const;
     RoadSet      get_roads();
+
+    Mesh3D          get_refline_segments(double eps) const;
+    RoadNetworkMesh get_mesh(double eps) const;
 
     std::string xodr_file;
     std::string proj4;

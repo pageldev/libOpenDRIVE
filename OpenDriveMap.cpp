@@ -328,4 +328,46 @@ RoadSet OpenDriveMap::get_roads()
     return roads;
 }
 
+Mesh3D OpenDriveMap::get_refline_segments(double eps) const
+{
+    Mesh3D refline_segments;
+    for (std::shared_ptr<const Road> road : this->get_roads())
+    {
+        const size_t idx_offset = refline_segments.vertices.size();
+        const Line3D refl_pts = road->ref_line->get_line(0.0, road->length, eps);
+        refline_segments.vertices.insert(refline_segments.vertices.end(), refl_pts.begin(), refl_pts.end());
+        for (size_t idx = idx_offset; idx < (idx_offset + refl_pts.size() - 1); idx++)
+        {
+            refline_segments.indices.push_back(idx);
+            refline_segments.indices.push_back(idx + 1);
+        }
+    }
+
+    return refline_segments;
+}
+
+RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
+{
+    RoadNetworkMesh out_mesh;
+    for (std::shared_ptr<const Road> road : this->get_roads())
+    {
+        out_mesh.road_start_indices[out_mesh.vertices.size()] = road->id;
+        for (std::shared_ptr<const LaneSection> lanesec : road->get_lanesections())
+        {
+            out_mesh.lanesec_start_indices[out_mesh.vertices.size()] = lanesec->s0;
+            for (std::shared_ptr<const Lane> lane : lanesec->get_lanes())
+            {
+                const size_t idx_offset = out_mesh.vertices.size();
+                out_mesh.lane_start_indices[idx_offset] = lane->id;
+                Mesh3D lane_mesh = lane->get_mesh(lanesec->s0, lanesec->get_end(), eps);
+                out_mesh.vertices.insert(out_mesh.vertices.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
+                for (const size_t& idx : lane_mesh.indices)
+                    out_mesh.indices.push_back(idx + idx_offset);
+            }
+        }
+    }
+
+    return out_mesh;
+}
+
 } // namespace odr

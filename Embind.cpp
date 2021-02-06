@@ -13,21 +13,26 @@ namespace odr
 {
 EMSCRIPTEN_BINDINGS(OpenDriveMap)
 {
+    /* arrays */
     emscripten::value_array<Vec2D>("Vec2D").element(emscripten::index<0>()).element(emscripten::index<1>());
     emscripten::value_array<Vec3D>("Vec3D").element(emscripten::index<0>()).element(emscripten::index<1>()).element(emscripten::index<2>());
 
-    /* containers */
+    /* vectors */
+    emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
-    emscripten::register_map<int, double>("map<int, double>");
     emscripten::register_vector<Vec2D>("vector<Vec2D>");
     emscripten::register_vector<Vec3D>("vector<Vec3D>");
-    emscripten::register_vector<size_t>("vector<size_t>");
     emscripten::register_vector<std::string>("vector<string>");
     emscripten::register_vector<std::vector<Vec3D>>("vector<vector<Vec3D>>");
-    emscripten::register_vector<LaneVertices>("vector<LaneVertices>");
     emscripten::register_vector<Mesh3D>("vector<Mesh3D>");
     emscripten::register_vector<RoadMark>("vector<RoadMark>");
+
+    /* maps */
+    emscripten::register_map<size_t, std::string>("map<size_t, string>");
+    emscripten::register_map<size_t, double>("map<size_t, double>");
+    emscripten::register_map<size_t, int>("map<size_t, int>");
+    emscripten::register_map<int, double>("map<int, double>");
     emscripten::register_map<double, std::shared_ptr<RoadGeometry>>("map<double, shared_ptr<RoadGeometry>>");
     emscripten::register_map<std::string, std::shared_ptr<Road>>("map<string, shared_ptr<Road>>");
     emscripten::register_map<int, std::shared_ptr<Lane>>("map<int, shared_ptr<Lane>>");
@@ -59,9 +64,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
-    emscripten::class_<Mesh3D>("Mesh3D")
-        .property("vertices", &Mesh3D::vertices)
-        .property("indices", &Mesh3D::indices);
+    emscripten::class_<Mesh3D>("Mesh3D").property("vertices", &Mesh3D::vertices).property("indices", &Mesh3D::indices);
 
     emscripten::class_<RoadMark>("RoadMark")
         .property("s_start", &RoadMark::s_start)
@@ -89,13 +92,6 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("s0", &LaneSection::s0)
         .property("id_to_lane", &LaneSection::id_to_lane);
 
-    emscripten::class_<LaneVertices>("LaneVertices")
-        .constructor<>()
-        .property("vertices", &LaneVertices::vertices)
-        .property("indices", &LaneVertices::indices)
-        .property("lane_id", &LaneVertices::lane_id)
-        .property("type", &LaneVertices::type);
-
     emscripten::class_<Road>("Road")
         .constructor<>()
         .smart_ptr<std::shared_ptr<Road>>("shared_ptr<Road>")
@@ -109,8 +105,16 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("ref_line", &Road::ref_line)
         .property("s_to_lanesection", &Road::s_to_lanesection);
 
+    emscripten::class_<RoadNetworkMesh, emscripten::base<Mesh3D>>("RoadNetworkMesh")
+        .function("get_lane_outline_indices", &RoadNetworkMesh::get_lane_outline_indices)
+        .property("road_start_indices", &RoadNetworkMesh::road_start_indices)
+        .property("road_start_indices", &RoadNetworkMesh::lanesec_start_indices)
+        .property("road_start_indices", &RoadNetworkMesh::lane_start_indices);
+
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool>()
+        .function("get_refline_segments", &OpenDriveMap::get_refline_segments)
+        .function("get_mesh", &OpenDriveMap::get_mesh)
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads);
 }
