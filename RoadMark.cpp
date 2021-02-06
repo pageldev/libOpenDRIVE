@@ -2,5 +2,4 @@
 
 namespace odr
 {
-
 } // namespace odr

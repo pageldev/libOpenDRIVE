@@ -62,12 +62,12 @@ Vec2D ParamPoly3::get_grad(double s) const
 std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
     std::array<Vec2D, 4> coefficients = {{{aU, aV}, {bU, bV}, {cU, cV}, {dU, dV}}};
-    std::set<double> p_vals = approximate_linear_cubic_bezier<double, 2>(coefficients, eps);
+    std::set<double>     p_vals = approximate_linear_cubic_bezier<double, 2>(coefficients, eps);
 
     std::set<double> s_vals;
     for (const double& p : p_vals)
         s_vals.insert(p * length + s0);
-    
+
     return s_vals;
 }
 
