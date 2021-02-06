@@ -17,7 +17,7 @@ public:
     ConstRoadSet get_roads() const;
     RoadSet      get_roads();
 
-    Mesh3D          get_refline_segments(double eps) const;
+    Mesh3D          get_refline_lines(double eps) const;
     RoadNetworkMesh get_mesh(double eps) const;
 
     std::string xodr_file;

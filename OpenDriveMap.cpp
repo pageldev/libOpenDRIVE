@@ -328,22 +328,23 @@ RoadSet OpenDriveMap::get_roads()
     return roads;
 }
 
-Mesh3D OpenDriveMap::get_refline_segments(double eps) const
+Mesh3D OpenDriveMap::get_refline_lines(double eps) const
 {
-    Mesh3D refline_segments;
+    /* indices are pairs of vertices representing line segments */
+    Mesh3D reflines;
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
-        const size_t idx_offset = refline_segments.vertices.size();
+        const size_t idx_offset = reflines.vertices.size();
         const Line3D refl_pts = road->ref_line->get_line(0.0, road->length, eps);
-        refline_segments.vertices.insert(refline_segments.vertices.end(), refl_pts.begin(), refl_pts.end());
+        reflines.vertices.insert(reflines.vertices.end(), refl_pts.begin(), refl_pts.end());
         for (size_t idx = idx_offset; idx < (idx_offset + refl_pts.size() - 1); idx++)
         {
-            refline_segments.indices.push_back(idx);
-            refline_segments.indices.push_back(idx + 1);
+            reflines.indices.push_back(idx);
+            reflines.indices.push_back(idx + 1);
         }
     }
 
-    return refline_segments;
+    return reflines;
 }
 
 RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
