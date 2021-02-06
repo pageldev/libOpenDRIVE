@@ -14,6 +14,7 @@ namespace odr
 EMSCRIPTEN_BINDINGS(OpenDriveMap)
 {
     /* arrays */
+    emscripten::value_array<std::array<size_t, 2>>("array<size_t, 2>").element(emscripten::index<0>()).element(emscripten::index<1>());
     emscripten::value_array<Vec2D>("Vec2D").element(emscripten::index<0>()).element(emscripten::index<1>());
     emscripten::value_array<Vec3D>("Vec3D").element(emscripten::index<0>()).element(emscripten::index<1>()).element(emscripten::index<2>());
 
@@ -107,13 +108,16 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<RoadNetworkMesh, emscripten::base<Mesh3D>>("RoadNetworkMesh")
         .function("get_lane_outline_indices", &RoadNetworkMesh::get_lane_outline_indices)
-        .property("road_start_indices", &RoadNetworkMesh::road_start_indices)
-        .property("road_start_indices", &RoadNetworkMesh::lanesec_start_indices)
-        .property("road_start_indices", &RoadNetworkMesh::lane_start_indices);
+        .function("get_road_id", &RoadNetworkMesh::get_road_id)
+        .function("get_lanesec_s0", &RoadNetworkMesh::get_lanesec_s0)
+        .function("get_lane_id", &RoadNetworkMesh::get_lane_id)
+        .function("get_idx_interval_road", &RoadNetworkMesh::get_idx_interval_road)
+        .function("get_idx_interval_lanesec", &RoadNetworkMesh::get_idx_interval_lanesec)
+        .function("get_idx_interval_lane", &RoadNetworkMesh::get_idx_interval_lane);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool>()
-        .function("get_refline_segments", &OpenDriveMap::get_refline_segments)
+        .function("get_refline_segments", &OpenDriveMap::get_refline_lines)
         .function("get_mesh", &OpenDriveMap::get_mesh)
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads);
