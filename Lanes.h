@@ -25,8 +25,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
     Vec3D  get_surface_pt(double s, double t) const;
-    Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true, bool fixed_sample_dist = false) const;
-    Mesh3D get_mesh(double s_start, double s_end, double eps, bool fixed_sample_dist = false) const;
+    Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true) const;
+    Mesh3D get_mesh(double s_start, double s_end, double eps) const;
 
     std::vector<RoadMark> get_roadmarks(double s_start, double s_end) const;
     Mesh3D                get_roadmark_mesh(const RoadMark& roadmark, double eps) const;

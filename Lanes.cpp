@@ -79,24 +79,13 @@ std::set<double> Lane::approximate_border_linear(double s_start, double s_end, d
     return s_vals;
 }
 
-Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool outer, bool fixed_sample_dist) const
+Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool outer) const
 {
     auto road_ptr = this->road.lock();
     if (!road_ptr)
         throw std::runtime_error("could not access parent road for lane section");
 
-    std::set<double> s_vals;
-
-    if (fixed_sample_dist)
-    {
-        for (double s = s_start; s < s_end; s += eps)
-            s_vals.insert(s);
-        s_vals.insert(s_end);
-    }
-    else
-    {
-        s_vals = this->approximate_border_linear(s_start, s_end, eps, outer);
-    }
+    std::set<double> s_vals = this->approximate_border_linear(s_start, s_end, eps, outer);
 
     Line3D border_line;
     for (const double& s : s_vals)
@@ -108,44 +97,32 @@ Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool oute
     return border_line;
 }
 
-Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, bool fixed_sample_dist) const
+Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
 {
     auto road_ptr = this->road.lock();
     if (!road_ptr)
         throw std::runtime_error("could not access parent road for lane section");
 
-    std::set<double> s_vals;
+    std::set<double> s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
+    std::set<double> s_vals_outer_brdr = this->outer_border.approximate_linear(eps, s_start, s_end);
+    s_vals.insert(s_vals_outer_brdr.begin(), s_vals_outer_brdr.end());
+    std::set<double> s_vals_inner_brdr = this->inner_border.approximate_linear(eps, s_start, s_end);
+    s_vals.insert(s_vals_inner_brdr.begin(), s_vals_inner_brdr.end());
 
-    if (fixed_sample_dist)
+    std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
+    s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
+
+    const double     t_max = this->outer_border.get_max(s_start, s_end);
+    std::set<double> s_vals_superelev = road_ptr->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
+    s_vals.insert(s_vals_superelev.begin(), s_vals_superelev.end());
+
+    /* thin out s_vals array, be removing s vals closer than eps to each other */
+    for (auto s_iter = s_vals.begin(); s_iter != s_vals.end();)
     {
-        for (double s = s_start; s < s_end; s += eps)
-            s_vals.insert(s);
-        s_vals.insert(s_end);
-    }
-    else
-    {
-        s_vals = road_ptr->ref_line->approximate_linear(eps, s_start, s_end);
-
-        std::set<double> s_vals_outer_brdr = this->outer_border.approximate_linear(eps, s_start, s_end);
-        s_vals.insert(s_vals_outer_brdr.begin(), s_vals_outer_brdr.end());
-        std::set<double> s_vals_inner_brdr = this->inner_border.approximate_linear(eps, s_start, s_end);
-        s_vals.insert(s_vals_inner_brdr.begin(), s_vals_inner_brdr.end());
-
-        std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
-        s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
-
-        const double     t_max = this->outer_border.get_max(s_start, s_end);
-        std::set<double> s_vals_superelev = road_ptr->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
-        s_vals.insert(s_vals_superelev.begin(), s_vals_superelev.end());
-
-        /* thin out s_vals array, be removing s vals closer than eps to each other */
-        for (auto s_iter = s_vals.begin(); s_iter != s_vals.end();)
-        {
-            if (std::next(s_iter) != s_vals.end() && std::next(s_iter, 2) != s_vals.end() && ((*std::next(s_iter)) - *s_iter) <= eps)
-                s_iter = std::prev(s_vals.erase(std::next(s_iter)));
-            else
-                s_iter++;
-        }
+        if (std::next(s_iter) != s_vals.end() && std::next(s_iter, 2) != s_vals.end() && ((*std::next(s_iter)) - *s_iter) <= eps)
+            s_iter = std::prev(s_vals.erase(std::next(s_iter)));
+        else
+            s_iter++;
     }
 
     Mesh3D out_mesh;
