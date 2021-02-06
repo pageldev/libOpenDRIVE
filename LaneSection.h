@@ -14,15 +14,6 @@ namespace odr
 {
 class Road;
 
-struct LaneVertices
-{
-    std::vector<Vec3D>  vertices;
-    std::vector<size_t> indices;
-
-    int         lane_id;
-    std::string type;
-};
-
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
