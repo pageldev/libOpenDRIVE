@@ -76,7 +76,6 @@
             load_file: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.3,
             ref_line: true,
-            geom_edges: false,
             wireframe: false,
             spotlight: true,
             fitView: () => { fitView(refline_lines); },
@@ -87,7 +86,7 @@
         };
 
         var COLORS = {
-            road: 0xaeaeae,
+            road: 0.68,
             outline: 0x757575,
             ref_line: 0x69f0ae,
             background: 0x444444,
@@ -173,13 +172,7 @@
         });
         gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
             light.intensity = Number(!val);
-            road_mesh_group.traverse(n => { if (n.material) { n.material.wireframe = val } });
-            renderer.render(scene, camera);
-        });
-        gui_view_folder.add(PARAMS, 'geom_edges').name("Geometry Edges").onChange((val) => {
-            if (odr_geom_edges_group.children.length == 0)
-                add_odr_geom_edges();
-            odr_geom_edges_group.visible = val;
+            road_network_mesh.material.wireframe = val;
             renderer.render(scene, camera);
         });
 
@@ -244,7 +237,7 @@
             const odr_road_network_mesh = OpenDriveMap.get_mesh(PARAMS.resolution);
             road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
             road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
-            road_network_geom.attributes.color.array.fill(0.68);
+            road_network_geom.attributes.color.array.fill(COLORS.road);
             road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
             road_network_mesh = new THREE.Mesh(road_network_geom, road_network_material);
             road_network_mesh.renderOrder = 0;
@@ -269,10 +262,8 @@
             for (const [vert_idx, lane_id] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
                 picking_color.setHex(vert_idx);
                 const vert_idx_interval = odr_road_network_mesh.get_idx_interval_lane(vert_idx);
-                const colors = [];
-                for (let i = vert_idx_interval[0]; i < vert_idx_interval[1]; i++)
-                    colors.push(picking_color.r, picking_color.g, picking_color.b);
-                picking_road_network_geom.attributes.color.array.set(colors, vert_idx_interval[0] * 3);
+                const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
+                applyVertexColors(picking_road_network_geom.attributes.color, picking_color, vert_idx_interval[0], vert_count);
             }
             const picking_mesh = new THREE.Mesh(picking_road_network_geom, picking_material);
             disposable_objs.push(picking_road_network_geom);
@@ -329,18 +320,19 @@
                     if (INTERSECTED != picked_id) {
                         if (INTERSECTED) {
                             const prev_lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED);
-                            road_network_mesh.geometry.attributes.color.array.fill(0.68, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
+                            road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
                         }
                         INTERSECTED = picked_id;
                         const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED);
-                        road_network_mesh.geometry.attributes.color.array.fill(0.9, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
+                        const vert_count = (lane_vert_idx_interval[1] - lane_vert_idx_interval[0]);
+                        applyVertexColors(road_network_mesh.geometry.attributes.color, new THREE.Color(COLORS.lane_highlight), lane_vert_idx_interval[0], vert_count);
                         road_network_mesh.geometry.attributes.color.needsUpdate = true;
                         renderer.render(scene, camera);
                     }
                 } else {
                     if (INTERSECTED) {
                         const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED);
-                        road_network_mesh.geometry.attributes.color.array.fill(0.68, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
+                        road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                         road_network_mesh.geometry.attributes.color.needsUpdate = true;
                         renderer.render(scene, camera);
                     }
@@ -364,6 +356,16 @@
             controls.update();
 
             renderer.render(scene, camera);
+        }
+
+        function applyVertexColors(buffer_attribute, color, offset, count) {
+            const colors = new Float32Array(count * buffer_attribute.itemSize);
+            for (let i = 0; i < (count * buffer_attribute.itemSize); i += buffer_attribute.itemSize) {
+                colors[i] = color.r;
+                colors[i + 1] = color.g;
+                colors[i + 2] = color.b;
+            }
+            buffer_attribute.array.set(colors, offset * buffer_attribute.itemSize);
         }
 
         function onWindowResize() {
