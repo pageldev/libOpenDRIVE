@@ -113,7 +113,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_lane_id", &RoadNetworkMesh::get_lane_id)
         .function("get_idx_interval_road", &RoadNetworkMesh::get_idx_interval_road)
         .function("get_idx_interval_lanesec", &RoadNetworkMesh::get_idx_interval_lanesec)
-        .function("get_idx_interval_lane", &RoadNetworkMesh::get_idx_interval_lane);
+        .function("get_idx_interval_lane", &RoadNetworkMesh::get_idx_interval_lane)
+        .property("road_start_indices", &RoadNetworkMesh::road_start_indices)
+        .property("lanesec_start_indices", &RoadNetworkMesh::lanesec_start_indices)
+        .property("lane_start_indices", &RoadNetworkMesh::lane_start_indices);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool>()
