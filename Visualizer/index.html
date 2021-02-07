@@ -47,7 +47,31 @@
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
+    <script type="x-shader/x-vertex" id="vertexShader">
+        varying vec3 vWorldPosition;
+
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentShader">
+        vec3 topColor = vec3(0.62, 0.62, 0.62);
+        vec3 bottomColor = vec3(0.94, 0.94, 0.94);
+
+        varying vec3 vWorldPosition;
+        void main() {
+            float h = normalize(vWorldPosition).z;
+            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.9 ), 0.0 ) ), 1.0 );
+        }
+    </script>
+
     <script>
+        const vertexShader = document.getElementById('vertexShader').textContent;
+        const fragmentShader = document.getElementById('fragmentShader').textContent;
+
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
             resolution: 0.3,
@@ -55,7 +79,7 @@
             geom_edges: false,
             wireframe: false,
             spotlight: true,
-            fitView: () => { fitView(ref_line_group); },
+            fitView: () => { fitView(refline_lines); },
             lateralProfile: true,
             laneHeight: true,
             reload_map: () => { reload_odr_map(); },
@@ -66,7 +90,7 @@
             road: 0xaeaeae,
             outline: 0x757575,
             ref_line: 0x69f0ae,
-            background: 0xaab6fe,
+            background: 0x444444,
             lane_highlight: 0x0288d1,
             road_highlight: 0x9A9A9A,
             outline_highlight: 0xc158dc,
@@ -84,6 +108,11 @@
             shininess: 15,
             flatShading: true
         });
+        const sky_material = new THREE.ShaderMaterial({
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            side: THREE.BackSide
+        });
     </script>
 
     <script>
@@ -91,9 +120,10 @@
         var disposable_objs = [];
         var mouse = new THREE.Vector2();
 
-        var refline_lines;
-        var road_network_mesh;
-        var lane_outline_lines;
+        var refline_lines = null;
+        var road_network_mesh = null;
+        var lane_outline_lines = null;
+        var sky_dome = null;
 
         var spotlight_info = document.getElementById('spotlight_info');
         window.addEventListener('resize', onWindowResize, false);
@@ -108,7 +138,6 @@
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
-        scene.background = new THREE.Color(COLORS.background);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.BasicShadowMap;
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -124,10 +153,11 @@
         const controls = new THREE.MapControls(camera, renderer.domElement);
         controls.addEventListener('change', () => { renderer.render(scene, camera) });
 
-        const light = new THREE.DirectionalLight(0xffffff, 1, 100);
+        const light = new THREE.DirectionalLight(0xffffff);
         light.position.set(0, 0, 1);
         light.castShadow = true;
         scene.add(light);
+
         renderer.render(scene, camera);
 
         const gui = new dat.GUI();
@@ -138,7 +168,7 @@
 
         var gui_view_folder = gui.addFolder('View');
         gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
-            ref_line_group.visible = val;
+            refline_lines.visible = val;
             renderer.render(scene, camera);
         });
         gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
@@ -162,7 +192,7 @@
         var OpenDriveMap = null;
         libOpenDrive().then(Module => {
             ModuleOpenDrive = Module;
-            fetch("./data.xodr").then((file_data) => {
+            fetch("./eva.xodr").then((file_data) => {
                 file_data.text().then((file_text) => {
                     file_load(file_text, false);
                 });
@@ -191,7 +221,7 @@
         function load_odr_map(clear_map = true, fit_view = true) {
             const t0 = performance.now();
             if (clear_map) {
-                scene.remove(road_network_mesh, refline_lines, lane_outline_lines);
+                scene.remove(road_network_mesh, refline_lines, lane_outline_lines, sky_dome);
                 picking_scene.remove(...picking_scene.children);
                 for (let obj of disposable_objs)
                     obj.dispose();
@@ -248,8 +278,20 @@
             disposable_objs.push(picking_road_network_geom);
             picking_scene.add(picking_mesh);
 
+            /* sky dome */
+            const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
+            const bbox_center_pt = new THREE.Vector3();
+            bbox_reflines.getCenter(bbox_center_pt);
+            const sky_geom = new THREE.SphereGeometry(bbox_reflines.min.distanceTo(bbox_reflines.max) * 3, 32, 15);
+            sky_dome = new THREE.Mesh(sky_geom, sky_material);
+            sky_dome.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
+            disposable_objs.push(sky_geom);
+            scene.add(sky_dome);
+
             if (fit_view)
                 fitView(refline_lines);
+
+            renderer.render(scene, camera);
 
             const t1 = performance.now();
             console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
@@ -264,7 +306,6 @@
                 </div>`;
             notyf.open({ type: 'info', message: info_msg });
 
-            renderer.render(scene, camera);
             spotlight_info.style.display = "none";
             animate();
         }
@@ -319,7 +360,10 @@
 
             camera.position.set(center_pt.x, center_pt.y, bbox.max.z + dz);
             controls.target.set(center_pt.x, center_pt.y, center_pt.z);
+            controls.maxDistance = center_pt.distanceTo(bbox.max) * 2.0;
             controls.update();
+
+            renderer.render(scene, camera);
         }
 
         function onWindowResize() {
