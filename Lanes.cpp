@@ -130,8 +130,10 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
     {
         const double t_inner_brdr = this->inner_border.get(s);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr));
+        out_mesh.st_coordinates.push_back({s, t_inner_brdr});
         const double t_outer_brdr = this->outer_border.get(s);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr));
+        out_mesh.st_coordinates.push_back({s, t_outer_brdr});
     }
 
     const size_t num_pts = out_mesh.vertices.size();

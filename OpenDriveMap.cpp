@@ -361,6 +361,7 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
                 const size_t idx_offset = out_mesh.vertices.size();
                 out_mesh.lane_start_indices[idx_offset] = lane->id;
                 Mesh3D lane_mesh = lane->get_mesh(lanesec->s0, lanesec->get_end(), eps);
+                out_mesh.st_coordinates.insert(out_mesh.st_coordinates.end(), lane_mesh.st_coordinates.begin(), lane_mesh.st_coordinates.end());
                 out_mesh.vertices.insert(out_mesh.vertices.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
                 for (const size_t& idx : lane_mesh.indices)
                     out_mesh.indices.push_back(idx + idx_offset);

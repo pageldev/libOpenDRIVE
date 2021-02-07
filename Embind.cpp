@@ -65,7 +65,10 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("elevation_profile", &RefLine::elevation_profile)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
-    emscripten::class_<Mesh3D>("Mesh3D").property("vertices", &Mesh3D::vertices).property("indices", &Mesh3D::indices);
+    emscripten::class_<Mesh3D>("Mesh3D")
+        .property("vertices", &Mesh3D::vertices)
+        .property("indices", &Mesh3D::indices)
+        .property("st_coordinates", &Mesh3D::st_coordinates);
 
     emscripten::class_<RoadMark>("RoadMark")
         .property("s_start", &RoadMark::s_start)

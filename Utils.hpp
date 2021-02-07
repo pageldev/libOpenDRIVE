@@ -17,6 +17,7 @@ struct Mesh3D
 {
     std::vector<Vec3D>  vertices;
     std::vector<size_t> indices;
+    std::vector<Vec2D>  st_coordinates;
 };
 
 template<class C, class T, T C::*member>
