@@ -59,12 +59,12 @@
 
     <script type="x-shader/x-fragment" id="fragmentShader">
         vec3 topColor = vec3(0.62, 0.62, 0.62);
-        vec3 bottomColor = vec3(0.94, 0.94, 0.94);
+        vec3 bottomColor = vec3(0.90, 0.90, 0.90);
 
         varying vec3 vWorldPosition;
         void main() {
             float h = normalize(vWorldPosition).z;
-            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.9 ), 0.0 ) ), 1.0 );
+            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.8 ), 0.0 ) ), 1.0 );
         }
     </script>
 
@@ -115,7 +115,7 @@
     </script>
 
     <script>
-        var INTERSECTED = null;
+        var INTERSECTED = 0xffffff;
         var disposable_objs = [];
         var mouse = new THREE.Vector2();
 
@@ -273,7 +273,8 @@
             const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
             const bbox_center_pt = new THREE.Vector3();
             bbox_reflines.getCenter(bbox_center_pt);
-            const sky_geom = new THREE.SphereGeometry(bbox_reflines.min.distanceTo(bbox_reflines.max) * 3, 32, 15);
+            const dome_radius = Math.max(bbox_reflines.min.distanceTo(bbox_reflines.max) * 3, 800);
+            const sky_geom = new THREE.SphereGeometry(dome_radius, 32, 15);
             sky_dome = new THREE.Mesh(sky_geom, sky_material);
             sky_dome.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
             disposable_objs.push(sky_geom);
@@ -318,7 +319,7 @@
 
                 if (picked_id != 0xffffff) {
                     if (INTERSECTED != picked_id) {
-                        if (INTERSECTED) {
+                        if (INTERSECTED != 0xffffff) {
                             const prev_lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED);
                             road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
                         }
@@ -330,13 +331,13 @@
                         renderer.render(scene, camera);
                     }
                 } else {
-                    if (INTERSECTED) {
+                    if (INTERSECTED != 0xffffff) {
                         const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED);
                         road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                         road_network_mesh.geometry.attributes.color.needsUpdate = true;
                         renderer.render(scene, camera);
                     }
-                    INTERSECTED = null;
+                    INTERSECTED = 0xffffff;
                 }
             }
         }
