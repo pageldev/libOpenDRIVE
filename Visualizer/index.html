@@ -47,7 +47,24 @@
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 
-    <script type="x-shader/x-vertex" id="vertexShader">
+    <script id="idVertexShader" type="x-shader/x-vertex">
+        attribute vec4 id;
+        varying vec4 vId;
+
+        void main() { 
+            vId = id;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
+
+    <script id="idFragmentShader" type="x-shader/x-vertex">
+        varying vec4 vId;
+        void main() {
+            gl_FragColor = vId;
+        }
+    </script>
+
+    <script id="skyDomeVertexShader" type="x-shader/x-vertex">
         varying vec3 vWorldPosition;
 
         void main() {
@@ -57,7 +74,7 @@
         }
     </script>
 
-    <script type="x-shader/x-fragment" id="fragmentShader">
+    <script id="skyDomeFragmentShader" type="x-shader/x-fragment">
         vec3 topColor = vec3(0.62, 0.62, 0.62);
         vec3 bottomColor = vec3(0.90, 0.90, 0.90);
 
@@ -69,8 +86,10 @@
     </script>
 
     <script>
-        const vertexShader = document.getElementById('vertexShader').textContent;
-        const fragmentShader = document.getElementById('fragmentShader').textContent;
+        const idVertexShader = document.getElementById('idVertexShader').textContent;
+        const idFragmentShader = document.getElementById('idFragmentShader').textContent;
+        const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
+        const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
 
         var PARAMS = {
             load_file: () => { document.getElementById('xodr_file_input').click(); },
@@ -97,7 +116,6 @@
 
         const refline_material = new THREE.LineBasicMaterial({ color: COLORS.ref_line });
         const outlines_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
-        const picking_material = new THREE.MeshBasicMaterial({ vertexColors: true });
         const road_network_material = new THREE.MeshPhongMaterial({
             vertexColors: THREE.VertexColors,
             wireframe: PARAMS.wireframe,
@@ -107,9 +125,13 @@
             shininess: 15,
             flatShading: true
         });
+        const picking_material = new THREE.ShaderMaterial({
+            vertexShader: idVertexShader,
+            fragmentShader: idFragmentShader,
+        });
         const sky_material = new THREE.ShaderMaterial({
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader,
+            vertexShader: skyDomeVertexShader,
+            fragmentShader: skyDomeFragmentShader,
             side: THREE.BackSide
         });
     </script>
@@ -144,7 +166,7 @@
 
         const picking_scene = new THREE.Scene();
         picking_scene.background = new THREE.Color(0xffffff);
-        const picking_texture = new THREE.WebGLRenderTarget(1, 1);
+        const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
         camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
@@ -232,19 +254,35 @@
             disposable_objs.push(reflines_geom);
             scene.add(refline_lines);
 
-            /* road network mesh */
+            /* road network geometry */
             const road_network_geom = new THREE.BufferGeometry();
             const odr_road_network_mesh = OpenDriveMap.get_mesh(PARAMS.resolution);
             road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
             road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
             road_network_geom.attributes.color.array.fill(COLORS.road);
             road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
+            road_network_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 4), 4));
+            for (const [vert_start_idx, lane_id] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
+                const vert_idx_interval = odr_road_network_mesh.get_idx_interval_lane(vert_start_idx);
+                const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
+                const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
+                const attr_arr = new Float32Array(vert_count * 4);
+                for (let i = 0; i < vert_count; i++)
+                    attr_arr.set(vert_start_idx_encoded, i * 4);
+                road_network_geom.attributes.id.array.set(attr_arr, vert_idx_interval[0] * 4);
+            }
+            disposable_objs.push(road_network_geom);
+
+            /* road network mesh */
             road_network_mesh = new THREE.Mesh(road_network_geom, road_network_material);
             road_network_mesh.renderOrder = 0;
             road_network_mesh.receiveShadow = true;
             road_network_mesh.userData = { odr_road_network_mesh };
-            disposable_objs.push(road_network_geom);
             scene.add(road_network_mesh);
+
+            /* picking road network mesh */
+            const picking_mesh = new THREE.Mesh(road_network_geom, picking_material);
+            picking_scene.add(picking_mesh);
 
             /* lane outline */
             const outlines_geom = new THREE.BufferGeometry();
@@ -253,21 +291,6 @@
             lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
             lane_outline_lines.renderOrder = 9;
             scene.add(lane_outline_lines);
-
-            /* picking road network mesh */
-            /* based on examples/webgl_interactive_cubes_gpu.html */
-            /* give the geometry's vertices a color corresponding to the "id" = vertex start idx of lane submesh */
-            const picking_road_network_geom = road_network_geom.clone();
-            const picking_color = new THREE.Color();
-            for (const [vert_idx, lane_id] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
-                picking_color.setHex(vert_idx);
-                const vert_idx_interval = odr_road_network_mesh.get_idx_interval_lane(vert_idx);
-                const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
-                applyVertexColors(picking_road_network_geom.attributes.color, picking_color, vert_idx_interval[0], vert_count);
-            }
-            const picking_mesh = new THREE.Mesh(picking_road_network_geom, picking_material);
-            disposable_objs.push(picking_road_network_geom);
-            picking_scene.add(picking_mesh);
 
             /* sky dome */
             const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
@@ -312,9 +335,9 @@
                 renderer.render(picking_scene, camera);
                 camera.clearViewOffset();
 
-                const pixel_buffer = new Uint8Array(4);
+                const pixel_buffer = new Float32Array(4);
                 renderer.readRenderTargetPixels(picking_texture, 0, 0, 1, 1, pixel_buffer);
-                const picked_id = (pixel_buffer[0] << 16) | (pixel_buffer[1] << 8) | (pixel_buffer[2]); // interpret the pixel as an ID
+                const picked_id = decodeUInt32(pixel_buffer);
                 renderer.setRenderTarget(null);
 
                 if (picked_id != 0xffffff) {
@@ -409,6 +432,22 @@
             if (delete_vec)
                 std_vec.delete();
             return entries;
+        }
+
+        function encodeUInt32(ui32) {
+            rgba = new Float32Array(4);
+            rgba[0] = (Math.trunc(ui32) % 256) / 255.;
+            rgba[1] = (Math.trunc(ui32 / 256) % 256) / 255.;
+            rgba[2] = (Math.trunc(ui32 / 256 / 256) % 256) / 255.;
+            rgba[3] = (Math.trunc(ui32 / 256 / 256 / 256) % 256) / 255.;
+            return rgba;
+        }
+
+        function decodeUInt32(rgba) {
+            return Math.round(rgba[0] * 255) +
+                Math.round(rgba[1] * 255) * 256 +
+                Math.round(rgba[2] * 255) * 256 * 256 +
+                Math.round(rgba[3] * 255) * 256 * 256 * 256;
         }
     </script>
 </body>
