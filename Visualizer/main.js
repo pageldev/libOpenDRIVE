@@ -1,22 +1,16 @@
-const idVertexShader = document.getElementById('idVertexShader').textContent;
-const idFragmentShader = document.getElementById('idFragmentShader').textContent;
-const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
-const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
+/* globals */
+var ModuleOpenDrive = null;
+var OpenDriveMap = null;
+var refline_lines = null;
+var road_network_mesh = null;
+var lane_outline_lines = null;
+var sky_dome = null;
+var disposable_objs = [];
+var mouse = new THREE.Vector2();
+var spotlight_info = document.getElementById('spotlight_info');
+var INTERSECTED = 0xffffff;
 
-var PARAMS = {
-    load_file: () => { document.getElementById('xodr_file_input').click(); },
-    resolution: 0.3,
-    ref_line: true,
-    wireframe: false,
-    spotlight: true,
-    fitView: () => { fitView(refline_lines); },
-    lateralProfile: true,
-    laneHeight: true,
-    reload_map: () => { reload_odr_map(); },
-    selected_road_id: null,
-};
-
-var COLORS = {
+const COLORS = {
     road: 0.68,
     outline: 0x757575,
     ref_line: 0x69f0ae,
@@ -26,8 +20,52 @@ var COLORS = {
     outline_highlight: 0xc158dc,
 };
 
-const refline_material = new THREE.LineBasicMaterial({ color: COLORS.ref_line });
-const outlines_material = new THREE.LineBasicMaterial({ color: COLORS.outline });
+/* event listeners */
+window.addEventListener('resize', onWindowResize, false);
+window.addEventListener('mousemove', onDocumentMouseMove, false);
+window.addEventListener('dblclick', onDocumentMouseDbClick, false);
+
+/* notifactions */
+const notyf = new Notyf({
+    duration: 3000,
+    position: { x: 'right', y: 'bottom' },
+    types: [{ type: 'info', background: '#607d8b', icon: false }]
+});
+
+/* THREEJS renderer */
+const renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('ThreeJS').appendChild(renderer.domElement);
+
+/* THREEJS globals */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
+const controls = new THREE.MapControls(camera, renderer.domElement);
+controls.addEventListener('change', () => { renderer.render(scene, camera) });
+
+/* THREEJS lights */
+const light = new THREE.DirectionalLight(0xffffff);
+light.position.set(0, 0, 1);
+light.castShadow = true;
+scene.add(light);
+
+/* THREEJS auxiliary globals */
+const picking_scene = new THREE.Scene();
+picking_scene.background = new THREE.Color(0xffffff);
+const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
+
+/* THREEJS materials */
+const idVertexShader = document.getElementById('idVertexShader').textContent;
+const idFragmentShader = document.getElementById('idFragmentShader').textContent;
+const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
+const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
+
+const refline_material = new THREE.LineBasicMaterial({
+    color: COLORS.ref_line
+});
 const road_network_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
@@ -36,6 +74,9 @@ const road_network_material = new THREE.MeshPhongMaterial({
     polygonOffsetUnits: 1,
     shininess: 15,
     flatShading: true
+});
+const outlines_material = new THREE.LineBasicMaterial({
+    color: COLORS.outline
 });
 const picking_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
@@ -47,74 +88,9 @@ const sky_material = new THREE.ShaderMaterial({
     side: THREE.BackSide
 });
 
-var INTERSECTED = 0xffffff;
-var disposable_objs = [];
-var mouse = new THREE.Vector2();
-
-var refline_lines = null;
-var road_network_mesh = null;
-var lane_outline_lines = null;
-var sky_dome = null;
-
-var spotlight_info = document.getElementById('spotlight_info');
-window.addEventListener('resize', onWindowResize, false);
-window.addEventListener('mousemove', onDocumentMouseMove, false);
-window.addEventListener('dblclick', onDocumentMouseDbClick, false);
-
-const notyf = new Notyf({
-    duration: 3000,
-    position: { x: 'right', y: 'bottom' },
-    types: [{ type: 'info', background: '#607d8b', icon: false }]
-});
-
-const scene = new THREE.Scene();
-const renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.BasicShadowMap;
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.getElementById('ThreeJS').appendChild(renderer.domElement);
-
-const picking_scene = new THREE.Scene();
-picking_scene.background = new THREE.Color(0xffffff);
-const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
-camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
-
-const controls = new THREE.MapControls(camera, renderer.domElement);
-controls.addEventListener('change', () => { renderer.render(scene, camera) });
-
-const light = new THREE.DirectionalLight(0xffffff);
-light.position.set(0, 0, 1);
-light.castShadow = true;
-scene.add(light);
-
 renderer.render(scene, camera);
 
-const gui = new dat.GUI();
-gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.02 }).name('📏  Detail').onChange((val) => { load_odr_map(true, false); });
-gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
-gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
-
-var gui_view_folder = gui.addFolder('View');
-gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
-    refline_lines.visible = val;
-    renderer.render(scene, camera);
-});
-gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
-    light.intensity = Number(!val);
-    road_network_mesh.material.wireframe = val;
-    renderer.render(scene, camera);
-});
-
-var gui_attributes_folder = gui.addFolder('Load Attributes');
-gui_attributes_folder.add(PARAMS, 'lateralProfile').name("Lateral Profile");
-gui_attributes_folder.add(PARAMS, 'laneHeight').name("Lane Height");
-gui_attributes_folder.add(PARAMS, 'reload_map').name("Reload Map");
-
-var ModuleOpenDrive = null;
-var OpenDriveMap = null;
+/* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
     fetch("./eva.xodr").then((file_data) => {
@@ -302,21 +278,6 @@ function applyVertexColors(buffer_attribute, color, offset, count) {
     buffer_attribute.array.set(colors, offset * buffer_attribute.itemSize);
 }
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function onDocumentMouseMove(event) {
-    event.preventDefault();
-    mouse.x = event.clientX;
-    mouse.y = event.clientY;
-}
-
-function onDocumentMouseDbClick(event) {
-}
-
 function get_std_map_keys(std_map, delete_map = false) {
     let map_keys = [];
     const map_keys_vec = std_map.keys();
@@ -358,4 +319,19 @@ function decodeUInt32(rgba) {
         Math.round(rgba[1] * 255) * 256 +
         Math.round(rgba[2] * 255) * 256 * 256 +
         Math.round(rgba[3] * 255) * 256 * 256 * 256;
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onDocumentMouseMove(event) {
+    event.preventDefault();
+    mouse.x = event.clientX;
+    mouse.y = event.clientY;
+}
+
+function onDocumentMouseDbClick(event) {
 }
