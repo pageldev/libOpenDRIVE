@@ -1,7 +1,7 @@
 .SUFFIXES:
 
 CC = g++
-CFLAGS = -std=c++14 -g -O3 -Wall $(INCLUDE_DIRS)
+CFLAGS = -std=c++14 -O3 -Wall $(INCLUDE_DIRS)
 INCLUDE_DIRS = -I./ -I./$(THIRDPARTY_DIR)
 THIRDPARTY_DIR = Thirdparty
 BUILD_DIR = build/x64

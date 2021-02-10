@@ -110,7 +110,7 @@ renderer.render(scene, camera);
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./eva.xodr").then((file_data) => {
+    fetch("./data.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             file_load(file_text, false);
         });
