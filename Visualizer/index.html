@@ -26,7 +26,7 @@
             position: absolute;
             bottom: 1em;
             left: 1em;
-            color: black;
+            color: #546e7a;
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
@@ -52,6 +52,23 @@
         
         void main() {
             gl_FragColor = vId;
+        }
+    </script>
+
+    <script id="xyzVertexShader" type="x-shader/x-vertex">
+        varying vec3 vXYZ;
+
+        void main() { 
+            vXYZ = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }
+    </script>
+
+    <script id="xyzFragmentShader" type="x-shader/x-vertex">
+        varying vec3 vXYZ;
+        
+        void main() {
+            gl_FragColor = vec4(vXYZ, 1.0);
         }
     </script>
 

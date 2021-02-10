@@ -55,14 +55,19 @@ scene.add(light);
 /* THREEJS auxiliary globals */
 const picking_scene = new THREE.Scene();
 picking_scene.background = new THREE.Color(0xffffff);
+const xyz_scene = new THREE.Scene();
+xyz_scene.background = new THREE.Color(0xffffff);
 const st_scene = new THREE.Scene();
 st_scene.background = new THREE.Color(0xffffff);
 const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
+const xyz_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 const st_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 
 /* THREEJS materials */
 const idVertexShader = document.getElementById('idVertexShader').textContent;
 const idFragmentShader = document.getElementById('idFragmentShader').textContent;
+const xyzVertexShader = document.getElementById('xyzVertexShader').textContent;
+const xyzFragmentShader = document.getElementById('xyzFragmentShader').textContent;
 const stVertexShader = document.getElementById('stVertexShader').textContent;
 const stFragmentShader = document.getElementById('stFragmentShader').textContent;
 const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
@@ -86,6 +91,10 @@ const outlines_material = new THREE.LineBasicMaterial({
 const picking_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
     fragmentShader: idFragmentShader,
+});
+const xyz_material = new THREE.ShaderMaterial({
+    vertexShader: xyzVertexShader,
+    fragmentShader: xyzFragmentShader,
 });
 const st_material = new THREE.ShaderMaterial({
     vertexShader: stVertexShader,
@@ -180,6 +189,10 @@ function load_odr_map(clear_map = true, fit_view = true) {
     const picking_mesh = new THREE.Mesh(road_network_geom, picking_material);
     picking_scene.add(picking_mesh);
 
+    /* xyz coords road network mesh */
+    const xyz_mesh = new THREE.Mesh(road_network_geom, xyz_material);
+    xyz_scene.add(xyz_mesh);
+
     /* st coords road network mesh */
     const st_mesh = new THREE.Mesh(road_network_geom, st_material);
     st_scene.add(st_mesh);
@@ -232,11 +245,15 @@ function animate() {
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
         renderer.setRenderTarget(picking_texture);
         renderer.render(picking_scene, camera);
+        renderer.setRenderTarget(xyz_texture);
+        renderer.render(xyz_scene, camera);
         renderer.setRenderTarget(st_texture);
         renderer.render(st_scene, camera);
 
         const id_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(picking_texture, 0, 0, 1, 1, id_pixel_buffer);
+        const xyz_pixel_buffer = new Float32Array(4);
+        renderer.readRenderTargetPixels(xyz_texture, 0, 0, 1, 1, xyz_pixel_buffer);
         const st_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(st_texture, 0, 0, 1, 1, st_pixel_buffer);
 
@@ -279,6 +296,7 @@ function animate() {
                         <tr><th>section s0</th><th>${lanesec_s0.toFixed(2)}</th></tr>
                         <tr><th>lane</th><th>${lane_id} <span style="color:gray;">${lane_id}</span></th></tr>
                         <tr><th>s/t</th><th>[${st_pixel_buffer[0].toFixed(2)}, ${st_pixel_buffer[1].toFixed(2)}]</th>
+                        <tr><th>world</th><th>[${xyz_pixel_buffer[0].toFixed(2)}, ${xyz_pixel_buffer[1].toFixed(2)}, ${xyz_pixel_buffer[2].toFixed(2)}]</th></tr>
                     </table>`;
         }
     }
