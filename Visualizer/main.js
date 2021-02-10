@@ -55,11 +55,16 @@ scene.add(light);
 /* THREEJS auxiliary globals */
 const picking_scene = new THREE.Scene();
 picking_scene.background = new THREE.Color(0xffffff);
+const st_scene = new THREE.Scene();
+st_scene.background = new THREE.Color(0xffffff);
 const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
+const st_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 
 /* THREEJS materials */
 const idVertexShader = document.getElementById('idVertexShader').textContent;
 const idFragmentShader = document.getElementById('idFragmentShader').textContent;
+const stVertexShader = document.getElementById('stVertexShader').textContent;
+const stFragmentShader = document.getElementById('stFragmentShader').textContent;
 const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
 const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
 
@@ -81,6 +86,10 @@ const outlines_material = new THREE.LineBasicMaterial({
 const picking_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
     fragmentShader: idFragmentShader,
+});
+const st_material = new THREE.ShaderMaterial({
+    vertexShader: stVertexShader,
+    fragmentShader: stFragmentShader,
 });
 const sky_material = new THREE.ShaderMaterial({
     vertexShader: skyDomeVertexShader,
@@ -144,11 +153,12 @@ function load_odr_map(clear_map = true, fit_view = true) {
     const road_network_geom = new THREE.BufferGeometry();
     const odr_road_network_mesh = OpenDriveMap.get_mesh(PARAMS.resolution);
     road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
+    road_network_geom.setAttribute('st', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.st_coordinates, true).flat(), 2));
     road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
+    road_network_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 4), 4));
     road_network_geom.attributes.color.array.fill(COLORS.road);
     road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
-    road_network_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 4), 4));
-    for (const [vert_start_idx, lane_id] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
+    for (const [vert_start_idx, _] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
         const vert_idx_interval = odr_road_network_mesh.get_idx_interval_lane(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
         const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
@@ -169,6 +179,10 @@ function load_odr_map(clear_map = true, fit_view = true) {
     /* picking road network mesh */
     const picking_mesh = new THREE.Mesh(road_network_geom, picking_material);
     picking_scene.add(picking_mesh);
+
+    /* st coords road network mesh */
+    const st_mesh = new THREE.Mesh(road_network_geom, st_material);
+    st_scene.add(st_mesh);
 
     /* lane outline */
     const outlines_geom = new THREE.BufferGeometry();
@@ -215,13 +229,18 @@ function animate() {
     requestAnimationFrame(animate);
 
     if (PARAMS.spotlight) {
-        renderer.setRenderTarget(picking_texture);
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
+        renderer.setRenderTarget(picking_texture);
         renderer.render(picking_scene, camera);
-        camera.clearViewOffset();
+        renderer.setRenderTarget(st_texture);
+        renderer.render(st_scene, camera);
 
         const id_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(picking_texture, 0, 0, 1, 1, id_pixel_buffer);
+        const st_pixel_buffer = new Float32Array(4);
+        renderer.readRenderTargetPixels(st_texture, 0, 0, 1, 1, st_pixel_buffer);
+
+        camera.clearViewOffset();
         renderer.setRenderTarget(null);
 
         if (isValid(id_pixel_buffer)) {
