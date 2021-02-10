@@ -18,7 +18,7 @@ gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
 gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
 
 var gui_view_folder = gui.addFolder('View');
-gui_view_folder.add(PARAMS, 'view_mode', { default: 'default', 'lane id': 'id', 'st coordinates': 'st' }).name("View Mode").onChange((val) => {
+gui_view_folder.add(PARAMS, 'view_mode', { default: 'default', 'lane id': 'id' }).name("View Mode").onChange((val) => {
     if (val == 'id') {
         road_network_mesh.material = id_material;
     } else {
