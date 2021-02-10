@@ -4,7 +4,7 @@ var PARAMS = {
     ref_line: true,
     wireframe: false,
     spotlight: true,
-    fitView: () => { fitView(refline_lines); },
+    fitView: () => { fitViewToObj(refline_lines); },
     lateralProfile: true,
     laneHeight: true,
     reload_map: () => { reload_odr_map(); },

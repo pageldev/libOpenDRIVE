@@ -12,12 +12,10 @@ var INTERSECTED_ID = 0xffffffff;
 
 const COLORS = {
     road: 0.68,
-    outline: 0x757575,
+    outline: 0.45,
     ref_line: 0x69f0ae,
     background: 0x444444,
     lane_highlight: 0x0288d1,
-    road_highlight: 0x9A9A9A,
-    outline_highlight: 0xc158dc,
 };
 
 /* event listeners */
@@ -86,7 +84,7 @@ const road_network_material = new THREE.MeshPhongMaterial({
     flatShading: true
 });
 const outlines_material = new THREE.LineBasicMaterial({
-    color: COLORS.outline
+    vertexColors: THREE.VertexColors,
 });
 const picking_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
@@ -200,6 +198,8 @@ function load_odr_map(clear_map = true, fit_view = true) {
     /* lane outline */
     const outlines_geom = new THREE.BufferGeometry();
     outlines_geom.setAttribute('position', road_network_geom.attributes.position);
+    outlines_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(outlines_geom.attributes.position.count * 3), 3));
+    outlines_geom.attributes.color.array.fill(COLORS.outline);
     outlines_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.get_lane_outline_indices(), true));
     lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
     lane_outline_lines.renderOrder = 9;
@@ -217,7 +217,7 @@ function load_odr_map(clear_map = true, fit_view = true) {
     scene.add(sky_dome);
 
     if (fit_view)
-        fitView(refline_lines);
+        fitViewToObj(refline_lines);
 
     renderer.render(scene, camera);
 
@@ -302,8 +302,7 @@ function animate() {
     }
 }
 
-function fitView(obj) {
-    const bbox = new THREE.Box3().setFromObject(obj);
+function fitViewToBbox(bbox, restrict_zoom = true) {
     let center_pt = new THREE.Vector3();
     bbox.getCenter(center_pt);
 
@@ -313,10 +312,16 @@ function fitView(obj) {
 
     camera.position.set(center_pt.x, center_pt.y, bbox.max.z + dz);
     controls.target.set(center_pt.x, center_pt.y, center_pt.z);
-    controls.maxDistance = center_pt.distanceTo(bbox.max) * 2.0;
+    if (restrict_zoom)
+        controls.maxDistance = center_pt.distanceTo(bbox.max) * 2.0;
     controls.update();
 
     renderer.render(scene, camera);
+}
+
+function fitViewToObj(obj) {
+    const bbox = new THREE.Box3().setFromObject(obj);
+    fitViewToBbox(bbox);
 }
 
 function applyVertexColors(buffer_attribute, color, offset, count) {
@@ -388,5 +393,13 @@ function onDocumentMouseMove(event) {
     mouse.y = event.clientY;
 }
 
-function onDocumentMouseDbClick(event) {
+function onDocumentMouseDbClick(e) {
+    if (INTERSECTED_ID != 0xffffffff) {
+        const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED_ID);
+        const vertA = road_network_mesh.userData.odr_road_network_mesh.vertices.get(lane_vert_idx_interval[0]);
+        const vertB = road_network_mesh.userData.odr_road_network_mesh.vertices.get(lane_vert_idx_interval[1] - 1);
+        const bbox = new THREE.Box3();
+        bbox.setFromArray([vertA, vertB].flat());
+        fitViewToBbox(bbox, false);
+    }
 }
