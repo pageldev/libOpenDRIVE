@@ -74,7 +74,7 @@ const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').t
 const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line
 });
-const road_network_material = new THREE.MeshPhongMaterial({
+const default_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
     polygonOffset: true,
@@ -86,7 +86,7 @@ const road_network_material = new THREE.MeshPhongMaterial({
 const outlines_material = new THREE.LineBasicMaterial({
     vertexColors: THREE.VertexColors,
 });
-const picking_material = new THREE.ShaderMaterial({
+const id_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
     fragmentShader: idFragmentShader,
 });
@@ -103,6 +103,7 @@ const sky_material = new THREE.ShaderMaterial({
     fragmentShader: skyDomeFragmentShader,
     side: THREE.BackSide
 });
+var road_network_material = default_material;
 
 renderer.render(scene, camera);
 
@@ -185,7 +186,7 @@ function load_odr_map(clear_map = true, fit_view = true) {
     scene.add(road_network_mesh);
 
     /* picking road network mesh */
-    const picking_mesh = new THREE.Mesh(road_network_geom, picking_material);
+    const picking_mesh = new THREE.Mesh(road_network_geom, id_material);
     picking_scene.add(picking_mesh);
 
     /* xyz coords road network mesh */

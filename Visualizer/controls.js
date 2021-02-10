@@ -8,6 +8,7 @@ var PARAMS = {
     lateralProfile: true,
     laneHeight: true,
     reload_map: () => { reload_odr_map(); },
+    view_mode: 'default',
 };
 
 const gui = new dat.GUI();
@@ -17,6 +18,15 @@ gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
 gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
 
 var gui_view_folder = gui.addFolder('View');
+gui_view_folder.add(PARAMS, 'view_mode', { default: 'default', 'lane id': 'id', 'st coordinates': 'st' }).name("View Mode").onChange((val) => {
+    if (val == 'id') {
+        road_network_mesh.material = id_material;
+    } else {
+        road_network_mesh.material = default_material;
+    }
+    road_network_material = road_network_mesh.material;
+    renderer.render(scene, camera);
+});
 gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
     refline_lines.visible = val;
     renderer.render(scene, camera);
