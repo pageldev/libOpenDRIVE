@@ -148,17 +148,18 @@ function load_odr_map(clear_map = true, fit_view = true) {
 
     /* reflines */
     const reflines_geom = new THREE.BufferGeometry();
-    const odr_refline_segments = OpenDriveMap.get_refline_segments(PARAMS.resolution);
+    const odr_refline_segments = OpenDriveMap.get_refline_segments(parseFloat(PARAMS.resolution));
     reflines_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_refline_segments.vertices).flat(), 3));
     reflines_geom.setIndex(get_std_vec_entries(odr_refline_segments.indices, true));
     refline_lines = new THREE.LineSegments(reflines_geom, refline_material);
     refline_lines.renderOrder = 10;
+    refline_lines.visible = PARAMS.ref_line;
     disposable_objs.push(reflines_geom);
     scene.add(refline_lines);
 
     /* road network geometry */
     const road_network_geom = new THREE.BufferGeometry();
-    const odr_road_network_mesh = OpenDriveMap.get_mesh(PARAMS.resolution);
+    const odr_road_network_mesh = OpenDriveMap.get_mesh(parseFloat(PARAMS.resolution));
     road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
     road_network_geom.setAttribute('st', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.st_coordinates, true).flat(), 2));
     road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));

@@ -26,7 +26,6 @@
             position: absolute;
             bottom: 1em;
             left: 1em;
-            color: #546e7a;
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
@@ -101,13 +100,13 @@
     </script>
 
     <script id="skyDomeFragmentShader" type="x-shader/x-fragment">
-        vec3 topColor = vec3(0.62, 0.62, 0.62);
-        vec3 bottomColor = vec3(0.90, 0.90, 0.90);
+        vec3 topColor = vec3(0.90, 0.90, 0.90);
+        vec3 bottomColor = vec3(0.62, 0.66, 0.85);
 
         varying vec3 vWorldPosition;
         void main() {
             float h = normalize(vWorldPosition).z;
-            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.8 ), 0.0 ) ), 1.0 );
+            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.7 ), 0.0 ) ), 1.0 );
         }
     </script>
 
