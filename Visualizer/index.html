@@ -26,10 +26,7 @@
             position: absolute;
             bottom: 1em;
             left: 1em;
-            text-align: left;
-            font-family: monospace;
-            display: block;
-            color: whitesmoke;
+            color: black;
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
@@ -37,7 +34,7 @@
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-    <div class="bottom_info" id="spotlight_info"></div>
+    <div class="popup_info bottom_info" id="spotlight_info"></div>
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="on_file_select(this.files[0])" />
 
     <script id="idVertexShader" type="x-shader/x-vertex">

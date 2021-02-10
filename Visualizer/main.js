@@ -8,7 +8,7 @@ var sky_dome = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
 var spotlight_info = document.getElementById('spotlight_info');
-var INTERSECTED_ID = null;
+var INTERSECTED_ID = 0xffffffff;
 
 const COLORS = {
     road: 0.68,
@@ -246,7 +246,7 @@ function animate() {
         if (isValid(id_pixel_buffer)) {
             const decoded_id = decodeUInt32(id_pixel_buffer);
             if (INTERSECTED_ID != decoded_id) {
-                if (INTERSECTED_ID) {
+                if (INTERSECTED_ID != 0xffffffff) {
                     const prev_lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED_ID);
                     road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
                 }
@@ -256,15 +256,30 @@ function animate() {
                 applyVertexColors(road_network_mesh.geometry.attributes.color, new THREE.Color(COLORS.lane_highlight), lane_vert_idx_interval[0], vert_count);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
                 renderer.render(scene, camera);
+                spotlight_info.style.display = "block";
             }
         } else {
-            if (INTERSECTED_ID) {
+            if (INTERSECTED_ID != 0xffffffff) {
                 const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED_ID);
                 road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
                 renderer.render(scene, camera);
             }
-            INTERSECTED_ID = null;
+            INTERSECTED_ID = 0xffffffff;
+            spotlight_info.style.display = "none";
+        }
+
+        if (INTERSECTED_ID != 0xffffffff) {
+            const road_id = road_network_mesh.userData.odr_road_network_mesh.get_road_id(INTERSECTED_ID);
+            const lanesec_s0 = road_network_mesh.userData.odr_road_network_mesh.get_lanesec_s0(INTERSECTED_ID);
+            const lane_id = road_network_mesh.userData.odr_road_network_mesh.get_lane_id(INTERSECTED_ID);
+            spotlight_info.innerHTML = `
+                    <table>
+                        <tr><th>road id</th><th>${road_id}</th></tr>
+                        <tr><th>section s0</th><th>${lanesec_s0.toFixed(2)}</th></tr>
+                        <tr><th>lane</th><th>${lane_id} <span style="color:gray;">${lane_id}</span></th></tr>
+                        <tr><th>s/t</th><th>[${st_pixel_buffer[0].toFixed(2)}, ${st_pixel_buffer[1].toFixed(2)}]</th>
+                    </table>`;
         }
     }
 }
