@@ -291,11 +291,12 @@ function animate() {
             const road_id = road_network_mesh.userData.odr_road_network_mesh.get_road_id(INTERSECTED_ID);
             const lanesec_s0 = road_network_mesh.userData.odr_road_network_mesh.get_lanesec_s0(INTERSECTED_ID);
             const lane_id = road_network_mesh.userData.odr_road_network_mesh.get_lane_id(INTERSECTED_ID);
+            const lane_type = OpenDriveMap.roads.get(road_id).s_to_lanesection.get(lanesec_s0).id_to_lane.get(lane_id).type;
             spotlight_info.innerHTML = `
                     <table>
                         <tr><th>road id</th><th>${road_id}</th></tr>
                         <tr><th>section s0</th><th>${lanesec_s0.toFixed(2)}</th></tr>
-                        <tr><th>lane</th><th>${lane_id} <span style="color:gray;">${lane_id}</span></th></tr>
+                        <tr><th>lane</th><th>${lane_id} <span style="color:gray;">${lane_type}</span></th></tr>
                         <tr><th>s/t</th><th>[${st_pixel_buffer[0].toFixed(2)}, ${st_pixel_buffer[1].toFixed(2)}]</th>
                         <tr><th>world</th><th>[${xyz_pixel_buffer[0].toFixed(2)}, ${xyz_pixel_buffer[1].toFixed(2)}, ${xyz_pixel_buffer[2].toFixed(2)}]</th></tr>
                     </table>`;
