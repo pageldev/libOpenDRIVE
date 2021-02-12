@@ -43,7 +43,6 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
 const controls = new THREE.MapControls(camera, renderer.domElement);
 controls.addEventListener('start', () => { spotlight_paused = true; });
-controls.addEventListener('change', () => { renderer.render(scene, camera) });
 controls.addEventListener('end', () => { spotlight_paused = false; });
 
 /* THREEJS lights */
@@ -231,8 +230,6 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     if (fit_view)
         fitViewToObj(refline_lines);
 
-    renderer.render(scene, camera);
-
     const t1 = performance.now();
     console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
     const info_msg = `
@@ -251,7 +248,9 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 }
 
 function animate() {
-    requestAnimationFrame(animate);
+    setTimeout(function () {
+        requestAnimationFrame(animate);
+    }, 1000 / 40);
 
     if (PARAMS.spotlight && !spotlight_paused) {
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
@@ -284,7 +283,6 @@ function animate() {
                 const vert_count = (lane_vert_idx_interval[1] - lane_vert_idx_interval[0]);
                 applyVertexColors(road_network_mesh.geometry.attributes.color, new THREE.Color(COLORS.lane_highlight), lane_vert_idx_interval[0], vert_count);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
-                renderer.render(scene, camera);
                 spotlight_info.style.display = "block";
             }
         } else {
@@ -292,7 +290,6 @@ function animate() {
                 const lane_vert_idx_interval = road_network_mesh.userData.odr_road_network_mesh.get_idx_interval_lane(INTERSECTED_ID);
                 road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
-                renderer.render(scene, camera);
             }
             INTERSECTED_ID = 0xffffffff;
             spotlight_info.style.display = "none";
@@ -313,6 +310,8 @@ function animate() {
                     </table>`;
         }
     }
+
+    renderer.render(scene, camera);
 }
 
 function fitViewToBbox(bbox, restrict_zoom = true) {
@@ -328,8 +327,6 @@ function fitViewToBbox(bbox, restrict_zoom = true) {
     if (restrict_zoom)
         controls.maxDistance = center_pt.distanceTo(bbox.max) * 2.0;
     controls.update();
-
-    renderer.render(scene, camera);
 }
 
 function fitViewToObj(obj) {
