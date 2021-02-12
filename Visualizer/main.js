@@ -9,6 +9,7 @@ var disposable_objs = [];
 var mouse = new THREE.Vector2();
 var spotlight_info = document.getElementById('spotlight_info');
 var INTERSECTED_ID = 0xffffffff;
+var spotlight_paused = false;
 
 const COLORS = {
     road: 0.68,
@@ -33,7 +34,6 @@ const notyf = new Notyf({
 /* THREEJS renderer */
 const renderer = new THREE.WebGLRenderer({ antialias: true, sortObjects: false });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('ThreeJS').appendChild(renderer.domElement);
 
@@ -42,12 +42,13 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
 camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
 const controls = new THREE.MapControls(camera, renderer.domElement);
+controls.addEventListener('start', () => { spotlight_paused = true; });
 controls.addEventListener('change', () => { renderer.render(scene, camera) });
+controls.addEventListener('end', () => { spotlight_paused = false; });
 
 /* THREEJS lights */
 const light = new THREE.DirectionalLight(0xffffff);
 light.position.set(0, 0, 1);
-light.castShadow = true;
 scene.add(light);
 
 /* THREEJS auxiliary globals */
@@ -102,12 +103,10 @@ const sky_material = new THREE.ShaderMaterial({
     side: THREE.BackSide
 });
 
-renderer.render(scene, camera);
-
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./synth4.xodr").then((file_data) => {
+    fetch("./data.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             loadFile(file_text, false);
         });
@@ -184,8 +183,8 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     /* road network mesh */
     road_network_mesh = new THREE.Mesh(road_network_geom, road_network_material);
     road_network_mesh.renderOrder = 0;
-    road_network_mesh.receiveShadow = true;
     road_network_mesh.userData = { odr_road_network_mesh };
+    road_network_mesh.matrixAutoUpdate = false;
     scene.add(road_network_mesh);
 
     /* picking road network mesh */
@@ -254,7 +253,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 function animate() {
     requestAnimationFrame(animate);
 
-    if (PARAMS.spotlight) {
+    if (PARAMS.spotlight && !spotlight_paused) {
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
         renderer.setRenderTarget(picking_texture);
         renderer.render(picking_scene, camera);
