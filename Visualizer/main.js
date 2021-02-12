@@ -72,14 +72,12 @@ const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textC
 const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
 
 const refline_material = new THREE.LineBasicMaterial({
-    color: COLORS.ref_line
+    color: COLORS.ref_line,
+    depthTest: false,
 });
 const default_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
-    polygonOffset: true,
-    polygonOffsetFactor: 20,
-    polygonOffsetUnits: 1,
     shininess: 15,
     flatShading: true
 });
@@ -110,7 +108,7 @@ renderer.render(scene, camera);
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./data.xodr").then((file_data) => {
+    fetch("./synth4.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             file_load(file_text, false);
         });
@@ -217,6 +215,8 @@ function load_odr_map(clear_map = true, fit_view = true) {
     sky_dome.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
     disposable_objs.push(sky_geom);
     scene.add(sky_dome);
+
+    camera.far = dome_radius * 1.5;
 
     if (fit_view)
         fitViewToObj(refline_lines);
