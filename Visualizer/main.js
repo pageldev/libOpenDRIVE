@@ -75,7 +75,7 @@ const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line,
     depthTest: false,
 });
-const default_material = new THREE.MeshPhongMaterial({
+const road_network_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
     shininess: 15,
@@ -101,7 +101,6 @@ const sky_material = new THREE.ShaderMaterial({
     fragmentShader: skyDomeFragmentShader,
     side: THREE.BackSide
 });
-var road_network_material = default_material;
 
 renderer.render(scene, camera);
 
@@ -110,46 +109,47 @@ libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
     fetch("./synth4.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
-            file_load(file_text, false);
+            loadFile(file_text, false);
         });
     });
 });
 
-function file_load(file_text, clear_map) {
+function loadFile(file_text, clear_map) {
     if (clear_map)
         ModuleOpenDrive['FS_unlink']('./data.xodr');
     ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
     OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight);
-    load_odr_map(clear_map);
+    loadOdrMap(clear_map);
 }
 
-function on_file_select(file) {
+function onFileSelect(file) {
     let file_reader = new FileReader();
-    file_reader.onload = () => { file_load(file_reader.result, true); }
+    file_reader.onload = () => { loadFile(file_reader.result, true); }
     file_reader.readAsText(file);
 }
 
-function reload_odr_map() {
+function reloadOdrMap() {
     OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight);
-    load_odr_map(true, false);
+    loadOdrMap(true, false);
 }
 
-function load_odr_map(clear_map = true, fit_view = true) {
+function loadOdrMap(clear_map = true, fit_view = true) {
     const t0 = performance.now();
     if (clear_map) {
+        road_network_mesh.userData.odr_road_network_mesh.delete();
         scene.remove(road_network_mesh, refline_lines, lane_outline_lines, sky_dome);
         picking_scene.remove(...picking_scene.children);
+        xyz_scene.remove(...xyz_scene.children);
+        st_scene.remove(...st_scene.children);
         for (let obj of disposable_objs)
             obj.dispose();
     }
 
-    const odr_roads = OpenDriveMap.roads;
-
     /* reflines */
     const reflines_geom = new THREE.BufferGeometry();
     const odr_refline_segments = OpenDriveMap.get_refline_segments(parseFloat(PARAMS.resolution));
-    reflines_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_refline_segments.vertices).flat(), 3));
-    reflines_geom.setIndex(get_std_vec_entries(odr_refline_segments.indices, true));
+    reflines_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_refline_segments.vertices).flat(), 3));
+    reflines_geom.setIndex(getStdVecEntries(odr_refline_segments.indices, true));
     refline_lines = new THREE.LineSegments(reflines_geom, refline_material);
     refline_lines.renderOrder = 10;
     refline_lines.visible = PARAMS.ref_line;
@@ -159,13 +159,13 @@ function load_odr_map(clear_map = true, fit_view = true) {
     /* road network geometry */
     const road_network_geom = new THREE.BufferGeometry();
     const odr_road_network_mesh = OpenDriveMap.get_mesh(parseFloat(PARAMS.resolution));
-    road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.vertices, true).flat(), 3));
-    road_network_geom.setAttribute('st', new THREE.Float32BufferAttribute(get_std_vec_entries(odr_road_network_mesh.st_coordinates, true).flat(), 2));
+    road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_road_network_mesh.vertices, true).flat(), 3));
+    road_network_geom.setAttribute('st', new THREE.Float32BufferAttribute(getStdVecEntries(odr_road_network_mesh.st_coordinates, true).flat(), 2));
     road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
     road_network_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 4), 4));
     road_network_geom.attributes.color.array.fill(COLORS.road);
-    road_network_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.indices, true));
-    for (const [vert_start_idx, _] of get_std_map_entries(odr_road_network_mesh.lane_start_indices)) {
+    road_network_geom.setIndex(getStdVecEntries(odr_road_network_mesh.indices, true));
+    for (const [vert_start_idx, _] of getStdMapEntries(odr_road_network_mesh.lane_start_indices)) {
         const vert_idx_interval = odr_road_network_mesh.get_idx_interval_lane(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
         const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
@@ -200,9 +200,10 @@ function load_odr_map(clear_map = true, fit_view = true) {
     outlines_geom.setAttribute('position', road_network_geom.attributes.position);
     outlines_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(outlines_geom.attributes.position.count * 3), 3));
     outlines_geom.attributes.color.array.fill(COLORS.outline);
-    outlines_geom.setIndex(get_std_vec_entries(odr_road_network_mesh.get_lane_outline_indices(), true));
+    outlines_geom.setIndex(getStdVecEntries(odr_road_network_mesh.get_lane_outline_indices(), true));
     lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
     lane_outline_lines.renderOrder = 9;
+    disposable_objs.push(outlines_geom);
     scene.add(lane_outline_lines);
 
     /* sky dome */
@@ -230,7 +231,7 @@ function load_odr_map(clear_map = true, fit_view = true) {
         <h3>Finished loading</h3>
         <table>
             <tr><th>Time</th><th>${((t1 - t0) / 1e3).toFixed(2)}s</th></tr>
-            <tr><th>Num Roads</th><th>${odr_roads.size()}</th></tr>
+            <tr><th>Num Roads</th><th>${OpenDriveMap.roads.size()}</th></tr>
             <tr><th>Num Vertices</th><th>${renderer.info.render.triangles}</th></tr>
         </table>
         </div>`;
@@ -337,7 +338,7 @@ function applyVertexColors(buffer_attribute, color, offset, count) {
     buffer_attribute.array.set(colors, offset * buffer_attribute.itemSize);
 }
 
-function get_std_map_keys(std_map, delete_map = false) {
+function getStdMapKeys(std_map, delete_map = false) {
     let map_keys = [];
     const map_keys_vec = std_map.keys();
     for (let idx = 0; idx < map_keys_vec.size(); idx++)
@@ -348,14 +349,14 @@ function get_std_map_keys(std_map, delete_map = false) {
     return map_keys;
 }
 
-function get_std_map_entries(std_map) {
+function getStdMapEntries(std_map) {
     let map_entries = [];
-    for (let key of get_std_map_keys(std_map))
+    for (let key of getStdMapKeys(std_map))
         map_entries.push([key, std_map.get(key)]);
     return map_entries;
 }
 
-function get_std_vec_entries(std_vec, delete_vec = false, ArrayType = null) {
+function getStdVecEntries(std_vec, delete_vec = false, ArrayType = null) {
     let entries = ArrayType ? new ArrayType(std_vec.size()) : new Array(std_vec.size());
     for (let idx = 0; idx < std_vec.size(); idx++)
         entries[idx] = std_vec.get(idx);
