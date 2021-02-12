@@ -114,21 +114,25 @@ libOpenDrive().then(Module => {
     });
 });
 
-function loadFile(file_text, clear_map) {
-    if (clear_map)
-        ModuleOpenDrive['FS_unlink']('./data.xodr');
-    ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
-    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight);
-    loadOdrMap(clear_map);
-}
-
 function onFileSelect(file) {
     let file_reader = new FileReader();
     file_reader.onload = () => { loadFile(file_reader.result, true); }
     file_reader.readAsText(file);
 }
 
+function loadFile(file_text, clear_map) {
+    if (clear_map)
+        ModuleOpenDrive['FS_unlink']('./data.xodr');
+    ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
+    if (OpenDriveMap)
+        OpenDriveMap.delete();
+    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight);
+    loadOdrMap(clear_map);
+}
+
 function reloadOdrMap() {
+    if (OpenDriveMap)
+        OpenDriveMap.delete();
     OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight);
     loadOdrMap(true, false);
 }
@@ -153,6 +157,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     refline_lines = new THREE.LineSegments(reflines_geom, refline_material);
     refline_lines.renderOrder = 10;
     refline_lines.visible = PARAMS.ref_line;
+    refline_lines.matrixAutoUpdate = false;
     disposable_objs.push(reflines_geom);
     scene.add(refline_lines);
 
@@ -185,14 +190,17 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 
     /* picking road network mesh */
     const picking_mesh = new THREE.Mesh(road_network_geom, id_material);
+    picking_mesh.matrixAutoUpdate = false;
     picking_scene.add(picking_mesh);
 
     /* xyz coords road network mesh */
     const xyz_mesh = new THREE.Mesh(road_network_geom, xyz_material);
+    xyz_mesh.matrixAutoUpdate = false;
     xyz_scene.add(xyz_mesh);
 
     /* st coords road network mesh */
     const st_mesh = new THREE.Mesh(road_network_geom, st_material);
+    st_mesh.matrixAutoUpdate = false;
     st_scene.add(st_mesh);
 
     /* lane outline */
@@ -203,6 +211,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     outlines_geom.setIndex(getStdVecEntries(odr_road_network_mesh.get_lane_outline_indices(), true));
     lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
     lane_outline_lines.renderOrder = 9;
+    lane_outline_lines.matrixAutoUpdate = false;
     disposable_objs.push(outlines_geom);
     scene.add(lane_outline_lines);
 
@@ -214,6 +223,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const sky_geom = new THREE.SphereGeometry(dome_radius, 32, 15);
     sky_dome = new THREE.Mesh(sky_geom, sky_material);
     sky_dome.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
+    sky_dome.matrixAutoUpdate = false;
     disposable_objs.push(sky_geom);
     scene.add(sky_dome);
 
