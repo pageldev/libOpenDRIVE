@@ -4,7 +4,6 @@ var OpenDriveMap = null;
 var refline_lines = null;
 var road_network_mesh = null;
 var lane_outline_lines = null;
-var sky_dome = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
 var spotlight_info = document.getElementById('spotlight_info');
@@ -68,8 +67,6 @@ const xyzVertexShader = document.getElementById('xyzVertexShader').textContent;
 const xyzFragmentShader = document.getElementById('xyzFragmentShader').textContent;
 const stVertexShader = document.getElementById('stVertexShader').textContent;
 const stFragmentShader = document.getElementById('stFragmentShader').textContent;
-const skyDomeVertexShader = document.getElementById('skyDomeVertexShader').textContent;
-const skyDomeFragmentShader = document.getElementById('skyDomeFragmentShader').textContent;
 
 const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line,
@@ -95,11 +92,6 @@ const xyz_material = new THREE.ShaderMaterial({
 const st_material = new THREE.ShaderMaterial({
     vertexShader: stVertexShader,
     fragmentShader: stFragmentShader,
-});
-const sky_material = new THREE.ShaderMaterial({
-    vertexShader: skyDomeVertexShader,
-    fragmentShader: skyDomeFragmentShader,
-    side: THREE.BackSide
 });
 
 /* load WASM + odr map */
@@ -139,7 +131,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const t0 = performance.now();
     if (clear_map) {
         road_network_mesh.userData.odr_road_network_mesh.delete();
-        scene.remove(road_network_mesh, refline_lines, lane_outline_lines, sky_dome);
+        scene.remove(road_network_mesh, refline_lines, lane_outline_lines);
         picking_scene.remove(...picking_scene.children);
         xyz_scene.remove(...xyz_scene.children);
         st_scene.remove(...st_scene.children);
@@ -213,22 +205,11 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     disposable_objs.push(outlines_geom);
     scene.add(lane_outline_lines);
 
-    /* sky dome */
+    /* fit view and camera */
     const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
-    const bbox_center_pt = new THREE.Vector3();
-    bbox_reflines.getCenter(bbox_center_pt);
-    const dome_radius = Math.max(bbox_reflines.min.distanceTo(bbox_reflines.max) * 3, 800);
-    const sky_geom = new THREE.SphereGeometry(dome_radius, 32, 15);
-    sky_dome = new THREE.Mesh(sky_geom, sky_material);
-    sky_dome.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
-    sky_dome.matrixAutoUpdate = false;
-    disposable_objs.push(sky_geom);
-    scene.add(sky_dome);
-
-    camera.far = dome_radius * 1.5;
-
+    camera.far = bbox_reflines.min.distanceTo(bbox_reflines.max) * 1.5;
     if (fit_view)
-        fitViewToObj(refline_lines);
+        fitViewToBbox(bbox_reflines);
 
     const t1 = performance.now();
     console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
@@ -325,7 +306,7 @@ function fitViewToBbox(bbox, restrict_zoom = true) {
     camera.position.set(center_pt.x, center_pt.y, bbox.max.z + dz);
     controls.target.set(center_pt.x, center_pt.y, center_pt.z);
     if (restrict_zoom)
-        controls.maxDistance = center_pt.distanceTo(bbox.max) * 2.0;
+        controls.maxDistance = center_pt.distanceTo(bbox.max) * 1.2;
     controls.update();
 }
 

@@ -89,27 +89,6 @@
         }
     </script>
 
-    <script id="skyDomeVertexShader" type="x-shader/x-vertex">
-        varying vec3 vWorldPosition;
-
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-        }
-    </script>
-
-    <script id="skyDomeFragmentShader" type="x-shader/x-fragment">
-        vec3 topColor = vec3(0.90, 0.90, 0.90);
-        vec3 bottomColor = vec3(0.62, 0.66, 0.85);
-
-        varying vec3 vWorldPosition;
-        void main() {
-            float h = normalize(vWorldPosition).z;
-            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), 0.7 ), 0.0 ) ), 1.0 );
-        }
-    </script>
-
     <script src="./libOpenDrive.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.125.1/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.125.1/examples/js/controls/OrbitControls.js"></script>
