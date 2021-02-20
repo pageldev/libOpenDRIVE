@@ -4,6 +4,8 @@ var OpenDriveMap = null;
 var refline_lines = null;
 var road_network_mesh = null;
 var lane_outline_lines = null;
+var ground_plane = null;
+var ground_grid = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
 var spotlight_info = document.getElementById('spotlight_info');
@@ -45,8 +47,8 @@ controls.addEventListener('start', () => { spotlight_paused = true; });
 controls.addEventListener('end', () => { spotlight_paused = false; });
 
 /* THREEJS lights */
-const light = new THREE.DirectionalLight(0xffffff);
-light.position.set(0, 0, 1);
+THREE.RectAreaLightUniformsLib.init();
+const light = new THREE.RectAreaLight(0xffffff, 2.8, 1, 1);
 scene.add(light);
 
 /* THREEJS auxiliary globals */
@@ -72,11 +74,10 @@ const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line,
     depthTest: false,
 });
-const road_network_material = new THREE.MeshPhongMaterial({
+const road_network_material = new THREE.MeshStandardMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
-    shininess: 15,
-    flatShading: true
+    roughness: 0.3,
 });
 const outlines_material = new THREE.LineBasicMaterial({
     vertexColors: THREE.VertexColors,
@@ -93,6 +94,12 @@ const st_material = new THREE.ShaderMaterial({
     vertexShader: stVertexShader,
     fragmentShader: stFragmentShader,
 });
+const plane_material = new THREE.MeshStandardMaterial({
+    color: 0x808080,
+    roughness: 0.15,
+    metalness: 0.0
+});
+
 
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
@@ -131,7 +138,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const t0 = performance.now();
     if (clear_map) {
         road_network_mesh.userData.odr_road_network_mesh.delete();
-        scene.remove(road_network_mesh, refline_lines, lane_outline_lines);
+        scene.remove(road_network_mesh, refline_lines, lane_outline_lines, ground_plane, ground_grid);
         picking_scene.remove(...picking_scene.children);
         xyz_scene.remove(...xyz_scene.children);
         st_scene.remove(...st_scene.children);
@@ -169,6 +176,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
             attr_arr.set(vert_start_idx_encoded, i * 4);
         road_network_geom.attributes.id.array.set(attr_arr, vert_idx_interval[0] * 4);
     }
+    road_network_geom.computeVertexNormals();
     disposable_objs.push(road_network_geom);
 
     /* road network mesh */
@@ -207,9 +215,33 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 
     /* fit view and camera */
     const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
-    camera.far = bbox_reflines.min.distanceTo(bbox_reflines.max) * 1.5;
+    const max_diag_dist = bbox_reflines.min.distanceTo(bbox_reflines.max);
+    camera.far = max_diag_dist * 1.5;
     if (fit_view)
         fitViewToBbox(bbox_reflines);
+
+    /* ground plane */
+    let bbox_center_pt = new THREE.Vector3();
+    bbox_reflines.getCenter(bbox_center_pt);
+    const plane_geom = new THREE.PlaneGeometry(max_diag_dist * 4, max_diag_dist * 4);
+    ground_plane = new THREE.Mesh(plane_geom, plane_material);
+    ground_plane.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_reflines.min.z - 10.0);
+    disposable_objs.push(plane_geom);
+    scene.add(ground_plane);
+
+    /* ground grid */
+    ground_grid = new THREE.GridHelper(max_diag_dist, max_diag_dist / 30, 0xb0b0b0, 0xb0b0b0);
+    ground_grid.geometry.rotateX(Math.PI / 2);
+    ground_grid.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_reflines.min.z - 9.99);
+    disposable_objs.push(ground_grid.geometry);
+    scene.add(ground_grid);
+
+    /* fit light */
+    light.width = max_diag_dist;
+    light.height = max_diag_dist;
+    light.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z + max_diag_dist * 0.7);
+    light.position.needsUpdate = true;
+    light.autoUpdate = true;
 
     const t1 = performance.now();
     console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
