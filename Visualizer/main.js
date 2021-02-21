@@ -181,6 +181,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     road_network_mesh.renderOrder = 0;
     road_network_mesh.userData = { odr_road_network_mesh };
     road_network_mesh.matrixAutoUpdate = false;
+    road_network_mesh.visible = !(PARAMS.view_mode == 'Outlines');
     scene.add(road_network_mesh);
 
     /* picking road network mesh */
