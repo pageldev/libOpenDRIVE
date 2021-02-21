@@ -109,17 +109,21 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("ref_line", &Road::ref_line)
         .property("s_to_lanesection", &Road::s_to_lanesection);
 
-    emscripten::class_<RoadNetworkMesh, emscripten::base<Mesh3D>>("RoadNetworkMesh")
-        .function("get_lane_outline_indices", &RoadNetworkMesh::get_lane_outline_indices)
-        .function("get_road_id", &RoadNetworkMesh::get_road_id)
-        .function("get_lanesec_s0", &RoadNetworkMesh::get_lanesec_s0)
-        .function("get_lane_id", &RoadNetworkMesh::get_lane_id)
-        .function("get_idx_interval_road", &RoadNetworkMesh::get_idx_interval_road)
-        .function("get_idx_interval_lanesec", &RoadNetworkMesh::get_idx_interval_lanesec)
-        .function("get_idx_interval_lane", &RoadNetworkMesh::get_idx_interval_lane)
-        .property("road_start_indices", &RoadNetworkMesh::road_start_indices)
-        .property("lanesec_start_indices", &RoadNetworkMesh::lanesec_start_indices)
-        .property("lane_start_indices", &RoadNetworkMesh::lane_start_indices);
+    emscripten::class_<MeshUnion, emscripten::base<Mesh3D>>("MeshUnion")
+        .function("get_road_id", &MeshUnion::get_road_id)
+        .function("get_lanesec_s0", &MeshUnion::get_lanesec_s0)
+        .function("get_lane_id", &MeshUnion::get_lane_id)
+        .function("get_idx_interval_road", &MeshUnion::get_idx_interval_road)
+        .function("get_idx_interval_lanesec", &MeshUnion::get_idx_interval_lanesec)
+        .function("get_idx_interval_lane", &MeshUnion::get_idx_interval_lane)
+        .property("road_start_indices", &MeshUnion::road_start_indices)
+        .property("lanesec_start_indices", &MeshUnion::lanesec_start_indices)
+        .property("lane_start_indices", &MeshUnion::lane_start_indices);
+
+    emscripten::class_<LaneMeshUnion, emscripten::base<MeshUnion>>("LaneMeshUnion")
+        .function("get_lane_outline_indices", &LaneMeshUnion::get_lane_outline_indices);
+
+    emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh").property("lane_mesh_union", &RoadNetworkMesh::lane_mesh_union);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool>()

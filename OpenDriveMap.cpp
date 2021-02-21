@@ -352,19 +352,21 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
     RoadNetworkMesh out_mesh;
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
-        out_mesh.road_start_indices[out_mesh.vertices.size()] = road->id;
+        out_mesh.lane_mesh_union.road_start_indices[out_mesh.lane_mesh_union.vertices.size()] = road->id;
         for (std::shared_ptr<const LaneSection> lanesec : road->get_lanesections())
         {
-            out_mesh.lanesec_start_indices[out_mesh.vertices.size()] = lanesec->s0;
+            out_mesh.lane_mesh_union.lanesec_start_indices[out_mesh.lane_mesh_union.vertices.size()] = lanesec->s0;
             for (std::shared_ptr<const Lane> lane : lanesec->get_lanes())
             {
-                const size_t idx_offset = out_mesh.vertices.size();
-                out_mesh.lane_start_indices[idx_offset] = lane->id;
+                const size_t idx_offset = out_mesh.lane_mesh_union.vertices.size();
+                out_mesh.lane_mesh_union.lane_start_indices[idx_offset] = lane->id;
                 Mesh3D lane_mesh = lane->get_mesh(lanesec->s0, lanesec->get_end(), eps);
-                out_mesh.st_coordinates.insert(out_mesh.st_coordinates.end(), lane_mesh.st_coordinates.begin(), lane_mesh.st_coordinates.end());
-                out_mesh.vertices.insert(out_mesh.vertices.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
+                out_mesh.lane_mesh_union.st_coordinates.insert(
+                    out_mesh.lane_mesh_union.st_coordinates.end(), lane_mesh.st_coordinates.begin(), lane_mesh.st_coordinates.end());
+                out_mesh.lane_mesh_union.vertices.insert(
+                    out_mesh.lane_mesh_union.vertices.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
                 for (const size_t& idx : lane_mesh.indices)
-                    out_mesh.indices.push_back(idx + idx_offset);
+                    out_mesh.lane_mesh_union.indices.push_back(idx + idx_offset);
             }
         }
     }
