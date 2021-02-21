@@ -12,8 +12,8 @@ var INTERSECTED_ID = 0xffffffff;
 var spotlight_paused = false;
 
 const COLORS = {
-    road: 0.75,
-    outline: 0.25,
+    road: 1.0,
+    outline: 0xae52d4,
     ref_line: 0x69f0ae,
     background: 0x444444,
     lane_highlight: 0x0288d1,
@@ -72,15 +72,16 @@ const stFragmentShader = document.getElementById('stFragmentShader').textContent
 
 const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line,
-    depthTest: false,
 });
 const road_network_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
-    shininess: 15.0,
+    shininess: 20.0,
+    transparent: true,
+    opacity: 0.4
 });
 const outlines_material = new THREE.LineBasicMaterial({
-    vertexColors: THREE.VertexColors,
+    color: COLORS.outline,
 });
 const id_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
@@ -200,8 +201,6 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     /* lane outline */
     const outlines_geom = new THREE.BufferGeometry();
     outlines_geom.setAttribute('position', road_network_geom.attributes.position);
-    outlines_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(outlines_geom.attributes.position.count * 3), 3));
-    outlines_geom.attributes.color.array.fill(COLORS.outline);
     outlines_geom.setIndex(getStdVecEntries(odr_lane_mesh_union.get_lane_outline_indices(), true));
     lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
     lane_outline_lines.renderOrder = 9;
