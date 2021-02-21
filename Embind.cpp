@@ -123,7 +123,9 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<LaneMeshUnion, emscripten::base<MeshUnion>>("LaneMeshUnion")
         .function("get_lane_outline_indices", &LaneMeshUnion::get_lane_outline_indices);
 
-    emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh").property("lane_mesh_union", &RoadNetworkMesh::lane_mesh_union);
+    emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh")
+        .property("lane_mesh_union", &RoadNetworkMesh::lane_mesh_union)
+        .property("roadmark_mesh_union", &RoadNetworkMesh::roadmark_mesh_union);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool>()

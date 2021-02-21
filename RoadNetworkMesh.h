@@ -31,6 +31,7 @@ struct LaneMeshUnion : public MeshUnion
 struct RoadNetworkMesh
 {
     LaneMeshUnion lane_mesh_union;
+    MeshUnion     roadmark_mesh_union;
 };
 
 } // namespace odr
