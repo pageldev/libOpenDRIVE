@@ -97,7 +97,7 @@ const st_material = new THREE.ShaderMaterial({
     fragmentShader: stFragmentShader,
 });
 const roadmarks_material = new THREE.MeshBasicMaterial({
-    color: 0xff0000,
+    color: 0xffffff,
 });
 
 

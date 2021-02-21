@@ -375,6 +375,7 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
                 const std::vector<RoadMark> roadmarks = lane->get_roadmarks(lanesec->s0, lanesec->get_end());
                 for (const RoadMark& roadmark : roadmarks)
                 {
+                    idx_offset = roadmarks_union.vertices.size();
                     const Mesh3D roadmark_mesh = lane->get_roadmark_mesh(roadmark, eps);
                     roadmarks_union.vertices.insert(roadmarks_union.vertices.end(), roadmark_mesh.vertices.begin(), roadmark_mesh.vertices.end());
                     for (const size_t& idx : roadmark_mesh.indices)
