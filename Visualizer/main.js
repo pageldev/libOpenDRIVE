@@ -208,7 +208,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const roadmarks_geom = new THREE.BufferGeometry();
     roadmarks_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_roadmark_mesh_union.vertices, true).flat(), 3));
     roadmarks_geom.setIndex(getStdVecEntries(odr_roadmark_mesh_union.indices, true));
-    odr_lane_mesh_union.delete();
+    odr_roadmark_mesh_union.delete();
     disposable_objs.push(roadmarks_geom);
     roadmarks_mesh = new THREE.Mesh(roadmarks_geom, roadmarks_material);
     scene.add(roadmarks_mesh);
