@@ -42,12 +42,14 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
 camera.up.set(0, 0, 1); /* Coordinate system with Z pointing up */
 const controls = new THREE.MapControls(camera, renderer.domElement);
-controls.addEventListener('start', () => { spotlight_paused = true; });
+controls.addEventListener('start', () => { spotlight_paused = true; controls.autoRotate = false; });
 controls.addEventListener('end', () => { spotlight_paused = false; });
+controls.autoRotate = true;
 
 /* THREEJS lights */
 const light = new THREE.DirectionalLight(0xffffff, 1.0);
 scene.add(light);
+scene.add(light.target);
 
 /* THREEJS auxiliary globals */
 const picking_scene = new THREE.Scene();
@@ -223,9 +225,11 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     scene.add(ground_grid);
 
     /* fit light */
-    light.position.set(bbox_reflines.min.x, bbox_reflines.min.y, bbox_center_pt.z + max_diag_dist * 0.7);
+    light.position.set(bbox_reflines.min.x, bbox_reflines.min.y, bbox_reflines.max.z + max_diag_dist);
+    light.target.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z);
     light.position.needsUpdate = true;
-    light.autoUpdate = true;
+    light.target.position.needsUpdate = true;
+    light.target.updateMatrixWorld();
 
     const t1 = performance.now();
     console.log("Heap size: " + ModuleOpenDrive.HEAP8.length / 1024 / 1024 + " mb");
@@ -241,6 +245,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     notyf.open({ type: 'info', message: info_msg });
 
     spotlight_info.style.display = "none";
+    controls.autoRotate = true;
     animate();
 }
 
@@ -248,6 +253,8 @@ function animate() {
     setTimeout(function () {
         requestAnimationFrame(animate);
     }, 1000 / 40);
+
+    controls.update();
 
     if (PARAMS.spotlight && !spotlight_paused) {
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
@@ -319,7 +326,7 @@ function fitViewToBbox(bbox, restrict_zoom = true) {
     const fov2r = (camera.fov * 0.5) * (Math.PI / 180.0);
     const dz = l2xy / Math.tan(fov2r);
 
-    camera.position.set(center_pt.x, center_pt.y, bbox.max.z + dz);
+    camera.position.set(bbox.min.x, center_pt.y, bbox.max.z + dz);
     controls.target.set(center_pt.x, center_pt.y, center_pt.z);
     if (restrict_zoom)
         controls.maxDistance = center_pt.distanceTo(bbox.max) * 1.2;
