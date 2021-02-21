@@ -4,7 +4,6 @@ var OpenDriveMap = null;
 var refline_lines = null;
 var road_network_mesh = null;
 var lane_outline_lines = null;
-var ground_plane = null;
 var ground_grid = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
@@ -13,8 +12,8 @@ var INTERSECTED_ID = 0xffffffff;
 var spotlight_paused = false;
 
 const COLORS = {
-    road: 0.68,
-    outline: 0.45,
+    road: 0.75,
+    outline: 0.25,
     ref_line: 0x69f0ae,
     background: 0x444444,
     lane_highlight: 0x0288d1,
@@ -47,8 +46,7 @@ controls.addEventListener('start', () => { spotlight_paused = true; });
 controls.addEventListener('end', () => { spotlight_paused = false; });
 
 /* THREEJS lights */
-THREE.RectAreaLightUniformsLib.init();
-const light = new THREE.RectAreaLight(0xffffff, 2.8, 1, 1);
+const light = new THREE.DirectionalLight(0xffffff, 1.0);
 scene.add(light);
 
 /* THREEJS auxiliary globals */
@@ -74,10 +72,10 @@ const refline_material = new THREE.LineBasicMaterial({
     color: COLORS.ref_line,
     depthTest: false,
 });
-const road_network_material = new THREE.MeshStandardMaterial({
+const road_network_material = new THREE.MeshPhongMaterial({
     vertexColors: THREE.VertexColors,
     wireframe: PARAMS.wireframe,
-    roughness: 0.3,
+    shininess: 15.0,
 });
 const outlines_material = new THREE.LineBasicMaterial({
     vertexColors: THREE.VertexColors,
@@ -93,11 +91,6 @@ const xyz_material = new THREE.ShaderMaterial({
 const st_material = new THREE.ShaderMaterial({
     vertexShader: stVertexShader,
     fragmentShader: stFragmentShader,
-});
-const plane_material = new THREE.MeshStandardMaterial({
-    color: 0x808080,
-    roughness: 0.15,
-    metalness: 0.0
 });
 
 
@@ -138,7 +131,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const t0 = performance.now();
     if (clear_map) {
         road_network_mesh.userData.odr_road_network_mesh.delete();
-        scene.remove(road_network_mesh, refline_lines, lane_outline_lines, ground_plane, ground_grid);
+        scene.remove(road_network_mesh, refline_lines, lane_outline_lines, ground_grid);
         picking_scene.remove(...picking_scene.children);
         xyz_scene.remove(...xyz_scene.children);
         st_scene.remove(...st_scene.children);
@@ -220,26 +213,17 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     if (fit_view)
         fitViewToBbox(bbox_reflines);
 
-    /* ground plane */
+    /* ground grid */
     let bbox_center_pt = new THREE.Vector3();
     bbox_reflines.getCenter(bbox_center_pt);
-    const plane_geom = new THREE.PlaneGeometry(max_diag_dist * 4, max_diag_dist * 4);
-    ground_plane = new THREE.Mesh(plane_geom, plane_material);
-    ground_plane.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_reflines.min.z - 10.0);
-    disposable_objs.push(plane_geom);
-    scene.add(ground_plane);
-
-    /* ground grid */
-    ground_grid = new THREE.GridHelper(max_diag_dist, max_diag_dist / 30, 0xb0b0b0, 0xb0b0b0);
+    ground_grid = new THREE.GridHelper(max_diag_dist, max_diag_dist / 10, 0x2f2f2f, 0x2f2f2f);
     ground_grid.geometry.rotateX(Math.PI / 2);
-    ground_grid.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_reflines.min.z - 9.99);
+    ground_grid.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_reflines.min.z - 0.1);
     disposable_objs.push(ground_grid.geometry);
     scene.add(ground_grid);
 
     /* fit light */
-    light.width = max_diag_dist;
-    light.height = max_diag_dist;
-    light.position.set(bbox_center_pt.x, bbox_center_pt.y, bbox_center_pt.z + max_diag_dist * 0.7);
+    light.position.set(bbox_reflines.min.x, bbox_reflines.min.y, bbox_center_pt.z + max_diag_dist * 0.7);
     light.position.needsUpdate = true;
     light.autoUpdate = true;
 

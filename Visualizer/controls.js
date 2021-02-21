@@ -23,12 +23,9 @@ gui_view_folder.add(PARAMS, 'view_mode', { default: 'default', 'lane id': 'id' }
 });
 gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
     refline_lines.visible = val;
-    renderer.render(scene, camera);
 });
 gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
-    light.intensity = Number(!val);
-    road_network_mesh.material.wireframe = val;
-    renderer.render(scene, camera);
+    road_network_material.wireframe = val;
 });
 
 var gui_attributes_folder = gui.addFolder('Load Attributes');
