@@ -175,7 +175,7 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
             if (roadmark_group.width > 0)
                 width = roadmark_group.width;
 
-            roadmarks.push_back({s_start_roadmark_group, s_end_roadmark_group, 0, width});
+            roadmarks.push_back({s_start_roadmark_group, s_end_roadmark_group, 0, width, roadmark_group.type});
         }
         else
         {
@@ -189,7 +189,8 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
                      s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
                 {
                     const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmarks_line.length);
-                    roadmarks.push_back({s_start_single_roadmark, s_end_single_roadmark, roadmarks_line.t_offset, width});
+                    roadmarks.push_back(
+                        {s_start_single_roadmark, s_end_single_roadmark, roadmarks_line.t_offset, width, roadmark_group.type + roadmarks_line.name});
                 }
             }
         }

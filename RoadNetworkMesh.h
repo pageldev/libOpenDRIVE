@@ -28,10 +28,18 @@ struct LaneMeshUnion : public MeshUnion
     std::vector<size_t> get_lane_outline_indices() const;
 };
 
+struct RoadmarkMeshUnion : public MeshUnion
+{
+    std::string           get_roadmark_type(size_t vert_idx) const;
+    std::array<size_t, 2> get_idx_interval_roadmark(size_t vert_idx) const;
+
+    std::map<size_t, std::string> roadmark_type_start_indices;
+};
+
 struct RoadNetworkMesh
 {
-    LaneMeshUnion lane_mesh_union;
-    MeshUnion     roadmark_mesh_union;
+    LaneMeshUnion     lane_mesh_union;
+    RoadmarkMeshUnion roadmark_mesh_union;
 };
 
 } // namespace odr

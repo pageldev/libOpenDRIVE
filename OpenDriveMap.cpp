@@ -349,9 +349,9 @@ Mesh3D OpenDriveMap::get_refline_lines(double eps) const
 
 RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
 {
-    RoadNetworkMesh out_mesh;
-    LaneMeshUnion&  lanes_union = out_mesh.lane_mesh_union;
-    MeshUnion&      roadmarks_union = out_mesh.roadmark_mesh_union;
+    RoadNetworkMesh    out_mesh;
+    LaneMeshUnion&     lanes_union = out_mesh.lane_mesh_union;
+    RoadmarkMeshUnion& roadmarks_union = out_mesh.roadmark_mesh_union;
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
         lanes_union.road_start_indices[lanes_union.vertices.size()] = road->id;
@@ -380,6 +380,7 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
                     roadmarks_union.vertices.insert(roadmarks_union.vertices.end(), roadmark_mesh.vertices.begin(), roadmark_mesh.vertices.end());
                     for (const size_t& idx : roadmark_mesh.indices)
                         roadmarks_union.indices.push_back(idx + idx_offset);
+                    roadmarks_union.roadmark_type_start_indices[idx_offset] = roadmark.type;
                 }
             }
         }

@@ -9,7 +9,7 @@ var ground_grid = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
 var spotlight_info = document.getElementById('spotlight_info');
-var INTERSECTED_ID = 0xffffffff;
+var INTERSECTED_LANE_ID = 0xffffffff;
 var spotlight_paused = false;
 
 const COLORS = {
@@ -53,13 +53,16 @@ scene.add(light);
 scene.add(light.target);
 
 /* THREEJS auxiliary globals */
-const picking_scene = new THREE.Scene();
-picking_scene.background = new THREE.Color(0xffffff);
+const lane_picking_scene = new THREE.Scene();
+lane_picking_scene.background = new THREE.Color(0xffffff);
+const roadmark_picking_scene = new THREE.Scene();
+roadmark_picking_scene.background = new THREE.Color(0xffffff);
 const xyz_scene = new THREE.Scene();
 xyz_scene.background = new THREE.Color(0xffffff);
 const st_scene = new THREE.Scene();
 st_scene.background = new THREE.Color(0xffffff);
-const picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
+const lane_picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
+const roadmark_picking_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 const xyz_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 const st_texture = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType });
 
@@ -104,7 +107,7 @@ const roadmarks_material = new THREE.MeshBasicMaterial({
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./data.xodr").then((file_data) => {
+    fetch("./synth6.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             loadFile(file_text, false);
         });
@@ -139,7 +142,8 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     if (clear_map) {
         road_network_mesh.userData.odr_road_network_mesh.delete();
         scene.remove(road_network_mesh, roadmarks_mesh, refline_lines, lane_outline_lines, ground_grid);
-        picking_scene.remove(...picking_scene.children);
+        lane_picking_scene.remove(...lane_picking_scene.children);
+        roadmark_picking_scene.remove(...roadmark_picking_scene.children);
         xyz_scene.remove(...xyz_scene.children);
         st_scene.remove(...st_scene.children);
         for (let obj of disposable_objs)
@@ -189,9 +193,9 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     scene.add(road_network_mesh);
 
     /* picking road network mesh */
-    const picking_mesh = new THREE.Mesh(road_network_geom, id_material);
-    picking_mesh.matrixAutoUpdate = false;
-    picking_scene.add(picking_mesh);
+    const lane_picking_mesh = new THREE.Mesh(road_network_geom, id_material);
+    lane_picking_mesh.matrixAutoUpdate = false;
+    lane_picking_scene.add(lane_picking_mesh);
 
     /* xyz coords road network mesh */
     const xyz_mesh = new THREE.Mesh(road_network_geom, xyz_material);
@@ -203,15 +207,33 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     st_mesh.matrixAutoUpdate = false;
     st_scene.add(st_mesh);
 
-    /* roadmarks */
+    /* roadmarks geometry */
     const odr_roadmark_mesh_union = odr_road_network_mesh.roadmark_mesh_union;
     const roadmarks_geom = new THREE.BufferGeometry();
     roadmarks_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_roadmark_mesh_union.vertices, true).flat(), 3));
+    roadmarks_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(roadmarks_geom.attributes.position.count * 4), 4));
     roadmarks_geom.setIndex(getStdVecEntries(odr_roadmark_mesh_union.indices, true));
+    for (const [vert_start_idx, _] of getStdMapEntries(odr_roadmark_mesh_union.roadmark_type_start_indices)) {
+        const vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_roadmark(vert_start_idx);
+        const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
+        const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
+        const attr_arr = new Float32Array(vert_count * 4);
+        for (let i = 0; i < vert_count; i++)
+            attr_arr.set(vert_start_idx_encoded, i * 4);
+        roadmarks_geom.attributes.id.array.set(attr_arr, vert_idx_interval[0] * 4);
+    }
     odr_roadmark_mesh_union.delete();
     disposable_objs.push(roadmarks_geom);
+
+    /* roadmarks mesh */
     roadmarks_mesh = new THREE.Mesh(roadmarks_geom, roadmarks_material);
+    roadmarks_mesh.matrixAutoUpdate = false;
     scene.add(roadmarks_mesh);
+
+    /* picking roadmarks mesh */
+    const roadmark_picking_mesh = new THREE.Mesh(roadmarks_geom, id_material);
+    roadmark_picking_mesh.matrixAutoUpdate = false;
+    roadmark_picking_scene.add(roadmark_picking_mesh);
 
     /* lane outline */
     const outlines_geom = new THREE.BufferGeometry();
@@ -274,15 +296,19 @@ function animate() {
 
     if (PARAMS.spotlight && !spotlight_paused) {
         camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
-        renderer.setRenderTarget(picking_texture);
-        renderer.render(picking_scene, camera);
+        renderer.setRenderTarget(lane_picking_texture);
+        renderer.render(lane_picking_scene, camera);
+        renderer.setRenderTarget(roadmark_picking_texture);
+        renderer.render(roadmark_picking_scene, camera);
         renderer.setRenderTarget(xyz_texture);
         renderer.render(xyz_scene, camera);
         renderer.setRenderTarget(st_texture);
         renderer.render(st_scene, camera);
 
-        const id_pixel_buffer = new Float32Array(4);
-        renderer.readRenderTargetPixels(picking_texture, 0, 0, 1, 1, id_pixel_buffer);
+        const lane_id_pixel_buffer = new Float32Array(4);
+        renderer.readRenderTargetPixels(lane_picking_texture, 0, 0, 1, 1, lane_id_pixel_buffer);
+        const roadmark_id_pixel_buffer = new Float32Array(4);
+        renderer.readRenderTargetPixels(roadmark_picking_texture, 0, 0, 1, 1, roadmark_id_pixel_buffer);
         const xyz_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(xyz_texture, 0, 0, 1, 1, xyz_pixel_buffer);
         const st_pixel_buffer = new Float32Array(4);
@@ -291,16 +317,16 @@ function animate() {
         camera.clearViewOffset();
         renderer.setRenderTarget(null);
 
-        if (isValid(id_pixel_buffer)) {
-            const decoded_id = decodeUInt32(id_pixel_buffer);
+        if (isValid(lane_id_pixel_buffer)) {
+            const decoded_lane_id = decodeUInt32(lane_id_pixel_buffer);
             const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-            if (INTERSECTED_ID != decoded_id) {
-                if (INTERSECTED_ID != 0xffffffff) {
-                    const prev_lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_ID);
+            if (INTERSECTED_LANE_ID != decoded_lane_id) {
+                if (INTERSECTED_LANE_ID != 0xffffffff) {
+                    const prev_lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
                     road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
                 }
-                INTERSECTED_ID = decoded_id;
-                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_ID);
+                INTERSECTED_LANE_ID = decoded_lane_id;
+                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
                 const vert_count = (lane_vert_idx_interval[1] - lane_vert_idx_interval[0]);
                 applyVertexColors(road_network_mesh.geometry.attributes.color, new THREE.Color(COLORS.lane_highlight), lane_vert_idx_interval[0], vert_count);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
@@ -308,22 +334,22 @@ function animate() {
             }
             odr_lane_mesh_union.delete();
         } else {
-            if (INTERSECTED_ID != 0xffffffff) {
+            if (INTERSECTED_LANE_ID != 0xffffffff) {
                 const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_ID);
+                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
                 road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
                 odr_lane_mesh_union.delete();
             }
-            INTERSECTED_ID = 0xffffffff;
+            INTERSECTED_LANE_ID = 0xffffffff;
             spotlight_info.style.display = "none";
         }
 
-        if (INTERSECTED_ID != 0xffffffff) {
+        if (INTERSECTED_LANE_ID != 0xffffffff) {
             const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-            const road_id = odr_lane_mesh_union.get_road_id(INTERSECTED_ID);
-            const lanesec_s0 = odr_lane_mesh_union.get_lanesec_s0(INTERSECTED_ID);
-            const lane_id = odr_lane_mesh_union.get_lane_id(INTERSECTED_ID);
+            const road_id = odr_lane_mesh_union.get_road_id(INTERSECTED_LANE_ID);
+            const lanesec_s0 = odr_lane_mesh_union.get_lanesec_s0(INTERSECTED_LANE_ID);
+            const lane_id = odr_lane_mesh_union.get_lane_id(INTERSECTED_LANE_ID);
             const lane_type = OpenDriveMap.roads.get(road_id).s_to_lanesection.get(lanesec_s0).id_to_lane.get(lane_id).type;
             odr_lane_mesh_union.delete();
             spotlight_info.innerHTML = `
@@ -430,9 +456,9 @@ function onDocumentMouseMove(event) {
 }
 
 function onDocumentMouseDbClick(e) {
-    if (INTERSECTED_ID != 0xffffffff) {
+    if (INTERSECTED_LANE_ID != 0xffffffff) {
         const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-        const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_ID);
+        const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
         const vertA = odr_lane_mesh_union.vertices.get(lane_vert_idx_interval[0]);
         const vertB = odr_lane_mesh_union.vertices.get(lane_vert_idx_interval[1] - 1);
         odr_lane_mesh_union.delete();

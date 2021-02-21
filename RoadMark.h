@@ -52,6 +52,8 @@ struct RoadMark
     double s_end = 0;
     double t_offset = 0;
     double width = 0;
+
+    std::string type = "";
 };
 
 } // namespace odr

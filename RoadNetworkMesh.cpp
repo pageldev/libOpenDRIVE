@@ -90,4 +90,24 @@ std::vector<size_t> LaneMeshUnion::get_lane_outline_indices() const
     return out_indices;
 }
 
+std::string RoadmarkMeshUnion::get_roadmark_type(size_t vert_idx) const
+{
+    auto idx_roadmark_type_iter = this->roadmark_type_start_indices.upper_bound(vert_idx);
+    if (idx_roadmark_type_iter != this->roadmark_type_start_indices.begin())
+        idx_roadmark_type_iter--;
+    return idx_roadmark_type_iter->second;
+}
+
+std::array<size_t, 2> RoadmarkMeshUnion::get_idx_interval_roadmark(size_t vert_idx) const
+{
+    auto idx_roadmark_type_iter = this->roadmark_type_start_indices.upper_bound(vert_idx);
+    if (idx_roadmark_type_iter != this->roadmark_type_start_indices.begin())
+        idx_roadmark_type_iter--;
+    const size_t start_idx = idx_roadmark_type_iter->first;
+    const size_t end_idx = (std::next(idx_roadmark_type_iter) == this->roadmark_type_start_indices.end()) ? this->vertices.size()
+                                                                                                          : std::next(idx_roadmark_type_iter)->first;
+
+    return {start_idx, end_idx};
+}
+
 } // namespace odr

@@ -123,6 +123,11 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<LaneMeshUnion, emscripten::base<MeshUnion>>("LaneMeshUnion")
         .function("get_lane_outline_indices", &LaneMeshUnion::get_lane_outline_indices);
 
+    emscripten::class_<RoadmarkMeshUnion, emscripten::base<MeshUnion>>("RoadmarkMeshUnion")
+        .function("get_roadmark_type", &RoadmarkMeshUnion::get_roadmark_type)
+        .function("get_idx_interval_roadmark", &RoadmarkMeshUnion::get_idx_interval_roadmark)
+        .property("roadmark_type_start_indices", &RoadmarkMeshUnion::roadmark_type_start_indices);
+
     emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh")
         .property("lane_mesh_union", &RoadNetworkMesh::lane_mesh_union)
         .property("roadmark_mesh_union", &RoadNetworkMesh::roadmark_mesh_union);
