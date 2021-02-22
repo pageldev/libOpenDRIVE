@@ -292,7 +292,6 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     odr_roadmark_mesh_union.delete();
     odr_lane_mesh_union.delete();
     spotlight_info.style.display = "none";
-    controls.autoRotate = true;
     animate();
 }
 
