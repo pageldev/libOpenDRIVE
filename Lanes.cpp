@@ -213,14 +213,9 @@ Mesh3D Lane::get_roadmark_mesh(const RoadMark& roadmark, double eps) const
     }
 
     const size_t num_pts = out_mesh.vertices.size();
-    const bool   ccw = this->id > 0;
     for (size_t idx = 3; idx < num_pts; idx += 2)
     {
-        std::array<size_t, 6> indicies_patch;
-        if (ccw)
-            indicies_patch = {idx - 3, idx - 1, idx, idx - 3, idx, idx - 2};
-        else
-            indicies_patch = {idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
+        std::array<size_t, 6> indicies_patch = {idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
         out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
     }
 
