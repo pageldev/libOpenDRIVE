@@ -256,6 +256,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
     const max_diag_dist = bbox_reflines.min.distanceTo(bbox_reflines.max);
     camera.far = max_diag_dist * 1.5;
+    controls.autoRotate = fit_view;
     if (fit_view)
         fitViewToBbox(bbox_reflines);
 

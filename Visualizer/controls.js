@@ -14,7 +14,9 @@ var PARAMS = {
 
 const gui = new dat.GUI();
 gui.add(PARAMS, 'load_file').name('📁 Load .xodr');
-gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.02 }).name('📏  Detail').onChange((val) => { loadOdrMap(true, false); });
+gui.add(PARAMS, 'resolution', { Low: 1.0, Medium: 0.3, High: 0.02 }).name('📏  Detail').onChange((val) => {
+    loadOdrMap(true, false);
+});
 gui.add(PARAMS, 'spotlight').name("🔦 Spotlight");
 gui.add(PARAMS, 'fitView').name("⟲ Reset Camera");
 
