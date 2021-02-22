@@ -21,8 +21,10 @@ var gui_view_folder = gui.addFolder('View');
 gui_view_folder.add(PARAMS, 'view_mode', { Default: 'Default', 'Outlines': 'Outlines' }).name("View Mode").onChange((val) => {
     if (val == 'Default') {
         road_network_mesh.visible = true;
+        roadmarks_mesh.visible = true;
     } else if (val == 'Outlines') {
         road_network_mesh.visible = false;
+        roadmarks_mesh.visible = false;
     }
 });
 gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {

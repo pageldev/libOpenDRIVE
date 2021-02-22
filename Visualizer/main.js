@@ -5,6 +5,7 @@ var refline_lines = null;
 var road_network_mesh = null;
 var roadmarks_mesh = null;
 var lane_outline_lines = null;
+var roadmark_outline_lines = null;
 var ground_grid = null;
 var disposable_objs = [];
 var mouse = new THREE.Vector2();
@@ -14,7 +15,9 @@ var spotlight_paused = false;
 
 const COLORS = {
     road: 1.0,
-    outline: 0xae52d4,
+    roadmark: 0xffffff,
+    lane_outline: 0xae52d4,
+    roadmark_outline: 0xffffff,
     ref_line: 0x69f0ae,
     background: 0x444444,
     lane_highlight: 0x0288d1,
@@ -84,8 +87,11 @@ const road_network_material = new THREE.MeshPhongMaterial({
     transparent: true,
     opacity: 0.4
 });
-const outlines_material = new THREE.LineBasicMaterial({
-    color: COLORS.outline,
+const lane_outlines_material = new THREE.LineBasicMaterial({
+    color: COLORS.lane_outline,
+});
+const roadmark_outlines_material = new THREE.LineBasicMaterial({
+    color: COLORS.roadmark_outline,
 });
 const id_material = new THREE.ShaderMaterial({
     vertexShader: idVertexShader,
@@ -100,7 +106,7 @@ const st_material = new THREE.ShaderMaterial({
     fragmentShader: stFragmentShader,
 });
 const roadmarks_material = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: COLORS.roadmark,
 });
 
 
@@ -141,7 +147,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     const t0 = performance.now();
     if (clear_map) {
         road_network_mesh.userData.odr_road_network_mesh.delete();
-        scene.remove(road_network_mesh, roadmarks_mesh, refline_lines, lane_outline_lines, ground_grid);
+        scene.remove(road_network_mesh, roadmarks_mesh, refline_lines, lane_outline_lines, roadmark_outline_lines, ground_grid);
         lane_picking_scene.remove(...lane_picking_scene.children);
         roadmark_picking_scene.remove(...roadmark_picking_scene.children);
         xyz_scene.remove(...xyz_scene.children);
@@ -203,10 +209,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 
     /* roadmarks geometry */
     const odr_roadmark_mesh_union = odr_road_network_mesh.roadmark_mesh_union;
-    const roadmarks_geom = new THREE.BufferGeometry();
-    roadmarks_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_roadmark_mesh_union.vertices, true).flat(), 3));
-    roadmarks_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(roadmarks_geom.attributes.position.count * 4), 4));
-    roadmarks_geom.setIndex(getStdVecEntries(odr_roadmark_mesh_union.indices, true));
+    const roadmarks_geom = get_geometry(odr_roadmark_mesh_union);
     for (const [vert_start_idx, _] of getStdMapEntries(odr_roadmark_mesh_union.roadmark_type_start_indices)) {
         const vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_roadmark(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
@@ -216,12 +219,12 @@ function loadOdrMap(clear_map = true, fit_view = true) {
             attr_arr.set(vert_start_idx_encoded, i * 4);
         roadmarks_geom.attributes.id.array.set(attr_arr, vert_idx_interval[0] * 4);
     }
-    odr_roadmark_mesh_union.delete();
     disposable_objs.push(roadmarks_geom);
 
     /* roadmarks mesh */
     roadmarks_mesh = new THREE.Mesh(roadmarks_geom, roadmarks_material);
     roadmarks_mesh.matrixAutoUpdate = false;
+    roadmarks_mesh.visible = !(PARAMS.view_mode == 'Outlines');
     scene.add(roadmarks_mesh);
 
     /* picking roadmarks mesh */
@@ -230,14 +233,23 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     roadmark_picking_scene.add(roadmark_picking_mesh);
 
     /* lane outline */
-    const outlines_geom = new THREE.BufferGeometry();
-    outlines_geom.setAttribute('position', road_network_geom.attributes.position);
-    outlines_geom.setIndex(getStdVecEntries(odr_lane_mesh_union.get_lane_outline_indices(), true));
-    lane_outline_lines = new THREE.LineSegments(outlines_geom, outlines_material);
+    const lane_outlines_geom = new THREE.BufferGeometry();
+    lane_outlines_geom.setAttribute('position', road_network_geom.attributes.position);
+    lane_outlines_geom.setIndex(getStdVecEntries(odr_lane_mesh_union.get_lane_outline_indices(), true));
+    lane_outline_lines = new THREE.LineSegments(lane_outlines_geom, lane_outlines_material);
     lane_outline_lines.renderOrder = 9;
-    lane_outline_lines.matrixAutoUpdate = false;
-    disposable_objs.push(outlines_geom);
+    disposable_objs.push(lane_outlines_geom);
     scene.add(lane_outline_lines);
+
+    /* roadmark outline */
+    const roadmark_outlines_geom = new THREE.BufferGeometry();
+    roadmark_outlines_geom.setAttribute('position', roadmarks_geom.attributes.position);
+    roadmark_outlines_geom.setIndex(getStdVecEntries(odr_roadmark_mesh_union.get_roadmark_outline_indices(), true));
+    roadmark_outline_lines = new THREE.LineSegments(roadmark_outlines_geom, roadmark_outlines_material);
+    roadmark_outline_lines.renderOrder = 8;
+    roadmark_outline_lines.matrixAutoUpdate = false;
+    disposable_objs.push(roadmark_outlines_geom);
+    scene.add(roadmark_outline_lines);
 
     /* fit view and camera */
     const bbox_reflines = new THREE.Box3().setFromObject(refline_lines);
@@ -275,6 +287,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
         </div>`;
     notyf.open({ type: 'info', message: info_msg });
 
+    odr_roadmark_mesh_union.delete();
     odr_lane_mesh_union.delete();
     spotlight_info.style.display = "none";
     controls.autoRotate = true;
