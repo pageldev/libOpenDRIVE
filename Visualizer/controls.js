@@ -2,6 +2,7 @@ var PARAMS = {
     load_file: () => { document.getElementById('xodr_file_input').click(); },
     resolution: 0.3,
     ref_line: true,
+    roadmarks: true,
     wireframe: false,
     spotlight: true,
     fitView: () => { fitViewToObj(refline_lines); },
@@ -29,6 +30,10 @@ gui_view_folder.add(PARAMS, 'view_mode', { Default: 'Default', 'Outlines': 'Outl
 });
 gui_view_folder.add(PARAMS, 'ref_line').name("Reference Line").onChange((val) => {
     refline_lines.visible = val;
+});
+gui_view_folder.add(PARAMS, 'roadmarks').name("Roadmarks").onChange((val) => {
+    roadmarks_mesh.visible = val;
+    roadmark_outline_lines.visible = val;
 });
 gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
     road_network_material.wireframe = val;

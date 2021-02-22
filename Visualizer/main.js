@@ -224,7 +224,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     /* roadmarks mesh */
     roadmarks_mesh = new THREE.Mesh(roadmarks_geom, roadmarks_material);
     roadmarks_mesh.matrixAutoUpdate = false;
-    roadmarks_mesh.visible = !(PARAMS.view_mode == 'Outlines');
+    roadmarks_mesh.visible = !(PARAMS.view_mode == 'Outlines') && PARAMS.roadmarks;
     scene.add(roadmarks_mesh);
 
     /* picking roadmarks mesh */
@@ -249,6 +249,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     roadmark_outline_lines.renderOrder = 8;
     roadmark_outline_lines.matrixAutoUpdate = false;
     disposable_objs.push(roadmark_outlines_geom);
+    roadmark_outline_lines.visible = PARAMS.roadmarks;
     scene.add(roadmark_outline_lines);
 
     /* fit view and camera */
