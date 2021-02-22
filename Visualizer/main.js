@@ -107,7 +107,7 @@ const roadmarks_material = new THREE.MeshBasicMaterial({
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./synth6.xodr").then((file_data) => {
+    fetch("./data.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             loadFile(file_text, false);
         });
@@ -163,15 +163,10 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     scene.add(refline_lines);
 
     /* road network geometry */
-    const road_network_geom = new THREE.BufferGeometry();
     const odr_road_network_mesh = OpenDriveMap.get_mesh(parseFloat(PARAMS.resolution));
     const odr_lane_mesh_union = odr_road_network_mesh.lane_mesh_union;
-    road_network_geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_lane_mesh_union.vertices, true).flat(), 3));
-    road_network_geom.setAttribute('st', new THREE.Float32BufferAttribute(getStdVecEntries(odr_lane_mesh_union.st_coordinates, true).flat(), 2));
-    road_network_geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 3), 3));
-    road_network_geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(road_network_geom.attributes.position.count * 4), 4));
+    const road_network_geom = get_geometry(odr_lane_mesh_union);
     road_network_geom.attributes.color.array.fill(COLORS.road);
-    road_network_geom.setIndex(getStdVecEntries(odr_lane_mesh_union.indices, true));
     for (const [vert_start_idx, _] of getStdMapEntries(odr_lane_mesh_union.lane_start_indices)) {
         const vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
@@ -181,7 +176,6 @@ function loadOdrMap(clear_map = true, fit_view = true) {
             attr_arr.set(vert_start_idx_encoded, i * 4);
         road_network_geom.attributes.id.array.set(attr_arr, vert_idx_interval[0] * 4);
     }
-    road_network_geom.computeVertexNormals();
     disposable_objs.push(road_network_geom);
 
     /* road network mesh */
@@ -364,6 +358,17 @@ function animate() {
     }
 
     renderer.render(scene, camera);
+}
+
+function get_geometry(odr_meshunion) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(getStdVecEntries(odr_meshunion.vertices, true).flat(), 3));
+    geom.setAttribute('st', new THREE.Float32BufferAttribute(getStdVecEntries(odr_meshunion.st_coordinates, true).flat(), 2));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(geom.attributes.position.count * 3), 3));
+    geom.setAttribute('id', new THREE.Float32BufferAttribute(new Float32Array(geom.attributes.position.count * 4), 4));
+    geom.setIndex(getStdVecEntries(odr_meshunion.indices, true));
+    geom.computeVertexNormals();
+    return geom;
 }
 
 function fitViewToBbox(bbox, restrict_zoom = true) {
