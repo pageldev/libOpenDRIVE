@@ -32,6 +32,7 @@ struct RoadmarkMeshUnion : public MeshUnion
 {
     std::string           get_roadmark_type(size_t vert_idx) const;
     std::array<size_t, 2> get_idx_interval_roadmark(size_t vert_idx) const;
+    std::vector<size_t>   get_roadmark_outline_indices() const;
 
     std::map<size_t, std::string> roadmark_type_start_indices;
 };

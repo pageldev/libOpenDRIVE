@@ -34,6 +34,27 @@ std::vector<K> extract_keys(std::map<K, V> const& input_map)
     return retval;
 }
 
+template<class K, class V>
+V get_nearest_val(std::map<K, V> const& input_map, const K k)
+{
+    auto kv_iter = input_map.upper_bound(k);
+    if (kv_iter != input_map.begin())
+        kv_iter--;
+    return kv_iter->second;
+}
+
+template<class K, class V>
+std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, const K end_k)
+{
+    auto kv_iter = input_map.upper_bound(k);
+    if (kv_iter != input_map.begin())
+        kv_iter--;
+    const size_t start_idx = kv_iter->first;
+    const size_t end_idx = (std::next(kv_iter) == input_map.end()) ? end_k : std::next(kv_iter)->first;
+
+    return {start_idx, end_idx};
+}
+
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
 {
