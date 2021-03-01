@@ -69,7 +69,7 @@ std::set<double> Lane::approximate_border_linear(double s_start, double s_end, d
     std::set<double>   s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_brdr.begin(), s_vals_brdr.end());
 
-    std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
+    std::set<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
     s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
 
     const double     t_max = this->outer_border.get_max(s_start, s_end);
@@ -109,7 +109,7 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
     std::set<double> s_vals_inner_brdr = this->inner_border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_inner_brdr.begin(), s_vals_inner_brdr.end());
 
-    std::vector<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
+    std::set<double> s_vals_lane_height = extract_keys(this->s_to_height_offset);
     s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
 
     const double     t_max = this->outer_border.get_max(s_start, s_end);

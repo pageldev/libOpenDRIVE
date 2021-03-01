@@ -118,9 +118,9 @@ CubicSpline CubicSpline::negate() const
 
 CubicSpline CubicSpline::add(const CubicSpline& other) const
 {
-    std::vector<double> s0_vals = extract_keys(this->s0_to_poly);
-    std::vector<double> other_s0s = extract_keys(other.s0_to_poly);
-    s0_vals.insert(s0_vals.end(), other_s0s.begin(), other_s0s.end());
+    std::set<double> s0_vals = extract_keys(this->s0_to_poly);
+    std::set<double> other_s0s = extract_keys(other.s0_to_poly);
+    s0_vals.insert(other_s0s.begin(), other_s0s.end());
 
     CubicSpline retval;
     for (const double& s0 : s0_vals)
