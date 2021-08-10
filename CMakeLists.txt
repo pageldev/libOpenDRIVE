@@ -33,6 +33,6 @@ add_library(OpenDrive SHARED
 target_include_directories(OpenDrive PRIVATE .)
 target_include_directories(OpenDrive PRIVATE Thirdparty)
 
-# add_executable(main main.cpp)
-# target_link_libraries(main xodr)
-# target_include_directories(main PUBLIC .)
+add_executable(test test.cpp)
+target_link_libraries(test OpenDrive)
+target_include_directories(test PUBLIC .)
