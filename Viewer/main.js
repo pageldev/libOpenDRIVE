@@ -322,6 +322,8 @@ function animate() {
         renderer.readRenderTargetPixels(roadmark_picking_texture, 0, 0, 1, 1, roadmark_id_pixel_buffer);
         const xyz_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(xyz_texture, 0, 0, 1, 1, xyz_pixel_buffer);
+        xyz_pixel_buffer[0] += OpenDriveMap.x_offs;
+        xyz_pixel_buffer[1] += OpenDriveMap.y_offs;
         const st_pixel_buffer = new Float32Array(4);
         renderer.readRenderTargetPixels(st_texture, 0, 0, 1, 1, st_pixel_buffer);
 

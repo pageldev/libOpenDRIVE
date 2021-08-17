@@ -138,7 +138,9 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_refline_segments", &OpenDriveMap::get_refline_lines)
         .function("get_mesh", &OpenDriveMap::get_mesh)
         .property("xodr_file", &OpenDriveMap::xodr_file)
-        .property("roads", &OpenDriveMap::roads);
+        .property("roads", &OpenDriveMap::roads)
+        .property("x_offs", &OpenDriveMap::x_offs)
+        .property("y_offs", &OpenDriveMap::y_offs);
 }
 
 } // namespace odr
