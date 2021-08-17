@@ -17,7 +17,7 @@
 
 namespace odr
 {
-OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight) : xodr_file(xodr_file)
+OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight, bool center_map) : xodr_file(xodr_file)
 {
     pugi::xml_document     doc;
     pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
@@ -28,6 +28,22 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
 
     if (auto geoReference_node = odr_node.child("header").child("geoReference"))
         this->proj4 = geoReference_node.text().as_string();
+
+    size_t cnt = 1;
+    if (center_map)
+    {
+        for (pugi::xml_node road_node : odr_node.children("road"))
+        {
+            for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
+            {
+                const double x0 = geometry_hdr_node.attribute("x").as_double();
+                this->x_offs = this->x_offs + ((x0 - this->x_offs) / cnt);
+                const double y0 = geometry_hdr_node.attribute("y").as_double();
+                this->y_offs = this->y_offs + ((y0 - this->y_offs) / cnt);
+                cnt++;
+            }
+        }
+    }
 
     for (pugi::xml_node road_node : odr_node.children("road"))
     {
@@ -84,8 +100,8 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
             double         s0 = geometry_hdr_node.attribute("s").as_double();
-            double         x0 = geometry_hdr_node.attribute("x").as_double();
-            double         y0 = geometry_hdr_node.attribute("y").as_double();
+            double         x0 = geometry_hdr_node.attribute("x").as_double() - this->x_offs;
+            double         y0 = geometry_hdr_node.attribute("y").as_double() - this->y_offs;
             double         hdg0 = geometry_hdr_node.attribute("hdg").as_double();
             double         length = geometry_hdr_node.attribute("length").as_double();
             pugi::xml_node geometry_node = geometry_hdr_node.first_child();
