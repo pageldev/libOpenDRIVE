@@ -24,17 +24,24 @@
 
         .bottom_info {
             position: absolute;
-            top: 1em;
+            bottom: 1em;
             left: 1em;
         }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <link rel="stylesheet" href="/lib/notyf.min.css">
+    <link rel="stylesheet" href="/lib/font-awesome.min.css">
 </head>
 
 <body>
     <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
     <div class="popup_info bottom_info" id="spotlight_info"></div>
     <input id="xodr_file_input" type="file" style="visibility:hidden" onchange="onFileSelect(this.files[0])" />
+
+    <div id="ThreeJS" style="position: absolute; bottom: 0.1em; right: 0.1em; font-size: 2.5em;">
+        <a class="icon" target="_blank" href="http://github.com/grepthat/libOpenDRIVE" title="github", style="color: lightgray;">
+            <i class="fa fa-github"></i>
+        </a>
+    </div>
 
     <script id="idVertexShader" type="x-shader/x-vertex">
         attribute vec4 id;

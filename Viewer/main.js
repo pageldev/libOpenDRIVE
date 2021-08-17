@@ -33,7 +33,7 @@ window.addEventListener('dblclick', onDocumentMouseDbClick, false);
 /* notifactions */
 const notyf = new Notyf({
     duration: 3000,
-    position: { x: 'right', y: 'bottom' },
+    position: { x: 'left', y: 'top' },
     types: [{ type: 'info', background: '#607d8b', icon: false }]
 });
 

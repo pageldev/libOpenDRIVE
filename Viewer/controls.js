@@ -40,7 +40,6 @@ gui_view_folder.add(PARAMS, 'roadmarks').name("Roadmarks").onChange((val) => {
 gui_view_folder.add(PARAMS, 'wireframe').name("Wireframe").onChange((val) => {
     road_network_material.wireframe = val;
 });
-gui_view_folder.open();
 
 var gui_attributes_folder = gui.addFolder('Load Attributes');
 gui_attributes_folder.add(PARAMS, 'lateralProfile').name("Lateral Profile");
