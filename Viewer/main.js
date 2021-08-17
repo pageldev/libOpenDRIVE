@@ -115,7 +115,7 @@ const roadmarks_material = new THREE.MeshBasicMaterial({
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./SanFrancisco-Downtown-Sample-OpenDrive_new.xodr").then((file_data) => {
+    fetch("./data.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             loadFile(file_text, false);
         });
