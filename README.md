@@ -1,9 +1,11 @@
 ```bash
-mkdir build && cd build
+mkdir build && pushd build
 emcmake cmake ..
 emmake make
+popd
 
-emcc -std=c++14 -O3 -Wall libOpenDrive.a
+emcc -std=c++14 -O3 -Wall -I . \
+    build/libOpenDrive.a Embind.cpp \
     --bind \
     -s ENVIRONMENT=web \
     -s MODULARIZE=1 \
@@ -11,5 +13,5 @@ emcc -std=c++14 -O3 -Wall libOpenDrive.a
     -s EXPORTED_RUNTIME_METHODS='["cwrap"]' \
     -s FORCE_FILESYSTEM=1 \
     -s ALLOW_MEMORY_GROWTH=1 \
-    -o libOpenDrive.js
+    -o Viewer/libOpenDrive.js
 ```
