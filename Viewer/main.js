@@ -33,7 +33,7 @@ window.addEventListener('dblclick', onDocumentMouseDbClick, false);
 /* notifactions */
 const notyf = new Notyf({
     duration: 3000,
-    position: { x: 'left', y: 'top' },
+    position: { x: 'left', y: 'bottom' },
     types: [{ type: 'info', background: '#607d8b', icon: false }]
 });
 
@@ -115,7 +115,7 @@ const roadmarks_material = new THREE.MeshBasicMaterial({
 /* load WASM + odr map */
 libOpenDrive().then(Module => {
     ModuleOpenDrive = Module;
-    fetch("./data.xodr").then((file_data) => {
+    fetch("./SanFrancisco-Downtown-Sample-OpenDrive_new.xodr").then((file_data) => {
         file_data.text().then((file_text) => {
             loadFile(file_text, false);
         });
