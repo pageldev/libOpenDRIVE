@@ -12,7 +12,7 @@ make
 
 This also builds an executable to test the library:
 ```bash
-./build/test Viewer/data.xodr
+./build/test-xodr Viewer/data.xodr
 ```
 
 ## WebAssembly
