@@ -1,9 +1,22 @@
+# libOpenDRIVE
+libOpenDRIVE is a lightweight C++ library providing OpenDRIVE file parsing and 3D model generation. 
 
-## Viewer
-![viewer-demo](https://user-images.githubusercontent.com/42587026/129762731-3c89900b-979e-436a-9a55-4c8745baa945.png)
+It's dependency-free, small and includes a web-based viewer. It can be easily integrated in other projects and can be compiled to a WebAssembly library. A core function is the parsing of OpenDRIVE files and the generation of 3D models. The library targets OpenDRIVE version 1.4.
 
-## WASM
+To build the library simply run:
+```bash
+mkdir build && pushd build
+cmake ..
+make
+```
 
+This also builds an executable to test the library:
+```bash
+./build/test Viewer/data.xodr
+```
+
+## WebAssembly
+To build the WebAssembly library run:
 ```bash
 mkdir build && pushd build
 emcmake cmake ..
@@ -21,3 +34,7 @@ emcc -std=c++14 -O3 -Wall -I . \
     -s ALLOW_MEMORY_GROWTH=1 \
     -o Viewer/libOpenDrive.js
 ```
+
+## Viewer
+To use the included Viewer first build the WebAssembly library and run a Webserver in the _Viewer/_ directory (e.g. `python3 -m http.server`).
+![viewer-demo](https://user-images.githubusercontent.com/42587026/129762731-3c89900b-979e-436a-9a55-4c8745baa945.png)
