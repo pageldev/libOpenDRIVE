@@ -1,10 +1,12 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "Arc.h"
 #include "Math.hpp"
 #include "RoadGeometry.h"
 #include "Utils.hpp"
 
 #include <array>
-#include <cmath>
 #include <functional>
 #include <initializer_list>
 #include <vector>
