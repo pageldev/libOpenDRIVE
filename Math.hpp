@@ -2,9 +2,11 @@
 
 #include <algorithm>
 #include <array>
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <numeric>
 #include <type_traits>
+#include <vector>
 
 namespace odr
 {

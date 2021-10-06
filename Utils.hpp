@@ -10,6 +10,7 @@
 #include <set>
 #include <type_traits>
 #include <vector>
+#include <memory>
 
 namespace odr
 {
