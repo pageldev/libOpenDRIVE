@@ -17,8 +17,10 @@ std::string Mesh3D::get_obj() const
     }
     for (size_t idx = 0; idx < this->indices.size(); idx += 3)
     {
-        size_t const* idxs = &(indices[idx]);
-        ss_obj << "f " << idxs[0] << "//" << idxs[0] << ' ' << idxs[1] << "//" << idxs[1] << ' ' << idxs[2] << "//" << idxs[2] << std::endl;
+        const size_t i1 = indices.at(idx) + 1;
+        const size_t i2 = indices.at(idx + 1) + 1;
+        const size_t i3 = indices.at(idx + 2) + 1;
+        ss_obj << "f " << i1 << "//" << i1 << ' ' << i2 << "//" << i2 << ' ' << i3 << "//" << i3 << std::endl;
     }
 
     return ss_obj.str();
