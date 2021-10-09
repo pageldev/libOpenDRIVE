@@ -128,11 +128,16 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
     Mesh3D out_mesh;
     for (const double& s : s_vals)
     {
+        Vec3D        vn_inner_brdr{0, 0, 0};
         const double t_inner_brdr = this->inner_border.get(s);
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
+        out_mesh.normals.push_back(vn_inner_brdr);
         out_mesh.st_coordinates.push_back({s, t_inner_brdr});
+
+        Vec3D        vn_outer_brdr{0, 0, 0};
         const double t_outer_brdr = this->outer_border.get(s);
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
+        out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
     }
 
@@ -206,10 +211,15 @@ Mesh3D Lane::get_roadmark_mesh(const RoadMark& roadmark, double eps) const
     Mesh3D out_mesh;
     for (const double& s : s_vals)
     {
+        Vec3D        vn_edge_a{0, 0, 0};
         const double t_edge_a = this->outer_border.get(s) + roadmark.width * 0.5 + roadmark.t_offset;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
+        out_mesh.normals.push_back(vn_edge_a);
+
+        Vec3D        vn_edge_b{0, 0, 0};
         const double t_edge_b = t_edge_a - roadmark.width;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b));
+        out_mesh.normals.push_back(vn_edge_b);
     }
 
     const size_t num_pts = out_mesh.vertices.size();

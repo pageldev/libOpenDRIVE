@@ -351,9 +351,15 @@ Mesh3D OpenDriveMap::get_refline_lines(double eps) const
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
         const size_t idx_offset = reflines.vertices.size();
-        const Line3D refl_pts = road->ref_line->get_line(0.0, road->length, eps);
-        reflines.vertices.insert(reflines.vertices.end(), refl_pts.begin(), refl_pts.end());
-        for (size_t idx = idx_offset; idx < (idx_offset + refl_pts.size() - 1); idx++)
+
+        std::set<double> s_vals = road->ref_line->approximate_linear(eps, 0.0, road->length);
+        for (const double& s : s_vals)
+        {
+            reflines.vertices.push_back(road->ref_line->get_xyz(s));
+            reflines.normals.push_back(normalize(road->ref_line->get_grad(s)));
+        }
+
+        for (size_t idx = idx_offset; idx < (idx_offset + s_vals.size() - 1); idx++)
         {
             reflines.indices.push_back(idx);
             reflines.indices.push_back(idx + 1);

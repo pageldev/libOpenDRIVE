@@ -10,6 +10,8 @@ struct Mesh3D
 {
     std::vector<Vec3D>  vertices;
     std::vector<size_t> indices;
-    std::vector<Vec2D>  st_coordinates;
+
+    std::vector<Vec3D> normals;
+    std::vector<Vec2D> st_coordinates;
 };
 } // namespace odr
