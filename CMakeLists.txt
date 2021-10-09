@@ -22,6 +22,7 @@ add_library(OpenDrive SHARED
     Geometries/Spiral/odrSpiral.cpp
     Lanes.cpp
     LaneSection.cpp
+    Mesh.cpp
     OpenDriveMap.cpp
     RefLine.cpp
     Road.cpp

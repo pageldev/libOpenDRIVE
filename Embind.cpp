@@ -67,6 +67,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("s0_to_geometry", &RefLine::s0_to_geometry);
 
     emscripten::class_<Mesh3D>("Mesh3D")
+        .function("get_obj", &Mesh3D::get_obj)
         .property("vertices", &Mesh3D::vertices)
         .property("indices", &Mesh3D::indices)
         .property("normals", &Mesh3D::normals)

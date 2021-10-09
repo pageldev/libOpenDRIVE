@@ -2,12 +2,15 @@
 
 #include "Math.hpp"
 
+#include <string>
 #include <vector>
 
 namespace odr
 {
 struct Mesh3D
 {
+    std::string get_obj() const;
+
     std::vector<Vec3D>  vertices;
     std::vector<size_t> indices;
 
