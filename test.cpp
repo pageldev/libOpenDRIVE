@@ -37,8 +37,10 @@ int main(int argc, char** argv)
     {
         std::ofstream out_file;
         out_file.open(argv[2]);
-        for (const auto& pt : pts)
-            out_file << pt[0] << ' ' << pt[1] << ' ' << pt[2] << std::endl;
+
+        odr::RoadNetworkMesh road_network_mesh = odr.get_mesh(0.1);
+        out_file << road_network_mesh.lane_mesh_union.get_obj() << std::endl;
+
         out_file.close();
     }
 
