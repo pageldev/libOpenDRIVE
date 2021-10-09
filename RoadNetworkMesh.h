@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mesh.h"
 #include "Utils.hpp"
 
 #include <map>

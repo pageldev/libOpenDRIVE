@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mesh.h"
 #include "Road.h"
 #include "RoadNetworkMesh.h"
 

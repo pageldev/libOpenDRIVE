@@ -2,6 +2,7 @@
 
     #include "LaneSection.h"
     #include "Lanes.h"
+    #include "Mesh.h"
     #include "OpenDriveMap.h"
     #include "RefLine.h"
     #include "Road.h"
