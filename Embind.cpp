@@ -126,7 +126,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
     emscripten::class_<RoadmarkMeshUnion, emscripten::base<MeshUnion>>("RoadmarkMeshUnion")
         .function("get_roadmark_type", &RoadmarkMeshUnion::get_roadmark_type)
         .function("get_idx_interval_roadmark", &RoadmarkMeshUnion::get_idx_interval_roadmark)
-        .function("get_roadmark_outline_indices", &RoadmarkMeshUnion::get_roadmark_outline_indices)        
+        .function("get_roadmark_outline_indices", &RoadmarkMeshUnion::get_roadmark_outline_indices)
         .property("roadmark_type_start_indices", &RoadmarkMeshUnion::roadmark_type_start_indices);
 
     emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh")

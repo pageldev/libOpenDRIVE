@@ -64,7 +64,8 @@ Vec3D RefLine::get_grad(double s) const
 
 double RefLine::match(double x, double y) const
 {
-    std::function<double(double)> f_dist = [&](const double s) {
+    std::function<double(double)> f_dist = [&](const double s)
+    {
         const Vec3D pt = this->get_xyz(s);
         return euclDistance(Vec2D{pt[0], pt[1]}, {x, y});
     };

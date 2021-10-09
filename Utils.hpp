@@ -7,10 +7,10 @@
 #include <cmath>
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <type_traits>
 #include <vector>
-#include <memory>
 
 namespace odr
 {
@@ -209,7 +209,8 @@ template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>
 std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std::array<Vec<T, Dim>, 4>& ctrl_pts)
 {
     /* modified f_cubic allowing different p values for segments */
-    auto f_cubic_p123 = [&](const T& p1, const T& p2, const T& p3) -> Vec<T, Dim> {
+    auto f_cubic_p123 = [&](const T& p1, const T& p2, const T& p3) -> Vec<T, Dim>
+    {
         Vec<T, Dim> out;
         for (size_t dim = 0; dim < Dim; dim++)
         {

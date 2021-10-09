@@ -137,7 +137,8 @@ template<typename T, size_t Dim>
 std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end) const
 {
     /* modified get(T t) allowing different t values for segments */
-    auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim> {
+    auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
+    {
         Vec<T, Dim> out;
         for (size_t dim = 0; dim < Dim; dim++)
         {
