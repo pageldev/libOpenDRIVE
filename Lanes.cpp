@@ -7,7 +7,7 @@ namespace odr
 {
 Lane::Lane(int id, bool level, std::string type) : id(id), level(level), type(type) {}
 
-Vec3D Lane::get_surface_pt(double s, double t) const
+Vec3D Lane::get_surface_pt(double s, double t, Vec3D* vn) const
 {
     auto road_ptr = this->road.lock();
     if (!road_ptr)
@@ -54,7 +54,7 @@ Vec3D Lane::get_surface_pt(double s, double t) const
         }
     }
 
-    return road_ptr->get_xyz(s, t, h_t);
+    return road_ptr->get_xyz(s, t, h_t, vn);
 }
 
 std::set<double> Lane::approximate_border_linear(double s_start, double s_end, double eps, bool outer) const

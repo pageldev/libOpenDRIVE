@@ -24,7 +24,7 @@ struct HeightOffset
 struct Lane : public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
-    Vec3D  get_surface_pt(double s, double t) const;
+    Vec3D  get_surface_pt(double s, double t, Vec3D* vn = nullptr) const;
     Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true) const;
     Mesh3D get_mesh(double s_start, double s_end, double eps) const;
 
