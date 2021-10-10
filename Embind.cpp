@@ -137,7 +137,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .property("roadmark_mesh_union", &RoadNetworkMesh::roadmark_mesh_union);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
-        .constructor<std::string, bool, bool>()
+        .constructor<std::string, bool, bool, bool>()
         .function("get_refline_segments", &OpenDriveMap::get_refline_lines)
         .function("get_mesh", &OpenDriveMap::get_mesh)
         .property("xodr_file", &OpenDriveMap::xodr_file)
