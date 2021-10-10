@@ -133,9 +133,10 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 double dV = geometry_node.attribute("dV").as_double();
 
                 bool pRange_normalized = true;
-                if (geometry_node.attribute("pRange"))
+                if (geometry_node.attribute("pRange") || geometry_hdr_node.attribute("pRange"))
                 {
-                    std::string pRange_str = geometry_node.attribute("pRange").as_string();
+                    std::string pRange_str = geometry_node.attribute("pRange") ? geometry_node.attribute("pRange").as_string()
+                                                                               : geometry_hdr_node.attribute("pRange").as_string();
                     std::transform(pRange_str.begin(), pRange_str.end(), pRange_str.begin(), [](unsigned char c) { return std::tolower(c); });
                     if (pRange_str == "arclength")
                         pRange_normalized = false;
