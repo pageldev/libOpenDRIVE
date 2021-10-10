@@ -35,34 +35,38 @@ ParamPoly3::ParamPoly3(double s0,
         this->dU = dU * length * length * length;
         this->dV = dV * length * length * length;
     }
+
+    const std::array<Vec2D, 4> coefficients = {{{this->aU, this->aV}, {this->bU, this->bV}, {this->cU, this->cV}, {this->dU, this->dV}}};
+    this->cubic_bezier = CubicBezier2D(CubicBezier2D::get_control_points(coefficients));
 }
 
 Vec2D ParamPoly3::get_xy(double s) const
 {
     const double p = (s - s0) / length;
-    const double xs = aU + bU * p + cU * p * p + dU * p * p * p;
-    const double ys = aV + bV * p + cV * p * p + dV * p * p * p;
-    const double xt = (std::cos(hdg0) * xs) - (std::sin(hdg0) * ys) + x0;
-    const double yt = (std::sin(hdg0) * xs) + (std::cos(hdg0) * ys) + y0;
+    const Vec2D  pt = this->cubic_bezier.get(p);
+
+    const double xt = (std::cos(hdg0) * pt[0]) - (std::sin(hdg0) * pt[1]) + x0;
+    const double yt = (std::sin(hdg0) * pt[0]) + (std::cos(hdg0) * pt[1]) + y0;
 
     return Vec2D{xt, yt};
 }
 
 Vec2D ParamPoly3::get_grad(double s) const
 {
+    const double p = (s - s0) / length;
+    const Vec2D  dxy = this->cubic_bezier.get_grad(p);
+
     const double h1 = std::cos(hdg0);
     const double h2 = std::sin(hdg0);
-    const double p = (s - s0) / length;
-    const double dx = h1 * (bU + 2 * cU * p + 3 * dU * p * p) - h2 * (bV + 2 * cV * p + 3 * dV * p * p);
-    const double dy = h2 * (bU + 2 * cU * p + 3 * dU * p * p) + h1 * (bV + 2 * cV * p + 3 * dV * p * p);
+    const double dx = h1 * dxy[0] - h2 * dxy[1];
+    const double dy = h2 * dxy[0] + h1 * dxy[1];
 
     return {{dx, dy}};
 }
 
 std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
-    std::array<Vec2D, 4> coefficients = {{{aU, aV}, {bU, bV}, {cU, cV}, {dU, dV}}};
-    std::set<double>     p_vals = approximate_linear_cubic_bezier<double, 2>(coefficients, eps);
+    std::set<double> p_vals = this->cubic_bezier.approximate_linear(eps);
 
     std::set<double> s_vals;
     for (const double& p : p_vals)

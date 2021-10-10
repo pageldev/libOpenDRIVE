@@ -212,5 +212,6 @@ template<typename T, size_t Dim>
 const double CubicBezier<T, Dim>::LengthTolerance = 1e-2;
 
 typedef CubicBezier<double, 2> CubicBezier2D;
+typedef CubicBezier<double, 1> CubicBezier1D;
 
 } // namespace odr

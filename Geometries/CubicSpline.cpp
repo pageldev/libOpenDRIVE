@@ -1,4 +1,5 @@
 #include "CubicSpline.h"
+#include "CubicBezier.hpp"
 #include "Utils.hpp"
 
 #include <cmath>
@@ -70,7 +71,7 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
         const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
         const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
-        const std::set<double>     p_vals = approximate_linear_cubic_bezier(coefficients, eps);
+        const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);
 
         s_vals.push_back(s_start);
         for (const double& p : p_vals)

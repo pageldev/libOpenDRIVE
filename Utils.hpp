@@ -176,30 +176,6 @@ void rdp(
 }
 
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-std::array<Vec<T, Dim>, 4> get_control_points_cubic_bezier(const std::array<Vec<T, Dim>, 4>& coefficients)
-{
-    /* a + b*x + c*x^2 +d*x^3 */
-    const Vec<T, Dim>& a = coefficients[0];
-    const Vec<T, Dim>& b = coefficients[1];
-    const Vec<T, Dim>& c = coefficients[2];
-    const Vec<T, Dim>& d = coefficients[3];
-
-    std::array<Vec<T, Dim>, 4> ctrl_pts;
-    ctrl_pts[0] = a;
-
-    for (size_t dim = 0; dim < Dim; dim++)
-        ctrl_pts[1][dim] = (b[dim] / 3) + a[dim];
-
-    for (size_t dim = 0; dim < Dim; dim++)
-        ctrl_pts[2][dim] = (c[dim] / 3) + 2 * ctrl_pts[1][dim] - ctrl_pts[0][dim];
-
-    for (size_t dim = 0; dim < Dim; dim++)
-        ctrl_pts[3][dim] = d[dim] + 3 * ctrl_pts[2][dim] - 3 * ctrl_pts[1][dim] + ctrl_pts[0][dim];
-
-    return ctrl_pts;
-}
-
-template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std::array<Vec<T, Dim>, 4>& ctrl_pts)
 {
     /* modified f_cubic allowing different p values for segments */
@@ -241,57 +217,6 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
         p_vals.push_back(1);
 
     return p_vals;
-}
-
-template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-std::set<T> approximate_linear_cubic_bezier(const std::array<Vec<T, Dim>, 4>& coefficients, T eps)
-{
-    /* coefficients = [a, b, c, d]; a + b*x + c*x^2 +d*x^3 */
-    std::array<Vec<T, Dim>, 4> ctrl_pts = get_control_points_cubic_bezier<T, Dim>(coefficients);
-
-    /* approximate cubic bezier by splitting into quadratic ones */
-    const T seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * norm(coefficients[3])), (1.0 / 3.0));
-
-    std::vector<std::array<T, 2>> seg_intervals;
-    for (T p = 0; p < 1; p += seg_size)
-        seg_intervals.push_back({p, std::min<T>(p + seg_size, 1)});
-
-    if (T(1) - (seg_intervals.back().at(1)) < 1e-6)
-        seg_intervals.back().at(1) = 1.0;
-    else
-        seg_intervals.push_back({seg_intervals.back().at(1), 1.0});
-
-    std::vector<T> p_vals{0};
-    for (const std::array<T, 2>& seg_intrvl : seg_intervals)
-    {
-        /* get sub-cubic bezier for interval */
-        const double& p0 = seg_intrvl.at(0);
-        const double& p1 = seg_intrvl.at(1);
-
-        const std::array<Vec<T, Dim>, 4> c_pts_sub = subdivide_cubic_bezier<T, Dim>(p0, p1, ctrl_pts);
-
-        /* approximate sub-cubic bezier by two quadratic ones */
-        Vec<T, Dim> pB_quad_0;
-        for (size_t dim = 0; dim < Dim; dim++)
-            pB_quad_0[dim] = (1.0 - 0.75) * c_pts_sub[0][dim] + 0.75 * c_pts_sub[1][dim];
-        Vec<T, Dim> pB_quad_1;
-        for (size_t dim = 0; dim < Dim; dim++)
-            pB_quad_1[dim] = (1.0 - 0.75) * c_pts_sub[3][dim] + 0.75 * c_pts_sub[2][dim];
-        Vec<T, Dim> pM_quad;
-        for (size_t dim = 0; dim < Dim; dim++)
-            pM_quad[dim] = (1.0 - 0.5) * pB_quad_0[dim] + 0.5 * pB_quad_1[dim];
-
-        /* linear approximate the two quadratic bezier */
-        for (const double& p_sub : approximate_linear_quad_bezier<T, Dim>({c_pts_sub[0], pB_quad_0, pM_quad}, 0.5 * eps))
-            p_vals.push_back(p0 + p_sub * (p1 - p0) * 0.5);
-        p_vals.pop_back();
-        for (const double& p_sub : approximate_linear_quad_bezier<T, Dim>({pM_quad, pB_quad_1, c_pts_sub[3]}, 0.5 * eps))
-            p_vals.push_back(p0 + (p1 - p0) * 0.5 + p_sub * (p1 - p0) * 0.5);
-        p_vals.pop_back();
-    }
-    p_vals.push_back(1);
-
-    return std::set<T>(p_vals.begin(), p_vals.end());
 }
 
 } // namespace odr
