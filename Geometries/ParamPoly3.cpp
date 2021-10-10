@@ -43,7 +43,7 @@ ParamPoly3::ParamPoly3(double s0,
 
 Vec2D ParamPoly3::get_xy(double s) const
 {
-    const double p = (s - s0) / length;
+    const double p = this->cubic_bezier.get_t(s - s0);
     const Vec2D  pt = this->cubic_bezier.get(p);
 
     const double xt = (std::cos(hdg0) * pt[0]) - (std::sin(hdg0) * pt[1]) + x0;
