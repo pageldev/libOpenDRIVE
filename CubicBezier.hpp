@@ -68,6 +68,8 @@ struct CubicBezier
         return coefficients;
     }
 
+    T length;
+
     std::array<Vec<T, Dim>, 4> control_points;
     std::map<T, T>             arclen_t;
     static const double        LengthTolerance;
@@ -90,6 +92,8 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
         arclen += euclDistance(pt, pt_prev);
         this->arclen_t[arclen] = *t_val_iter;
     }
+
+    this->length = std::prev(this->arclen_t.end())->first;
 }
 
 template<typename T, size_t Dim>
@@ -105,14 +109,26 @@ Vec<T, Dim> CubicBezier<T, Dim>::get(T t) const
 template<typename T, size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
+    if ((arclen - this->length) > this->LengthTolerance || arclen < 0)
+        throw std::runtime_error("arclength out of range");
+
+    arclen = std::min<T>(arclen, this->length);
+
     auto arclen_t_iter = this->arclen_t.upper_bound(arclen);
     if (arclen_t_iter != this->arclen_t.begin())
         arclen_t_iter--;
+
     const T arcl_lower_bound = arclen_t_iter->first;
     const T t_lower_bound = arclen_t_iter->second;
+    if (arclen == arcl_lower_bound)
+        return t_lower_bound;
 
-    const T length = std::prev(arclen_t.end())->first;
-    return ((arclen - arcl_lower_bound) / length) + t_lower_bound;
+    const T arcl_upper_bound = std::next(arclen_t_iter)->first;
+    const T t_upper_bound = std::next(arclen_t_iter)->second;
+    const T seg_arc_len = arcl_upper_bound - arcl_lower_bound;
+    const T seg_t_len = t_upper_bound - t_lower_bound;
+
+    return t_lower_bound + ((arclen - arcl_lower_bound) / seg_arc_len) * seg_t_len;
 }
 
 template<typename T, size_t Dim>

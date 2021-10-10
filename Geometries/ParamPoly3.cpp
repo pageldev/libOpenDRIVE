@@ -38,7 +38,9 @@ ParamPoly3::ParamPoly3(double s0,
 
     const std::array<Vec2D, 4> coefficients = {{{this->aU, this->aV}, {this->bU, this->bV}, {this->cU, this->cV}, {this->dU, this->dV}}};
     this->cubic_bezier = CubicBezier2D(CubicBezier2D::get_control_points(coefficients));
+
     this->cubic_bezier.arclen_t[length] = 1.0;
+    this->cubic_bezier.length = length;
 }
 
 Vec2D ParamPoly3::get_xy(double s) const
@@ -54,7 +56,7 @@ Vec2D ParamPoly3::get_xy(double s) const
 
 Vec2D ParamPoly3::get_grad(double s) const
 {
-    const double p = (s - s0) / length;
+    const double p = this->cubic_bezier.get_t(s - s0);
     const Vec2D  dxy = this->cubic_bezier.get_grad(p);
 
     const double h1 = std::cos(hdg0);
