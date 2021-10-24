@@ -52,6 +52,8 @@ struct RoadmarksMesh : public LanesMesh
 
 struct RoadNetworkMesh
 {
+    Mesh3D get_mesh() const;
+
     LanesMesh     lanes_mesh;
     RoadmarksMesh roadmarks_mesh;
 };

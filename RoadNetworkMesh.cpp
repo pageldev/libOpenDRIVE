@@ -69,4 +69,12 @@ std::vector<size_t> RoadmarksMesh::get_roadmark_outline_indices() const
     return get_outline_indices<std::string>(this->roadmark_type_start_indices, this->vertices.size());
 }
 
+Mesh3D RoadNetworkMesh::get_mesh() const
+{
+    Mesh3D out_mesh;
+    out_mesh.add_mesh(this->lanes_mesh);
+    out_mesh.add_mesh(this->roadmarks_mesh);
+    return out_mesh;
+}
+
 } // namespace odr

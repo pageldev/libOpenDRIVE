@@ -39,7 +39,7 @@ int main(int argc, char** argv)
         out_file.open(argv[2]);
 
         odr::RoadNetworkMesh road_network_mesh = odr.get_mesh(0.1);
-        out_file << road_network_mesh.lanes_mesh.get_obj() << std::endl;
+        out_file << road_network_mesh.get_mesh().get_obj() << std::endl;
 
         out_file.close();
     }
