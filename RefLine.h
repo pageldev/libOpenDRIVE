@@ -14,6 +14,7 @@ struct RoadGeometry;
 struct RefLine
 {
     RefLine(double length);
+    virtual ~RefLine() = default;
 
     ConstRoadGeometrySet get_geometries() const;
     RoadGeometrySet      get_geometries();

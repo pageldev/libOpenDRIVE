@@ -11,6 +11,9 @@ namespace odr
 {
 struct MeshUnion : public Mesh3D
 {
+    MeshUnion() = default;
+    virtual ~MeshUnion() = default;
+
     std::string get_road_id(size_t vert_idx) const;
     double      get_lanesec_s0(size_t vert_idx) const;
     int         get_lane_id(size_t vert_idx) const;
@@ -26,11 +29,17 @@ struct MeshUnion : public Mesh3D
 
 struct LaneMeshUnion : public MeshUnion
 {
+    LaneMeshUnion() = default;
+    virtual ~LaneMeshUnion() = default;
+
     std::vector<size_t> get_lane_outline_indices() const;
 };
 
 struct RoadmarkMeshUnion : public MeshUnion
 {
+    RoadmarkMeshUnion() = default;
+    virtual ~RoadmarkMeshUnion() = default;
+
     std::string           get_roadmark_type(size_t vert_idx) const;
     std::array<size_t, 2> get_idx_interval_roadmark(size_t vert_idx) const;
     std::vector<size_t>   get_roadmark_outline_indices() const;

@@ -10,6 +10,4 @@ RoadGeometry::RoadGeometry(double s0, double x0, double y0, double hdg0, double 
 {
 }
 
-RoadGeometry::~RoadGeometry(){};
-
 } // namespace odr

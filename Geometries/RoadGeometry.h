@@ -21,7 +21,7 @@ enum class GeometryType
 struct RoadGeometry
 {
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
-    virtual ~RoadGeometry();
+    virtual ~RoadGeometry() = default;
 
     virtual Vec2D get_xy(double s) const = 0;
     virtual Vec2D get_grad(double s) const = 0;

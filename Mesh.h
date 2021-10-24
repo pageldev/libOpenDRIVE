@@ -9,6 +9,9 @@ namespace odr
 {
 struct Mesh3D
 {
+    Mesh3D() = default;
+    virtual ~Mesh3D() = default;
+
     std::string get_obj() const;
 
     std::vector<Vec3D>  vertices;

@@ -17,6 +17,7 @@ class Road;
 struct LaneSection : public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
+    virtual ~LaneSection() = default;
 
     double get_end() const;
 

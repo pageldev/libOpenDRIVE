@@ -53,6 +53,7 @@ class Road : public std::enable_shared_from_this<Road>
 {
 public:
     Road() = default;
+    virtual ~Road() = default;
 
     ConstLaneSectionSet get_lanesections() const;
     LaneSectionSet      get_lanesections();
