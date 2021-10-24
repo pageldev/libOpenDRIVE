@@ -467,14 +467,16 @@ Mesh3D OpenDriveMap::get_refline_lines(double eps) const
 
 RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
 {
-    RoadNetworkMesh out_mesh;
-    LanesMesh&      lanes_mesh = out_mesh.lanes_mesh;
-    RoadmarksMesh&  roadmarks_mesh = out_mesh.roadmarks_mesh;
+    RoadNetworkMesh  out_mesh;
+    LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
+    RoadmarksMesh&   roadmarks_mesh = out_mesh.roadmarks_mesh;
+    RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
 
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
         lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road->id;
         roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road->id;
+        road_objects_mesh.road_start_indices[road_objects_mesh.vertices.size()] = road->id;
 
         for (std::shared_ptr<const LaneSection> lanesec : road->get_lanesections())
         {
@@ -496,6 +498,13 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
                     roadmarks_mesh.add_mesh(lane->get_roadmark_mesh(roadmark, eps));
                 }
             }
+        }
+
+        for (std::shared_ptr<RoadObject> road_object : road->objects)
+        {
+            const size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
+            road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object->id;
+            road_objects_mesh.add_mesh(road_object->get_mesh(eps));
         }
     }
 
