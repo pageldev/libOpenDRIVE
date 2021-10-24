@@ -172,11 +172,11 @@ function loadOdrMap(clear_map = true, fit_view = true) {
 
     /* road network geometry */
     const odr_road_network_mesh = OpenDriveMap.get_mesh(parseFloat(PARAMS.resolution));
-    const odr_lane_mesh_union = odr_road_network_mesh.lane_mesh_union;
-    const road_network_geom = get_geometry(odr_lane_mesh_union);
+    const odr_lanes_mesh = odr_road_network_mesh.lanes_mesh;
+    const road_network_geom = get_geometry(odr_lanes_mesh);
     road_network_geom.attributes.color.array.fill(COLORS.road);
-    for (const [vert_start_idx, _] of getStdMapEntries(odr_lane_mesh_union.lane_start_indices)) {
-        const vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(vert_start_idx);
+    for (const [vert_start_idx, _] of getStdMapEntries(odr_lanes_mesh.lane_start_indices)) {
+        const vert_idx_interval = odr_lanes_mesh.get_idx_interval_lane(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
         const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
         const attr_arr = new Float32Array(vert_count * 4);
@@ -210,11 +210,11 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     st_scene.add(st_mesh);
 
     /* roadmarks geometry */
-    const odr_roadmark_mesh_union = odr_road_network_mesh.roadmark_mesh_union;
-    const roadmarks_geom = get_geometry(odr_roadmark_mesh_union);
+    const odr_roadmarks_mesh = odr_road_network_mesh.roadmarks_mesh;
+    const roadmarks_geom = get_geometry(odr_roadmarks_mesh);
     roadmarks_geom.attributes.color.array.fill(COLORS.roadmark);
-    for (const [vert_start_idx, _] of getStdMapEntries(odr_roadmark_mesh_union.roadmark_type_start_indices)) {
-        const vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_roadmark(vert_start_idx);
+    for (const [vert_start_idx, _] of getStdMapEntries(odr_roadmarks_mesh.roadmark_type_start_indices)) {
+        const vert_idx_interval = odr_roadmarks_mesh.get_idx_interval_roadmark(vert_start_idx);
         const vert_count = vert_idx_interval[1] - vert_idx_interval[0];
         const vert_start_idx_encoded = encodeUInt32(vert_start_idx);
         const attr_arr = new Float32Array(vert_count * 4);
@@ -238,7 +238,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     /* lane outline */
     const lane_outlines_geom = new THREE.BufferGeometry();
     lane_outlines_geom.setAttribute('position', road_network_geom.attributes.position);
-    lane_outlines_geom.setIndex(getStdVecEntries(odr_lane_mesh_union.get_lane_outline_indices(), true));
+    lane_outlines_geom.setIndex(getStdVecEntries(odr_lanes_mesh.get_lane_outline_indices(), true));
     lane_outline_lines = new THREE.LineSegments(lane_outlines_geom, lane_outlines_material);
     lane_outline_lines.renderOrder = 9;
     disposable_objs.push(lane_outlines_geom);
@@ -247,7 +247,7 @@ function loadOdrMap(clear_map = true, fit_view = true) {
     /* roadmark outline */
     const roadmark_outlines_geom = new THREE.BufferGeometry();
     roadmark_outlines_geom.setAttribute('position', roadmarks_geom.attributes.position);
-    roadmark_outlines_geom.setIndex(getStdVecEntries(odr_roadmark_mesh_union.get_roadmark_outline_indices(), true));
+    roadmark_outlines_geom.setIndex(getStdVecEntries(odr_roadmarks_mesh.get_roadmark_outline_indices(), true));
     roadmark_outline_lines = new THREE.LineSegments(roadmark_outlines_geom, roadmark_outlines_material);
     roadmark_outline_lines.renderOrder = 8;
     roadmark_outline_lines.matrixAutoUpdate = false;
@@ -292,8 +292,8 @@ function loadOdrMap(clear_map = true, fit_view = true) {
         </div>`;
     notyf.open({ type: 'info', message: info_msg });
 
-    odr_roadmark_mesh_union.delete();
-    odr_lane_mesh_union.delete();
+    odr_roadmarks_mesh.delete();
+    odr_lanes_mesh.delete();
     spotlight_info.style.display = "none";
     animate();
 }
@@ -332,27 +332,27 @@ function animate() {
 
         if (isValid(lane_id_pixel_buffer)) {
             const decoded_lane_id = decodeUInt32(lane_id_pixel_buffer);
-            const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
+            const odr_lanes_mesh = road_network_mesh.userData.odr_road_network_mesh.lanes_mesh;
             if (INTERSECTED_LANE_ID != decoded_lane_id) {
                 if (INTERSECTED_LANE_ID != 0xffffffff) {
-                    const prev_lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
+                    const prev_lane_vert_idx_interval = odr_lanes_mesh.get_idx_interval_lane(INTERSECTED_LANE_ID);
                     road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, prev_lane_vert_idx_interval[0] * 3, prev_lane_vert_idx_interval[1] * 3);
                 }
                 INTERSECTED_LANE_ID = decoded_lane_id;
-                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
+                const lane_vert_idx_interval = odr_lanes_mesh.get_idx_interval_lane(INTERSECTED_LANE_ID);
                 const vert_count = (lane_vert_idx_interval[1] - lane_vert_idx_interval[0]);
                 applyVertexColors(road_network_mesh.geometry.attributes.color, new THREE.Color(COLORS.lane_highlight), lane_vert_idx_interval[0], vert_count);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
                 spotlight_info.style.display = "block";
             }
-            odr_lane_mesh_union.delete();
+            odr_lanes_mesh.delete();
         } else {
             if (INTERSECTED_LANE_ID != 0xffffffff) {
-                const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-                const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
+                const odr_lanes_mesh = road_network_mesh.userData.odr_road_network_mesh.lanes_mesh;
+                const lane_vert_idx_interval = odr_lanes_mesh.get_idx_interval_lane(INTERSECTED_LANE_ID);
                 road_network_mesh.geometry.attributes.color.array.fill(COLORS.road, lane_vert_idx_interval[0] * 3, lane_vert_idx_interval[1] * 3);
                 road_network_mesh.geometry.attributes.color.needsUpdate = true;
-                odr_lane_mesh_union.delete();
+                odr_lanes_mesh.delete();
             }
             INTERSECTED_LANE_ID = 0xffffffff;
             spotlight_info.style.display = "none";
@@ -360,37 +360,37 @@ function animate() {
 
         if (isValid(roadmark_id_pixel_buffer)) {
             const decoded_roadmark_id = decodeUInt32(roadmark_id_pixel_buffer);
-            const odr_roadmark_mesh_union = road_network_mesh.userData.odr_road_network_mesh.roadmark_mesh_union;
+            const odr_roadmarks_mesh = road_network_mesh.userData.odr_road_network_mesh.roadmarks_mesh;
             if (INTERSECTED_ROADMARK_ID != decoded_roadmark_id) {
                 if (INTERSECTED_ROADMARK_ID != 0xffffffff) {
-                    const prev_roadmark_vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_roadmark(INTERSECTED_ROADMARK_ID);
+                    const prev_roadmark_vert_idx_interval = odr_roadmarks_mesh.get_idx_interval_roadmark(INTERSECTED_ROADMARK_ID);
                     roadmarks_mesh.geometry.attributes.color.array.fill(COLORS.roadmark, prev_roadmark_vert_idx_interval[0] * 3, prev_roadmark_vert_idx_interval[1] * 3);
                 }
                 INTERSECTED_ROADMARK_ID = decoded_roadmark_id;
-                const roadmark_vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_roadmark(INTERSECTED_ROADMARK_ID);
+                const roadmark_vert_idx_interval = odr_roadmarks_mesh.get_idx_interval_roadmark(INTERSECTED_ROADMARK_ID);
                 const vert_count = (roadmark_vert_idx_interval[1] - roadmark_vert_idx_interval[0]);
                 applyVertexColors(roadmarks_mesh.geometry.attributes.color, new THREE.Color(COLORS.roadmark_highlight), roadmark_vert_idx_interval[0], vert_count);
                 roadmarks_mesh.geometry.attributes.color.needsUpdate = true;
             }
-            odr_roadmark_mesh_union.delete();
+            odr_roadmarks_mesh.delete();
         } else {
             if (INTERSECTED_ROADMARK_ID != 0xffffffff) {
-                const odr_roadmark_mesh_union = road_network_mesh.userData.odr_road_network_mesh.roadmark_mesh_union;
-                const roadmark_vert_idx_interval = odr_roadmark_mesh_union.get_idx_interval_lane(INTERSECTED_ROADMARK_ID);
+                const odr_roadmarks_mesh = road_network_mesh.userData.odr_road_network_mesh.roadmarks_mesh;
+                const roadmark_vert_idx_interval = odr_roadmarks_mesh.get_idx_interval_lane(INTERSECTED_ROADMARK_ID);
                 roadmarks_mesh.geometry.attributes.color.array.fill(COLORS.roadmark, roadmark_vert_idx_interval[0] * 3, roadmark_vert_idx_interval[1] * 3);
                 roadmarks_mesh.geometry.attributes.color.needsUpdate = true;
-                odr_roadmark_mesh_union.delete();
+                odr_roadmarks_mesh.delete();
             }
             INTERSECTED_ROADMARK_ID = 0xffffffff;
         }
 
         if (INTERSECTED_LANE_ID != 0xffffffff) {
-            const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-            const road_id = odr_lane_mesh_union.get_road_id(INTERSECTED_LANE_ID);
-            const lanesec_s0 = odr_lane_mesh_union.get_lanesec_s0(INTERSECTED_LANE_ID);
-            const lane_id = odr_lane_mesh_union.get_lane_id(INTERSECTED_LANE_ID);
+            const odr_lanes_mesh = road_network_mesh.userData.odr_road_network_mesh.lanes_mesh;
+            const road_id = odr_lanes_mesh.get_road_id(INTERSECTED_LANE_ID);
+            const lanesec_s0 = odr_lanes_mesh.get_lanesec_s0(INTERSECTED_LANE_ID);
+            const lane_id = odr_lanes_mesh.get_lane_id(INTERSECTED_LANE_ID);
             const lane_type = OpenDriveMap.roads.get(road_id).s_to_lanesection.get(lanesec_s0).id_to_lane.get(lane_id).type;
-            odr_lane_mesh_union.delete();
+            odr_lanes_mesh.delete();
             spotlight_info.innerHTML = `
                     <table>
                         <tr><th>road id</th><th>${road_id}</th></tr>
@@ -507,11 +507,11 @@ function onDocumentMouseMove(event) {
 
 function onDocumentMouseDbClick(e) {
     if (INTERSECTED_LANE_ID != 0xffffffff) {
-        const odr_lane_mesh_union = road_network_mesh.userData.odr_road_network_mesh.lane_mesh_union;
-        const lane_vert_idx_interval = odr_lane_mesh_union.get_idx_interval_lane(INTERSECTED_LANE_ID);
-        const vertA = odr_lane_mesh_union.vertices.get(lane_vert_idx_interval[0]);
-        const vertB = odr_lane_mesh_union.vertices.get(lane_vert_idx_interval[1] - 1);
-        odr_lane_mesh_union.delete();
+        const odr_lanes_mesh = road_network_mesh.userData.odr_road_network_mesh.lanes_mesh;
+        const lane_vert_idx_interval = odr_lanes_mesh.get_idx_interval_lane(INTERSECTED_LANE_ID);
+        const vertA = odr_lanes_mesh.vertices.get(lane_vert_idx_interval[0]);
+        const vertB = odr_lanes_mesh.vertices.get(lane_vert_idx_interval[1] - 1);
+        odr_lanes_mesh.delete();
         const bbox = new THREE.Box3();
         bbox.setFromArray([vertA, vertB].flat());
         fitViewToBbox(bbox, false);

@@ -9,10 +9,10 @@
 
 namespace odr
 {
-struct MeshUnion : public Mesh3D
+struct RoadsMesh : public Mesh3D
 {
-    MeshUnion() = default;
-    virtual ~MeshUnion() = default;
+    RoadsMesh() = default;
+    virtual ~RoadsMesh() = default;
 
     std::string get_road_id(size_t vert_idx) const;
 
@@ -21,10 +21,10 @@ struct MeshUnion : public Mesh3D
     std::map<size_t, std::string> road_start_indices;
 };
 
-struct LaneMeshUnion : public MeshUnion
+struct LanesMesh : public RoadsMesh
 {
-    LaneMeshUnion() = default;
-    virtual ~LaneMeshUnion() = default;
+    LanesMesh() = default;
+    virtual ~LanesMesh() = default;
 
     double get_lanesec_s0(size_t vert_idx) const;
     int    get_lane_id(size_t vert_idx) const;
@@ -38,10 +38,10 @@ struct LaneMeshUnion : public MeshUnion
     std::map<size_t, int>    lane_start_indices;
 };
 
-struct RoadmarkMeshUnion : public LaneMeshUnion
+struct RoadmarksMesh : public LanesMesh
 {
-    RoadmarkMeshUnion() = default;
-    virtual ~RoadmarkMeshUnion() = default;
+    RoadmarksMesh() = default;
+    virtual ~RoadmarksMesh() = default;
 
     std::string           get_roadmark_type(size_t vert_idx) const;
     std::array<size_t, 2> get_idx_interval_roadmark(size_t vert_idx) const;
@@ -52,8 +52,8 @@ struct RoadmarkMeshUnion : public LaneMeshUnion
 
 struct RoadNetworkMesh
 {
-    LaneMeshUnion     lane_mesh_union;
-    RoadmarkMeshUnion roadmark_mesh_union;
+    LanesMesh     lanes_mesh;
+    RoadmarksMesh roadmarks_mesh;
 };
 
 } // namespace odr

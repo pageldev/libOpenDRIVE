@@ -394,33 +394,33 @@ Mesh3D OpenDriveMap::get_refline_lines(double eps) const
 
 RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
 {
-    RoadNetworkMesh    out_mesh;
-    LaneMeshUnion&     lanes_union = out_mesh.lane_mesh_union;
-    RoadmarkMeshUnion& roadmarks_union = out_mesh.roadmark_mesh_union;
+    RoadNetworkMesh out_mesh;
+    LanesMesh&      lanes_mesh = out_mesh.lanes_mesh;
+    RoadmarksMesh&  roadmarks_mesh = out_mesh.roadmarks_mesh;
 
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
-        lanes_union.road_start_indices[lanes_union.vertices.size()] = road->id;
-        roadmarks_union.road_start_indices[roadmarks_union.vertices.size()] = road->id;
+        lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road->id;
+        roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road->id;
 
         for (std::shared_ptr<const LaneSection> lanesec : road->get_lanesections())
         {
-            lanes_union.lanesec_start_indices[lanes_union.vertices.size()] = lanesec->s0;
-            roadmarks_union.lanesec_start_indices[roadmarks_union.vertices.size()] = lanesec->s0;
+            lanes_mesh.lanesec_start_indices[lanes_mesh.vertices.size()] = lanesec->s0;
+            roadmarks_mesh.lanesec_start_indices[roadmarks_mesh.vertices.size()] = lanesec->s0;
             for (std::shared_ptr<const Lane> lane : lanesec->get_lanes())
             {
-                const size_t lanes_idx_offset = lanes_union.vertices.size();
-                lanes_union.lane_start_indices[lanes_idx_offset] = lane->id;
-                lanes_union.add_mesh(lane->get_mesh(lanesec->s0, lanesec->get_end(), eps));
+                const size_t lanes_idx_offset = lanes_mesh.vertices.size();
+                lanes_mesh.lane_start_indices[lanes_idx_offset] = lane->id;
+                lanes_mesh.add_mesh(lane->get_mesh(lanesec->s0, lanesec->get_end(), eps));
 
-                size_t roadmarks_idx_offset = roadmarks_union.vertices.size();
-                roadmarks_union.lane_start_indices[roadmarks_idx_offset] = lane->id;
+                size_t roadmarks_idx_offset = roadmarks_mesh.vertices.size();
+                roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane->id;
                 const std::vector<RoadMark> roadmarks = lane->get_roadmarks(lanesec->s0, lanesec->get_end());
                 for (const RoadMark& roadmark : roadmarks)
                 {
-                    roadmarks_idx_offset = roadmarks_union.vertices.size();
-                    roadmarks_union.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
-                    roadmarks_union.add_mesh(lane->get_roadmark_mesh(roadmark, eps));
+                    roadmarks_idx_offset = roadmarks_mesh.vertices.size();
+                    roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
+                    roadmarks_mesh.add_mesh(lane->get_roadmark_mesh(roadmark, eps));
                 }
             }
         }
