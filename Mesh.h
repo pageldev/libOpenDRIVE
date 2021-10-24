@@ -12,6 +12,7 @@ struct Mesh3D
     Mesh3D() = default;
     virtual ~Mesh3D() = default;
 
+    void        add_mesh(const Mesh3D& other);
     std::string get_obj() const;
 
     std::vector<Vec3D>  vertices;

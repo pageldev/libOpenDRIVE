@@ -4,6 +4,19 @@
 
 namespace odr
 {
+
+void Mesh3D::add_mesh(const Mesh3D& other)
+{
+    const size_t idx_offset = this->vertices.size();
+
+    this->vertices.insert(this->vertices.end(), other.vertices.begin(), other.vertices.end());
+    this->normals.insert(this->normals.end(), other.normals.begin(), other.normals.end());
+    this->st_coordinates.insert(this->st_coordinates.end(), other.st_coordinates.begin(), other.st_coordinates.end());
+
+    for (const size_t& idx : other.indices)
+        this->indices.push_back(idx + idx_offset);
+}
+
 std::string Mesh3D::get_obj() const
 {
     std::stringstream ss_obj;
