@@ -129,4 +129,30 @@ constexpr Vec<T, Dim> MatVecMultiplication(const Mat<T, Dim> m, const Vec<T, Dim
     return res;
 }
 
+template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+constexpr Mat<T, 3> EulerAnglesToMatrix(T r_x, T r_y, T r_z)
+{
+    /* precompute sines and cosines of Euler angles */
+    const T su = std::sin(r_x);
+    const T cu = std::cos(r_x);
+    const T sv = std::sin(r_y);
+    const T cv = std::cos(r_y);
+    const T sw = std::sin(r_z);
+    const T cw = std::cos(r_z);
+
+    /* create and populate RotationMatrix */
+    Mat<T, 3> RotMat;
+    RotMat[0][0] = cv * cw;
+    RotMat[0][1] = su * sv * cw - cu * sw;
+    RotMat[0][2] = su * sw + cu * sv * cw;
+    RotMat[1][0] = cv * sw;
+    RotMat[1][1] = cu * cw + su * sv * sw;
+    RotMat[1][2] = cu * sv * sw - su * cw;
+    RotMat[2][0] = -sv;
+    RotMat[2][1] = su * cv;
+    RotMat[2][2] = cu * cv;
+
+    return RotMat;
+}
+
 } // namespace odr
