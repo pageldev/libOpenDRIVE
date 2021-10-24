@@ -53,8 +53,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         road->id = road_node.attribute("id").as_string();
         road->junction = road_node.attribute("junction").as_string();
         road->name = road_node.attribute("name").as_string();
-
         this->roads[road->id] = road;
+
+        CHECK_AND_REPAIR(road->length >= 0, "road::length < 0", road->length = 0);
 
         /* parse road links */
         for (bool is_predecessor : {true, false})
@@ -85,6 +86,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         {
             double      s = road_type_node.attribute("s").as_double();
             std::string type = road_type_node.attribute("type").as_string();
+
+            CHECK_AND_REPAIR(s >= 0, "road::type::s < 0", s = 0);
+
             road->s_to_type[s] = type;
             if (pugi::xml_node node = road_type_node.child("speed"))
             {
@@ -99,11 +103,15 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         road->ref_line = std::make_shared<RefLine>(road->length);
         for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
-            double         s0 = geometry_hdr_node.attribute("s").as_double();
-            double         x0 = geometry_hdr_node.attribute("x").as_double() - this->x_offs;
-            double         y0 = geometry_hdr_node.attribute("y").as_double() - this->y_offs;
-            double         hdg0 = geometry_hdr_node.attribute("hdg").as_double();
-            double         length = geometry_hdr_node.attribute("length").as_double();
+            double s0 = geometry_hdr_node.attribute("s").as_double();
+            double x0 = geometry_hdr_node.attribute("x").as_double() - this->x_offs;
+            double y0 = geometry_hdr_node.attribute("y").as_double() - this->y_offs;
+            double hdg0 = geometry_hdr_node.attribute("hdg").as_double();
+            double length = geometry_hdr_node.attribute("length").as_double();
+
+            CHECK_AND_REPAIR(s0 >= 0, "road::planView::geometry::s < 0", s0 = 0);
+            CHECK_AND_REPAIR(length >= 0, "road::planView::geometry::length < 0", length = 0);
+
             pugi::xml_node geometry_node = geometry_hdr_node.first_child();
             std::string    geometry_type = geometry_node.name();
             if (geometry_type == "line")
@@ -167,6 +175,9 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 double b = node.node().attribute("b").as_double();
                 double c = node.node().attribute("c").as_double();
                 double d = node.node().attribute("d").as_double();
+
+                CHECK_AND_REPAIR(s0 >= 0, (entry.first + "::s < 0").c_str(), s0 = 0);
+
                 entry.second.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
             }
         }
@@ -181,6 +192,8 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 double b = crossfall_node.attribute("b").as_double();
                 double c = crossfall_node.attribute("c").as_double();
                 double d = crossfall_node.attribute("d").as_double();
+
+                CHECK_AND_REPAIR(s0 >= 0, "road::lateralProfile::crossfall::s < 0", s0 = 0);
 
                 Poly3 crossfall_poly(s0, a, b, c, d);
                 road->crossfall.s0_to_poly[s0] = crossfall_poly;
@@ -223,12 +236,14 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
 
                 for (pugi::xml_node lane_width_node : lane_node.node().children("width"))
                 {
-                    double sOffs = lane_width_node.attribute("sOffset").as_double();
+                    double s_offset = lane_width_node.attribute("sOffset").as_double();
                     double a = lane_width_node.attribute("a").as_double();
                     double b = lane_width_node.attribute("b").as_double();
                     double c = lane_width_node.attribute("c").as_double();
                     double d = lane_width_node.attribute("d").as_double();
-                    lane->lane_width.s0_to_poly[s0 + sOffs] = Poly3(s0 + sOffs, a, b, c, d);
+
+                    CHECK_AND_REPAIR(s_offset >= 0, "lane::width::sOffset < 0", s_offset = 0);
+                    lane->lane_width.s0_to_poly[s0 + s_offset] = Poly3(s0 + s_offset, a, b, c, d);
                 }
 
                 if (with_laneHeight)
@@ -238,13 +253,15 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                         double s_offset = lane_height_node.attribute("sOffset").as_double();
                         double inner = lane_height_node.attribute("inner").as_double();
                         double outer = lane_height_node.attribute("outer").as_double();
+
+                        CHECK_AND_REPAIR(s_offset >= 0, "lane::height::sOffset < 0", s_offset = 0);
                         lane->s_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
                     }
                 }
 
                 for (pugi::xml_node roadmark_node : lane_node.node().children("roadMark"))
                 {
-                    double sOffsetRoadMark = roadmark_node.attribute("sOffset").as_double(0);
+                    double s_offset_roadmark = roadmark_node.attribute("sOffset").as_double(0);
                     double width = roadmark_node.attribute("width").as_double(-1);
                     double height = roadmark_node.attribute("height").as_double(0);
 
@@ -254,7 +271,8 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                     std::string material = roadmark_node.attribute("material").as_string("standard");
                     std::string laneChange = roadmark_node.attribute("laneChange").as_string("both");
 
-                    RoadMarkGroup roadmark_group{width, height, sOffsetRoadMark, type, weight, color, material, laneChange};
+                    CHECK_AND_REPAIR(s_offset_roadmark >= 0, "lane::roadMark::sOffset < 0", s_offset_roadmark = 0);
+                    RoadMarkGroup roadmark_group{width, height, s_offset_roadmark, type, weight, color, material, laneChange};
 
                     if (pugi::xml_node roadmark_type_node = roadmark_node.child("type"))
                     {
@@ -266,17 +284,21 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                             double length = roadmarks_line_node.attribute("length").as_double(0);
                             double space = roadmarks_line_node.attribute("space").as_double(0);
                             double tOffset = roadmarks_line_node.attribute("tOffset").as_double(0);
-                            double sOffsetRoadMarksLine = roadmarks_line_node.attribute("sOffset").as_double(0);
+                            double s_offset_roadmarks_line = roadmarks_line_node.attribute("sOffset").as_double(0);
                             double line_width_0 = roadmarks_line_node.attribute("width").as_double(-1);
                             double line_width = line_width_0 < 0 ? line_width_1 : line_width_0;
 
                             std::string rule = roadmarks_line_node.attribute("rule").as_string("none");
 
-                            RoadMarksLine roadmarks_line{line_width, length, space, tOffset, sOffsetRoadMarksLine, name, rule};
-                            roadmark_group.s_to_roadmarks_line[s0 + sOffsetRoadMark + sOffsetRoadMarksLine] = roadmarks_line;
+                            CHECK_AND_REPAIR(length >= 0, "roadMark::type::line::length < 0", length = 0);
+                            CHECK_AND_REPAIR(space >= 0, "roadMark::type::line::space < 0", space = 0);
+                            CHECK_AND_REPAIR(s_offset_roadmarks_line >= 0, "roadMark::type::line::sOffset < 0", s_offset_roadmarks_line = 0);
+
+                            RoadMarksLine roadmarks_line{line_width, length, space, tOffset, s_offset_roadmarks_line, name, rule};
+                            roadmark_group.s_to_roadmarks_line[s0 + s_offset_roadmark + s_offset_roadmarks_line] = roadmarks_line;
                         }
                     }
-                    lane->s_to_roadmark_group[s0 + sOffsetRoadMark] = roadmark_group;
+                    lane->s_to_roadmark_group[s0 + s_offset_roadmark] = roadmark_group;
                 }
 
                 if (pugi::xml_node node = lane_node.node().child("link").child("predecessor"))

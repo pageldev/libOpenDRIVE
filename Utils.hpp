@@ -12,6 +12,15 @@
 #include <type_traits>
 #include <vector>
 
+#define CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                               \
+    {                                                                                                                                                \
+        if (!(check_expr))                                                                                                                           \
+        {                                                                                                                                            \
+            printf("[%s:%d %s] check failed: %s\n", __FILE_NAME__, __LINE__, __FUNCTION__, msg);                                                     \
+            repair_expr;                                                                                                                             \
+        }                                                                                                                                            \
+    }
+
 namespace odr
 {
 
