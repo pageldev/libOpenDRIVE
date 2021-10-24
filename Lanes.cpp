@@ -54,7 +54,7 @@ Vec3D Lane::get_surface_pt(double s, double t, Vec3D* vn) const
         }
     }
 
-    return road_ptr->get_xyz(s, t, h_t, vn);
+    return road_ptr->get_xyz(s, t, h_t, nullptr, nullptr, vn);
 }
 
 std::set<double> Lane::approximate_border_linear(double s_start, double s_end, double eps, bool outer) const
