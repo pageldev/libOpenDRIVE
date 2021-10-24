@@ -33,21 +33,21 @@ std::vector<size_t> get_outline_indices(const std::map<size_t, T>& start_indices
 
 std::string MeshUnion::get_road_id(size_t vert_idx) const { return get_nearest_val<size_t, std::string>(this->road_start_indices, vert_idx); }
 
-double MeshUnion::get_lanesec_s0(size_t vert_idx) const { return get_nearest_val<size_t, double>(this->lanesec_start_indices, vert_idx); }
+double LaneMeshUnion::get_lanesec_s0(size_t vert_idx) const { return get_nearest_val<size_t, double>(this->lanesec_start_indices, vert_idx); }
 
-int MeshUnion::get_lane_id(size_t vert_idx) const { return get_nearest_val<size_t, int>(this->lane_start_indices, vert_idx); }
+int LaneMeshUnion::get_lane_id(size_t vert_idx) const { return get_nearest_val<size_t, int>(this->lane_start_indices, vert_idx); }
 
 std::array<size_t, 2> MeshUnion::get_idx_interval_road(size_t vert_idx) const
 {
     return get_key_interval<size_t, std::string>(this->road_start_indices, vert_idx, this->vertices.size());
 }
 
-std::array<size_t, 2> MeshUnion::get_idx_interval_lanesec(size_t vert_idx) const
+std::array<size_t, 2> LaneMeshUnion::get_idx_interval_lanesec(size_t vert_idx) const
 {
     return get_key_interval<size_t, double>(this->lanesec_start_indices, vert_idx, this->vertices.size());
 }
 
-std::array<size_t, 2> MeshUnion::get_idx_interval_lane(size_t vert_idx) const
+std::array<size_t, 2> LaneMeshUnion::get_idx_interval_lane(size_t vert_idx) const
 {
     return get_key_interval<size_t, int>(this->lane_start_indices, vert_idx, this->vertices.size());
 }

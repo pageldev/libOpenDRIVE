@@ -114,19 +114,19 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<MeshUnion, emscripten::base<Mesh3D>>("MeshUnion")
         .function("get_road_id", &MeshUnion::get_road_id)
-        .function("get_lanesec_s0", &MeshUnion::get_lanesec_s0)
-        .function("get_lane_id", &MeshUnion::get_lane_id)
         .function("get_idx_interval_road", &MeshUnion::get_idx_interval_road)
-        .function("get_idx_interval_lanesec", &MeshUnion::get_idx_interval_lanesec)
-        .function("get_idx_interval_lane", &MeshUnion::get_idx_interval_lane)
-        .property("road_start_indices", &MeshUnion::road_start_indices)
-        .property("lanesec_start_indices", &MeshUnion::lanesec_start_indices)
-        .property("lane_start_indices", &MeshUnion::lane_start_indices);
+        .property("road_start_indices", &MeshUnion::road_start_indices);
 
     emscripten::class_<LaneMeshUnion, emscripten::base<MeshUnion>>("LaneMeshUnion")
-        .function("get_lane_outline_indices", &LaneMeshUnion::get_lane_outline_indices);
+        .function("get_lanesec_s0", &LaneMeshUnion::get_lanesec_s0)
+        .function("get_lane_id", &LaneMeshUnion::get_lane_id)
+        .function("get_idx_interval_lanesec", &LaneMeshUnion::get_idx_interval_lanesec)
+        .function("get_idx_interval_lane", &LaneMeshUnion::get_idx_interval_lane)
+        .function("get_lane_outline_indices", &LaneMeshUnion::get_lane_outline_indices)
+        .property("lanesec_start_indices", &LaneMeshUnion::lanesec_start_indices)
+        .property("lane_start_indices", &LaneMeshUnion::lane_start_indices);
 
-    emscripten::class_<RoadmarkMeshUnion, emscripten::base<MeshUnion>>("RoadmarkMeshUnion")
+    emscripten::class_<RoadmarkMeshUnion, emscripten::base<LaneMeshUnion>>("RoadmarkMeshUnion")
         .function("get_roadmark_type", &RoadmarkMeshUnion::get_roadmark_type)
         .function("get_idx_interval_roadmark", &RoadmarkMeshUnion::get_idx_interval_roadmark)
         .function("get_roadmark_outline_indices", &RoadmarkMeshUnion::get_roadmark_outline_indices)
