@@ -38,6 +38,9 @@ struct RoadObject
 
     Mesh3D get_mesh(double eps) const;
 
+    static Mesh3D get_cylinder(double eps, double radius, double height);
+    static Mesh3D get_box(double width, double length, double height);
+
     std::string type;
     std::string name;
     std::string id;
