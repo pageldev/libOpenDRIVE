@@ -12,6 +12,7 @@
 #include "pugixml/pugixml.hpp"
 
 #include <iostream>
+#include <math.h>
 #include <string>
 #include <utility>
 
@@ -381,23 +382,29 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
             for (pugi::xml_node repeat_node : object_node.children("repeat"))
             {
                 RoadObjectRepeat road_object_repeat;
-                road_object_repeat.s0 = repeat_node.attribute("s").as_double();
-                road_object_repeat.length = repeat_node.attribute("length").as_double();
-                road_object_repeat.distance = repeat_node.attribute("distance").as_double();
-                road_object_repeat.t_start = repeat_node.attribute("tStart").as_double();
-                road_object_repeat.t_end = repeat_node.attribute("tEnd").as_double();
-                road_object_repeat.width_start = repeat_node.attribute("widthStart").as_double();
-                road_object_repeat.width_end = repeat_node.attribute("widthEnd").as_double();
-                road_object_repeat.height_start = repeat_node.attribute("heightStart").as_double();
-                road_object_repeat.height_end = repeat_node.attribute("heightEnd").as_double();
-                road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double();
-                road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double();
+                road_object_repeat.s0 = repeat_node.attribute("s").as_double(NAN);
+                road_object_repeat.t_start = repeat_node.attribute("tStart").as_double(NAN);
+                road_object_repeat.t_end = repeat_node.attribute("tEnd").as_double(NAN);
+                road_object_repeat.width_start = repeat_node.attribute("widthStart").as_double(NAN);
+                road_object_repeat.width_end = repeat_node.attribute("widthEnd").as_double(NAN);
+                road_object_repeat.height_start = repeat_node.attribute("heightStart").as_double(NAN);
+                road_object_repeat.height_end = repeat_node.attribute("heightEnd").as_double(NAN);
+                road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double(NAN);
+                road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
 
-                CHECK_AND_REPAIR(road_object_repeat.s0 >= 0, "repeat::s < 0", road_object_repeat.s0 = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "repeat::s < 0", road_object_repeat.s0 = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
+                                 "repeat::widthStart < 0",
+                                 road_object_repeat.width_start = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
+                                 "repeat::widthStart < 0",
+                                 road_object_repeat.width_end = 0);
+
+                road_object_repeat.length = repeat_node.attribute("length").as_double(0);
+                road_object_repeat.distance = repeat_node.attribute("distance").as_double(0);
+
                 CHECK_AND_REPAIR(road_object_repeat.length >= 0, "repeat::length < 0", road_object_repeat.length = 0);
                 CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "repeat::distance < 0", road_object_repeat.distance = 0);
-                CHECK_AND_REPAIR(road_object_repeat.width_start >= 0, "repeat::widthStart < 0", road_object_repeat.width_start = 0);
-                CHECK_AND_REPAIR(road_object_repeat.width_end >= 0, "repeat::widthStart < 0", road_object_repeat.width_end = 0);
 
                 road_object->repeats.push_back(std::move(road_object_repeat));
             }

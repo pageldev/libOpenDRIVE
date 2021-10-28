@@ -1,6 +1,7 @@
 #include "RoadObject.h"
 #include "Road.h"
 
+#include <cmath>
 #include <math.h>
 
 namespace odr
@@ -70,18 +71,25 @@ Mesh3D RoadObject::get_mesh(double eps) const
     Mesh3D road_obj_mesh;
     for (const RoadObjectRepeat& repeat : repeats_copy)
     {
-        const double s_start = repeat.s0;
-        const double s_end = repeat.s0 + std::max(repeat.length, 1e-12); // avoid division by zero
+        const double s_start = isnan(repeat.s0) ? this->s0 : repeat.s0;
+        const double s_end = s_start + std::max(repeat.length, 1e-12); // avoid division by zero
 
         if (repeat.distance != 0)
         {
             for (double s = s_start; (s - s_end) < 1e-9 && s < road_ptr->length; s += repeat.distance)
             {
                 const double progress = (s - s_start) / (s_end - s_start);
-                const double t_s = repeat.t_start + progress * (repeat.t_end - repeat.t_start);
-                const double z_s = repeat.z_offset_start + progress * (repeat.z_offset_end - repeat.z_offset_start);
-                const double height_s = repeat.height_start + progress * (repeat.height_end - repeat.height_start);
-                const double width_s = repeat.width_start + progress * (repeat.width_end - repeat.width_start);
+                const double t_s =
+                    (isnan(repeat.t_start) || isnan(repeat.t_end)) ? this->t0 : repeat.t_start + progress * (repeat.t_end - repeat.t_start);
+                const double z_s = (isnan(repeat.z_offset_start) || isnan(repeat.z_offset_end))
+                                       ? this->z0
+                                       : repeat.z_offset_start + progress * (repeat.z_offset_end - repeat.z_offset_start);
+                const double height_s = (isnan(repeat.height_start) || isnan(repeat.height_end))
+                                            ? this->height
+                                            : repeat.height_start + progress * (repeat.height_end - repeat.height_start);
+                const double width_s = (isnan(repeat.width_start) || isnan(repeat.width_end))
+                                           ? this->width
+                                           : repeat.width_start + progress * (repeat.width_end - repeat.width_start);
 
                 Mesh3D single_road_obj_mesh;
                 if (this->radius > 0)
@@ -104,9 +112,6 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 }
 
                 road_obj_mesh.add_mesh(single_road_obj_mesh);
-
-                if (repeat.distance < 0)
-                    break;
             }
         }
     }
