@@ -64,7 +64,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
     std::vector<RoadObjectRepeat> repeats_copy = this->repeats;
     if (repeats_copy.empty())
-        repeats_copy.push_back({s0, 0, 1, t0, t0, width, width, height, height, z0, z0});
+        repeats_copy.push_back({NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN});
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
 
@@ -96,11 +96,9 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 {
                     single_road_obj_mesh = this->get_cylinder(eps, this->radius, height_s);
                 }
-                else if ((this->width > 0 || width_s > 0) && (this->length > 0))
+                else if (width_s > 0 && this->length > 0)
                 {
-                    const double w = (width_s > 0) ? width_s : this->width;
-                    const double h = (height_s > 0) ? height_s : this->height;
-                    single_road_obj_mesh = this->get_box(w, this->length, h);
+                    single_road_obj_mesh = this->get_box(width_s, this->length, height_s);
                 }
 
                 /* apply rotation and transform s/t/h -> x/y/z */

@@ -356,22 +356,22 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
             std::shared_ptr<RoadObject> road_object = std::make_shared<RoadObject>();
             road_object->road = road;
 
-            road_object->type = object_node.attribute("type").as_string();
-            road_object->name = object_node.attribute("name").as_string();
-            road_object->id = object_node.attribute("id").as_string();
-            road_object->orientation = object_node.attribute("orientation").as_string();
+            road_object->type = object_node.attribute("type").as_string("");
+            road_object->name = object_node.attribute("name").as_string("");
+            road_object->id = object_node.attribute("id").as_string("");
+            road_object->orientation = object_node.attribute("orientation").as_string("");
 
-            road_object->s0 = object_node.attribute("s").as_double();
-            road_object->t0 = object_node.attribute("t").as_double();
-            road_object->z0 = object_node.attribute("zOffset").as_double();
-            road_object->valid_length = object_node.attribute("validLength").as_double();
-            road_object->length = object_node.attribute("length").as_double();
-            road_object->width = object_node.attribute("width").as_double();
-            road_object->radius = object_node.attribute("radius").as_double();
-            road_object->height = object_node.attribute("height").as_double();
-            road_object->hdg = object_node.attribute("hdg").as_double();
-            road_object->pitch = object_node.attribute("pitch").as_double();
-            road_object->roll = object_node.attribute("roll").as_double();
+            road_object->s0 = object_node.attribute("s").as_double(0);
+            road_object->t0 = object_node.attribute("t").as_double(0);
+            road_object->z0 = object_node.attribute("zOffset").as_double(0);
+            road_object->valid_length = object_node.attribute("validLength").as_double(0);
+            road_object->length = object_node.attribute("length").as_double(0);
+            road_object->width = object_node.attribute("width").as_double(0);
+            road_object->radius = object_node.attribute("radius").as_double(0);
+            road_object->height = object_node.attribute("height").as_double(0);
+            road_object->hdg = object_node.attribute("hdg").as_double(0);
+            road_object->pitch = object_node.attribute("pitch").as_double(0);
+            road_object->roll = object_node.attribute("roll").as_double(0);
 
             CHECK_AND_REPAIR(road_object->s0 >= 0, "object::s < 0", road_object->s0 = 0);
             CHECK_AND_REPAIR(road_object->valid_length >= 0, "object::validLength < 0", road_object->valid_length = 0);
