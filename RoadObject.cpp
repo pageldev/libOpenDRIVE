@@ -106,7 +106,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 {
                     pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
                     pt_uvz = add(pt_uvz, {s, t_s, z_s});
-                    pt_uvz = road_ptr->get_xyz(std::min(pt_uvz[0], road_ptr->length), pt_uvz[1], pt_uvz[2]);
+                    pt_uvz = road_ptr->get_xyz(std::max<double>(std::min(pt_uvz[0], road_ptr->length), 0), pt_uvz[1], pt_uvz[2]);
                 }
 
                 road_obj_mesh.add_mesh(single_road_obj_mesh);
