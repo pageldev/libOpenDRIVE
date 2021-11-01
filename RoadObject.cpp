@@ -71,15 +71,14 @@ Mesh3D RoadObject::get_mesh(double eps) const
     Mesh3D road_obj_mesh;
     for (const RoadObjectRepeat& repeat : repeats_copy)
     {
-        const double obj_len = repeat.length > 0 ? repeat.length : this->length;
         const double s_start = isnan(repeat.s0) ? this->s0 : repeat.s0;
-        const double s_end = s_start + std::min(obj_len, road_ptr->length); // avoid division by zero
+        const double s_end = s_start + std::max(repeat.length, 1e-12); // avoid division by zero
 
         if (repeat.distance != 0)
         {
-            for (double s = s_start; s <= s_end; s += repeat.distance)
+            for (double s = s_start; (s - s_end) < 1e-9 && s < road_ptr->length; s += repeat.distance)
             {
-                const double progress = (s_start == s_end) ? 1.0 : (s - s_start) / (s_end - s_start);
+                const double progress = (s - s_start) / (s_end - s_start);
                 const double t_s =
                     (isnan(repeat.t_start) || isnan(repeat.t_end)) ? this->t0 : repeat.t_start + progress * (repeat.t_end - repeat.t_start);
                 const double z_s = (isnan(repeat.z_offset_start) || isnan(repeat.z_offset_end))
