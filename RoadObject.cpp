@@ -1,4 +1,5 @@
 #include "RoadObject.h"
+#include "RefLine.h"
 #include "Road.h"
 
 #include <cmath>
@@ -68,6 +69,18 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
 
+    auto get_t_s = [&](const RoadObjectRepeat& r, const double& p) -> double
+    { return (isnan(r.t_start) || isnan(r.t_end)) ? this->t0 : r.t_start + p * (r.t_end - r.t_start); };
+
+    auto get_z_s = [&](const RoadObjectRepeat& r, const double& p) -> double
+    { return (isnan(r.z_offset_start) || isnan(r.z_offset_end)) ? this->z0 : r.z_offset_start + p * (r.z_offset_end - r.z_offset_start); };
+
+    auto get_height_s = [&](const RoadObjectRepeat& r, const double& p) -> double
+    { return (isnan(r.height_start) || isnan(r.height_end)) ? this->height : r.height_start + p * (r.height_end - r.height_start); };
+
+    auto get_width_s = [&](const RoadObjectRepeat& r, const double& p) -> double
+    { return (isnan(r.width_start) || isnan(r.width_end)) ? this->width : r.width_start + p * (r.width_end - r.width_start); };
+
     Mesh3D road_obj_mesh;
     for (const RoadObjectRepeat& repeat : repeats_copy)
     {
@@ -78,18 +91,11 @@ Mesh3D RoadObject::get_mesh(double eps) const
         {
             for (double s = s_start; s <= s_end; s += repeat.distance)
             {
-                const double progress = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
-                const double t_s =
-                    (isnan(repeat.t_start) || isnan(repeat.t_end)) ? this->t0 : repeat.t_start + progress * (repeat.t_end - repeat.t_start);
-                const double z_s = (isnan(repeat.z_offset_start) || isnan(repeat.z_offset_end))
-                                       ? this->z0
-                                       : repeat.z_offset_start + progress * (repeat.z_offset_end - repeat.z_offset_start);
-                const double height_s = (isnan(repeat.height_start) || isnan(repeat.height_end))
-                                            ? this->height
-                                            : repeat.height_start + progress * (repeat.height_end - repeat.height_start);
-                const double width_s = (isnan(repeat.width_start) || isnan(repeat.width_end))
-                                           ? this->width
-                                           : repeat.width_start + progress * (repeat.width_end - repeat.width_start);
+                const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
+                const double t_s = get_t_s(repeat, p);
+                const double z_s = get_z_s(repeat, p);
+                const double height_s = get_height_s(repeat, p);
+                const double width_s = get_width_s(repeat, p);
 
                 Mesh3D single_road_obj_mesh;
                 if (this->radius > 0)
@@ -113,6 +119,46 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
                 road_obj_mesh.add_mesh(single_road_obj_mesh);
             }
+        }
+        else
+        {
+            Mesh3D continuous_road_obj_mesh;
+
+            const std::array<size_t, 24> idx_patch_template = {1, 5, 4, 1, 4, 0, 2, 7, 6, 2, 3, 7, 1, 6, 5, 1, 2, 6, 0, 4, 7, 0, 7, 3};
+            for (const double& s : road_ptr->ref_line->approximate_linear(eps, s_start, s_end))
+            {
+                const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
+                const double t_s = get_t_s(repeat, p);
+                const double z_s = get_z_s(repeat, p);
+                const double height_s = get_height_s(repeat, p);
+                const double width_s = get_width_s(repeat, p);
+
+                continuous_road_obj_mesh.vertices.push_back(road_ptr->get_xyz(s, t_s - 0.5 * width_s, z_s));
+                continuous_road_obj_mesh.vertices.push_back(road_ptr->get_xyz(s, t_s + 0.5 * width_s, z_s));
+                continuous_road_obj_mesh.vertices.push_back(road_ptr->get_xyz(s, t_s + 0.5 * width_s, z_s + height_s));
+                continuous_road_obj_mesh.vertices.push_back(road_ptr->get_xyz(s, t_s - 0.5 * width_s, z_s + height_s));
+
+                if (continuous_road_obj_mesh.vertices.size() == 4)
+                {
+                    const std::array<size_t, 6> front_idx_patch = {0, 2, 1, 0, 3, 2};
+                    continuous_road_obj_mesh.indices.insert(continuous_road_obj_mesh.indices.end(), front_idx_patch.begin(), front_idx_patch.end());
+                }
+
+                if (continuous_road_obj_mesh.vertices.size() > 7)
+                {
+                    const size_t           cur_offs = continuous_road_obj_mesh.vertices.size() - 8;
+                    std::array<size_t, 24> wall_idx_patch;
+                    for (size_t idx = 0; idx < idx_patch_template.size(); idx++)
+                        wall_idx_patch.at(idx) = idx_patch_template.at(idx) + cur_offs;
+                    continuous_road_obj_mesh.indices.insert(continuous_road_obj_mesh.indices.end(), wall_idx_patch.begin(), wall_idx_patch.end());
+                }
+            }
+
+            const size_t                last_idx = continuous_road_obj_mesh.vertices.size() - 1;
+            const std::array<size_t, 6> back_idx_patch = {last_idx - 3, last_idx - 2, last_idx - 1, last_idx - 3, last_idx - 1, last_idx};
+            continuous_road_obj_mesh.indices.insert(continuous_road_obj_mesh.indices.end(), back_idx_patch.begin(), back_idx_patch.end());
+
+            road_obj_mesh.add_mesh(continuous_road_obj_mesh);
         }
     }
 
