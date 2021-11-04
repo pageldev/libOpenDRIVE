@@ -76,7 +76,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
         if (repeat.distance != 0)
         {
-            for (double s = s_start; s < s_end; s += repeat.distance)
+            for (double s = s_start; s <= s_end; s += repeat.distance)
             {
                 const double progress = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s =
@@ -101,12 +101,14 @@ Mesh3D RoadObject::get_mesh(double eps) const
                     single_road_obj_mesh = this->get_box(width_s, this->length, height_s);
                 }
 
-                /* apply rotation and transform s/t/h -> x/y/z */
+                Vec3D       e_s, e_t, e_h;
+                const Vec3D p0 = road_ptr->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
+                const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                 for (Vec3D& pt_uvz : single_road_obj_mesh.vertices)
                 {
                     pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
-                    pt_uvz = add(pt_uvz, {s, t_s, z_s});
-                    pt_uvz = road_ptr->get_xyz(std::max<double>(std::min(pt_uvz[0], road_ptr->length), 0), pt_uvz[1], pt_uvz[2]);
+                    pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
+                    pt_uvz = add(pt_uvz, p0);
                 }
 
                 road_obj_mesh.add_mesh(single_road_obj_mesh);
