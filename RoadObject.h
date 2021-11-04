@@ -24,11 +24,11 @@ struct RoadObjectRepeat
     double z_offset_end = 0;
 };
 
-struct RoadObjectCorner
+struct RoadObjectCornerLocal
 {
-    double s = 0;
-    double t = 0;
-    double dz = 0;
+    double u = 0;
+    double v = 0;
+    double z = 0;
     double height = 0;
 };
 
@@ -60,7 +60,8 @@ struct RoadObject
     double roll = 0;
 
     std::vector<RoadObjectRepeat> repeats;
-    std::vector<RoadObjectCorner> outline;
+
+    std::vector<RoadObjectCornerLocal> local_outline;
 
     std::weak_ptr<Road> road;
 };

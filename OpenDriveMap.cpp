@@ -409,22 +409,16 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 road_object->repeats.push_back(std::move(road_object_repeat));
             }
 
-            for (pugi::xml_node corner_node : object_node.child("outline").children("cornerRoad"))
+            for (pugi::xml_node corner_node : object_node.child("outline").children("cornerLocal"))
             {
-                RoadObjectCorner road_object_corner;
-                road_object_corner.s = corner_node.attribute("s").as_double();
-                road_object_corner.t = corner_node.attribute("t").as_double();
-                road_object_corner.dz = corner_node.attribute("dz").as_double();
-                road_object_corner.height = corner_node.attribute("height").as_double();
+                RoadObjectCornerLocal road_object_corner_local;
+                road_object_corner_local.u = corner_node.attribute("u").as_double(0);
+                road_object_corner_local.v = corner_node.attribute("v").as_double(0);
+                road_object_corner_local.z = corner_node.attribute("z").as_double(0);
+                road_object_corner_local.height = corner_node.attribute("height").as_double(0);
 
-                CHECK_AND_REPAIR(road_object_corner.s >= 0, "cornerRoad::s < 0", road_object_corner.s = 0);
-
-                road_object->outline.push_back(std::move(road_object_corner));
+                road_object->local_outline.push_back(std::move(road_object_corner_local));
             }
-
-            /* check for cornerLocal outline - not implemented yet */
-            // if (object_node.child("outline").child("cornerLocal"))
-            //     printf("cornerLocal outline not supported\n");
 
             road->objects.push_back(road_object);
         }

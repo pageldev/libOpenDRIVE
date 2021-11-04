@@ -82,6 +82,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
     { return (isnan(r.width_start) || isnan(r.width_end)) ? this->width : r.width_start + p * (r.width_end - r.width_start); };
 
     Mesh3D road_obj_mesh;
+
     for (const RoadObjectRepeat& repeat : repeats_copy)
     {
         const double s_start = isnan(repeat.s0) ? this->s0 : repeat.s0;
@@ -160,6 +161,40 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
             road_obj_mesh.add_mesh(continuous_road_obj_mesh);
         }
+    }
+
+    if (this->local_outline.size() > 1)
+    {
+        Mesh3D outline_road_obj_mesh;
+        for (const RoadObjectCornerLocal& corner_local : this->local_outline)
+        {
+            outline_road_obj_mesh.vertices.push_back({corner_local.u, corner_local.v, corner_local.z});
+            outline_road_obj_mesh.vertices.push_back({corner_local.u, corner_local.v, corner_local.z + corner_local.height});
+            if (outline_road_obj_mesh.vertices.size() > 3)
+            {
+                const size_t                cur_idx = outline_road_obj_mesh.vertices.size() - 1;
+                const std::array<size_t, 6> wall_idx_patch = {cur_idx, cur_idx - 3, cur_idx - 1, cur_idx, cur_idx - 2, cur_idx - 3};
+                outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), wall_idx_patch.begin(), wall_idx_patch.end());
+            }
+        }
+
+        Vec3D e_s, e_t, e_h;
+        Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
+        p0[2] = 0.0;
+
+        const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
+        for (Vec3D& pt_uvz : outline_road_obj_mesh.vertices)
+        {
+            pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
+            pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
+            pt_uvz = add(pt_uvz, p0);
+        }
+
+        const size_t                last_idx = outline_road_obj_mesh.vertices.size() - 1;
+        const std::array<size_t, 6> last_idx_patch = {0, last_idx - 1, last_idx, 0, last_idx, 1};
+        outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), last_idx_patch.begin(), last_idx_patch.end());
+
+        road_obj_mesh.add_mesh(outline_road_obj_mesh);
     }
 
     return road_obj_mesh;
