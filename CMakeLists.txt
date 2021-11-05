@@ -28,6 +28,7 @@ add_library(OpenDrive SHARED
     Road.cpp
     RoadMark.cpp
     RoadNetworkMesh.cpp
+    RoadObject.cpp
     Thirdparty/json11/json11.cpp
     Thirdparty/pugixml/pugixml.cpp
 )

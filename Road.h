@@ -4,11 +4,13 @@
 #include "LaneSection.h"
 #include "Lanes.h"
 #include "Math.hpp"
+#include "RoadObject.h"
 #include "Utils.hpp"
 
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 namespace odr
 {
@@ -61,7 +63,7 @@ public:
     std::shared_ptr<const LaneSection> get_lanesection(double s) const;
     std::shared_ptr<LaneSection>       get_lanesection(double s);
 
-    Vec3D get_xyz(double s, double t, double h, Vec3D* vn = nullptr) const;
+    Vec3D get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr) const;
 
     double      length = 0;
     std::string id;
@@ -80,6 +82,8 @@ public:
     std::map<double, std::shared_ptr<LaneSection>> s_to_lanesection;
     std::map<double, std::string>                  s_to_type;
     std::map<double, SpeedRecord>                  s_to_speed;
+
+    std::vector<std::shared_ptr<RoadObject>> objects;
 };
 
 using ConstRoadSet = std::set<std::shared_ptr<const Road>, SharedPtrCmp<const Road, std::string, &Road::id>>;
