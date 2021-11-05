@@ -71,7 +71,7 @@ std::shared_ptr<LaneSection> Road::get_lanesection(double s)
     return lanesection;
 }
 
-Vec3D Road::get_xyz(double s, double t, double h, Vec3D* vn) const
+Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
 {
     const Vec3D  s_vec = this->ref_line->get_grad(s);
     const double theta = this->superelevation.get(s);
@@ -86,8 +86,13 @@ Vec3D Road::get_xyz(double s, double t, double h, Vec3D* vn) const
 
     const Vec3D xyz = MatVecMultiplication(trans_mat, Vec3D{t, h, 1});
 
-    if (vn)
-        *vn = e_h;
+    if (_e_s)
+        *_e_s = e_s;
+    if (_e_t)
+        *_e_t = e_t;
+    if (_e_h)
+        *_e_h = e_h;
+
     return xyz;
 }
 

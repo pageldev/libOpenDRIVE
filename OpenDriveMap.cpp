@@ -12,6 +12,7 @@
 #include "pugixml/pugixml.hpp"
 
 #include <iostream>
+#include <math.h>
 #include <string>
 #include <utility>
 
@@ -348,6 +349,79 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 id_lane.second->outer_border = id_lane.second->outer_border.add(road->lane_offset);
             }
         }
+
+        /* parse road objects */
+        for (pugi::xml_node object_node : road_node.child("objects").children("object"))
+        {
+            std::shared_ptr<RoadObject> road_object = std::make_shared<RoadObject>();
+            road_object->road = road;
+
+            road_object->type = object_node.attribute("type").as_string("");
+            road_object->name = object_node.attribute("name").as_string("");
+            road_object->id = object_node.attribute("id").as_string("");
+            road_object->orientation = object_node.attribute("orientation").as_string("");
+
+            road_object->s0 = object_node.attribute("s").as_double(0);
+            road_object->t0 = object_node.attribute("t").as_double(0);
+            road_object->z0 = object_node.attribute("zOffset").as_double(0);
+            road_object->valid_length = object_node.attribute("validLength").as_double(0);
+            road_object->length = object_node.attribute("length").as_double(0);
+            road_object->width = object_node.attribute("width").as_double(0);
+            road_object->radius = object_node.attribute("radius").as_double(0);
+            road_object->height = object_node.attribute("height").as_double(0);
+            road_object->hdg = object_node.attribute("hdg").as_double(0);
+            road_object->pitch = object_node.attribute("pitch").as_double(0);
+            road_object->roll = object_node.attribute("roll").as_double(0);
+
+            CHECK_AND_REPAIR(road_object->s0 >= 0, "object::s < 0", road_object->s0 = 0);
+            CHECK_AND_REPAIR(road_object->valid_length >= 0, "object::validLength < 0", road_object->valid_length = 0);
+            CHECK_AND_REPAIR(road_object->length >= 0, "object::length < 0", road_object->length = 0);
+            CHECK_AND_REPAIR(road_object->width >= 0, "object::width < 0", road_object->width = 0);
+            CHECK_AND_REPAIR(road_object->radius >= 0, "object::radius < 0", road_object->radius = 0);
+
+            for (pugi::xml_node repeat_node : object_node.children("repeat"))
+            {
+                RoadObjectRepeat road_object_repeat;
+                road_object_repeat.s0 = repeat_node.attribute("s").as_double(NAN);
+                road_object_repeat.t_start = repeat_node.attribute("tStart").as_double(NAN);
+                road_object_repeat.t_end = repeat_node.attribute("tEnd").as_double(NAN);
+                road_object_repeat.width_start = repeat_node.attribute("widthStart").as_double(NAN);
+                road_object_repeat.width_end = repeat_node.attribute("widthEnd").as_double(NAN);
+                road_object_repeat.height_start = repeat_node.attribute("heightStart").as_double(NAN);
+                road_object_repeat.height_end = repeat_node.attribute("heightEnd").as_double(NAN);
+                road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double(NAN);
+                road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
+
+                CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "repeat::s < 0", road_object_repeat.s0 = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
+                                 "repeat::widthStart < 0",
+                                 road_object_repeat.width_start = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
+                                 "repeat::widthStart < 0",
+                                 road_object_repeat.width_end = 0);
+
+                road_object_repeat.length = repeat_node.attribute("length").as_double(0);
+                road_object_repeat.distance = repeat_node.attribute("distance").as_double(0);
+
+                CHECK_AND_REPAIR(road_object_repeat.length >= 0, "repeat::length < 0", road_object_repeat.length = 0);
+                CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "repeat::distance < 0", road_object_repeat.distance = 0);
+
+                road_object->repeats.push_back(std::move(road_object_repeat));
+            }
+
+            for (pugi::xml_node corner_node : object_node.child("outline").children("cornerLocal"))
+            {
+                RoadObjectCornerLocal road_object_corner_local;
+                road_object_corner_local.u = corner_node.attribute("u").as_double(0);
+                road_object_corner_local.v = corner_node.attribute("v").as_double(0);
+                road_object_corner_local.z = corner_node.attribute("z").as_double(0);
+                road_object_corner_local.height = corner_node.attribute("height").as_double(0);
+
+                road_object->local_outline.push_back(std::move(road_object_corner_local));
+            }
+
+            road->objects.push_back(road_object);
+        }
     }
 }
 
@@ -394,14 +468,16 @@ Mesh3D OpenDriveMap::get_refline_lines(double eps) const
 
 RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
 {
-    RoadNetworkMesh out_mesh;
-    LanesMesh&      lanes_mesh = out_mesh.lanes_mesh;
-    RoadmarksMesh&  roadmarks_mesh = out_mesh.roadmarks_mesh;
+    RoadNetworkMesh  out_mesh;
+    LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
+    RoadmarksMesh&   roadmarks_mesh = out_mesh.roadmarks_mesh;
+    RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
 
     for (std::shared_ptr<const Road> road : this->get_roads())
     {
         lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road->id;
         roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road->id;
+        road_objects_mesh.road_start_indices[road_objects_mesh.vertices.size()] = road->id;
 
         for (std::shared_ptr<const LaneSection> lanesec : road->get_lanesections())
         {
@@ -423,6 +499,13 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
                     roadmarks_mesh.add_mesh(lane->get_roadmark_mesh(roadmark, eps));
                 }
             }
+        }
+
+        for (std::shared_ptr<RoadObject> road_object : road->objects)
+        {
+            const size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
+            road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object->id;
+            road_objects_mesh.add_mesh(road_object->get_mesh(eps));
         }
     }
 

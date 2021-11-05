@@ -50,12 +50,18 @@ struct RoadmarksMesh : public LanesMesh
     std::map<size_t, std::string> roadmark_type_start_indices;
 };
 
+struct RoadObjectsMesh : public RoadsMesh
+{
+    std::map<size_t, std::string> road_object_start_indices;
+};
+
 struct RoadNetworkMesh
 {
     Mesh3D get_mesh() const;
 
-    LanesMesh     lanes_mesh;
-    RoadmarksMesh roadmarks_mesh;
+    LanesMesh       lanes_mesh;
+    RoadmarksMesh   roadmarks_mesh;
+    RoadObjectsMesh road_objects_mesh;
 };
 
 } // namespace odr

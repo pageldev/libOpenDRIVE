@@ -6,6 +6,7 @@
 #include <map>
 #include <numeric>
 #include <set>
+#include <sstream>
 #include <stdio.h>
 
 namespace odr
@@ -110,7 +111,11 @@ template<typename T, size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
     if ((arclen - this->length) > this->LengthTolerance || arclen < 0)
-        throw std::runtime_error("arclength out of range");
+    {
+        std::stringstream ss_err;
+        ss_err << "arclength " << arclen << " out of range; length: " << this->length;
+        throw std::runtime_error(ss_err.str());
+    }
 
     arclen = std::min<T>(arclen, this->length);
 

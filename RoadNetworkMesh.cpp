@@ -74,6 +74,7 @@ Mesh3D RoadNetworkMesh::get_mesh() const
     Mesh3D out_mesh;
     out_mesh.add_mesh(this->lanes_mesh);
     out_mesh.add_mesh(this->roadmarks_mesh);
+    out_mesh.add_mesh(this->road_objects_mesh);
     return out_mesh;
 }
 
