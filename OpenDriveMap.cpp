@@ -392,19 +392,19 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double(NAN);
                 road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
 
-                CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "repeat::s < 0", road_object_repeat.s0 = 0);
+                CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "object::repeat::s < 0", road_object_repeat.s0 = 0);
                 CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
-                                 "repeat::widthStart < 0",
+                                 "object::repeat::widthStart < 0",
                                  road_object_repeat.width_start = 0);
                 CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
-                                 "repeat::widthStart < 0",
+                                 "object::repeat::widthStart < 0",
                                  road_object_repeat.width_end = 0);
 
                 road_object_repeat.length = repeat_node.attribute("length").as_double(0);
                 road_object_repeat.distance = repeat_node.attribute("distance").as_double(0);
 
-                CHECK_AND_REPAIR(road_object_repeat.length >= 0, "repeat::length < 0", road_object_repeat.length = 0);
-                CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "repeat::distance < 0", road_object_repeat.distance = 0);
+                CHECK_AND_REPAIR(road_object_repeat.length >= 0, "object::repeat::length < 0", road_object_repeat.length = 0);
+                CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "object::repeat::distance < 0", road_object_repeat.distance = 0);
 
                 road_object->repeats.push_back(std::move(road_object_repeat));
             }
@@ -420,7 +420,10 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 road_object->local_outline.push_back(std::move(road_object_corner_local));
             }
 
-            road->objects.push_back(road_object);
+            CHECK_AND_REPAIR(road->id_to_object.find(road_object->id) == road->id_to_object.end(),
+                             (std::string("object::id already exists - ") + road_object->id).c_str(),
+                             road_object->id = road_object->id + std::string("_dup"));
+            road->id_to_object[road_object->id] = road_object;
         }
     }
 }
@@ -501,7 +504,7 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
             }
         }
 
-        for (std::shared_ptr<RoadObject> road_object : road->objects)
+        for (std::shared_ptr<const RoadObject> road_object : road->get_road_objects())
         {
             const size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
             road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object->id;

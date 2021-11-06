@@ -52,6 +52,24 @@ LaneSectionSet Road::get_lanesections()
     return lanesections;
 }
 
+ConstRoadObjectSet Road::get_road_objects() const
+{
+    ConstRoadObjectSet road_objects;
+    for (const auto& id_obj : this->id_to_object)
+        road_objects.insert(id_obj.second);
+
+    return road_objects;
+}
+
+RoadObjectSet Road::get_road_objects()
+{
+    RoadObjectSet road_objects;
+    for (const auto& id_obj : this->id_to_object)
+        road_objects.insert(id_obj.second);
+
+    return road_objects;
+}
+
 std::shared_ptr<const LaneSection> Road::get_lanesection(double s) const
 {
     if (this->s_to_lanesection.size() > 0)

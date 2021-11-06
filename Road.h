@@ -60,6 +60,9 @@ public:
     ConstLaneSectionSet get_lanesections() const;
     LaneSectionSet      get_lanesections();
 
+    ConstRoadObjectSet get_road_objects() const;
+    RoadObjectSet      get_road_objects();
+
     std::shared_ptr<const LaneSection> get_lanesection(double s) const;
     std::shared_ptr<LaneSection>       get_lanesection(double s);
 
@@ -79,11 +82,10 @@ public:
     Crossfall                crossfall;
     std::shared_ptr<RefLine> ref_line;
 
-    std::map<double, std::shared_ptr<LaneSection>> s_to_lanesection;
-    std::map<double, std::string>                  s_to_type;
-    std::map<double, SpeedRecord>                  s_to_speed;
-
-    std::vector<std::shared_ptr<RoadObject>> objects;
+    std::map<double, std::shared_ptr<LaneSection>>     s_to_lanesection;
+    std::map<double, std::string>                      s_to_type;
+    std::map<double, SpeedRecord>                      s_to_speed;
+    std::map<std::string, std::shared_ptr<RoadObject>> id_to_object;
 };
 
 using ConstRoadSet = std::set<std::shared_ptr<const Road>, SharedPtrCmp<const Road, std::string, &Road::id>>;

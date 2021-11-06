@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Mesh.h"
+#include "Utils.hpp"
 
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace odr
@@ -41,9 +43,9 @@ struct RoadObject
     static Mesh3D get_cylinder(double eps, double radius, double height);
     static Mesh3D get_box(double width, double length, double height);
 
+    std::string id;
     std::string type;
     std::string name;
-    std::string id;
     std::string orientation;
 
     double s0 = 0;
@@ -65,4 +67,8 @@ struct RoadObject
 
     std::weak_ptr<Road> road;
 };
+
+using ConstRoadObjectSet = std::set<std::shared_ptr<const RoadObject>, SharedPtrCmp<const RoadObject, std::string, &RoadObject::id>>;
+using RoadObjectSet = std::set<std::shared_ptr<RoadObject>, SharedPtrCmp<RoadObject, std::string, &RoadObject::id>>;
+
 } // namespace odr
