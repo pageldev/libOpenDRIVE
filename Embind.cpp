@@ -132,9 +132,15 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .function("get_roadmark_outline_indices", &RoadmarksMesh::get_roadmark_outline_indices)
         .property("roadmark_type_start_indices", &RoadmarksMesh::roadmark_type_start_indices);
 
+    emscripten::class_<RoadObjectsMesh, emscripten::base<RoadsMesh>>("RoadObjectsMesh")
+        .function("get_road_object_id", &RoadObjectsMesh::get_road_object_id)
+        .function("get_idx_interval_road_object", &RoadObjectsMesh::get_idx_interval_road_object)
+        .property("road_object_start_indices", &RoadObjectsMesh::road_object_start_indices);
+
     emscripten::class_<RoadNetworkMesh>("RoadNetworkMesh")
         .property("lanes_mesh", &RoadNetworkMesh::lanes_mesh)
-        .property("roadmarks_mesh", &RoadNetworkMesh::roadmarks_mesh);
+        .property("roadmarks_mesh", &RoadNetworkMesh::roadmarks_mesh)
+        .property("road_objects_mesh", &RoadNetworkMesh::road_objects_mesh);
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, bool, bool, bool>()

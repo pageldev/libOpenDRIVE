@@ -74,7 +74,7 @@ std::string RoadObjectsMesh::get_road_object_id(size_t vert_idx) const
     return get_nearest_val<size_t, std::string>(this->road_object_start_indices, vert_idx);
 }
 
-std::array<size_t, 2> RoadObjectsMesh::get_idx_interval_object(size_t vert_idx) const
+std::array<size_t, 2> RoadObjectsMesh::get_idx_interval_road_object(size_t vert_idx) const
 {
     return get_key_interval<size_t, std::string>(this->road_object_start_indices, vert_idx, this->vertices.size());
 }
