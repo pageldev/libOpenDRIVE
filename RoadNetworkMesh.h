@@ -52,6 +52,8 @@ struct RoadmarksMesh : public LanesMesh
 
 struct RoadObjectsMesh : public RoadsMesh
 {
+    std::string get_road_object_id(size_t vert_idx) const;
+
     std::array<size_t, 2> get_idx_interval_object(size_t vert_idx) const;
 
     std::map<size_t, std::string> road_object_start_indices;

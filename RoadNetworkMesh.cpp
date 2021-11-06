@@ -69,6 +69,11 @@ std::vector<size_t> RoadmarksMesh::get_roadmark_outline_indices() const
     return get_outline_indices<std::string>(this->roadmark_type_start_indices, this->vertices.size());
 }
 
+std::string RoadObjectsMesh::get_road_object_id(size_t vert_idx) const
+{
+    return get_nearest_val<size_t, std::string>(this->road_object_start_indices, vert_idx);
+}
+
 std::array<size_t, 2> RoadObjectsMesh::get_idx_interval_object(size_t vert_idx) const
 {
     return get_key_interval<size_t, std::string>(this->road_object_start_indices, vert_idx, this->vertices.size());
