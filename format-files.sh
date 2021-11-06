@@ -5,4 +5,5 @@ find -E . -type f \
     -not -path "./build/*" \
     -not -path "./Thirdparty/*" \
     -not -name './Viewer/libOpenDrive.js' \
+    -not -path './Viewer/lib/*' \
     -exec clang-format --style=file -i '{}' \;
