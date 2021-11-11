@@ -15,21 +15,20 @@
 #define CHECK(expr, msg)                                                                                                                             \
     {                                                                                                                                                \
         if (!(expr))                                                                                                                                 \
-            printf("[%s:%d %s] check failed: %s\n", __FILE__, __LINE__, __FUNCTION__, msg);                                                     \
+            printf("[%s] check failed: %s\n", __FUNCTION__, msg);                                                                                    \
     }
 
 #define CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                               \
     {                                                                                                                                                \
         if (!(check_expr))                                                                                                                           \
         {                                                                                                                                            \
-            printf("[%s:%d %s] check failed: %s\n", __FILE__, __LINE__, __FUNCTION__, msg);                                                     \
+            printf("[%s] check failed: %s\n", __FUNCTION__, msg);                                                                                    \
             repair_expr;                                                                                                                             \
         }                                                                                                                                            \
     }
 
 namespace odr
 {
-
 template<class C, class T, T C::*member>
 struct SharedPtrCmp
 {
