@@ -15,8 +15,11 @@ This also builds an executable to test the library:
 ./build/test-xodr Viewer/data.xodr
 ```
 
+
 ## WebAssembly
-To build the WebAssembly library run:
+Before build WebAssembly you have to install emsdk. Refer to [this page](https://github.com/emscripten-core/emsdk)
+
+Then build the WebAssembly library run:
 ```bash
 mkdir build && pushd build
 emcmake cmake ..
