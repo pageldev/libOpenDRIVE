@@ -64,7 +64,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
         throw std::runtime_error("could not access parent road for road object");
 
     std::vector<RoadObjectRepeat> repeats_copy = this->repeats;
-    if (repeats_copy.empty())
+    if (repeats_copy.empty() && this->local_outline.empty())
         repeats_copy.push_back({NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN});
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
