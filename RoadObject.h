@@ -26,12 +26,17 @@ struct RoadObjectRepeat
     double z_offset_end = 0;
 };
 
-struct RoadObjectCornerLocal
+struct RoadObjectCorner
 {
-    double u = 0;
-    double v = 0;
-    double z = 0;
+    enum class Type
+    {
+        Local,
+        Road
+    };
+
+    Vec3D  pt;
     double height = 0;
+    Type   type = Type::Road;
 };
 
 struct RoadObject
@@ -63,7 +68,7 @@ struct RoadObject
 
     std::vector<RoadObjectRepeat> repeats;
 
-    std::vector<RoadObjectCornerLocal> local_outline;
+    std::vector<RoadObjectCorner> outline;
 
     std::weak_ptr<Road> road;
 };

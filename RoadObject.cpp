@@ -2,6 +2,8 @@
 #include "RefLine.h"
 #include "Road.h"
 
+#include "earcut/earcut.hpp"
+
 #include <cmath>
 #include <math.h>
 
@@ -64,7 +66,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
         throw std::runtime_error("could not access parent road for road object");
 
     std::vector<RoadObjectRepeat> repeats_copy = this->repeats;
-    if (repeats_copy.empty() && this->local_outline.empty())
+    if (repeats_copy.empty() && this->outline.empty())
         repeats_copy.push_back({NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN});
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
@@ -168,38 +170,51 @@ Mesh3D RoadObject::get_mesh(double eps) const
         }
     }
 
-    if (this->local_outline.size() > 1)
+    if (this->outline.size() > 1)
     {
+        Vec3D e_s, e_t, e_h;
+        Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
+        p0[2] = 0.0; // interpret road obj's z-value as absolute
+
+        const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
+
         Mesh3D outline_road_obj_mesh;
-        for (const RoadObjectCornerLocal& corner_local : this->local_outline)
+
+        const bool is_flat_object = std::all_of(this->outline.begin(), this->outline.end(), [](const RoadObjectCorner& c) { return c.height == 0; });
+        if (!is_flat_object)
         {
-            outline_road_obj_mesh.vertices.push_back({corner_local.u, corner_local.v, corner_local.z});
-            outline_road_obj_mesh.vertices.push_back({corner_local.u, corner_local.v, corner_local.z + corner_local.height});
-            if (outline_road_obj_mesh.vertices.size() > 3)
+            for (const RoadObjectCorner& corner : this->outline)
             {
-                const size_t                cur_idx = outline_road_obj_mesh.vertices.size() - 1;
-                const std::array<size_t, 6> wall_idx_patch = {cur_idx, cur_idx - 3, cur_idx - 1, cur_idx, cur_idx - 2, cur_idx - 3};
-                outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), wall_idx_patch.begin(), wall_idx_patch.end());
+                Vec3D pt_top;
+                if (corner.type == RoadObjectCorner::Type::Local)
+                {
+                    pt_top = add(corner.pt, Vec3D{0, 0, corner.height});
+                    pt_top = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_top)), p0);
+                }
+                else
+                {
+                    pt_top = road_ptr->get_xyz(this->s0, this->t0, this->z0 + height);
+                }
+
+                outline_road_obj_mesh.vertices.push_back(pt_top);
+                outline_road_obj_mesh.st_coordinates.push_back({this->s0, this->t0});
             }
         }
 
-        Vec3D e_s, e_t, e_h;
-        Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
-        p0[2] = 0.0;
-
-        const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
-        for (Vec3D& pt_uvz : outline_road_obj_mesh.vertices)
+        for (const RoadObjectCorner& corner : this->outline)
         {
-            pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
-            pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
-            pt_uvz = add(pt_uvz, p0);
+            Vec3D pt_base = corner.pt;
+            if (corner.type == RoadObjectCorner::Type::Local)
+                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
 
+            outline_road_obj_mesh.vertices.push_back(pt_base);
             outline_road_obj_mesh.st_coordinates.push_back({this->s0, this->t0});
         }
 
-        const size_t                last_idx = outline_road_obj_mesh.vertices.size() - 1;
-        const std::array<size_t, 6> last_idx_patch = {0, last_idx - 1, last_idx, 0, last_idx, 1};
-        outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), last_idx_patch.begin(), last_idx_patch.end());
+        const auto                iter_start = outline_road_obj_mesh.vertices.begin();
+        const std::vector<Vec3D>  polygon(iter_start, std::next(iter_start, this->outline.size()));
+        const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(std::vector<std::vector<Vec3D>>{polygon});
+        outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), idx_patch_top.begin(), idx_patch_top.end());
 
         road_obj_mesh.add_mesh(outline_road_obj_mesh);
     }

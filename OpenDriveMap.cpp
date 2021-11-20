@@ -409,15 +409,28 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 road_object->repeats.push_back(std::move(road_object_repeat));
             }
 
-            for (pugi::xml_node corner_node : object_node.child("outline").children("cornerLocal"))
+            for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
             {
-                RoadObjectCornerLocal road_object_corner_local;
-                road_object_corner_local.u = corner_node.attribute("u").as_double(0);
-                road_object_corner_local.v = corner_node.attribute("v").as_double(0);
-                road_object_corner_local.z = corner_node.attribute("z").as_double(0);
-                road_object_corner_local.height = corner_node.attribute("height").as_double(0);
+                RoadObjectCorner road_object_corner_local;
+                road_object_corner_local.type = RoadObjectCorner::Type::Local;
+                road_object_corner_local.pt[0] = corner_local_node.attribute("u").as_double(0);
+                road_object_corner_local.pt[1] = corner_local_node.attribute("v").as_double(0);
+                road_object_corner_local.pt[2] = corner_local_node.attribute("z").as_double(0);
+                road_object_corner_local.height = corner_local_node.attribute("height").as_double(0);
 
-                road_object->local_outline.push_back(std::move(road_object_corner_local));
+                road_object->outline.push_back(std::move(road_object_corner_local));
+            }
+
+            for (pugi::xml_node corner_road_node : object_node.child("outline").children("cornerRoad"))
+            {
+                RoadObjectCorner road_object_corner_road;
+                road_object_corner_road.type = RoadObjectCorner::Type::Road;
+                road_object_corner_road.pt[0] = corner_road_node.attribute("s").as_double(0);
+                road_object_corner_road.pt[1] = corner_road_node.attribute("t").as_double(0);
+                road_object_corner_road.pt[2] = corner_road_node.attribute("dz").as_double(0);
+                road_object_corner_road.height = corner_road_node.attribute("height").as_double(0);
+
+                road_object->outline.push_back(std::move(road_object_corner_road));
             }
 
             CHECK_AND_REPAIR(road->id_to_object.find(road_object->id) == road->id_to_object.end(),
