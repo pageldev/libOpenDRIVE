@@ -28,8 +28,8 @@ public:
     std::vector<N> indices;
     std::size_t vertices = 0;
 
-    template <typename Polygon>
-    void operator()(const Polygon& points);
+    template <typename T>
+    void operator()(T const * points, size_t len);
 
 private:
     struct Node {
@@ -58,7 +58,7 @@ private:
         bool steiner = false;
     };
 
-    template <typename Ring> Node* linkedList(const Ring& points, const bool clockwise);
+    template <typename T> Node* linkedList(T const * points, size_t len, const bool clockwise);
     Node* filterPoints(Node* start, Node* end = nullptr);
     void earcutLinked(Node* ear, int pass = 0);
     bool isEar(Node* ear);
@@ -131,24 +131,23 @@ private:
     ObjectPool<Node> nodes;
 };
 
-template <typename N> template <typename Polygon>
-void Earcut<N>::operator()(const Polygon& points) {
+template <typename N> template <typename T>
+void Earcut<N>::operator()(T const * points, size_t len) {
     // reset
     indices.clear();
     vertices = 0;
 
-    if (points.empty()) return;
+    if (len == 0) return;
 
     double x;
     double y;
-    int threshold = 80 - static_cast<int>(points.size());
-    std::size_t len = points.size();
+    int threshold = 80 - static_cast<int>(len);
 
     //estimate size of nodes and indices
     nodes.reset(len * 3 / 2);
-    indices.reserve(len + points.size());
+    indices.reserve(2 * len);
 
-    Node* outerNode = linkedList(points, true);
+    Node* outerNode = linkedList(points, len, true);
     if (!outerNode || outerNode->prev == outerNode->next) return;
 
     // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
@@ -178,12 +177,10 @@ void Earcut<N>::operator()(const Polygon& points) {
 }
 
 // create a circular doubly linked list from polygon points in the specified winding order
-template <typename N> template <typename Ring>
+template <typename N> template <typename T>
 typename Earcut<N>::Node*
-Earcut<N>::linkedList(const Ring& points, const bool clockwise) {
-    using Point = typename Ring::value_type;
+Earcut<N>::linkedList(T const * points, size_t len, const bool clockwise) {
     double sum = 0;
-    const std::size_t len = points.size();
     std::size_t i, j;
     Node* last = nullptr;
 
@@ -191,10 +188,10 @@ Earcut<N>::linkedList(const Ring& points, const bool clockwise) {
     for (i = 0, j = len > 0 ? len - 1 : 0; i < len; j = i++) {
         const auto& p1 = points[i];
         const auto& p2 = points[j];
-        const double p20 = util::nth<0, Point>::get(p2);
-        const double p10 = util::nth<0, Point>::get(p1);
-        const double p11 = util::nth<1, Point>::get(p1);
-        const double p21 = util::nth<1, Point>::get(p2);
+        const double p20 = p2[0];
+        const double p10 = p1[0];
+        const double p11 = p1[1];
+        const double p21 = p2[1];
         sum += (p20 - p10) * (p11 + p21);
     }
 
@@ -696,10 +693,10 @@ void Earcut<N>::removeNode(Node* p) {
 }
 }
 
-template <typename N = uint32_t, typename Polygon>
-std::vector<N> earcut(const Polygon& poly) {
+template <typename N = uint32_t, typename T>
+std::vector<N> earcut(T const * poly_points, size_t len) {
     mapbox::detail::Earcut<N> earcut;
-    earcut(poly);
+    earcut(poly_points, len);
     return std::move(earcut.indices);
 }
 }
