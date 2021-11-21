@@ -222,6 +222,20 @@ Mesh3D RoadObject::get_mesh(double eps) const
         const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(outline_road_obj_mesh.vertices.data(), this->outline.size());
         outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), idx_patch_top.begin(), idx_patch_top.end());
 
+        /* add walls */
+        if (!is_flat_object)
+        {
+            const std::size_t N = this->outline.size();
+            for (size_t idx = 0; idx < N - 1; idx++)
+            {
+                std::array<size_t, 6> wall_idx_patch = {idx, idx + N, idx + 1, idx + 1, idx + N, idx + N + 1};
+                outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), wall_idx_patch.begin(), wall_idx_patch.end());
+            }
+
+            std::array<size_t, 6> last_idx_patch = {N - 1, 2 * N - 1, 0, 0, 2 * N - 1, N};
+            outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), last_idx_patch.begin(), last_idx_patch.end());
+        }
+
         road_obj_mesh.add_mesh(outline_road_obj_mesh);
     }
 
