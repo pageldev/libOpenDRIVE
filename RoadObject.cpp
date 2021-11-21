@@ -211,9 +211,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
             outline_road_obj_mesh.st_coordinates.push_back({this->s0, this->t0});
         }
 
-        const auto                iter_start = outline_road_obj_mesh.vertices.begin();
-        const std::vector<Vec3D>  polygon(iter_start, std::next(iter_start, this->outline.size()));
-        const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(std::vector<std::vector<Vec3D>>{polygon});
+        const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(outline_road_obj_mesh.vertices.data(), this->outline.size());
         outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), idx_patch_top.begin(), idx_patch_top.end());
 
         road_obj_mesh.add_mesh(outline_road_obj_mesh);
