@@ -144,22 +144,15 @@ void Earcut<N>::operator()(const Polygon& points) {
 
     double x;
     double y;
-    int threshold = 80;
-    std::size_t len = 0;
-
-    for (size_t i = 0; threshold >= 0 && i < points.size(); i++) {
-        threshold -= static_cast<int>(points[i].size());
-        len += points[i].size();
-    }
+    int threshold = 80 - static_cast<int>(points.size());
+    std::size_t len = points.size();
 
     //estimate size of nodes and indices
     nodes.reset(len * 3 / 2);
-    indices.reserve(len + points[0].size());
+    indices.reserve(len + points.size());
 
-    Node* outerNode = linkedList(points[0], true);
+    Node* outerNode = linkedList(points, true);
     if (!outerNode || outerNode->prev == outerNode->next) return;
-
-    if (points.size() > 1) outerNode = eliminateHoles(points, outerNode);
 
     // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
     hashing = threshold < 0;
