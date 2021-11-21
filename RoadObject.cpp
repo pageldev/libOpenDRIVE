@@ -180,6 +180,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
         Mesh3D outline_road_obj_mesh;
 
+        /* add top outline first - ensure the top vertices are at the front */
         const bool is_flat_object = std::all_of(this->outline.begin(), this->outline.end(), [](const RoadObjectCorner& c) { return c.height == 0; });
         if (!is_flat_object)
         {
@@ -193,7 +194,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 }
                 else
                 {
-                    pt_top = road_ptr->get_xyz(this->s0, this->t0, this->z0 + height);
+                    pt_top = road_ptr->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2] + corner.height);
                 }
 
                 outline_road_obj_mesh.vertices.push_back(pt_top);
@@ -201,11 +202,18 @@ Mesh3D RoadObject::get_mesh(double eps) const
             }
         }
 
+        /* add bottom outline */
         for (const RoadObjectCorner& corner : this->outline)
         {
-            Vec3D pt_base = corner.pt;
+            Vec3D pt_base;
             if (corner.type == RoadObjectCorner::Type::Local)
-                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
+            {
+                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, corner.pt)), p0);
+            }
+            else
+            {
+                pt_base = road_ptr->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2]);
+            }
 
             outline_road_obj_mesh.vertices.push_back(pt_base);
             outline_road_obj_mesh.st_coordinates.push_back({this->s0, this->t0});
