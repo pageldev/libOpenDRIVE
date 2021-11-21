@@ -65,9 +65,6 @@ private:
     bool isEarHashed(Node* ear);
     Node* cureLocalIntersections(Node* start);
     void splitEarcut(Node* start);
-    template <typename Polygon> Node* eliminateHoles(const Polygon& points, Node* outerNode);
-    Node* eliminateHole(Node* hole, Node* outerNode);
-    Node* findHoleBridge(Node* hole, Node* outerNode);
     bool sectorContainsSector(const Node* m, const Node* p);
     void indexCurve(Node* start);
     Node* sortLinked(Node* list);
@@ -413,114 +410,6 @@ void Earcut<N>::splitEarcut(Node* start) {
         }
         a = a->next;
     } while (a != start);
-}
-
-// link every hole into the outer loop, producing a single-ring polygon without holes
-template <typename N> template <typename Polygon>
-typename Earcut<N>::Node*
-Earcut<N>::eliminateHoles(const Polygon& points, Node* outerNode) {
-    const size_t len = points.size();
-
-    std::vector<Node*> queue;
-    for (size_t i = 1; i < len; i++) {
-        Node* list = linkedList(points[i], false);
-        if (list) {
-            if (list == list->next) list->steiner = true;
-            queue.push_back(getLeftmost(list));
-        }
-    }
-    std::sort(queue.begin(), queue.end(), [](const Node* a, const Node* b) {
-        return a->x < b->x;
-    });
-
-    // process holes from left to right
-    for (size_t i = 0; i < queue.size(); i++) {
-        outerNode = eliminateHole(queue[i], outerNode);
-        outerNode = filterPoints(outerNode, outerNode->next);
-    }
-
-    return outerNode;
-}
-
-// find a bridge between vertices that connects hole with an outer ring and and link it
-template <typename N>
-typename Earcut<N>::Node*
-Earcut<N>::eliminateHole(Node* hole, Node* outerNode) {
-    Node* bridge = findHoleBridge(hole, outerNode);
-    if (!bridge) {
-        return outerNode;
-    }
-
-    Node* bridgeReverse = splitPolygon(bridge, hole);
-
-    // filter collinear points around the cuts
-    Node* filteredBridge = filterPoints(bridge, bridge->next);
-    filterPoints(bridgeReverse, bridgeReverse->next);
-
-    // Check if input node was removed by the filtering
-    return outerNode == bridge ? filteredBridge : outerNode;
-}
-
-// David Eberly's algorithm for finding a bridge between hole and outer polygon
-template <typename N>
-typename Earcut<N>::Node*
-Earcut<N>::findHoleBridge(Node* hole, Node* outerNode) {
-    Node* p = outerNode;
-    double hx = hole->x;
-    double hy = hole->y;
-    double qx = -std::numeric_limits<double>::infinity();
-    Node* m = nullptr;
-
-    // find a segment intersected by a ray from the hole's leftmost Vertex to the left;
-    // segment's endpoint with lesser x will be potential connection Vertex
-    do {
-        if (hy <= p->y && hy >= p->next->y && p->next->y != p->y) {
-          double x = p->x + (hy - p->y) * (p->next->x - p->x) / (p->next->y - p->y);
-          if (x <= hx && x > qx) {
-            qx = x;
-            if (x == hx) {
-                if (hy == p->y) return p;
-                if (hy == p->next->y) return p->next;
-            }
-            m = p->x < p->next->x ? p : p->next;
-          }
-        }
-        p = p->next;
-    } while (p != outerNode);
-
-    if (!m) return 0;
-
-    if (hx == qx) return m; // hole touches outer segment; pick leftmost endpoint
-
-    // look for points inside the triangle of hole Vertex, segment intersection and endpoint;
-    // if there are no points found, we have a valid connection;
-    // otherwise choose the Vertex of the minimum angle with the ray as connection Vertex
-
-    const Node* stop = m;
-    double tanMin = std::numeric_limits<double>::infinity();
-    double tanCur = 0;
-
-    p = m;
-    double mx = m->x;
-    double my = m->y;
-
-    do {
-        if (hx >= p->x && p->x >= mx && hx != p->x &&
-            pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p->x, p->y)) {
-
-            tanCur = std::abs(hy - p->y) / (hx - p->x); // tangential
-
-            if (locallyInside(p, hole) &&
-                (tanCur < tanMin || (tanCur == tanMin && (p->x > m->x || sectorContainsSector(m, p))))) {
-                m = p;
-                tanMin = tanCur;
-            }
-        }
-
-        p = p->next;
-    } while (p != stop);
-
-    return m;
 }
 
 // whether sector in vertex m contains sector in vertex p in the same coordinates
