@@ -65,12 +65,13 @@ Mesh3D RoadObject::get_mesh(double eps) const
     if (!road_ptr)
         throw std::runtime_error("could not access parent road for road object");
 
-    std::vector<RoadObjectRepeat> repeats_copy = this->repeats;
-    if (repeats_copy.empty() && this->outline.empty())
+    std::vector<RoadObjectRepeat> repeats_copy = this->repeats; // make copy to keep method const
+    if (repeats_copy.empty() && this->outline.empty())          // handle single object as 1 object repeat
         repeats_copy.push_back({NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN});
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
 
+    /* helper functions - object repeat's attributes override object's attributes */
     auto get_t_s = [&](const RoadObjectRepeat& r, const double& p) -> double
     { return (isnan(r.t_start) || isnan(r.t_end)) ? this->t0 : r.t_start + p * (r.t_end - r.t_start); };
 
@@ -172,9 +173,8 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
     if (this->outline.size() > 1)
     {
-        Vec3D e_s, e_t, e_h;
-        Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
-        p0[2] = 0.0; // interpret road obj's z-value as absolute
+        Vec3D       e_s, e_t, e_h;
+        const Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
 
         const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
 
@@ -189,7 +189,8 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 Vec3D pt_top;
                 if (corner.type == RoadObjectCorner::Type::Local)
                 {
-                    pt_top = add(corner.pt, Vec3D{0, 0, corner.height});
+                    pt_top = {corner.pt[0], corner.pt[1], corner.pt[2] - p0[2]}; // assume z value is absolute, make road relative
+                    pt_top = add(pt_top, Vec3D{0, 0, corner.height});
                     pt_top = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_top)), p0);
                 }
                 else
@@ -208,7 +209,8 @@ Mesh3D RoadObject::get_mesh(double eps) const
             Vec3D pt_base;
             if (corner.type == RoadObjectCorner::Type::Local)
             {
-                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, corner.pt)), p0);
+                pt_base = {corner.pt[0], corner.pt[1], corner.pt[2] - p0[2]}; // assume z value is absolute, make road relative
+                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
             }
             else
             {
@@ -219,6 +221,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
             outline_road_obj_mesh.st_coordinates.push_back({this->s0, this->t0});
         }
 
+        /* run 2D triangulation on top vertices */
         const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(outline_road_obj_mesh.vertices.data(), this->outline.size());
         outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), idx_patch_top.begin(), idx_patch_top.end());
 
