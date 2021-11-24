@@ -336,7 +336,7 @@ function animate()
     controls.update();
 
     if (PARAMS.spotlight && !spotlight_paused) {
-        camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x * window.devicePixelRatio | 0, mouse.y * window.devicePixelRatio | 0, 1, 1);
+        camera.setViewOffset(renderer.getContext().drawingBufferWidth, renderer.getContext().drawingBufferHeight, mouse.x * renderer.getPixelRatio() | 0, mouse.y * renderer.getPixelRatio() | 0, 1, 1);
         renderer.setRenderTarget(lane_picking_texture);
         renderer.render(lane_picking_scene, camera);
         renderer.setRenderTarget(roadmark_picking_texture);
