@@ -141,7 +141,7 @@ function loadFile(file_text, clear_map)
     ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
     if (OpenDriveMap)
         OpenDriveMap.delete();
-    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight, true);
+    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight, true, false);
     loadOdrMap(clear_map);
 }
 
@@ -149,7 +149,7 @@ function reloadOdrMap()
 {
     if (OpenDriveMap)
         OpenDriveMap.delete();
-    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight, true);
+    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight, true, false);
     loadOdrMap(true, false);
 }
 

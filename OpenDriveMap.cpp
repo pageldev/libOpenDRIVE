@@ -18,7 +18,8 @@
 
 namespace odr
 {
-OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight, bool center_map) : xodr_file(xodr_file)
+OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight, bool center_map, bool with_objects) :
+    xodr_file(xodr_file)
 {
     pugi::xml_document     doc;
     pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
@@ -351,92 +352,95 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         }
 
         /* parse road objects */
-        for (pugi::xml_node object_node : road_node.child("objects").children("object"))
+        if (with_objects)
         {
-            std::shared_ptr<RoadObject> road_object = std::make_shared<RoadObject>();
-            road_object->road = road;
-
-            road_object->type = object_node.attribute("type").as_string("");
-            road_object->name = object_node.attribute("name").as_string("");
-            road_object->id = object_node.attribute("id").as_string("");
-            road_object->orientation = object_node.attribute("orientation").as_string("");
-
-            road_object->s0 = object_node.attribute("s").as_double(0);
-            road_object->t0 = object_node.attribute("t").as_double(0);
-            road_object->z0 = object_node.attribute("zOffset").as_double(0);
-            road_object->valid_length = object_node.attribute("validLength").as_double(0);
-            road_object->length = object_node.attribute("length").as_double(0);
-            road_object->width = object_node.attribute("width").as_double(0);
-            road_object->radius = object_node.attribute("radius").as_double(0);
-            road_object->height = object_node.attribute("height").as_double(0);
-            road_object->hdg = object_node.attribute("hdg").as_double(0);
-            road_object->pitch = object_node.attribute("pitch").as_double(0);
-            road_object->roll = object_node.attribute("roll").as_double(0);
-
-            CHECK_AND_REPAIR(road_object->s0 >= 0, "object::s < 0", road_object->s0 = 0);
-            CHECK_AND_REPAIR(road_object->valid_length >= 0, "object::validLength < 0", road_object->valid_length = 0);
-            CHECK_AND_REPAIR(road_object->length >= 0, "object::length < 0", road_object->length = 0);
-            CHECK_AND_REPAIR(road_object->width >= 0, "object::width < 0", road_object->width = 0);
-            CHECK_AND_REPAIR(road_object->radius >= 0, "object::radius < 0", road_object->radius = 0);
-
-            for (pugi::xml_node repeat_node : object_node.children("repeat"))
+            for (pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
-                RoadObjectRepeat road_object_repeat;
-                road_object_repeat.s0 = repeat_node.attribute("s").as_double(NAN);
-                road_object_repeat.t_start = repeat_node.attribute("tStart").as_double(NAN);
-                road_object_repeat.t_end = repeat_node.attribute("tEnd").as_double(NAN);
-                road_object_repeat.width_start = repeat_node.attribute("widthStart").as_double(NAN);
-                road_object_repeat.width_end = repeat_node.attribute("widthEnd").as_double(NAN);
-                road_object_repeat.height_start = repeat_node.attribute("heightStart").as_double(NAN);
-                road_object_repeat.height_end = repeat_node.attribute("heightEnd").as_double(NAN);
-                road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double(NAN);
-                road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
+                std::shared_ptr<RoadObject> road_object = std::make_shared<RoadObject>();
+                road_object->road = road;
 
-                CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "object::repeat::s < 0", road_object_repeat.s0 = 0);
-                CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
-                                 "object::repeat::widthStart < 0",
-                                 road_object_repeat.width_start = 0);
-                CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
-                                 "object::repeat::widthStart < 0",
-                                 road_object_repeat.width_end = 0);
+                road_object->type = object_node.attribute("type").as_string("");
+                road_object->name = object_node.attribute("name").as_string("");
+                road_object->id = object_node.attribute("id").as_string("");
+                road_object->orientation = object_node.attribute("orientation").as_string("");
 
-                road_object_repeat.length = repeat_node.attribute("length").as_double(0);
-                road_object_repeat.distance = repeat_node.attribute("distance").as_double(0);
+                road_object->s0 = object_node.attribute("s").as_double(0);
+                road_object->t0 = object_node.attribute("t").as_double(0);
+                road_object->z0 = object_node.attribute("zOffset").as_double(0);
+                road_object->valid_length = object_node.attribute("validLength").as_double(0);
+                road_object->length = object_node.attribute("length").as_double(0);
+                road_object->width = object_node.attribute("width").as_double(0);
+                road_object->radius = object_node.attribute("radius").as_double(0);
+                road_object->height = object_node.attribute("height").as_double(0);
+                road_object->hdg = object_node.attribute("hdg").as_double(0);
+                road_object->pitch = object_node.attribute("pitch").as_double(0);
+                road_object->roll = object_node.attribute("roll").as_double(0);
 
-                CHECK_AND_REPAIR(road_object_repeat.length >= 0, "object::repeat::length < 0", road_object_repeat.length = 0);
-                CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "object::repeat::distance < 0", road_object_repeat.distance = 0);
+                CHECK_AND_REPAIR(road_object->s0 >= 0, "object::s < 0", road_object->s0 = 0);
+                CHECK_AND_REPAIR(road_object->valid_length >= 0, "object::validLength < 0", road_object->valid_length = 0);
+                CHECK_AND_REPAIR(road_object->length >= 0, "object::length < 0", road_object->length = 0);
+                CHECK_AND_REPAIR(road_object->width >= 0, "object::width < 0", road_object->width = 0);
+                CHECK_AND_REPAIR(road_object->radius >= 0, "object::radius < 0", road_object->radius = 0);
 
-                road_object->repeats.push_back(std::move(road_object_repeat));
+                for (pugi::xml_node repeat_node : object_node.children("repeat"))
+                {
+                    RoadObjectRepeat road_object_repeat;
+                    road_object_repeat.s0 = repeat_node.attribute("s").as_double(NAN);
+                    road_object_repeat.t_start = repeat_node.attribute("tStart").as_double(NAN);
+                    road_object_repeat.t_end = repeat_node.attribute("tEnd").as_double(NAN);
+                    road_object_repeat.width_start = repeat_node.attribute("widthStart").as_double(NAN);
+                    road_object_repeat.width_end = repeat_node.attribute("widthEnd").as_double(NAN);
+                    road_object_repeat.height_start = repeat_node.attribute("heightStart").as_double(NAN);
+                    road_object_repeat.height_end = repeat_node.attribute("heightEnd").as_double(NAN);
+                    road_object_repeat.z_offset_start = repeat_node.attribute("zOffsetStart").as_double(NAN);
+                    road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
+
+                    CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "object::repeat::s < 0", road_object_repeat.s0 = 0);
+                    CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
+                                     "object::repeat::widthStart < 0",
+                                     road_object_repeat.width_start = 0);
+                    CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
+                                     "object::repeat::widthStart < 0",
+                                     road_object_repeat.width_end = 0);
+
+                    road_object_repeat.length = repeat_node.attribute("length").as_double(0);
+                    road_object_repeat.distance = repeat_node.attribute("distance").as_double(0);
+
+                    CHECK_AND_REPAIR(road_object_repeat.length >= 0, "object::repeat::length < 0", road_object_repeat.length = 0);
+                    CHECK_AND_REPAIR(road_object_repeat.distance >= 0, "object::repeat::distance < 0", road_object_repeat.distance = 0);
+
+                    road_object->repeats.push_back(std::move(road_object_repeat));
+                }
+
+                for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
+                {
+                    RoadObjectCorner road_object_corner_local;
+                    road_object_corner_local.type = RoadObjectCorner::Type::Local;
+                    road_object_corner_local.pt[0] = corner_local_node.attribute("u").as_double(0);
+                    road_object_corner_local.pt[1] = corner_local_node.attribute("v").as_double(0);
+                    road_object_corner_local.pt[2] = corner_local_node.attribute("z").as_double(0);
+                    road_object_corner_local.height = corner_local_node.attribute("height").as_double(0);
+
+                    road_object->outline.push_back(std::move(road_object_corner_local));
+                }
+
+                for (pugi::xml_node corner_road_node : object_node.child("outline").children("cornerRoad"))
+                {
+                    RoadObjectCorner road_object_corner_road;
+                    road_object_corner_road.type = RoadObjectCorner::Type::Road;
+                    road_object_corner_road.pt[0] = corner_road_node.attribute("s").as_double(0);
+                    road_object_corner_road.pt[1] = corner_road_node.attribute("t").as_double(0);
+                    road_object_corner_road.pt[2] = corner_road_node.attribute("dz").as_double(0);
+                    road_object_corner_road.height = corner_road_node.attribute("height").as_double(0);
+
+                    road_object->outline.push_back(std::move(road_object_corner_road));
+                }
+
+                CHECK_AND_REPAIR(road->id_to_object.find(road_object->id) == road->id_to_object.end(),
+                                 (std::string("object::id already exists - ") + road_object->id).c_str(),
+                                 road_object->id = road_object->id + std::string("_dup"));
+                road->id_to_object[road_object->id] = road_object;
             }
-
-            for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
-            {
-                RoadObjectCorner road_object_corner_local;
-                road_object_corner_local.type = RoadObjectCorner::Type::Local;
-                road_object_corner_local.pt[0] = corner_local_node.attribute("u").as_double(0);
-                road_object_corner_local.pt[1] = corner_local_node.attribute("v").as_double(0);
-                road_object_corner_local.pt[2] = corner_local_node.attribute("z").as_double(0);
-                road_object_corner_local.height = corner_local_node.attribute("height").as_double(0);
-
-                road_object->outline.push_back(std::move(road_object_corner_local));
-            }
-
-            for (pugi::xml_node corner_road_node : object_node.child("outline").children("cornerRoad"))
-            {
-                RoadObjectCorner road_object_corner_road;
-                road_object_corner_road.type = RoadObjectCorner::Type::Road;
-                road_object_corner_road.pt[0] = corner_road_node.attribute("s").as_double(0);
-                road_object_corner_road.pt[1] = corner_road_node.attribute("t").as_double(0);
-                road_object_corner_road.pt[2] = corner_road_node.attribute("dz").as_double(0);
-                road_object_corner_road.height = corner_road_node.attribute("height").as_double(0);
-
-                road_object->outline.push_back(std::move(road_object_corner_road));
-            }
-
-            CHECK_AND_REPAIR(road->id_to_object.find(road_object->id) == road->id_to_object.end(),
-                             (std::string("object::id already exists - ") + road_object->id).c_str(),
-                             road_object->id = road_object->id + std::string("_dup"));
-            road->id_to_object[road_object->id] = road_object;
         }
     }
 }
