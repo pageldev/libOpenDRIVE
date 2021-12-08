@@ -190,6 +190,9 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
                 if (roadmarks_line.width > 0)
                     width = roadmarks_line.width;
 
+                if ((roadmarks_line.length + roadmarks_line.space) == 0)
+                    continue;
+
                 for (double s_start_single_roadmark = s_roadmarks_line.first; s_start_single_roadmark < s_end_roadmark_group;
                      s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
                 {
