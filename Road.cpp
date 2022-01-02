@@ -94,15 +94,15 @@ Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3
     const Vec3D  s_vec = this->ref_line->get_grad(s);
     const double theta = this->superelevation.get(s);
 
-    const Vec3D e_s = normalize(s_vec);
-    const Vec3D e_t = normalize(Vec3D{std::cos(theta) * -e_s[1] + std::sin(theta) * -e_s[2] * e_s[0],
-                                      std::cos(theta) * e_s[0] + std::sin(theta) * -e_s[2] * e_s[1],
-                                      std::sin(theta) * (e_s[0] * e_s[0] + e_s[1] * e_s[1])});
-    const Vec3D e_h = normalize(crossProduct(s_vec, e_t));
+    const Vec3D e_s = glm::normalize(s_vec);
+    const Vec3D e_t = glm::normalize(Vec3D{std::cos(theta) * -e_s[1] + std::sin(theta) * -e_s[2] * e_s[0],
+                                           std::cos(theta) * e_s[0] + std::sin(theta) * -e_s[2] * e_s[1],
+                                           std::sin(theta) * (e_s[0] * e_s[0] + e_s[1] * e_s[1])});
+    const Vec3D e_h = glm::normalize(glm::cross(s_vec, e_t));
     const Vec3D p0 = this->ref_line->get_xyz(s);
-    const Mat3D trans_mat{{{e_t[0], e_h[0], p0[0]}, {e_t[1], e_h[1], p0[1]}, {e_t[2], e_h[2], p0[2]}}};
+    const Mat3D trans_mat{e_t[0], e_t[1], e_t[2], e_h[0], e_h[1], e_h[2], p0[0], p0[1], p0[2]};
 
-    const Vec3D xyz = MatVecMultiplication(trans_mat, Vec3D{t, h, 1});
+    const Vec3D xyz = trans_mat * Vec3D{t, h, 1};
 
     if (_e_s)
         *_e_s = e_s;

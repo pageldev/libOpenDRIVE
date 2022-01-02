@@ -222,7 +222,7 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
     for (size_t dim = 0; dim < Dim; dim++)
         param_c[dim] = ctrl_pts[0][dim] - 2 * ctrl_pts[1][dim] + ctrl_pts[2][dim];
 
-    const T step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
+    const T step_size = std::min(std::sqrt((4 * eps) / glm::length(param_c)), 1.0);
 
     std::vector<T> p_vals;
     for (T p = 0; p < 1; p += step_size)

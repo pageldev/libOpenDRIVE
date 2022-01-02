@@ -70,7 +70,7 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
         const double b_p = -3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_0 * s_1 - 2 * c * s_0 * s_0 + 2 * c * s_0 * s_1 - b * s_0 + b * s_1;
         const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
 
-        const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
+        const std::array<Vec1D, 4> coefficients = {Vec1D{a_p}, Vec1D{b_p}, Vec1D{c_p}, Vec1D{d_p}};
         const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);
 
         s_vals.push_back(s_start);

@@ -12,6 +12,8 @@ set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLM REQUIRED glm)
 add_library(OpenDrive SHARED
     Geometries/Arc.cpp
     Geometries/CubicSpline.cpp
@@ -33,8 +35,10 @@ add_library(OpenDrive SHARED
     Thirdparty/pugixml/pugixml.cpp
 )
 target_include_directories(OpenDrive PRIVATE .)
+target_include_directories(OpenDrive PRIVATE ${GLM_INCLUDE_DIRS})
 target_include_directories(OpenDrive PRIVATE Thirdparty)
 
 add_executable(test-xodr test.cpp)
 target_link_libraries(test-xodr OpenDrive)
 target_include_directories(test-xodr PUBLIC .)
+target_include_directories(test-xodr PUBLIC ${GLM_INCLUDE_DIRS})

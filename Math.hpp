@@ -8,18 +8,20 @@
 #include <type_traits>
 #include <vector>
 
+#include <glm/glm.hpp>
+
 namespace odr
 {
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-using Vec = std::array<T, Dim>;
+using Vec = glm::vec<Dim, T>;
+
+template<typename T, size_t Dim, typename std::enable_if_t<(Dim > 1)>* = nullptr, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+using Mat = glm::mat<Dim, Dim, T>;
 
 using Vec1D = Vec<double, 1>;
 using Vec2D = Vec<double, 2>;
 using Vec3D = Vec<double, 3>;
 using Line3D = std::vector<Vec3D>;
-
-template<typename T, size_t Dim, typename std::enable_if_t<(Dim > 1)>* = nullptr, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-using Mat = std::array<std::array<T, Dim>, Dim>;
 
 using Mat3D = Mat<double, 3>;
 

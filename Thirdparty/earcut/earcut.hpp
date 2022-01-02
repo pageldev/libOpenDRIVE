@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <glm/vec3.hpp>
+
 namespace mapbox {
 
 namespace util {
@@ -16,6 +18,13 @@ namespace util {
 template <std::size_t I, typename T> struct nth {
     inline static typename std::tuple_element<I, T>::type
     get(const T& t) { return std::get<I>(t); };
+};
+
+template <std::size_t I, typename T>
+struct nth<I, glm::vec<3, T>> {
+    inline static auto get(const glm::vec<3, T>& t) {
+        return t[I];
+    };
 };
 
 }

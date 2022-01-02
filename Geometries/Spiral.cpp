@@ -38,7 +38,7 @@ Vec2D Spiral::get_grad(double s) const
     const double hdg = as_spiral + hdg0 - a0_spiral;
     const double dx = std::cos(hdg);
     const double dy = std::sin(hdg);
-    return {{dx, dy}};
+    return Vec2D{dx, dy};
 }
 
 std::set<double> Spiral::approximate_linear(double eps) const

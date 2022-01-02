@@ -1,6 +1,8 @@
 #include "Math.hpp"
 #include "Utils.hpp"
 
+#include <glm/glm.hpp>
+
 #include <array>
 #include <cmath>
 #include <map>
@@ -90,7 +92,7 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
     {
         const Vec<T, Dim> pt_prev = this->get(*std::prev(t_val_iter));
         const Vec<T, Dim> pt = this->get(*t_val_iter);
-        arclen += euclDistance(pt, pt_prev);
+        arclen += glm::distance(pt, pt_prev);
         this->arclen_t[arclen] = *t_val_iter;
     }
 
@@ -185,7 +187,7 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 {
     /* approximate cubic bezier by splitting into quadratic ones */
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
-    const T                    seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * norm(coefficients[3])), (1.0 / 3.0));
+    const T                    seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * glm::length(coefficients[3])), (1.0 / 3.0));
 
     std::vector<std::array<T, 2>> seg_intervals;
     for (T t = 0; t < 1; t += seg_size)
