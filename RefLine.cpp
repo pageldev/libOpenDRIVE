@@ -67,7 +67,7 @@ double RefLine::match(double x, double y) const
     std::function<double(double)> f_dist = [&](const double s)
     {
         const Vec3D pt = this->get_xyz(s);
-        return glm::distance(Vec2D{pt[0], pt[1]}, Vec2D{x, y});
+        return euclDistance(Vec2D{pt[0], pt[1]}, {x, y});
     };
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }

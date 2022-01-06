@@ -64,7 +64,7 @@ Vec2D ParamPoly3::get_grad(double s) const
     const double dx = h1 * dxy[0] - h2 * dxy[1];
     const double dy = h2 * dxy[0] + h1 * dxy[1];
 
-    return Vec2D{dx, dy};
+    return {{dx, dy}};
 }
 
 std::set<double> ParamPoly3::approximate_linear(double eps) const

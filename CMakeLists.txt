@@ -34,9 +34,7 @@ add_library(OpenDrive SHARED
 )
 target_include_directories(OpenDrive PRIVATE .)
 target_include_directories(OpenDrive PRIVATE Thirdparty)
-target_include_directories(OpenDrive PRIVATE Thirdparty/glm)
 
 add_executable(test-xodr test.cpp)
 target_link_libraries(test-xodr OpenDrive)
 target_include_directories(test-xodr PUBLIC .)
-target_include_directories(test-xodr PUBLIC Thirdparty/glm)

@@ -113,12 +113,12 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
                 Vec3D       e_s, e_t, e_h;
                 const Vec3D p0 = road_ptr->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
-                const Mat3D base_mat{e_s[0], e_s[1], e_s[2], e_t[0], e_t[1], e_t[2], e_h[0], e_h[1], e_h[2]};
+                const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                 for (Vec3D& pt_uvz : single_road_obj_mesh.vertices)
                 {
-                    pt_uvz = rot_mat * pt_uvz;
-                    pt_uvz = base_mat * pt_uvz;
-                    pt_uvz = pt_uvz + p0;
+                    pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
+                    pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
+                    pt_uvz = add(pt_uvz, p0);
 
                     single_road_obj_mesh.st_coordinates.push_back({s, t_s});
                 }
@@ -176,7 +176,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
         Vec3D       e_s, e_t, e_h;
         const Vec3D p0 = road_ptr->get_xyz(this->s0, this->t0, this->z0, &e_s, &e_t, &e_h);
 
-        const Mat3D base_mat{e_s[0], e_s[1], e_s[2], e_t[0], e_t[1], e_t[2], e_h[0], e_h[1], e_h[2]};
+        const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
 
         Mesh3D outline_road_obj_mesh;
 
@@ -190,8 +190,8 @@ Mesh3D RoadObject::get_mesh(double eps) const
                 if (corner.type == RoadObjectCorner::Type::Local)
                 {
                     pt_top = {corner.pt[0], corner.pt[1], corner.pt[2] - p0[2]}; // assume z value is absolute, make road relative
-                    pt_top = pt_top + Vec3D{0, 0, corner.height};
-                    pt_top = (base_mat * (rot_mat * pt_top)) + p0;
+                    pt_top = add(pt_top, Vec3D{0, 0, corner.height});
+                    pt_top = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_top)), p0);
                 }
                 else
                 {
@@ -210,7 +210,7 @@ Mesh3D RoadObject::get_mesh(double eps) const
             if (corner.type == RoadObjectCorner::Type::Local)
             {
                 pt_base = {corner.pt[0], corner.pt[1], corner.pt[2] - p0[2]}; // assume z value is absolute, make road relative
-                pt_base = (base_mat * (rot_mat * pt_base)) + p0;
+                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
             }
             else
             {
