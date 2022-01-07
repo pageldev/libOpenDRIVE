@@ -53,6 +53,24 @@ V get_nearest_val(std::map<K, V> const& input_map, const K k)
 }
 
 template<class K, class V>
+K get_nearest_key(std::map<K, V> const& input_map, const K k)
+{
+    if (input_map.empty())
+        throw std::runtime_error("map empty");
+
+    auto kv_iter = input_map.upper_bound(k);
+    if (kv_iter == input_map.end())
+        return std::prev(kv_iter)->first;
+
+    if (kv_iter == input_map.begin())
+        return kv_iter->first;
+
+    auto prev_kv_iter = std::prev(kv_iter);
+    auto nearest_key = std::abs(prev_kv_iter->first - k) < std::abs(kv_iter->first - k) ? prev_kv_iter->first : kv_iter->first;
+    return nearest_key;
+}
+
+template<class K, class V>
 std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, const K end_k)
 {
     auto kv_iter = input_map.upper_bound(k);
