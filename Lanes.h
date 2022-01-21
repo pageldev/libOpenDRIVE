@@ -14,6 +14,7 @@
 namespace odr
 {
 class Road;
+struct LaneSection;
 
 struct HeightOffset
 {
@@ -48,7 +49,8 @@ struct Lane : public std::enable_shared_from_this<Lane>
     std::map<double, HeightOffset>  s_to_height_offset;
     std::map<double, RoadMarkGroup> s_to_roadmark_group;
 
-    std::weak_ptr<Road> road;
+    std::weak_ptr<Road>        road;
+    std::weak_ptr<LaneSection> lane_section;
 };
 
 using ConstLaneSet = std::set<std::shared_ptr<const Lane>, SharedPtrCmp<const Lane, int, &Lane::id>>;
