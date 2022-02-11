@@ -69,7 +69,7 @@ struct CubicBezier
         return coefficients;
     }
 
-    T length;
+    T valid_length;
 
     std::array<Vec<T, Dim>, 4> control_points;
     std::map<T, T>             arclen_t;
@@ -94,7 +94,7 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
         this->arclen_t[arclen] = *t_val_iter;
     }
 
-    this->length = std::prev(this->arclen_t.end())->first;
+    this->valid_length = std::prev(this->arclen_t.end())->first;
 }
 
 template<typename T, size_t Dim>
@@ -110,14 +110,14 @@ Vec<T, Dim> CubicBezier<T, Dim>::get(T t) const
 template<typename T, size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
-    if ((arclen - this->length) > this->LengthTolerance || arclen < 0)
+    if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
         std::stringstream ss_err;
-        ss_err << "arclength " << arclen << " out of range; length: " << this->length;
+        ss_err << "arclength " << arclen << " out of range; valid length: " << this->valid_length;
         throw std::runtime_error(ss_err.str());
     }
 
-    arclen = std::min<T>(arclen, this->length);
+    arclen = std::min<T>(arclen, this->valid_length);
 
     auto arclen_t_iter = this->arclen_t.upper_bound(arclen);
     if (arclen_t_iter != this->arclen_t.begin())

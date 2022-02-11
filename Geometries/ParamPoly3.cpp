@@ -40,7 +40,7 @@ ParamPoly3::ParamPoly3(double s0,
     this->cubic_bezier = CubicBezier2D(CubicBezier2D::get_control_points(coefficients));
 
     this->cubic_bezier.arclen_t[length] = 1.0;
-    this->cubic_bezier.length = length;
+    this->cubic_bezier.valid_length = length;
 }
 
 Vec2D ParamPoly3::get_xy(double s) const
