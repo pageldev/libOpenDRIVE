@@ -32,7 +32,7 @@ int sign(T val)
 template<typename T, size_t Dim, typename BinaryOperation, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 constexpr Vec<T, Dim> operation(const Vec<T, Dim>& a, const Vec<T, Dim>& b, BinaryOperation op)
 {
-    Vec<T, Dim> res;
+    Vec<T, Dim> res{};
     for (size_t idx = 0; idx < Dim; idx++)
         res[idx] = op(a[idx], b[idx]);
     return res;
@@ -53,7 +53,7 @@ constexpr Vec<T, Dim> sub(const Vec<T, Dim>& a, const Vec<T, Dim>& b)
 template<typename T, size_t Dim, typename BinaryOperation, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 constexpr Vec<T, Dim> operation(const T& scalar, const Vec<T, Dim>& a, BinaryOperation op)
 {
-    Vec<T, Dim> res;
+    Vec<T, Dim> res{};
     for (size_t idx = 0; idx < Dim; idx++)
         res[idx] = op(scalar, a[idx]);
     return res;
@@ -107,7 +107,7 @@ constexpr T norm(const Vec<T, Dim> v)
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 constexpr Vec<T, Dim> normalize(const Vec<T, Dim> v)
 {
-    Vec<T, Dim> e_v;
+    Vec<T, Dim> e_v{};
     const T     n = norm(v);
     std::transform(v.begin(), v.end(), e_v.begin(), [&](const T& a) { return a / n; });
     return e_v;
@@ -122,7 +122,7 @@ constexpr Vec<T, 3> crossProduct(const Vec<T, 3> a, const Vec<T, 3> b)
 template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 constexpr Vec<T, Dim> MatVecMultiplication(const Mat<T, Dim> m, const Vec<T, Dim> v)
 {
-    Vec<T, Dim> res;
+    Vec<T, Dim> res{};
     res.fill(T{0});
     for (size_t idx = 0; idx < Dim * Dim; idx++)
         res[idx / Dim] += ((double*)m.data())[idx] * v[idx % Dim];
@@ -141,7 +141,7 @@ constexpr Mat<T, 3> EulerAnglesToMatrix(T r_x, T r_y, T r_z)
     const T cw = std::cos(r_z);
 
     /* create and populate RotationMatrix */
-    Mat<T, 3> RotMat;
+    Mat<T, 3> RotMat{};
     RotMat[0][0] = cv * cw;
     RotMat[0][1] = su * sv * cw - cu * sw;
     RotMat[0][2] = su * sw + cu * sv * cw;
