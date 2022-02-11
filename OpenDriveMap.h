@@ -4,6 +4,8 @@
 #include "Road.h"
 #include "RoadNetworkMesh.h"
 
+#include "pugixml/pugixml.hpp"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -24,6 +26,8 @@ public:
 
     std::string xodr_file = "";
     std::string proj4 = "";
+
+    pugi::xml_document xml_doc;
 
     double x_offs = 0;
     double y_offs = 0;

@@ -9,8 +9,6 @@
 #include "RefLine.h"
 #include "Road.h"
 
-#include "pugixml/pugixml.hpp"
-
 #include <iostream>
 #include <math.h>
 #include <string>
@@ -21,12 +19,11 @@ namespace odr
 OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight, bool center_map, bool with_objects) :
     xodr_file(xodr_file)
 {
-    pugi::xml_document     doc;
-    pugi::xml_parse_result result = doc.load_file(xodr_file.c_str());
+    pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
     if (!result)
         printf("%s\n", result.description());
 
-    pugi::xml_node odr_node = doc.child("OpenDRIVE");
+    pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
 
     if (auto geoReference_node = odr_node.child("header").child("geoReference"))
         this->proj4 = geoReference_node.text().as_string();
