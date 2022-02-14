@@ -29,6 +29,7 @@ if(EMSCRIPTEN)
       LINK_FLAGS
       "\
 --bind \
+-s ENVIRONMENT=web \
 -s MODULARIZE=1 \
 -s 'EXPORT_NAME=\"libOpenDrive\"' \
 -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' \
