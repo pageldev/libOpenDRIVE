@@ -7,3 +7,5 @@ compile_commands.json
 build/
 build-wasm/
 Viewer/libOpenDrive.js
+Viewer/OpenDrive.js
+Viewer/*.data
