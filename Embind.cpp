@@ -21,6 +21,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     /* vectors */
     emscripten::register_vector<size_t>("vector<size_t>");
+    emscripten::register_vector<uint32_t>("vector<uint32_t>");
     emscripten::register_vector<int>("vector<int>");
     emscripten::register_vector<double>("vector<double>");
     emscripten::register_vector<Vec2D>("vector<Vec2D>");
@@ -83,7 +84,7 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
         .constructor<int, bool, std::string>()
         .smart_ptr<std::shared_ptr<Lane>>("shared_ptr<Lane>")
         .function("get_surface_pt", &Lane::get_surface_pt, emscripten::allow_raw_pointers())
-        .function("get_mesh", &Lane::get_mesh)
+        .function("get_mesh", &Lane::get_mesh, emscripten::allow_raw_pointers())
         .function("get_roadmarks", &Lane::get_roadmarks)
         .function("get_roadmark_mesh", &Lane::get_roadmark_mesh)
         .property("inner_border", &Lane::inner_border)
