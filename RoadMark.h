@@ -2,6 +2,7 @@
 
 #include "Math.hpp"
 #include "Utils.hpp"
+#include "XmlNode.h"
 
 #include <map>
 #include <memory>
@@ -13,7 +14,7 @@ namespace odr
 const double ROADMARK_WEIGHT_STANDARD_WIDTH = 0.12;
 const double ROADMARK_WEIGHT_BOLD_WIDTH = 0.25;
 
-struct RoadMarksLine
+struct RoadMarksLine : public XmlNode
 {
     RoadMarksLine() = default;
 
@@ -27,7 +28,7 @@ struct RoadMarksLine
     std::string rule;
 };
 
-struct RoadMarkGroup
+struct RoadMarkGroup : public XmlNode
 {
     RoadMarkGroup() = default;
 

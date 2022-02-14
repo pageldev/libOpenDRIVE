@@ -1,10 +1,11 @@
 #pragma once
 
-#include <memory>
-#include <set>
-
 #include "Math.hpp"
 #include "Utils.hpp"
+#include "XmlNode.h"
+
+#include <memory>
+#include <set>
 
 namespace odr
 {
@@ -18,7 +19,7 @@ enum class GeometryType
     ParamPoly3
 };
 
-struct RoadGeometry
+struct RoadGeometry : public XmlNode
 {
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
     virtual ~RoadGeometry() = default;

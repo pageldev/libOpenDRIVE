@@ -4,6 +4,7 @@
 #include "Math.hpp"
 #include "Mesh.h"
 #include "RoadMark.h"
+#include "XmlNode.h"
 
 #include <map>
 #include <memory>
@@ -22,7 +23,7 @@ struct HeightOffset
     double outer;
 };
 
-struct Lane : public std::enable_shared_from_this<Lane>
+struct Lane : public XmlNode, public std::enable_shared_from_this<Lane>
 {
     Lane(int id, bool level, std::string type);
     virtual ~Lane() = default;

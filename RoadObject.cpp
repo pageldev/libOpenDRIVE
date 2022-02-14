@@ -67,7 +67,14 @@ Mesh3D RoadObject::get_mesh(double eps) const
 
     std::vector<RoadObjectRepeat> repeats_copy = this->repeats; // make copy to keep method const
     if (repeats_copy.empty() && this->outline.empty())          // handle single object as 1 object repeat
-        repeats_copy.push_back({NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN});
+    {
+        RoadObjectRepeat rp;
+        rp.s0 = rp.t_start = rp.t_end = rp.width_start = rp.width_end = rp.height_start = rp.height_end = rp.z_offset_start = rp.z_offset_end = NAN;
+        rp.length = 0;
+        rp.distance = 1;
+        rp.xml_node = this->xml_node;
+        repeats_copy.push_back(rp);
+    }
 
     const Mat3D rot_mat = EulerAnglesToMatrix<double>(roll, pitch, hdg);
 

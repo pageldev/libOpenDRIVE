@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Lanes.h"
-
 #include "Math.hpp"
 #include "Utils.hpp"
+#include "XmlNode.h"
 
 #include <map>
 #include <memory>
@@ -14,7 +14,7 @@ namespace odr
 {
 class Road;
 
-struct LaneSection : public std::enable_shared_from_this<LaneSection>
+struct LaneSection : public XmlNode, public std::enable_shared_from_this<LaneSection>
 {
     LaneSection(double s0);
     virtual ~LaneSection() = default;

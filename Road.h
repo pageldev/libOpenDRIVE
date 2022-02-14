@@ -6,6 +6,7 @@
 #include "Math.hpp"
 #include "RoadObject.h"
 #include "Utils.hpp"
+#include "XmlNode.h"
 
 #include <map>
 #include <memory>
@@ -31,27 +32,27 @@ struct Crossfall : public CubicSpline
     std::map<double, Side> sides;
 };
 
-struct RoadLink
+struct RoadLink : public XmlNode
 {
     std::string elementId;
     std::string elementType;
     std::string contactPoint;
 };
 
-struct RoadNeighbor
+struct RoadNeighbor : public XmlNode
 {
     std::string elementId;
     std::string side;
     std::string direction;
 };
 
-struct SpeedRecord
+struct SpeedRecord : public XmlNode
 {
     std::string max;
     std::string unit;
 };
 
-class Road : public std::enable_shared_from_this<Road>
+class Road : public XmlNode, public std::enable_shared_from_this<Road>
 {
 public:
     Road() = default;

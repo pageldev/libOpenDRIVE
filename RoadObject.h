@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "Utils.hpp"
+#include "XmlNode.h"
 
 #include <memory>
 #include <set>
@@ -11,7 +12,7 @@ namespace odr
 {
 class Road;
 
-struct RoadObjectRepeat
+struct RoadObjectRepeat : public XmlNode
 {
     double s0 = 0;
     double length = 0;
@@ -26,7 +27,7 @@ struct RoadObjectRepeat
     double z_offset_end = 0;
 };
 
-struct RoadObjectCorner
+struct RoadObjectCorner : public XmlNode
 {
     enum class Type
     {
@@ -39,7 +40,7 @@ struct RoadObjectCorner
     Type   type = Type::Road;
 };
 
-struct RoadObject
+struct RoadObject : public XmlNode
 {
     RoadObject() = default;
 
