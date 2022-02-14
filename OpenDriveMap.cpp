@@ -512,11 +512,11 @@ RoadNetworkMesh OpenDriveMap::get_mesh(double eps) const
 
                 size_t roadmarks_idx_offset = roadmarks_mesh.vertices.size();
                 roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane->id;
-                const std::vector<RoadMark> roadmarks = lane->get_roadmarks(lanesec->s0, lanesec->get_end());
-                for (const RoadMark& roadmark : roadmarks)
+                const std::vector<std::shared_ptr<RoadMark>> roadmarks = lane->get_roadmarks(lanesec->s0, lanesec->get_end());
+                for (std::shared_ptr<const RoadMark> roadmark : roadmarks)
                 {
                     roadmarks_idx_offset = roadmarks_mesh.vertices.size();
-                    roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
+                    roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark->type;
                     roadmarks_mesh.add_mesh(lane->get_roadmark_mesh(roadmark, eps));
                 }
             }

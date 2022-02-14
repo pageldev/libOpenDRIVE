@@ -161,7 +161,7 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, std::vector<uint
     return out_mesh;
 }
 
-std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
+std::vector<std::shared_ptr<RoadMark>> Lane::get_roadmarks(double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s_to_roadmark_group.empty())
         return {};
@@ -171,7 +171,7 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
     if (s_start_rm_iter != this->s_to_roadmark_group.begin())
         s_start_rm_iter--;
 
-    std::vector<RoadMark> roadmarks;
+    std::vector<std::shared_ptr<RoadMark>> roadmarks;
     for (auto s_rm_iter = s_start_rm_iter; s_rm_iter != s_end_rm_iter; s_rm_iter++)
     {
         const RoadMarkGroup& roadmark_group = s_rm_iter->second;
@@ -185,7 +185,7 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
             if (roadmark_group.width > 0)
                 width = roadmark_group.width;
 
-            roadmarks.push_back({s_start_roadmark_group, s_end_roadmark_group, 0, width, roadmark_group.type});
+            roadmarks.push_back(std::make_shared<RoadMark>(RoadMark{s_start_roadmark_group, s_end_roadmark_group, 0, width, roadmark_group.type}));
         }
         else
         {
@@ -202,8 +202,8 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
                      s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
                 {
                     const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmarks_line.length);
-                    roadmarks.push_back(
-                        {s_start_single_roadmark, s_end_single_roadmark, roadmarks_line.t_offset, width, roadmark_group.type + roadmarks_line.name});
+                    roadmarks.push_back(std::make_shared<RoadMark>(RoadMark{
+                        s_start_single_roadmark, s_end_single_roadmark, roadmarks_line.t_offset, width, roadmark_group.type + roadmarks_line.name}));
                 }
             }
         }
@@ -212,20 +212,20 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
     return roadmarks;
 }
 
-Mesh3D Lane::get_roadmark_mesh(const RoadMark& roadmark, double eps) const
+Mesh3D Lane::get_roadmark_mesh(std::shared_ptr<const RoadMark> roadmark, double eps) const
 {
-    const std::set<double> s_vals = this->approximate_border_linear(roadmark.s_start, roadmark.s_end, eps, true);
+    const std::set<double> s_vals = this->approximate_border_linear(roadmark->s_start, roadmark->s_end, eps, true);
 
     Mesh3D out_mesh;
     for (const double& s : s_vals)
     {
         Vec3D        vn_edge_a{0, 0, 0};
-        const double t_edge_a = this->outer_border.get(s) + roadmark.width * 0.5 + roadmark.t_offset;
+        const double t_edge_a = this->outer_border.get(s) + roadmark->width * 0.5 + roadmark->t_offset;
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
         out_mesh.normals.push_back(vn_edge_a);
 
         Vec3D        vn_edge_b{0, 0, 0};
-        const double t_edge_b = t_edge_a - roadmark.width;
+        const double t_edge_b = t_edge_a - roadmark->width;
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b));
         out_mesh.normals.push_back(vn_edge_b);
     }
