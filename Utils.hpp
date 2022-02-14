@@ -251,4 +251,29 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
     return p_vals;
 }
 
+template<typename T>
+inline std::vector<T> get_triangle_strip_outline_indices(const size_t num_vertices)
+{
+    std::vector<T> out_indices;
+    out_indices.reserve(num_vertices + 4);
+
+    for (size_t idx = 0; idx < num_vertices - 2; idx += 2)
+    {
+        out_indices.push_back(idx);
+        out_indices.push_back(idx + 2);
+    }
+    for (size_t idx = 0 + 1; idx < num_vertices - 2; idx += 2)
+    {
+        out_indices.push_back(idx);
+        out_indices.push_back(idx + 2);
+    }
+
+    out_indices.push_back(0);
+    out_indices.push_back(1);
+    out_indices.push_back(num_vertices - 2);
+    out_indices.push_back(num_vertices - 1);
+
+    return out_indices;
+}
+
 } // namespace odr

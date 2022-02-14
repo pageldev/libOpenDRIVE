@@ -97,7 +97,7 @@ Line3D Lane::get_border_line(double s_start, double s_end, double eps, bool oute
     return border_line;
 }
 
-Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
+Mesh3D Lane::get_mesh(double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices) const
 {
     auto road_ptr = this->road.lock();
     if (!road_ptr)
@@ -151,6 +151,11 @@ Mesh3D Lane::get_mesh(double s_start, double s_end, double eps) const
         else
             indicies_patch = {idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
         out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
+    }
+
+    if (outline_indices)
+    {
+        *outline_indices = get_triangle_strip_outline_indices<uint32_t>(out_mesh.vertices.size());
     }
 
     return out_mesh;
