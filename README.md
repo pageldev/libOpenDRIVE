@@ -62,7 +62,7 @@ mkdir build && cd build
 emcmake cmake ..
 emmake make
 
-cp OpenDrive.* ../Viewer
+cp ModuleOpenDrive.* ../Viewer
 ```
 
 ### Javascript Example
