@@ -70,8 +70,15 @@ cp ModuleOpenDrive.* ../Viewer
 ```js
 fetch("./data.xodr").then((file_data) => {
     file_data.text().then((file_text) => {
+        odr_map_config = {
+            with_lateralProfile : PARAMS.lateralProfile,
+            with_laneHeight : PARAMS.laneHeight,
+            with_road_objects : false,
+            center_map : true,
+            abs_z_for_for_local_road_obj_outline : true
+        };
         ModuleOpenDrive['FS_createDataFile'](".", "data.xodr", file_text, true, true);
-        OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", true, true, true, true);
+        OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", odr_map_config);
     });
 });
 ```
