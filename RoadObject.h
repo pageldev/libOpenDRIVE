@@ -31,7 +31,8 @@ struct RoadObjectCorner : public XmlNode
 {
     enum class Type
     {
-        Local,
+        Local_RelZ, // z relative to road’s reference line
+        Local_AbsZ, // absolute z value
         Road
     };
 

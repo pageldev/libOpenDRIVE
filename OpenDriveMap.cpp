@@ -16,8 +16,7 @@
 
 namespace odr
 {
-OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool with_laneHeight, bool center_map, bool with_objects) :
-    xodr_file(xodr_file)
+OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfig& config) : xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
     if (!result)
@@ -29,7 +28,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         this->proj4 = geoReference_node.text().as_string();
 
     size_t cnt = 1;
-    if (center_map)
+    if (config.center_map)
     {
         for (pugi::xml_node road_node : odr_node.children("road"))
         {
@@ -167,7 +166,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         std::map<std::string /*x path query*/, CubicSpline&> cubic_spline_fields{
             {".//elevationProfile//elevation", road->ref_line->elevation_profile}, {".//lanes//laneOffset", road->lane_offset}};
 
-        if (with_lateralProfile)
+        if (config.with_lateralProfile)
             cubic_spline_fields.insert({".//lateralProfile//superelevation", road->superelevation});
 
         /* parse elevation profiles, lane offsets, superelevation */
@@ -189,7 +188,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         }
 
         /* parse crossfall - has extra attribute side */
-        if (with_lateralProfile)
+        if (config.with_lateralProfile)
         {
             for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
             {
@@ -256,7 +255,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                     lane->lane_width.s0_to_poly[s0 + s_offset] = Poly3(s0 + s_offset, a, b, c, d);
                 }
 
-                if (with_laneHeight)
+                if (config.with_laneHeight)
                 {
                     for (pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
@@ -361,8 +360,11 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
         }
 
         /* parse road objects */
-        if (with_objects)
+        if (config.with_road_objects)
         {
+            const RoadObjectCorner::Type default_local_outline_type =
+                config.abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type::Local_AbsZ : RoadObjectCorner::Type::Local_RelZ;
+
             for (pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
                 std::shared_ptr<RoadObject> road_object = std::make_shared<RoadObject>();
@@ -426,7 +428,7 @@ OpenDriveMap::OpenDriveMap(std::string xodr_file, bool with_lateralProfile, bool
                 for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
                 {
                     RoadObjectCorner road_object_corner_local;
-                    road_object_corner_local.type = RoadObjectCorner::Type::Local;
+                    road_object_corner_local.type = default_local_outline_type;
                     road_object_corner_local.pt[0] = corner_local_node.attribute("u").as_double(0);
                     road_object_corner_local.pt[1] = corner_local_node.attribute("v").as_double(0);
                     road_object_corner_local.pt[2] = corner_local_node.attribute("z").as_double(0);
