@@ -1,10 +1,10 @@
 #pragma once
-
+#include "Junction.h"
 #include "Mesh.h"
 #include "Road.h"
 #include "RoadNetworkMesh.h"
 
-#include "pugixml/pugixml.hpp"
+#include <pugixml/pugixml.hpp>
 
 #include <map>
 #include <memory>
@@ -41,7 +41,8 @@ public:
     double x_offs = 0;
     double y_offs = 0;
 
-    std::map<std::string, std::shared_ptr<Road>> roads;
+    std::map<std::string, std::shared_ptr<Road>>     roads;
+    std::map<std::string, std::shared_ptr<Junction>> junctions;
 };
 
 } // namespace odr

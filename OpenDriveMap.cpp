@@ -43,6 +43,65 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         }
     }
 
+    for (pugi::xml_node junction_node : odr_node.children("junction"))
+    {
+        /* make junction */
+        std::shared_ptr<Junction> junction = std::make_shared<Junction>();
+        junction->id = junction_node.attribute("id").as_string("");
+        junction->name = junction_node.attribute("name").as_string("");
+        junction->xml_node = junction_node;
+
+        for (pugi::xml_node connection_node : junction_node.children("connection"))
+        {
+            JunctionConnection junction_connection;
+            junction_connection.id = connection_node.attribute("id").as_string("");
+            junction_connection.incoming_road = connection_node.attribute("incomingRoad").as_string("");
+            junction_connection.connecting_road = connection_node.attribute("connectingRoad").as_string("");
+
+            const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
+            const bool        valid_contact_pt = (contact_point_str == "start" || contact_point_str == "end");
+            CHECK(valid_contact_pt, "Junction::Connection::contactPoint invalid value");
+            if (!valid_contact_pt)
+                continue;
+            junction_connection.contact_point =
+                (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
+
+            for (pugi::xml_node lane_link_node : connection_node.children("laneLink"))
+            {
+                JunctionLaneLink lane_link;
+                lane_link.from = lane_link_node.attribute("from").as_int(0);
+                lane_link.to = lane_link_node.attribute("to").as_int(0);
+                junction_connection.lane_links.push_back(lane_link);
+            }
+
+            junction->connections[junction_connection.id] = junction_connection;
+        }
+
+        const size_t num_conns = junction->connections.size();
+        CHECK(num_conns > 0, "Junection::connections == 0");
+        if (num_conns < 1)
+            continue;
+
+        for (pugi::xml_node priority_node : junction_node.children("priority"))
+        {
+            JunctionPriority junction_priority;
+            junction_priority.high = priority_node.attribute("high").as_string("");
+            junction_priority.low = priority_node.attribute("low").as_string("");
+            junction->priorities.push_back(junction_priority);
+        }
+
+        for (pugi::xml_node controller_node : junction_node.children("controller"))
+        {
+            JunctionController junction_controller;
+            junction_controller.id = controller_node.attribute("id").as_string("");
+            junction_controller.type = controller_node.attribute("type").as_string("");
+            junction_controller.sequence = controller_node.attribute("sequence").as_uint(0);
+            junction->controllers[junction_controller.id] = junction_controller;
+        }
+
+        this->junctions[junction->id] = junction;
+    }
+
     for (pugi::xml_node road_node : odr_node.children("road"))
     {
         /* make road */
