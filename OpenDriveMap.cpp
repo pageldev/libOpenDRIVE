@@ -77,7 +77,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         }
 
         const size_t num_conns = junction->connections.size();
-        CHECK(num_conns > 0, "Junection::connections == 0");
+        CHECK(num_conns > 0, "Junction::connections == 0");
         if (num_conns < 1)
             continue;
 
@@ -122,19 +122,23 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             if (road_link_node)
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
-                link.elementId = road_link_node.attribute("elementId").as_string("");
+                link.id = road_link_node.attribute("elementId").as_string("");
 
                 std::string type_str = road_link_node.attribute("elementType").as_string("");
                 CHECK_AND_REPAIR(type_str == "road" || type_str == "junction",
-                                 "Road::Succ/Predecessor::Link::ElementType invalid type",
+                                 "Road::Succ/Predecessor::Link::elementType invalid type",
                                  type_str = "road"); // default to road
-                link.elementType = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
+                link.type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
 
-                std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
-                CHECK_AND_REPAIR(contact_point_str == "start" || contact_point_str == "end",
-                                 "Road::Succ/Predecessor::Link::contactPoint invalid type",
-                                 contact_point_str = "start"); // default to start
-                link.contactPoint = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+                if (link.type == RoadLink::Type::Road)
+                {
+                    // junction connection has no contact point
+                    std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
+                    CHECK_AND_REPAIR(contact_point_str == "start" || contact_point_str == "end",
+                                     "Road::Succ/Predecessor::Link::contactPoint invalid type",
+                                     contact_point_str = "start"); // default to start
+                    link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+                }
 
                 link.xml_node = road_link_node;
             }
@@ -144,7 +148,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         for (pugi::xml_node road_neighbor_node : road_node.child("link").children("neighbor"))
         {
             RoadNeighbor road_neighbor;
-            road_neighbor.elementId = road_neighbor_node.attribute("elementId").as_string("");
+            road_neighbor.id = road_neighbor_node.attribute("elementId").as_string("");
             road_neighbor.side = road_neighbor_node.attribute("side").as_string("");
             road_neighbor.direction = road_neighbor_node.attribute("direction").as_string("");
             road_neighbor.xml_node = road_neighbor_node;

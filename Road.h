@@ -48,14 +48,14 @@ struct RoadLink : public XmlNode
         Junction
     };
 
-    std::string  elementId = "";
-    Type         elementType = Type::None;
-    ContactPoint contactPoint = ContactPoint::None;
+    std::string  id = "";
+    Type         type = Type::None;
+    ContactPoint contact_point = ContactPoint::None;
 };
 
 struct RoadNeighbor : public XmlNode
 {
-    std::string elementId = "";
+    std::string id = "";
     std::string side = "";
     std::string direction = "";
 };
