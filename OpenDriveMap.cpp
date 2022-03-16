@@ -64,9 +64,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             if (road_link_node)
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
-                link.elementId = road_link_node.child("elementId").text().as_string();
-                link.elementType = road_link_node.child("elementType").text().as_string();
-                link.contactPoint = road_link_node.child("contactPoint").text().as_string();
+                link.elementId = road_link_node.attribute("elementId").as_string();
+                link.elementType = road_link_node.attribute("elementType").as_string();
+                link.contactPoint = road_link_node.attribute("contactPoint").as_string();
                 link.xml_node = road_link_node;
             }
         }
