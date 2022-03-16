@@ -25,7 +25,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
     pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
 
     if (auto geoReference_node = odr_node.child("header").child("geoReference"))
-        this->proj4 = geoReference_node.text().as_string();
+        this->proj4 = geoReference_node.text().as_string("");
 
     size_t cnt = 1;
     if (config.center_map)
@@ -34,9 +34,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         {
             for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
             {
-                const double x0 = geometry_hdr_node.attribute("x").as_double();
+                const double x0 = geometry_hdr_node.attribute("x").as_double(0.0);
                 this->x_offs = this->x_offs + ((x0 - this->x_offs) / cnt);
-                const double y0 = geometry_hdr_node.attribute("y").as_double();
+                const double y0 = geometry_hdr_node.attribute("y").as_double(0.0);
                 this->y_offs = this->y_offs + ((y0 - this->y_offs) / cnt);
                 cnt++;
             }
@@ -47,10 +47,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
     {
         /* make road */
         std::shared_ptr<Road> road = std::make_shared<Road>();
-        road->length = road_node.attribute("length").as_double();
-        road->id = road_node.attribute("id").as_string();
-        road->junction = road_node.attribute("junction").as_string();
-        road->name = road_node.attribute("name").as_string();
+        road->length = road_node.attribute("length").as_double(0.0);
+        road->id = road_node.attribute("id").as_string("");
+        road->junction = road_node.attribute("junction").as_string("");
+        road->name = road_node.attribute("name").as_string("");
         road->xml_node = road_node;
         this->roads[road->id] = road;
 
@@ -64,9 +64,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             if (road_link_node)
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
-                link.elementId = road_link_node.attribute("elementId").as_string();
-                link.elementType = road_link_node.attribute("elementType").as_string();
-                link.contactPoint = road_link_node.attribute("contactPoint").as_string();
+                link.elementId = road_link_node.attribute("elementId").as_string("");
+                link.elementType = road_link_node.attribute("elementType").as_string("");
+                link.contactPoint = road_link_node.attribute("contactPoint").as_string("");
                 link.xml_node = road_link_node;
             }
         }
@@ -75,9 +75,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         for (pugi::xml_node road_neighbor_node : road_node.child("link").children("neighbor"))
         {
             RoadNeighbor road_neighbor;
-            road_neighbor.elementId = road_neighbor_node.attribute("elementId").as_string();
-            road_neighbor.side = road_neighbor_node.attribute("side").as_string();
-            road_neighbor.direction = road_neighbor_node.attribute("direction").as_string();
+            road_neighbor.elementId = road_neighbor_node.attribute("elementId").as_string("");
+            road_neighbor.side = road_neighbor_node.attribute("side").as_string("");
+            road_neighbor.direction = road_neighbor_node.attribute("direction").as_string("");
             road_neighbor.xml_node = road_neighbor_node;
             road->neighbors.push_back(road_neighbor);
         }
@@ -85,8 +85,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         /* parse road type and speed */
         for (pugi::xml_node road_type_node : road_node.children("type"))
         {
-            double      s = road_type_node.attribute("s").as_double();
-            std::string type = road_type_node.attribute("type").as_string();
+            double      s = road_type_node.attribute("s").as_double(0.0);
+            std::string type = road_type_node.attribute("type").as_string("");
 
             CHECK_AND_REPAIR(s >= 0, "road::type::s < 0", s = 0);
 
@@ -94,8 +94,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             if (pugi::xml_node node = road_type_node.child("speed"))
             {
                 SpeedRecord speed_record;
-                speed_record.max = node.attribute("max").as_string();
-                speed_record.unit = node.attribute("unit").as_string();
+                speed_record.max = node.attribute("max").as_string("");
+                speed_record.unit = node.attribute("unit").as_string("");
                 speed_record.xml_node = node;
                 road->s_to_speed[s] = speed_record;
             }
@@ -105,11 +105,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         road->ref_line = std::make_shared<RefLine>(road->length);
         for (pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
-            double s0 = geometry_hdr_node.attribute("s").as_double();
-            double x0 = geometry_hdr_node.attribute("x").as_double() - this->x_offs;
-            double y0 = geometry_hdr_node.attribute("y").as_double() - this->y_offs;
-            double hdg0 = geometry_hdr_node.attribute("hdg").as_double();
-            double length = geometry_hdr_node.attribute("length").as_double();
+            double s0 = geometry_hdr_node.attribute("s").as_double(0.0);
+            double x0 = geometry_hdr_node.attribute("x").as_double(0.0) - this->x_offs;
+            double y0 = geometry_hdr_node.attribute("y").as_double(0.0) - this->y_offs;
+            double hdg0 = geometry_hdr_node.attribute("hdg").as_double(0.0);
+            double length = geometry_hdr_node.attribute("length").as_double(0.0);
 
             CHECK_AND_REPAIR(s0 >= 0, "road::planView::geometry::s < 0", s0 = 0);
             CHECK_AND_REPAIR(length >= 0, "road::planView::geometry::length < 0", length = 0);
@@ -122,31 +122,31 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             }
             else if (geometry_type == "spiral")
             {
-                double curv_start = geometry_node.attribute("curvStart").as_double();
-                double curv_end = geometry_node.attribute("curvEnd").as_double();
+                double curv_start = geometry_node.attribute("curvStart").as_double(0.0);
+                double curv_end = geometry_node.attribute("curvEnd").as_double(0.0);
                 road->ref_line->s0_to_geometry[s0] = std::make_shared<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
             }
             else if (geometry_type == "arc")
             {
-                double curvature = geometry_node.attribute("curvature").as_double();
+                double curvature = geometry_node.attribute("curvature").as_double(0.0);
                 road->ref_line->s0_to_geometry[s0] = std::make_shared<Arc>(s0, x0, y0, hdg0, length, curvature);
             }
             else if (geometry_type == "paramPoly3")
             {
-                double aU = geometry_node.attribute("aU").as_double();
-                double bU = geometry_node.attribute("bU").as_double();
-                double cU = geometry_node.attribute("cU").as_double();
-                double dU = geometry_node.attribute("dU").as_double();
-                double aV = geometry_node.attribute("aV").as_double();
-                double bV = geometry_node.attribute("bV").as_double();
-                double cV = geometry_node.attribute("cV").as_double();
-                double dV = geometry_node.attribute("dV").as_double();
+                double aU = geometry_node.attribute("aU").as_double(0.0);
+                double bU = geometry_node.attribute("bU").as_double(0.0);
+                double cU = geometry_node.attribute("cU").as_double(0.0);
+                double dU = geometry_node.attribute("dU").as_double(0.0);
+                double aV = geometry_node.attribute("aV").as_double(0.0);
+                double bV = geometry_node.attribute("bV").as_double(0.0);
+                double cV = geometry_node.attribute("cV").as_double(0.0);
+                double dV = geometry_node.attribute("dV").as_double(0.0);
 
                 bool pRange_normalized = true;
                 if (geometry_node.attribute("pRange") || geometry_hdr_node.attribute("pRange"))
                 {
-                    std::string pRange_str = geometry_node.attribute("pRange") ? geometry_node.attribute("pRange").as_string()
-                                                                               : geometry_hdr_node.attribute("pRange").as_string();
+                    std::string pRange_str = geometry_node.attribute("pRange") ? geometry_node.attribute("pRange").as_string("")
+                                                                               : geometry_hdr_node.attribute("pRange").as_string("");
                     std::transform(pRange_str.begin(), pRange_str.end(), pRange_str.begin(), [](unsigned char c) { return std::tolower(c); });
                     if (pRange_str == "arclength")
                         pRange_normalized = false;
@@ -175,11 +175,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
             for (pugi::xpath_node node : nodes)
             {
-                double s0 = node.node().attribute("s").as_double();
-                double a = node.node().attribute("a").as_double();
-                double b = node.node().attribute("b").as_double();
-                double c = node.node().attribute("c").as_double();
-                double d = node.node().attribute("d").as_double();
+                double s0 = node.node().attribute("s").as_double(0.0);
+                double a = node.node().attribute("a").as_double(0.0);
+                double b = node.node().attribute("b").as_double(0.0);
+                double c = node.node().attribute("c").as_double(0.0);
+                double d = node.node().attribute("d").as_double(0.0);
 
                 CHECK_AND_REPAIR(s0 >= 0, (entry.first + "::s < 0").c_str(), s0 = 0);
 
@@ -192,11 +192,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         {
             for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
             {
-                double s0 = crossfall_node.attribute("s").as_double();
-                double a = crossfall_node.attribute("a").as_double();
-                double b = crossfall_node.attribute("b").as_double();
-                double c = crossfall_node.attribute("c").as_double();
-                double d = crossfall_node.attribute("d").as_double();
+                double s0 = crossfall_node.attribute("s").as_double(0.0);
+                double a = crossfall_node.attribute("a").as_double(0.0);
+                double b = crossfall_node.attribute("b").as_double(0.0);
+                double c = crossfall_node.attribute("c").as_double(0.0);
+                double d = crossfall_node.attribute("d").as_double(0.0);
 
                 CHECK_AND_REPAIR(s0 >= 0, "road::lateralProfile::crossfall::s < 0", s0 = 0);
 
@@ -204,7 +204,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                 road->crossfall.s0_to_poly[s0] = crossfall_poly;
                 if (pugi::xml_attribute side = crossfall_node.attribute("side"))
                 {
-                    std::string side_str = side.as_string();
+                    std::string side_str = side.as_string("");
                     std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
                     if (side_str == "left")
                         road->crossfall.sides[s0] = Crossfall::Side::Left;
@@ -223,7 +223,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         /* parse road lane sections and lanes */
         for (pugi::xml_node lane_section_node : road_node.child("lanes").children("laneSection"))
         {
-            double s0 = lane_section_node.attribute("s").as_double();
+            double s0 = lane_section_node.attribute("s").as_double(0.0);
 
             std::shared_ptr<LaneSection> lane_section = std::make_shared<LaneSection>(s0);
             lane_section->road = road;
@@ -233,9 +233,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             for (pugi::xpath_node lane_xpath_node : lane_section_node.select_nodes(".//lane"))
             {
                 pugi::xml_node lane_node = lane_xpath_node.node();
-                int            lane_id = lane_node.attribute("id").as_int();
-                std::string    lane_type = lane_node.attribute("type").as_string();
-                bool           level = lane_node.attribute("level").as_bool();
+                int            lane_id = lane_node.attribute("id").as_int(0);
+                std::string    lane_type = lane_node.attribute("type").as_string("");
+                bool           level = lane_node.attribute("level").as_bool(false);
 
                 std::shared_ptr<Lane> lane = std::make_shared<Lane>(lane_id, level, lane_type);
                 lane->road = road;
@@ -245,11 +245,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
 
                 for (pugi::xml_node lane_width_node : lane_node.children("width"))
                 {
-                    double s_offset = lane_width_node.attribute("sOffset").as_double();
-                    double a = lane_width_node.attribute("a").as_double();
-                    double b = lane_width_node.attribute("b").as_double();
-                    double c = lane_width_node.attribute("c").as_double();
-                    double d = lane_width_node.attribute("d").as_double();
+                    double s_offset = lane_width_node.attribute("sOffset").as_double(0.0);
+                    double a = lane_width_node.attribute("a").as_double(0.0);
+                    double b = lane_width_node.attribute("b").as_double(0.0);
+                    double c = lane_width_node.attribute("c").as_double(0.0);
+                    double d = lane_width_node.attribute("d").as_double(0.0);
 
                     CHECK_AND_REPAIR(s_offset >= 0, "lane::width::sOffset < 0", s_offset = 0);
                     lane->lane_width.s0_to_poly[s0 + s_offset] = Poly3(s0 + s_offset, a, b, c, d);
@@ -259,9 +259,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                 {
                     for (pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
-                        double s_offset = lane_height_node.attribute("sOffset").as_double();
-                        double inner = lane_height_node.attribute("inner").as_double();
-                        double outer = lane_height_node.attribute("outer").as_double();
+                        double s_offset = lane_height_node.attribute("sOffset").as_double(0.0);
+                        double inner = lane_height_node.attribute("inner").as_double(0.0);
+                        double outer = lane_height_node.attribute("outer").as_double(0.0);
 
                         CHECK_AND_REPAIR(s_offset >= 0, "lane::height::sOffset < 0", s_offset = 0);
                         lane->s_to_height_offset[s0 + s_offset] = HeightOffset{inner, outer};
@@ -312,9 +312,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                 }
 
                 if (pugi::xml_node node = lane_node.child("link").child("predecessor"))
-                    lane->predecessor = node.attribute("id").as_int();
+                    lane->predecessor = node.attribute("id").as_int(0);
                 if (pugi::xml_node node = lane_node.child("link").child("successor"))
-                    lane->successor = node.attribute("id").as_int();
+                    lane->successor = node.attribute("id").as_int(0);
             }
 
             /* derive lane borders from lane widths */
