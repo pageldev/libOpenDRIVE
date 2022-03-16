@@ -58,11 +58,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             junction_connection.incoming_road = connection_node.attribute("incomingRoad").as_string("");
             junction_connection.connecting_road = connection_node.attribute("connectingRoad").as_string("");
 
-            const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
-            const bool        valid_contact_pt = (contact_point_str == "start" || contact_point_str == "end");
-            CHECK(valid_contact_pt, "Junction::Connection::contactPoint invalid value");
-            if (!valid_contact_pt)
-                continue;
+            std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
+            CHECK_AND_REPAIR(contact_point_str == "start" || contact_point_str == "end",
+                             "Junction::Connection::contactPoint invalid value",
+                             contact_point_str = "start"); // default to start
             junction_connection.contact_point =
                 (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
 
@@ -124,8 +123,19 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             {
                 RoadLink& link = is_predecessor ? road->predecessor : road->successor;
                 link.elementId = road_link_node.attribute("elementId").as_string("");
-                link.elementType = road_link_node.attribute("elementType").as_string("");
-                link.contactPoint = road_link_node.attribute("contactPoint").as_string("");
+
+                std::string type_str = road_link_node.attribute("elementType").as_string("");
+                CHECK_AND_REPAIR(type_str == "road" || type_str == "junction",
+                                 "Road::Succ/Predecessor::Link::ElementType invalid type",
+                                 type_str = "road"); // default to road
+                link.elementType = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
+
+                std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
+                CHECK_AND_REPAIR(contact_point_str == "start" || contact_point_str == "end",
+                                 "Road::Succ/Predecessor::Link::contactPoint invalid type",
+                                 contact_point_str = "start"); // default to start
+                link.contactPoint = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+
                 link.xml_node = road_link_node;
             }
         }

@@ -34,22 +34,36 @@ struct Crossfall : public CubicSpline
 
 struct RoadLink : public XmlNode
 {
-    std::string elementId;
-    std::string elementType;
-    std::string contactPoint;
+    enum class ContactPoint
+    {
+        None,
+        Start,
+        End
+    };
+
+    enum class Type
+    {
+        None,
+        Road,
+        Junction
+    };
+
+    std::string  elementId = "";
+    Type         elementType = Type::None;
+    ContactPoint contactPoint = ContactPoint::None;
 };
 
 struct RoadNeighbor : public XmlNode
 {
-    std::string elementId;
-    std::string side;
-    std::string direction;
+    std::string elementId = "";
+    std::string side = "";
+    std::string direction = "";
 };
 
 struct SpeedRecord : public XmlNode
 {
-    std::string max;
-    std::string unit;
+    std::string max = "";
+    std::string unit = "";
 };
 
 class Road : public XmlNode, public std::enable_shared_from_this<Road>
