@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "Road.h"
 #include "RoadNetworkMesh.h"
+#include "RoutingGraph.h"
 
 #include <pugixml/pugixml.hpp>
 
@@ -32,6 +33,8 @@ public:
 
     Mesh3D          get_refline_lines(double eps) const;
     RoadNetworkMesh get_mesh(double eps) const;
+
+    RoutingGraph get_routing_graph() const;
 
     std::string xodr_file = "";
     std::string proj4 = "";
