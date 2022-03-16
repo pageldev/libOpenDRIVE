@@ -32,6 +32,7 @@ add_library(OpenDrive SHARED
     RoadMark.cpp
     RoadNetworkMesh.cpp
     RoadObject.cpp
+    RoutingGraph.cpp
     Thirdparty/pugixml/pugixml.cpp
 )
 
