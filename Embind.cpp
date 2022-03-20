@@ -6,7 +6,9 @@
     #include "OpenDriveMap.h"
     #include "RefLine.h"
     #include "Road.h"
+    #include "RoadNetworkMesh.h"
     #include "Utils.hpp"
+    #include "ViewerUtils.h"
 
     #include <emscripten/bind.h>
 
@@ -152,12 +154,13 @@ EMSCRIPTEN_BINDINGS(OpenDriveMap)
 
     emscripten::class_<OpenDriveMap>("OpenDriveMap")
         .constructor<std::string, OpenDriveMapConfig>()
-        .function("get_refline_segments", &OpenDriveMap::get_refline_lines)
-        .function("get_mesh", &OpenDriveMap::get_mesh)
         .property("xodr_file", &OpenDriveMap::xodr_file)
         .property("roads", &OpenDriveMap::roads)
         .property("x_offs", &OpenDriveMap::x_offs)
         .property("y_offs", &OpenDriveMap::y_offs);
+
+    emscripten::function("get_road_network_mesh", &get_road_network_mesh);
+    emscripten::function("get_refline_segments", &get_refline_segments);
 }
 
 } // namespace odr

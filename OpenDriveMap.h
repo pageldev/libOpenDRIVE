@@ -2,7 +2,6 @@
 #include "Junction.h"
 #include "Mesh.h"
 #include "Road.h"
-#include "RoadNetworkMesh.h"
 #include "RoutingGraph.h"
 
 #include <pugixml/pugixml.hpp>
@@ -30,9 +29,6 @@ public:
 
     ConstRoadSet get_roads() const;
     RoadSet      get_roads();
-
-    Mesh3D          get_refline_lines(double eps) const;
-    RoadNetworkMesh get_mesh(double eps) const;
 
     RoutingGraph get_routing_graph() const;
 

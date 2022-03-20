@@ -33,16 +33,5 @@ int main(int argc, char** argv)
     }
     printf("Finished\n");
 
-    if (argc == 3)
-    {
-        std::ofstream out_file;
-        out_file.open(argv[2]);
-
-        odr::RoadNetworkMesh road_network_mesh = odr.get_mesh(0.1);
-        out_file << road_network_mesh.get_mesh().get_obj() << std::endl;
-
-        out_file.close();
-    }
-
     return 0;
 }
