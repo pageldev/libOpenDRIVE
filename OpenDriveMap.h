@@ -32,9 +32,8 @@ public:
 
     RoutingGraph get_routing_graph() const;
 
-    std::string xodr_file = "";
-    std::string proj4 = "";
-
+    const std::string  xodr_file = "";
+    std::string        proj4 = "";
     pugi::xml_document xml_doc;
 
     double x_offs = 0;
