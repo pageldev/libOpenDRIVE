@@ -71,8 +71,8 @@ cp ModuleOpenDrive.* ../Viewer
 fetch("./data.xodr").then((file_data) => {
     file_data.text().then((file_text) => {
         odr_map_config = {
-            with_lateralProfile : PARAMS.lateralProfile,
-            with_laneHeight : PARAMS.laneHeight,
+            with_lateralProfile : true,
+            with_laneHeight : true,
             with_road_objects : false,
             center_map : true,
             abs_z_for_for_local_road_obj_outline : true
