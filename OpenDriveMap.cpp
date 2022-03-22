@@ -603,9 +603,12 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
                     if (!next_lane)
                         continue;
 
-                    LanePtr from = find_successor ? lane : next_lane;
-                    LanePtr to = find_successor ? next_lane : lane;
-                    routing_graph.add_edge(RoutingGraphEdge{from, to});
+                    LanePtr from_lane = find_successor ? lane : next_lane;
+                    LanePtr to_lane = find_successor ? next_lane : lane;
+
+                    const RoutingGraphVertex from(from_lane->road.lock()->id, from_lane->lane_section.lock()->s0, from_lane->id);
+                    const RoutingGraphVertex to(to_lane->road.lock()->id, to_lane->lane_section.lock()->s0, to_lane->id);
+                    routing_graph.add_edge(RoutingGraphEdge(from, to));
                 }
             }
         }
@@ -636,11 +639,14 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             {
                 if (lane_link.from == 0 || lane_link.to == 0)
                     continue;
-                LanePtr from = try_get_val(incoming_lanesec->id_to_lane, lane_link.from, LanePtr(nullptr));
-                LanePtr to = try_get_val(connecting_lanesec->id_to_lane, lane_link.to, LanePtr(nullptr));
-                if (!from || !to)
+                LanePtr from_lane = try_get_val(incoming_lanesec->id_to_lane, lane_link.from, LanePtr(nullptr));
+                LanePtr to_lane = try_get_val(connecting_lanesec->id_to_lane, lane_link.to, LanePtr(nullptr));
+                if (!from_lane || !to_lane)
                     continue;
-                routing_graph.add_edge(RoutingGraphEdge{from, to});
+
+                const RoutingGraphVertex from(from_lane->road.lock()->id, from_lane->lane_section.lock()->s0, from_lane->id);
+                const RoutingGraphVertex to(to_lane->road.lock()->id, to_lane->lane_section.lock()->s0, to_lane->id);
+                routing_graph.add_edge(RoutingGraphEdge(from, to));
             }
         }
     }

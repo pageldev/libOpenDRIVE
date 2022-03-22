@@ -10,10 +10,37 @@
 namespace odr
 {
 
+struct RoutingGraphVertex
+{
+    RoutingGraphVertex(std::string road_id, double lane_section_s0, int lane_id);
+    bool operator<(const RoutingGraphVertex& other) const;
+    bool operator==(const RoutingGraphVertex& other) const;
+
+    std::string road_id = "";
+    double      lane_section_s0 = 0.0;
+    int         lane_id = 0;
+};
+
+} // namespace odr
+
+template<>
+struct std::hash<odr::RoutingGraphVertex>
+{
+    std::size_t operator()(const odr::RoutingGraphVertex& v) const
+    {
+        return ((std::hash<string>()(v.road_id) ^ (std::hash<double>()(v.lane_section_s0) << 1)) >> 1) ^ (std::hash<int>()(v.lane_id) << 1);
+    }
+};
+
+namespace odr
+{
+
 struct RoutingGraphEdge
 {
-    std::shared_ptr<Lane> start = nullptr;
-    std::shared_ptr<Lane> end = nullptr;
+    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to);
+
+    RoutingGraphVertex from;
+    RoutingGraphVertex to;
 };
 
 class RoutingGraph
@@ -26,8 +53,8 @@ public:
 
     std::vector<RoutingGraphEdge> edges;
 
-    std::unordered_map<std::shared_ptr<Lane>, std::set<std::shared_ptr<Lane>>> successors;
-    std::unordered_map<std::shared_ptr<Lane>, std::set<std::shared_ptr<Lane>>> predecessors;
+    std::unordered_map<RoutingGraphVertex, std::set<RoutingGraphVertex>> successors;
+    std::unordered_map<RoutingGraphVertex, std::set<RoutingGraphVertex>> predecessors;
 };
 
 } // namespace odr
