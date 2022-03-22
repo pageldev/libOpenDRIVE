@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Math.hpp"
 #include "Mesh.h"
 #include "Utils.hpp"
 #include "XmlNode.h"
 
 #include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace odr

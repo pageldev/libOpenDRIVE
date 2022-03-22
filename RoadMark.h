@@ -1,13 +1,9 @@
 #pragma once
 
-#include "Math.hpp"
-#include "Utils.hpp"
 #include "XmlNode.h"
 
 #include <map>
-#include <memory>
 #include <string>
-#include <vector>
 
 namespace odr
 {

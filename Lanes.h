@@ -4,6 +4,7 @@
 #include "Math.hpp"
 #include "Mesh.h"
 #include "RoadMark.h"
+#include "Utils.hpp"
 #include "XmlNode.h"
 
 #include <map>

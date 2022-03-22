@@ -1,10 +1,7 @@
 #include "Road.h"
 #include "RefLine.h"
 
-#include <array>
 #include <cmath>
-#include <iterator>
-#include <math.h>
 #include <utility>
 
 namespace odr

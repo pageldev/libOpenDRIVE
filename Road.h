@@ -2,7 +2,6 @@
 
 #include "Geometries/CubicSpline.h"
 #include "LaneSection.h"
-#include "Lanes.h"
 #include "Math.hpp"
 #include "RoadObject.h"
 #include "Utils.hpp"
@@ -11,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace odr

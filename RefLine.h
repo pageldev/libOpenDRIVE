@@ -6,10 +6,10 @@
 
 #include <map>
 #include <memory>
+#include <set>
 
 namespace odr
 {
-struct RoadGeometry;
 
 struct RefLine
 {

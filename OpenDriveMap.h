@@ -1,6 +1,4 @@
 #pragma once
-#include "Junction.h"
-#include "Mesh.h"
 #include "Road.h"
 #include "RoutingGraph.h"
 
@@ -12,6 +10,8 @@
 
 namespace odr
 {
+
+class Junction;
 
 struct OpenDriveMapConfig
 {

@@ -4,8 +4,10 @@
 
 #include "earcut/earcut.hpp"
 
+#include <array>
 #include <cmath>
-#include <math.h>
+#include <cstdint>
+#include <stdexcept>
 
 namespace odr
 {

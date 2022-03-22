@@ -1,5 +1,5 @@
 #include "LaneSection.h"
-#include "RefLine.h"
+#include "Geometries/CubicSpline.h"
 #include "Road.h"
 
 #include <iterator>

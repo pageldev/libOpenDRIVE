@@ -3,17 +3,26 @@
 #include "Geometries/CubicSpline.h"
 #include "Geometries/Line.h"
 #include "Geometries/ParamPoly3.h"
+#include "Geometries/RoadGeometry.h"
 #include "Geometries/Spiral.h"
+#include "Junction.h"
 #include "LaneSection.h"
 #include "Lanes.h"
+#include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
+#include "RoadMark.h"
+#include "RoadObject.h"
 #include "Utils.hpp"
 
-#include <iostream>
+#include <algorithm>
 #include <math.h>
+#include <memory>
+#include <stdexcept>
+#include <stdio.h>
 #include <string>
-#include <utility>
+#include <type_traits>
+#include <vector>
 
 namespace odr
 {

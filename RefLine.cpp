@@ -4,7 +4,10 @@
 #include "Utils.hpp"
 
 #include <functional>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace odr
 {
