@@ -8,10 +8,10 @@ Here's an example of how code using libOpenDRIVE looks. For a complete example r
 
 ```c++
 // load map
-odr::OpenDriveMap odr("data.xodr");
+odr::OpenDriveMap odr_map("data.xodr");
 
 // iterate roads
-for (std::shared_ptr<odr::Road> road : odr.get_roads())
+for (std::shared_ptr<odr::Road> road : odr_map.get_roads())
     printf("road: %s, length: %.2f\n", road->id.c_str(), road->length);
 
 // get xyz point for road coordinates
