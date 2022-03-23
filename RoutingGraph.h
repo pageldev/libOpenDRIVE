@@ -3,8 +3,8 @@
 
 #include <cstdint>
 #include <memory>
-#include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace odr
@@ -21,6 +21,15 @@ struct RoutingGraphVertex
     int         lane_id = 0;
 };
 
+struct RoutingGraphEdge
+{
+    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to);
+    bool operator==(const RoutingGraphEdge& other) const;
+
+    RoutingGraphVertex from;
+    RoutingGraphVertex to;
+};
+
 } // namespace odr
 
 template<>
@@ -32,16 +41,20 @@ struct std::hash<odr::RoutingGraphVertex>
     }
 };
 
+template<>
+struct std::hash<odr::RoutingGraphEdge>
+{
+    std::size_t operator()(const odr::RoutingGraphEdge& e) const
+    {
+        return ((std::hash<odr::RoutingGraphVertex>()(e.from) ^ (std::hash<odr::RoutingGraphVertex>()(e.to) << 1)) >> 1);
+    }
+};
+
 namespace odr
 {
 
-struct RoutingGraphEdge
-{
-    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to);
-
-    RoutingGraphVertex from;
-    RoutingGraphVertex to;
-};
+using RoutingSequentMap = std::unordered_map<RoutingGraphVertex, std::unordered_set<RoutingGraphVertex>>;
+using RoutingEdgeSet = std::unordered_set<RoutingGraphEdge>;
 
 class RoutingGraph
 {
@@ -51,10 +64,14 @@ public:
 
     void add_edge(const RoutingGraphEdge& edge);
 
-    std::vector<RoutingGraphEdge> edges;
+    const RoutingEdgeSet&    get_edges() const;
+    const RoutingSequentMap& get_successors() const;
+    const RoutingSequentMap& get_predecessors() const;
 
-    std::unordered_map<RoutingGraphVertex, std::set<RoutingGraphVertex>> successors;
-    std::unordered_map<RoutingGraphVertex, std::set<RoutingGraphVertex>> predecessors;
+private:
+    RoutingEdgeSet    edges;
+    RoutingSequentMap successors;
+    RoutingSequentMap predecessors;
 };
 
 } // namespace odr

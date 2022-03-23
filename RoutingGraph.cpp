@@ -26,11 +26,24 @@ bool RoutingGraphVertex::operator==(const RoutingGraphVertex& other) const
 
 RoutingGraphEdge::RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to) : from(from), to(to) {}
 
+bool RoutingGraphEdge::operator==(const RoutingGraphEdge& other) const
+{
+    if (this->from == other.from && this->to == other.to)
+        return true;
+    return false;
+}
+
 void RoutingGraph::add_edge(const RoutingGraphEdge& edge)
 {
-    this->edges.push_back(edge);
+    this->edges.insert(edge);
     this->successors[edge.from].insert(edge.to);
     this->predecessors[edge.to].insert(edge.from);
 }
+
+const RoutingEdgeSet& RoutingGraph::get_edges() const { return this->edges; }
+
+const RoutingSequentMap& RoutingGraph::get_successors() const { return this->successors; }
+
+const RoutingSequentMap& RoutingGraph::get_predecessors() const { return this->predecessors; }
 
 } // namespace odr
