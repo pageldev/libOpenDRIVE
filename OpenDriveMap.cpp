@@ -16,7 +16,7 @@
 #include "Utils.hpp"
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <stdio.h>
@@ -491,11 +491,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                     road_object_repeat.z_offset_end = repeat_node.attribute("zOffsetEnd").as_double(NAN);
                     road_object_repeat.xml_node = repeat_node;
 
-                    CHECK_AND_REPAIR(isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "object::repeat::s < 0", road_object_repeat.s0 = 0);
-                    CHECK_AND_REPAIR(isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
+                    CHECK_AND_REPAIR(
+                        std::isnan(road_object_repeat.s0) || road_object_repeat.s0 >= 0, "object::repeat::s < 0", road_object_repeat.s0 = 0);
+                    CHECK_AND_REPAIR(std::isnan(road_object_repeat.width_start) || road_object_repeat.width_start >= 0,
                                      "object::repeat::widthStart < 0",
                                      road_object_repeat.width_start = 0);
-                    CHECK_AND_REPAIR(isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
+                    CHECK_AND_REPAIR(std::isnan(road_object_repeat.width_end) || road_object_repeat.width_end >= 0,
                                      "object::repeat::widthStart < 0",
                                      road_object_repeat.width_end = 0);
 
