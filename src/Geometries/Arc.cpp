@@ -1,9 +1,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "Arc.h"
+#include "Geometries/Arc.h"
 #include "Math.hpp"
-#include "RoadGeometry.h"
+#include "Geometries/RoadGeometry.h"
 #include "Utils.hpp"
 
 #include <array>

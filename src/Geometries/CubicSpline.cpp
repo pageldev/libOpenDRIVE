@@ -1,4 +1,4 @@
-#include "CubicSpline.h"
+#include "Geometries/CubicSpline.h"
 #include "CubicBezier.hpp"
 #include "Utils.hpp"
 
