@@ -56,6 +56,6 @@ if(EMSCRIPTEN)
 endif()
 
 if(NOT EMSCRIPTEN)
-    add_executable(test-xodr src/test.cpp)
+    add_executable(test-xodr test.cpp)
     target_link_libraries(test-xodr OpenDrive)
 endif()
