@@ -24,7 +24,7 @@ bool RoutingGraphVertex::operator==(const RoutingGraphVertex& other) const
     return false;
 }
 
-RoutingGraphEdge::RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to) : from(from), to(to) {}
+RoutingGraphEdge::RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to, double length) : from(from), to(to), length(length) {}
 
 bool RoutingGraphEdge::operator==(const RoutingGraphEdge& other) const
 {

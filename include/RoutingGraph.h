@@ -23,11 +23,12 @@ struct RoutingGraphVertex
 
 struct RoutingGraphEdge
 {
-    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to);
+    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to, double length);
     bool operator==(const RoutingGraphEdge& other) const;
 
     RoutingGraphVertex from;
     RoutingGraphVertex to;
+    double             length;
 };
 
 } // namespace odr
@@ -55,6 +56,7 @@ namespace odr
 
 using RoutingSequentMap = std::unordered_map<RoutingGraphVertex, std::unordered_set<RoutingGraphVertex>>;
 using RoutingEdgeSet = std::unordered_set<RoutingGraphEdge>;
+using RoutingVertexSet = std::unordered_set<RoutingGraphVertex>;
 
 class RoutingGraph
 {

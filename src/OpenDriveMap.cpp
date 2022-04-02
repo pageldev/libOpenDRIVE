@@ -6,8 +6,8 @@
 #include "Geometries/RoadGeometry.h"
 #include "Geometries/Spiral.h"
 #include "Junction.h"
-#include "LaneSection.h"
 #include "Lane.h"
+#include "LaneSection.h"
 #include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
@@ -609,7 +609,8 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
                     const RoutingGraphVertex from(from_lane->road.lock()->id, from_lane->lane_section.lock()->s0, from_lane->id);
                     const RoutingGraphVertex to(to_lane->road.lock()->id, to_lane->lane_section.lock()->s0, to_lane->id);
-                    routing_graph.add_edge(RoutingGraphEdge(from, to));
+                    const double             lane_length = from_lane->lane_section.lock()->get_length();
+                    routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
                 }
             }
         }
@@ -647,7 +648,8 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
                 const RoutingGraphVertex from(from_lane->road.lock()->id, from_lane->lane_section.lock()->s0, from_lane->id);
                 const RoutingGraphVertex to(to_lane->road.lock()->id, to_lane->lane_section.lock()->s0, to_lane->id);
-                routing_graph.add_edge(RoutingGraphEdge(from, to));
+                const double             lane_length = from_lane->lane_section.lock()->get_length();
+                routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }
         }
     }
