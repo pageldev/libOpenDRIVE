@@ -18,6 +18,7 @@ struct LaneSection : public XmlNode, public std::enable_shared_from_this<LaneSec
     virtual ~LaneSection() = default;
 
     double get_end() const;
+    double get_length() const;
 
     ConstLaneSet get_lanes() const;
     LaneSet      get_lanes();

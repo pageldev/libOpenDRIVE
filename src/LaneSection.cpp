@@ -27,6 +27,12 @@ double LaneSection::get_end() const
     return next_s0 - std::numeric_limits<double>::min();
 }
 
+double LaneSection::get_length() const
+{
+    const double s_end = this->get_end();
+    return s_end - this->s0;
+}
+
 ConstLaneSet LaneSection::get_lanes() const
 {
     ConstLaneSet lanes;
