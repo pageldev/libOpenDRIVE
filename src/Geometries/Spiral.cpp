@@ -1,6 +1,6 @@
 #include "Geometries/Spiral.h"
-#include "Math.hpp"
 #include "Geometries/Spiral/odrSpiral.h"
+#include "Math.hpp"
 #include "Utils.hpp"
 
 #include <array>

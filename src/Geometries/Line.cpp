@@ -1,6 +1,6 @@
 #include "Geometries/Line.h"
-#include "Math.hpp"
 #include "Geometries/RoadGeometry.h"
+#include "Math.hpp"
 #include "Utils.hpp"
 
 #include <array>
