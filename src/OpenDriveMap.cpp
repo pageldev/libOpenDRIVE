@@ -627,8 +627,8 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             if (!incoming_road || !connecting_road)
                 continue;
 
-            const bool is_succ_junc = incoming_road->successor.type == RoadLink::Type::Junction && incoming_road->successor.id == conn.id;
-            const bool is_pred_junc = incoming_road->predecessor.type == RoadLink::Type::Junction && incoming_road->predecessor.id == conn.id;
+            const bool is_succ_junc = incoming_road->successor.type == RoadLink::Type::Junction && incoming_road->successor.id == id_junc.first;
+            const bool is_pred_junc = incoming_road->predecessor.type == RoadLink::Type::Junction && incoming_road->predecessor.id == id_junc.first;
             if (!is_succ_junc && !is_pred_junc)
                 continue;
 
