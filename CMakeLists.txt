@@ -8,14 +8,23 @@ project(libOpenDrive VERSION 0.1.0 DESCRIPTION ".xodr library")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+
 set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+
+
+if(MSVC)
+SET(CMAKE_CXX_FLAGS "/EHsc")
+else()
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(BUILD_SHARED_LIBS ON)
+endif()
 
 include_directories(include)
 include_directories(Thirdparty)
 
-add_library(OpenDrive SHARED
+add_library(OpenDrive
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
     src/Geometries/Line.cpp
