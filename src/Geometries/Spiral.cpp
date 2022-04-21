@@ -1,17 +1,15 @@
 #include "Geometries/Spiral.h"
+#include "Geometries/RoadGeometry.h"
 #include "Geometries/Spiral/odrSpiral.h"
 #include "Math.hpp"
-#include "Utils.hpp"
 
-#include <array>
 #include <cmath>
-#include <functional>
-#include <vector>
 
 namespace odr
 {
+
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end) :
-    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Spiral), curv_start(curv_start), curv_end(curv_end)
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType_Spiral), curv_start(curv_start), curv_end(curv_end)
 {
     this->c_dot = (curv_end - curv_start) / length;
     this->s_start = curv_start / c_dot;
@@ -20,14 +18,16 @@ Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, doub
     odrSpiral(s0_spiral, c_dot, &x0_spiral, &y0_spiral, &a0_spiral);
 }
 
+std::unique_ptr<RoadGeometry> Spiral::clone() const { return std::make_unique<Spiral>(*this); }
+
 Vec2D Spiral::get_xy(double s) const
 {
     double xs_spiral, ys_spiral, as_spiral;
     odrSpiral(s - s0 + s0_spiral, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
 
-    double hdg = hdg0 - a0_spiral;
-    double xt = (std::cos(hdg) * (xs_spiral - x0_spiral)) - (std::sin(hdg) * (ys_spiral - y0_spiral)) + x0;
-    double yt = (std::sin(hdg) * (xs_spiral - x0_spiral)) + (std::cos(hdg) * (ys_spiral - y0_spiral)) + y0;
+    const double hdg = hdg0 - a0_spiral;
+    const double xt = (std::cos(hdg) * (xs_spiral - x0_spiral)) - (std::sin(hdg) * (ys_spiral - y0_spiral)) + x0;
+    const double yt = (std::sin(hdg) * (xs_spiral - x0_spiral)) + (std::cos(hdg) * (ys_spiral - y0_spiral)) + y0;
     return Vec2D{xt, yt};
 }
 

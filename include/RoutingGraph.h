@@ -1,79 +1,64 @@
 #pragma once
 #include "Lane.h"
 
-#include <cstdint>
+#include <cstddef>
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 namespace odr
 {
 
-struct RoutingGraphVertex
-{
-    RoutingGraphVertex(std::string road_id, double lane_section_s0, int lane_id);
-    bool operator<(const RoutingGraphVertex& other) const;
-    bool operator==(const RoutingGraphVertex& other) const;
-
-    std::string road_id = "";
-    double      lane_section_s0 = 0.0;
-    int         lane_id = 0;
-};
-
 struct RoutingGraphEdge
 {
-    RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to, double length);
-    bool operator==(const RoutingGraphEdge& other) const;
+    RoutingGraphEdge(LaneKey from, LaneKey to, double length);
 
-    RoutingGraphVertex from;
-    RoutingGraphVertex to;
-    double             length;
+    LaneKey from;
+    LaneKey to;
+    double  length;
 };
 
 } // namespace odr
-
-template<>
-struct std::hash<odr::RoutingGraphVertex>
-{
-    std::size_t operator()(const odr::RoutingGraphVertex& v) const
-    {
-        return ((std::hash<string>()(v.road_id) ^ (std::hash<double>()(v.lane_section_s0) << 1)) >> 1) ^ (std::hash<int>()(v.lane_id) << 1);
-    }
-};
 
 template<>
 struct std::hash<odr::RoutingGraphEdge>
 {
     std::size_t operator()(const odr::RoutingGraphEdge& e) const
     {
-        return ((std::hash<odr::RoutingGraphVertex>()(e.from) ^ (std::hash<odr::RoutingGraphVertex>()(e.to) << 1)) >> 1);
+        return ((std::hash<odr::LaneKey>()(e.from) ^ (std::hash<odr::LaneKey>()(e.to) << 1)) >> 1);
+    }
+};
+
+template<>
+struct std::equal_to<odr::RoutingGraphEdge>
+{
+    std::size_t operator()(const odr::RoutingGraphEdge& lhs, const odr::RoutingGraphEdge& rhs) const
+    {
+        return std::equal_to<odr::LaneKey>{}(lhs.from, rhs.from) && std::equal_to<odr::LaneKey>{}(lhs.to, rhs.to);
     }
 };
 
 namespace odr
 {
 
-using RoutingSequentMap = std::unordered_map<RoutingGraphVertex, std::unordered_set<RoutingGraphVertex>>;
-using RoutingEdgeSet = std::unordered_set<RoutingGraphEdge>;
-using RoutingVertexSet = std::unordered_set<RoutingGraphVertex>;
-
 class RoutingGraph
 {
 public:
     RoutingGraph() = default;
-    virtual ~RoutingGraph() = default;
 
     void add_edge(const RoutingGraphEdge& edge);
 
-    const RoutingEdgeSet&    get_edges() const;
-    const RoutingSequentMap& get_successors() const;
-    const RoutingSequentMap& get_predecessors() const;
+    const std::unordered_set<LaneKey>* get_lane_successors(const LaneKey& lane) const;
+    std::unordered_set<LaneKey>*       get_lane_successors(const LaneKey& lane);
+    const std::unordered_set<LaneKey>* get_lane_predecessors(const LaneKey& lane) const;
+    std::unordered_set<LaneKey>*       get_lane_predecessors(const LaneKey& lane);
 
-private:
-    RoutingEdgeSet    edges;
-    RoutingSequentMap successors;
-    RoutingSequentMap predecessors;
+    std::unordered_set<RoutingGraphEdge> edges;
+
+    using SequentMap = std::unordered_map<LaneKey, std::unordered_set<LaneKey>>;
+    SequentMap successors;
+    SequentMap predecessors;
 };
 
 } // namespace odr

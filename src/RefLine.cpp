@@ -3,7 +3,9 @@
 #include "Math.hpp"
 #include "Utils.hpp"
 
+#include <cmath>
 #include <functional>
+#include <iterator>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -11,41 +13,57 @@
 
 namespace odr
 {
-RefLine::RefLine(double length) : length(length) {}
+RefLine::RefLine(std::string road_id, double length) : road_id(road_id), length(length) {}
 
-ConstRoadGeometrySet RefLine::get_geometries() const
+RefLine::RefLine(const RefLine& other) : road_id(other.road_id), length(other.length), elevation_profile(other.elevation_profile)
 {
-    ConstRoadGeometrySet geometries;
     for (const auto& s0_geometry : this->s0_to_geometry)
-        geometries.insert(s0_geometry.second);
+        this->s0_to_geometry.insert({s0_geometry.first, s0_geometry.second->clone()});
+}
 
+std::set<const RoadGeometry*> RefLine::get_geometries() const
+{
+    std::set<const RoadGeometry*> geometries;
+    for (const auto& s0_geometry : this->s0_to_geometry)
+        geometries.insert(s0_geometry.second.get());
     return geometries;
 }
 
-RoadGeometrySet RefLine::get_geometries()
+std::set<RoadGeometry*> RefLine::get_geometries()
 {
-    RoadGeometrySet geometries;
-    for (const auto& s0_geometry : this->s0_to_geometry)
-        geometries.insert(s0_geometry.second);
-
+    std::set<RoadGeometry*> geometries;
+    for (auto& s0_geometry : this->s0_to_geometry)
+        geometries.insert(s0_geometry.second.get());
     return geometries;
 }
 
-std::shared_ptr<const RoadGeometry> RefLine::get_geometry(double s) const
+double RefLine::get_geometry_s0(double s) const
 {
-    if (this->s0_to_geometry.size() > 0)
-    {
-        auto target_geom_iter = this->s0_to_geometry.upper_bound(s);
-        if (target_geom_iter != s0_to_geometry.begin())
-            target_geom_iter--;
-        return target_geom_iter->second;
-    }
-    return nullptr;
+    if (this->s0_to_geometry.empty())
+        return NAN;
+    auto target_geom_iter = this->s0_to_geometry.upper_bound(s);
+    if (target_geom_iter != s0_to_geometry.begin())
+        target_geom_iter--;
+    return target_geom_iter->first;
+}
+
+const RoadGeometry* RefLine::get_geometry(double s) const
+{
+    const double geom_s0 = this->get_geometry_s0(s);
+    if (std::isnan(geom_s0))
+        return nullptr;
+    return this->s0_to_geometry.at(geom_s0).get();
+}
+
+RoadGeometry* RefLine::get_geometry(double s)
+{
+    RoadGeometry* road_geometry = const_cast<RoadGeometry*>(static_cast<const RefLine&>(*this).get_geometry(s));
+    return road_geometry;
 }
 
 Vec3D RefLine::get_xyz(double s) const
 {
-    std::shared_ptr<const RoadGeometry> geom = this->get_geometry(s);
+    const RoadGeometry* geom = this->get_geometry(s);
 
     Vec2D pt_xy{0, 0};
     if (geom)
@@ -56,7 +74,7 @@ Vec3D RefLine::get_xyz(double s) const
 
 Vec3D RefLine::get_grad(double s) const
 {
-    std::shared_ptr<const RoadGeometry> geom = this->get_geometry(s);
+    const RoadGeometry* geom = this->get_geometry(s);
 
     Vec2D d_xy{0, 0};
     if (geom)

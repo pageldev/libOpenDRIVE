@@ -32,6 +32,7 @@ add_library(OpenDrive
     src/Geometries/RoadGeometry.cpp
     src/Geometries/Spiral.cpp
     src/Geometries/Spiral/odrSpiral.cpp
+    src/Junction.cpp
     src/Lane.cpp
     src/LaneSection.cpp
     src/Mesh.cpp

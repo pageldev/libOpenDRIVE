@@ -150,7 +150,14 @@ function reloadOdrMap()
 {
     if (OpenDriveMap)
         OpenDriveMap.delete();
-    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", PARAMS.lateralProfile, PARAMS.laneHeight, true, false);
+    odr_map_config = {
+        with_lateralProfile : PARAMS.lateralProfile,
+        with_laneHeight : PARAMS.laneHeight,
+        with_road_objects : false,
+        center_map : true,
+        abs_z_for_for_local_road_obj_outline : true
+    };
+    OpenDriveMap = new ModuleOpenDrive.OpenDriveMap("./data.xodr", odr_map_config);
     loadOdrMap(true, false);
 }
 
@@ -296,7 +303,6 @@ function loadOdrMap(clear_map = true, fit_view = true)
         <h3>Finished loading</h3>
         <table>
             <tr><th>Time</th><th>${((t1 - t0) / 1e3).toFixed(2)}s</th></tr>
-            <tr><th>Num Roads</th><th>${OpenDriveMap.roads.size()}</th></tr>
             <tr><th>Num Vertices</th><th>${renderer.info.render.triangles}</th></tr>
         </table>
         </div>`;
@@ -400,13 +406,12 @@ function animate()
             const road_id = odr_lanes_mesh.get_road_id(INTERSECTED_LANE_ID);
             const lanesec_s0 = odr_lanes_mesh.get_lanesec_s0(INTERSECTED_LANE_ID);
             const lane_id = odr_lanes_mesh.get_lane_id(INTERSECTED_LANE_ID);
-            const lane_type = OpenDriveMap.roads.get(road_id).s_to_lanesection.get(lanesec_s0).id_to_lane.get(lane_id).type;
             odr_lanes_mesh.delete();
             spotlight_info.innerHTML = `
                     <table>
                         <tr><th>road id</th><th>${road_id}</th></tr>
                         <tr><th>section s0</th><th>${lanesec_s0.toFixed(2)}</th></tr>
-                        <tr><th>lane</th><th>${lane_id} <span style="color:gray;">${lane_type}</span></th></tr>
+                        <tr><th>lane</th><th>${lane_id}</th></tr>
                         <tr><th>s/t</th><th>[${st_pixel_buffer[0].toFixed(2)}, ${st_pixel_buffer[1].toFixed(2)}]</th>
                         <tr><th>world</th><th>[${xyz_pixel_buffer[0].toFixed(2)}, ${xyz_pixel_buffer[1].toFixed(2)}, ${xyz_pixel_buffer[2].toFixed(2)}]</th></tr>
                     </table>`;

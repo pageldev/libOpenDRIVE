@@ -1,14 +1,14 @@
 #include "Geometries/ParamPoly3.h"
+#include "Geometries/RoadGeometry.h"
 #include "Math.hpp"
-#include "Utils.hpp"
 
 #include <array>
 #include <cmath>
-#include <functional>
-#include <vector>
+#include <map>
 
 namespace odr
 {
+
 ParamPoly3::ParamPoly3(double s0,
                        double x0,
                        double y0,
@@ -23,7 +23,7 @@ ParamPoly3::ParamPoly3(double s0,
                        double cV,
                        double dV,
                        bool   pRange_normalized) :
-    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::ParamPoly3),
+    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType_ParamPoly3),
     aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV), pRange_normalized(pRange_normalized)
 {
     if (!pRange_normalized)
@@ -42,6 +42,8 @@ ParamPoly3::ParamPoly3(double s0,
     this->cubic_bezier.arclen_t[length] = 1.0;
     this->cubic_bezier.valid_length = length;
 }
+
+std::unique_ptr<RoadGeometry> ParamPoly3::clone() const { return std::make_unique<ParamPoly3>(*this); }
 
 Vec2D ParamPoly3::get_xy(double s) const
 {
