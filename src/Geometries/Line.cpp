@@ -1,16 +1,15 @@
 #include "Geometries/Line.h"
 #include "Geometries/RoadGeometry.h"
 #include "Math.hpp"
-#include "Utils.hpp"
 
-#include <array>
 #include <cmath>
-#include <functional>
-#include <vector>
 
 namespace odr
 {
-Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Line) {}
+
+Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType_Line) {}
+
+std::unique_ptr<RoadGeometry> Line::clone() const { return std::make_unique<Line>(*this); }
 
 Vec2D Line::get_xy(double s) const
 {

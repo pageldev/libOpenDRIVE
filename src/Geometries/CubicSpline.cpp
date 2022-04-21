@@ -1,10 +1,16 @@
 #include "Geometries/CubicSpline.h"
 #include "CubicBezier.hpp"
+#include "Math.hpp"
 #include "Utils.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cmath>
+#include <iterator>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -95,7 +101,7 @@ void Poly3::negate()
     d = -d;
 }
 
-size_t CubicSpline::size() const { return this->s0_to_poly.size(); }
+std::size_t CubicSpline::size() const { return this->s0_to_poly.size(); }
 
 double CubicSpline::get(double s) const
 {
@@ -119,8 +125,8 @@ CubicSpline CubicSpline::negate() const
 
 CubicSpline CubicSpline::add(const CubicSpline& other) const
 {
-    std::set<double> s0_vals = extract_keys(this->s0_to_poly);
-    std::set<double> other_s0s = extract_keys(other.s0_to_poly);
+    std::set<double> s0_vals = get_map_keys(this->s0_to_poly);
+    std::set<double> other_s0s = get_map_keys(other.s0_to_poly);
     s0_vals.insert(other_s0s.begin(), other_s0s.end());
 
     CubicSpline retval;

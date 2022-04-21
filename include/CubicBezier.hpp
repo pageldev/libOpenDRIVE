@@ -1,17 +1,17 @@
+#pragma once
 #include "Math.hpp"
 #include "Utils.hpp"
 
 #include <array>
 #include <cmath>
 #include <map>
-#include <numeric>
 #include <set>
 #include <sstream>
-#include <stdio.h>
 
 namespace odr
 {
-template<typename T, size_t Dim>
+
+template<typename T, std::size_t Dim>
 struct CubicBezier
 {
     CubicBezier() = default;
@@ -35,13 +35,13 @@ struct CubicBezier
         std::array<Vec<T, Dim>, 4> ctrl_pts;
         ctrl_pts[0] = a;
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             ctrl_pts[1][dim] = (b[dim] / 3) + a[dim];
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             ctrl_pts[2][dim] = (c[dim] / 3) + 2 * ctrl_pts[1][dim] - ctrl_pts[0][dim];
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             ctrl_pts[3][dim] = d[dim] + 3 * ctrl_pts[2][dim] - 3 * ctrl_pts[1][dim] + ctrl_pts[0][dim];
 
         return ctrl_pts;
@@ -57,13 +57,13 @@ struct CubicBezier
         std::array<Vec<T, Dim>, 4> coefficients;
         coefficients[0] = pA;
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             coefficients[1][dim] = 3 * pB[dim] - 3 * pA[dim];
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             coefficients[2][dim] = 3 * pC[dim] - 6 * pB[dim] + 3 * pA[dim];
 
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             coefficients[3][dim] = pD[dim] - 3 * pC[dim] + 3 * pB[dim] - pA[dim];
 
         return coefficients;
@@ -76,7 +76,7 @@ struct CubicBezier
     static const double        LengthTolerance;
 };
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : control_points(control_points)
 {
     const std::set<T> t_vals = this->approximate_linear(this->LengthTolerance);
@@ -97,24 +97,22 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
     this->valid_length = std::prev(this->arclen_t.end())->first;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 Vec<T, Dim> CubicBezier<T, Dim>::get(T t) const
 {
     Vec<T, Dim> out_pt;
-    for (size_t dim = 0; dim < Dim; dim++)
+    for (std::size_t dim = 0; dim < Dim; dim++)
         out_pt[dim] = (1 - t) * (1 - t) * (1 - t) * control_points[0][dim] + 3 * t * (1 - t) * (1 - t) * control_points[1][dim] +
                       3 * t * t * (1 - t) * control_points[2][dim] + t * t * t * control_points[3][dim];
     return out_pt;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
-        std::stringstream ss_err;
-        ss_err << "arclength " << arclen << " out of range; valid length: " << this->valid_length;
-        throw std::runtime_error(ss_err.str());
+        throw std::runtime_error(string_format("arc length %.3f out of range; valid length: %.3f", arclen, this->valid_length));
     }
 
     arclen = std::min<T>(arclen, this->valid_length);
@@ -136,32 +134,32 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
     return t_lower_bound + ((arclen - arcl_lower_bound) / seg_arc_len) * seg_t_len;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 T CubicBezier<T, Dim>::get_length() const
 {
     return std::prev(arclen_t.end())->first;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 Vec<T, Dim> CubicBezier<T, Dim>::get_grad(T t) const
 {
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
 
     Vec<T, Dim> grad;
-    for (size_t dim = 0; dim < Dim; dim++)
+    for (std::size_t dim = 0; dim < Dim; dim++)
         grad[dim] = coefficients[1][dim] + 2 * coefficients[2][dim] * t + 3 * coefficients[3][dim] * t * t;
 
     return grad;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end) const
 {
     /* modified get(T t) allowing different t values for segments */
     auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
     {
         Vec<T, Dim> out;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
         {
             out[dim] =
                 (1 - t3) *
@@ -180,7 +178,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end)
     return ctrl_pts_sub;
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 {
     /* approximate cubic bezier by splitting into quadratic ones */
@@ -207,13 +205,13 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 
         /* approximate sub-cubic bezier by two quadratic ones */
         Vec<T, Dim> pB_quad_0;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             pB_quad_0[dim] = (1.0 - 0.75) * c_pts_sub[0][dim] + 0.75 * c_pts_sub[1][dim];
         Vec<T, Dim> pB_quad_1;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             pB_quad_1[dim] = (1.0 - 0.75) * c_pts_sub[3][dim] + 0.75 * c_pts_sub[2][dim];
         Vec<T, Dim> pM_quad;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             pM_quad[dim] = (1.0 - 0.5) * pB_quad_0[dim] + 0.5 * pB_quad_1[dim];
 
         /* linear approximate the two quadratic bezier */
@@ -229,7 +227,7 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
     return std::set<T>(t_vals.begin(), t_vals.end());
 }
 
-template<typename T, size_t Dim>
+template<typename T, std::size_t Dim>
 const double CubicBezier<T, Dim>::LengthTolerance = 1e-2;
 
 typedef CubicBezier<double, 2> CubicBezier2D;

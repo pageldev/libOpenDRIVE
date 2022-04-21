@@ -5,9 +5,6 @@
 #include "OpenDriveMap.h"
 #include "Road.h"
 
-#include <fstream>
-#include <memory>
-#include <set>
 #include <stdio.h>
 #include <vector>
 
@@ -18,22 +15,35 @@ int main(int argc, char** argv)
         printf("ERROR: too few arguments\n");
         return -1;
     }
-    odr::OpenDriveMap odr(argv[1]);
+    odr::OpenDriveMap odr_map(argv[1]);
+    const double      eps = 0.1;
 
-    std::vector<odr::Vec3D> pts;
-    for (std::shared_ptr<odr::Road> road : odr.get_roads())
+    std::vector<odr::Vec3D> lane_pts;
+    std::vector<odr::Vec3D> roadmark_pts;
+
+    for (odr::Road road : odr_map.get_roads())
     {
-        printf("road: %s, length: %.2f\n", road->id.c_str(), road->length);
-        for (std::shared_ptr<odr::LaneSection> lanesec : road->get_lanesections())
+        printf("road: %s, length: %.2f\n", road.id.c_str(), road.length);
+        for (odr::LaneSection lanesection : road.get_lanesections())
         {
-            for (std::shared_ptr<odr::Lane> lane : lanesec->get_lanes())
+            const double s_start = lanesection.s0;
+            const double s_end = road.get_lanesection_end(lanesection);
+
+            for (odr::Lane lane : lanesection.get_lanes())
             {
-                auto lane_mesh = lane->get_mesh(lanesec->s0, lanesec->get_end(), 0.1);
-                pts.insert(pts.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
+                auto lane_mesh = road.get_lane_mesh(lane, eps);
+                lane_pts.insert(lane_pts.end(), lane_mesh.vertices.begin(), lane_mesh.vertices.end());
+
+                auto roadmarks = lane.get_roadmarks(s_start, s_end);
+                for (const auto& roadmark : roadmarks)
+                {
+                    auto roadmark_mesh = road.get_roadmark_mesh(lane, roadmark, eps);
+                    roadmark_pts.insert(roadmark_pts.end(), roadmark_mesh.vertices.begin(), roadmark_mesh.vertices.end());
+                }
             }
         }
     }
-    printf("Finished\n");
 
+    printf("Finished, got %lu lane points, %lu roadmark points\n", lane_pts.size(), roadmark_pts.size());
     return 0;
 }

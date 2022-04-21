@@ -1,21 +1,28 @@
 #pragma once
-
 #include "Math.hpp"
 #include "Mesh.h"
-#include "Utils.hpp"
 #include "XmlNode.h"
 
-#include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
 namespace odr
 {
-class Road;
 
 struct RoadObjectRepeat : public XmlNode
 {
+    RoadObjectRepeat(double s0,
+                     double length,
+                     double distance,
+                     double t_start,
+                     double t_end,
+                     double width_start,
+                     double width_end,
+                     double height_start,
+                     double height_end,
+                     double z_offset_start,
+                     double z_offset_end);
+
     double s0 = 0;
     double length = 0;
     double distance = 0;
@@ -31,36 +38,52 @@ struct RoadObjectRepeat : public XmlNode
 
 struct RoadObjectCorner : public XmlNode
 {
-    enum class Type
+    enum Type
     {
-        Local_RelZ, // z relative to road’s reference line
-        Local_AbsZ, // absolute z value
-        Road
+        Type_Local_RelZ, // z relative to road’s reference line
+        Type_Local_AbsZ, // absolute z value
+        Type_Road
     };
+
+    RoadObjectCorner(Vec3D pt, double height, Type type);
 
     Vec3D  pt;
     double height = 0;
-    Type   type = Type::Road;
+    Type   type = Type_Road;
 };
 
 struct RoadObject : public XmlNode
 {
-    RoadObject() = default;
-
-    Mesh3D get_mesh(double eps) const;
+    RoadObject(std::string road_id,
+               std::string id,
+               double      s0,
+               double      t0,
+               double      z0,
+               double      length,
+               double      valid_length,
+               double      width,
+               double      radius,
+               double      height,
+               double      hdg,
+               double      pitch,
+               double      roll,
+               std::string type,
+               std::string name,
+               std::string orientation);
 
     static Mesh3D get_cylinder(double eps, double radius, double height);
     static Mesh3D get_box(double width, double length, double height);
 
-    std::string id;
-    std::string type;
-    std::string name;
-    std::string orientation;
+    std::string road_id = "";
+
+    std::string id = "";
+    std::string type = "";
+    std::string name = "";
+    std::string orientation = "";
 
     double s0 = 0;
     double t0 = 0;
     double z0 = 0;
-
     double length = 0;
     double valid_length = 0;
     double width = 0;
@@ -71,13 +94,7 @@ struct RoadObject : public XmlNode
     double roll = 0;
 
     std::vector<RoadObjectRepeat> repeats;
-
     std::vector<RoadObjectCorner> outline;
-
-    std::weak_ptr<Road> road;
 };
-
-using ConstRoadObjectSet = std::set<std::shared_ptr<const RoadObject>, SharedPtrCmp<const RoadObject, std::string, &RoadObject::id>>;
-using RoadObjectSet = std::set<std::shared_ptr<RoadObject>, SharedPtrCmp<RoadObject, std::string, &RoadObject::id>>;
 
 } // namespace odr

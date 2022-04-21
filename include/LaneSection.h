@@ -1,38 +1,26 @@
 #pragma once
-
 #include "Lane.h"
-#include "Utils.hpp"
 #include "XmlNode.h"
 
 #include <map>
-#include <memory>
-#include <set>
+#include <string>
+#include <vector>
 
 namespace odr
 {
-class Road;
 
-struct LaneSection : public XmlNode, public std::enable_shared_from_this<LaneSection>
+struct LaneSection : public XmlNode
 {
-    LaneSection(double s0);
-    virtual ~LaneSection() = default;
+    LaneSection(std::string road_id, double s0);
 
-    double get_end() const;
-    double get_length() const;
+    std::vector<Lane> get_lanes() const;
 
-    ConstLaneSet get_lanes() const;
-    LaneSet      get_lanes();
+    int  get_lane_id(double s, double t) const;
+    Lane get_lane(double s, double t) const;
 
-    std::shared_ptr<const Lane> get_lane(double s, double t) const;
-    std::shared_ptr<Lane>       get_lane(double s, double t);
-
+    std::string         road_id = "";
     double              s0 = 0;
-    std::weak_ptr<Road> road;
-
-    std::map<int, std::shared_ptr<Lane>> id_to_lane;
+    std::map<int, Lane> id_to_lane;
 };
-
-using ConstLaneSectionSet = std::set<std::shared_ptr<const LaneSection>, SharedPtrCmp<const LaneSection, double, &LaneSection::s0>>;
-using LaneSectionSet = std::set<std::shared_ptr<LaneSection>, SharedPtrCmp<LaneSection, double, &LaneSection::s0>>;
 
 } // namespace odr

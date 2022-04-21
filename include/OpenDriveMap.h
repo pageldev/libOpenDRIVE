@@ -1,17 +1,16 @@
 #pragma once
+#include "Junction.h"
 #include "Road.h"
 #include "RoutingGraph.h"
 
 #include <pugixml/pugixml.hpp>
 
 #include <map>
-#include <memory>
 #include <string>
+#include <vector>
 
 namespace odr
 {
-
-class Junction;
 
 struct OpenDriveMapConfig
 {
@@ -27,20 +26,19 @@ class OpenDriveMap
 public:
     OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfig& config = OpenDriveMapConfig{});
 
-    ConstRoadSet get_roads() const;
-    RoadSet      get_roads();
+    std::vector<Road>     get_roads() const;
+    std::vector<Junction> get_junctions() const;
 
     RoutingGraph get_routing_graph() const;
 
-    const std::string  xodr_file = "";
     std::string        proj4 = "";
+    double             x_offs = 0;
+    double             y_offs = 0;
+    const std::string  xodr_file = "";
     pugi::xml_document xml_doc;
 
-    double x_offs = 0;
-    double y_offs = 0;
-
-    std::map<std::string, std::shared_ptr<Road>>     roads;
-    std::map<std::string, std::shared_ptr<Junction>> junctions;
+    std::map<std::string, Road>     id_to_road;
+    std::map<std::string, Junction> id_to_junction;
 };
 
 } // namespace odr

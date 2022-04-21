@@ -1,12 +1,10 @@
 #pragma once
-
 #include "Geometries/CubicSpline.h"
-#include "Math.hpp"
-#include "Mesh.h"
 #include "RoadMark.h"
-#include "Utils.hpp"
 #include "XmlNode.h"
 
+#include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -15,47 +13,61 @@
 
 namespace odr
 {
-class Road;
-struct LaneSection;
 
 struct HeightOffset
 {
-    double inner;
-    double outer;
+    HeightOffset(double inner, double outer);
+
+    double inner = 0;
+    double outer = 0;
 };
 
-struct Lane : public XmlNode, public std::enable_shared_from_this<Lane>
+struct LaneKey
 {
-    Lane(int id, bool level, std::string type);
-    virtual ~Lane() = default;
+    LaneKey(std::string road_id, double lanesection_s0, int lane_id);
 
-    Vec3D  get_surface_pt(double s, double t, Vec3D* vn = nullptr) const;
-    Line3D get_border_line(double s_start, double s_end, double eps, bool outer = true) const;
-    Mesh3D get_mesh(double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    std::string road_id = "";
+    double      lanesection_s0 = 0;
+    int         lane_id = 0;
+};
 
-    std::vector<std::shared_ptr<RoadMark>> get_roadmarks(double s_start, double s_end) const;
-    Mesh3D                                 get_roadmark_mesh(std::shared_ptr<const RoadMark> roadmark, double eps) const;
+struct Lane : public XmlNode
+{
+    Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
 
-    std::set<double> approximate_border_linear(double s_start, double s_end, double eps, bool outer = true) const;
+    std::vector<RoadMark> get_roadmarks(double s_start, double s_end) const;
 
-    int  id = 0;
-    bool level = false;
-    int  predecessor = 0;
-    int  successor = 0;
+    LaneKey     key;
+    int         id;
+    bool        level = false;
+    int         predecessor = 0;
+    int         successor = 0;
+    std::string type = "";
 
-    std::string type;
     CubicSpline lane_width;
     CubicSpline outer_border;
     CubicSpline inner_border;
 
-    std::map<double, HeightOffset>  s_to_height_offset;
-    std::map<double, RoadMarkGroup> s_to_roadmark_group;
-
-    std::weak_ptr<Road>        road;
-    std::weak_ptr<LaneSection> lane_section;
+    std::map<double, HeightOffset> s_to_height_offset;
+    std::set<RoadMarkGroup>        roadmark_groups;
 };
 
-using ConstLaneSet = std::set<std::shared_ptr<const Lane>, SharedPtrCmp<const Lane, int, &Lane::id>>;
-using LaneSet = std::set<std::shared_ptr<Lane>, SharedPtrCmp<Lane, int, &Lane::id>>;
-
 } // namespace odr
+
+template<>
+struct std::hash<odr::LaneKey>
+{
+    std::size_t operator()(const odr::LaneKey& key) const
+    {
+        return ((std::hash<string>()(key.road_id) ^ (std::hash<double>()(key.lanesection_s0) << 1)) >> 1) ^ (std::hash<int>()(key.lane_id) << 1);
+    }
+};
+
+template<>
+struct std::equal_to<odr::LaneKey>
+{
+    bool operator()(const odr::LaneKey& lhs, const odr::LaneKey& rhs) const
+    {
+        return (lhs.road_id == rhs.road_id) && (lhs.lanesection_s0 == rhs.lanesection_s0) && (lhs.lane_id == rhs.lane_id);
+    }
+};

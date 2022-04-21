@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Math.hpp"
 
 #include <algorithm>
@@ -9,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -30,13 +30,13 @@
 namespace odr
 {
 template<class C, class T, T C::*member>
-struct SharedPtrCmp
+struct PtrCmp
 {
-    bool operator()(const std::shared_ptr<C>& lhs, const std::shared_ptr<C>& rhs) const { return (*lhs).*member < (*rhs).*member; }
+    bool operator()(const C* lhs, const C* rhs) const { return (*lhs).*member < (*rhs).*member; }
 };
 
 template<class K, class V>
-std::set<K> extract_keys(std::map<K, V> const& input_map)
+std::set<K> get_map_keys(std::map<K, V> const& input_map)
 {
     std::set<K> retval;
     std::transform(input_map.begin(), input_map.end(), std::inserter(retval, retval.end()), [](auto pair) { return pair.first; });
@@ -44,7 +44,15 @@ std::set<K> extract_keys(std::map<K, V> const& input_map)
 }
 
 template<class K, class V>
-V get_nearest_val(std::map<K, V> const& input_map, const K k)
+std::vector<V> get_map_values(std::map<K, V> const& input_map)
+{
+    std::vector<V> retval;
+    std::transform(input_map.begin(), input_map.end(), std::back_inserter(retval), [](const auto& pair) { return pair.second; });
+    return retval;
+}
+
+template<class K, class V>
+V get_nearest_lower_val(std::map<K, V> const& input_map, const K k)
 {
     auto kv_iter = input_map.upper_bound(k);
     if (kv_iter != input_map.begin())
@@ -76,8 +84,8 @@ std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, co
     auto kv_iter = input_map.upper_bound(k);
     if (kv_iter != input_map.begin())
         kv_iter--;
-    const size_t start_idx = kv_iter->first;
-    const size_t end_idx = (std::next(kv_iter) == input_map.end()) ? end_k : std::next(kv_iter)->first;
+    const std::size_t start_idx = kv_iter->first;
+    const std::size_t end_idx = (std::next(kv_iter) == input_map.end()) ? end_k : std::next(kv_iter)->first;
 
     return {start_idx, end_idx};
 }
@@ -142,57 +150,61 @@ T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
     return 0.5 * (c + b);
 }
 
-template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-void rdp(
-    const std::vector<Vec<T, Dim>>& points, const T epsilon, std::vector<Vec<T, Dim>>& out, size_t start_idx = 0, size_t step = 1, int _end_idx = -1)
+template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+void rdp(const std::vector<Vec<T, Dim>>& points,
+         const T                         epsilon,
+         std::vector<Vec<T, Dim>>&       out,
+         std::size_t                     start_idx = 0,
+         std::size_t                     step = 1,
+         int                             _end_idx = -1)
 {
-    size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
-    size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
+    std::size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
+    std::size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
 
     if ((last_idx + 1 - start_idx) < 2)
         return;
 
     /* find the point with the maximum distance from line BETWEEN start and end */
-    T      d_max(0);
-    size_t d_max_idx = 0;
-    for (size_t idx = start_idx + step; idx < last_idx; idx += step)
+    T           d_max(0);
+    std::size_t d_max_idx = 0;
+    for (std::size_t idx = start_idx + step; idx < last_idx; idx += step)
     {
         std::array<T, Dim> delta;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             delta[dim] = points.at(last_idx)[dim] - points.at(start_idx)[dim];
 
         // Normalise
         T mag(0);
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             mag += std::pow(delta.at(dim), 2.0);
         mag = std::sqrt(mag);
         if (mag > 0.0)
         {
-            for (size_t dim = 0; dim < Dim; dim++)
+            for (std::size_t dim = 0; dim < Dim; dim++)
                 delta.at(dim) = delta.at(dim) / mag;
         }
 
         std::array<T, Dim> pv;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             pv[dim] = points.at(idx)[dim] - points.at(start_idx)[dim];
 
         // Get dot product (project pv onto normalized direction)
         T pvdot(0);
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             pvdot += delta.at(dim) * pv.at(dim);
 
         // Scale line direction vector
         std::array<T, Dim> ds;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             ds[dim] = pvdot * delta.at(dim);
 
         // Subtract this from pv
         std::array<T, Dim> a;
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             a[dim] = pv.at(dim) - ds.at(dim);
 
         T d(0);
-        for (size_t dim = 0; dim < Dim; dim++)
+        for (std::size_t dim = 0; dim < Dim; dim++)
             d += std::pow(a.at(dim), 2.0);
         d = std::sqrt(d);
 
@@ -221,37 +233,11 @@ void rdp(
     }
 }
 
-template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-std::array<Vec<T, Dim>, 4> subdivide_cubic_bezier(T p_start, T p_end, const std::array<Vec<T, Dim>, 4>& ctrl_pts)
-{
-    /* modified f_cubic allowing different p values for segments */
-    auto f_cubic_p123 = [&](const T& p1, const T& p2, const T& p3) -> Vec<T, Dim>
-    {
-        Vec<T, Dim> out;
-        for (size_t dim = 0; dim < Dim; dim++)
-        {
-            out[dim] =
-                (1 - p3) *
-                    ((1 - p2) * ((1 - p1) * ctrl_pts[0][dim] + p1 * ctrl_pts[1][dim]) + p2 * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim])) +
-                p3 * ((1 - p2) * ((1 - p1) * ctrl_pts[1][dim] + p1 * ctrl_pts[2][dim]) + p2 * ((1 - p1) * ctrl_pts[2][dim] + p1 * ctrl_pts[3][dim]));
-        }
-        return out;
-    };
-
-    std::array<Vec<T, Dim>, 4> ctrl_pts_sub;
-    ctrl_pts_sub[0] = f_cubic_p123(p_start, p_start, p_start);
-    ctrl_pts_sub[1] = f_cubic_p123(p_start, p_start, p_end);
-    ctrl_pts_sub[2] = f_cubic_p123(p_start, p_end, p_end);
-    ctrl_pts_sub[3] = f_cubic_p123(p_end, p_end, p_end);
-
-    return ctrl_pts_sub;
-}
-
-template<typename T, size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, T eps)
 {
     Vec<T, Dim> param_c;
-    for (size_t dim = 0; dim < Dim; dim++)
+    for (std::size_t dim = 0; dim < Dim; dim++)
         param_c[dim] = ctrl_pts[0][dim] - 2 * ctrl_pts[1][dim] + ctrl_pts[2][dim];
 
     const T step_size = std::min(std::sqrt((4 * eps) / norm(param_c)), 1.0);
@@ -266,17 +252,17 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
 }
 
 template<typename T>
-inline std::vector<T> get_triangle_strip_outline_indices(const size_t num_vertices)
+inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_vertices)
 {
     std::vector<T> out_indices;
     out_indices.reserve(num_vertices + 4);
 
-    for (size_t idx = 0; idx < num_vertices - 2; idx += 2)
+    for (std::size_t idx = 0; idx < num_vertices - 2; idx += 2)
     {
         out_indices.push_back(idx);
         out_indices.push_back(idx + 2);
     }
-    for (size_t idx = 0 + 1; idx < num_vertices - 2; idx += 2)
+    for (std::size_t idx = 0 + 1; idx < num_vertices - 2; idx += 2)
     {
         out_indices.push_back(idx);
         out_indices.push_back(idx + 2);
@@ -289,5 +275,48 @@ inline std::vector<T> get_triangle_strip_outline_indices(const size_t num_vertic
 
     return out_indices;
 }
+
+template<typename... Args>
+std::string string_format(const std::string& format, Args... args)
+{
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
+    if (size_s <= 0)
+    {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto size = static_cast<size_t>(size_s);
+    auto buf = std::make_unique<char[]>(size);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
+
+template<class T, typename F>
+bool compare_class_members(const T& obj_a, const T& obj_b, F cmp)
+{
+    return false;
+};
+
+template<class T, typename S, typename F, typename... Ss>
+bool compare_class_members(const T& obj_a, const T& obj_b, F cmp, S field, Ss... fields)
+{
+    if (obj_a.*field != obj_b.*field)
+        return cmp(obj_a.*field, obj_b.*field);
+    return compare_class_members(obj_a, obj_b, cmp, fields...);
+};
+
+template<class T>
+bool check_class_members_equal(const T& obj_a, const T& obj_b)
+{
+    return true;
+};
+
+// run '==' operator for class members in order
+template<class T, typename S, typename... Ss>
+bool check_class_members_equal(const T& obj_a, const T& obj_b, S field, Ss... fields)
+{
+    if (!(std::equal_to<T>{}(obj_a.*field, obj_b.*field)))
+        return false;
+    return check_class_members_equal(obj_a, obj_b, fields...);
+};
 
 } // namespace odr

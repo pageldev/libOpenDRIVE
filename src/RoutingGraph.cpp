@@ -1,37 +1,11 @@
 #include "RoutingGraph.h"
 
+#include <utility>
+
 namespace odr
 {
 
-RoutingGraphVertex::RoutingGraphVertex(std::string road_id, double lane_section_s0, int lane_id) :
-    road_id(road_id), lane_section_s0(lane_section_s0), lane_id(lane_id)
-{
-}
-
-bool RoutingGraphVertex::operator<(const RoutingGraphVertex& other) const
-{
-    if (this->road_id != other.road_id)
-        return this->road_id < other.road_id;
-    if (this->lane_section_s0 != other.lane_section_s0)
-        return this->lane_section_s0 < other.lane_section_s0;
-    return this->lane_id < other.lane_id;
-}
-
-bool RoutingGraphVertex::operator==(const RoutingGraphVertex& other) const
-{
-    if (this->road_id == other.road_id && this->lane_section_s0 == other.lane_section_s0 && this->lane_id == other.lane_id)
-        return true;
-    return false;
-}
-
-RoutingGraphEdge::RoutingGraphEdge(RoutingGraphVertex from, RoutingGraphVertex to, double length) : from(from), to(to), length(length) {}
-
-bool RoutingGraphEdge::operator==(const RoutingGraphEdge& other) const
-{
-    if (this->from == other.from && this->to == other.to)
-        return true;
-    return false;
-}
+RoutingGraphEdge::RoutingGraphEdge(LaneKey from, LaneKey to, double length) : from(from), to(to), length(length) {}
 
 void RoutingGraph::add_edge(const RoutingGraphEdge& edge)
 {
@@ -40,10 +14,30 @@ void RoutingGraph::add_edge(const RoutingGraphEdge& edge)
     this->predecessors[edge.to].insert(edge.from);
 }
 
-const RoutingEdgeSet& RoutingGraph::get_edges() const { return this->edges; }
+const std::unordered_set<LaneKey>* RoutingGraph::get_lane_successors(const LaneKey& lane) const
+{
+    auto successors_iter = this->successors.find(lane);
+    if (successors_iter == this->successors.end())
+        return nullptr;
+    return &(successors_iter->second);
+}
 
-const RoutingSequentMap& RoutingGraph::get_successors() const { return this->successors; }
+std::unordered_set<LaneKey>* RoutingGraph::get_lane_successors(const LaneKey& lane)
+{
+    return const_cast<std::unordered_set<LaneKey>*>(static_cast<const RoutingGraph&>(*this).get_lane_successors(lane));
+}
 
-const RoutingSequentMap& RoutingGraph::get_predecessors() const { return this->predecessors; }
+const std::unordered_set<LaneKey>* RoutingGraph::get_lane_predecessors(const LaneKey& lane) const
+{
+    auto predecessors_iter = this->predecessors.find(lane);
+    if (predecessors_iter == this->predecessors.end())
+        return nullptr;
+    return &(predecessors_iter->second);
+}
+
+std::unordered_set<LaneKey>* RoutingGraph::get_lane_predecessors(const LaneKey& lane)
+{
+    return const_cast<std::unordered_set<LaneKey>*>(static_cast<const RoutingGraph&>(*this).get_lane_predecessors(lane));
+}
 
 } // namespace odr
