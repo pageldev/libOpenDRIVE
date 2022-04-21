@@ -1,10 +1,4 @@
 #pragma once
-<<<<<<< HEAD
-
-=======
-#include <algorithm>
-#include <array>
->>>>>>> upstream/master
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <array>
