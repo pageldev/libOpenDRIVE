@@ -1,8 +1,8 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include <cmath>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <numeric>
 #include <type_traits>
 #include <vector>
