@@ -241,6 +241,8 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, double s_start, double s_end, doubl
     s_vals.insert(s_vals_outer_brdr.begin(), s_vals_outer_brdr.end());
     std::set<double> s_vals_inner_brdr = lane.inner_border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_inner_brdr.begin(), s_vals_inner_brdr.end());
+    std::set<double> s_vals_lane_offset = this->lane_offset.approximate_linear(eps, s_start, s_end);
+    s_vals.insert(s_vals_lane_offset.begin(), s_vals_lane_offset.end());
 
     std::set<double> s_vals_lane_height = get_map_keys(lane.s_to_height_offset);
     s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
