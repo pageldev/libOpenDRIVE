@@ -15,23 +15,29 @@ struct Poly3
     double get_grad(double s) const;
     double get_max(double s_start, double s_end) const;
     void   negate();
+    bool   isnan() const;
 
     std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 
-    double a = 0, b = 0, c = 0, d = 0;
+    double a = 0;
+    double b = 0;
+    double c = 0;
+    double d = 0;
 };
 
 struct CubicSpline
 {
     CubicSpline() = default;
 
+    double get(double s, double default_val = 0.0, bool extend_start = true) const;
+    double get_grad(double s, double default_val = 0.0, bool extend_start = true) const;
+    double get_max(double s_start, double s_end) const;
+    Poly3  get_poly(double s, bool extend_start = true) const;
+
+    bool        empty() const;
     std::size_t size() const;
-    double      get(double s) const;
-    double      get_grad(double s) const;
-    double      get_max(double s_start, double s_end) const;
     CubicSpline negate() const;
     CubicSpline add(const CubicSpline& other) const;
-    Poly3       get_poly(double s) const;
 
     std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 

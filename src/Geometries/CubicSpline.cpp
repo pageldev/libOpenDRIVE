@@ -101,17 +101,25 @@ void Poly3::negate()
     d = -d;
 }
 
+bool Poly3::isnan() const { return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d)); }
+
+bool CubicSpline::empty() const { return this->s0_to_poly.empty(); }
+
 std::size_t CubicSpline::size() const { return this->s0_to_poly.size(); }
 
-double CubicSpline::get(double s) const
+double CubicSpline::get(double s, double default_val, bool extend_start) const
 {
-    const Poly3 poly = this->get_poly(s);
+    const Poly3& poly = this->get_poly(s, extend_start);
+    if (poly.isnan())
+        return default_val;
     return poly.get(s);
 }
 
-double CubicSpline::get_grad(double s) const
+double CubicSpline::get_grad(double s, double default_val, bool extend_start) const
 {
-    const Poly3 poly = this->get_poly(s);
+    const Poly3& poly = this->get_poly(s, extend_start);
+    if (poly.isnan())
+        return default_val;
     return poly.get_grad(s);
 }
 
@@ -125,6 +133,11 @@ CubicSpline CubicSpline::negate() const
 
 CubicSpline CubicSpline::add(const CubicSpline& other) const
 {
+    if (other.s0_to_poly.empty())
+        return *this;
+    if (this->s0_to_poly.empty())
+        return other;
+
     std::set<double> s0_vals = get_map_keys(this->s0_to_poly);
     std::set<double> other_s0s = get_map_keys(other.s0_to_poly);
     s0_vals.insert(other_s0s.begin(), other_s0s.end());
@@ -132,8 +145,14 @@ CubicSpline CubicSpline::add(const CubicSpline& other) const
     CubicSpline retval;
     for (const double& s0 : s0_vals)
     {
-        const Poly3 this_poly = this->get_poly(s0);
-        const Poly3 other_poly = other.get_poly(s0);
+        const Poly3& this_poly = this->get_poly(s0, false);
+        const Poly3& other_poly = other.get_poly(s0, false);
+
+        if (this_poly.isnan() || other_poly.isnan()) // can't be both NAN
+        {
+            retval.s0_to_poly[s0] = this_poly.isnan() ? other_poly : this_poly;
+            continue;
+        }
 
         Poly3 res;
         res.a = this_poly.a + other_poly.a;
@@ -145,16 +164,19 @@ CubicSpline CubicSpline::add(const CubicSpline& other) const
     return retval;
 }
 
-Poly3 CubicSpline::get_poly(double s) const
+Poly3 CubicSpline::get_poly(double s, bool extend_start) const
 {
-    if (this->s0_to_poly.size() > 0)
-    {
-        auto target_poly_iter = this->s0_to_poly.upper_bound(s);
-        if (target_poly_iter != this->s0_to_poly.begin())
-            target_poly_iter--;
-        return target_poly_iter->second;
-    }
-    return Poly3{};
+    if (this->s0_to_poly.empty())
+        return Poly3(NAN, NAN, NAN, NAN, NAN);
+
+    if ((extend_start == false) && (s < this->s0_to_poly.begin()->first))
+        return Poly3(NAN, NAN, NAN, NAN, NAN);
+
+    // will return first poly if s < s_start and last poly for s > s_end
+    auto target_poly_iter = this->s0_to_poly.upper_bound(s);
+    if (target_poly_iter != this->s0_to_poly.begin())
+        target_poly_iter--;
+    return target_poly_iter->second;
 }
 
 double CubicSpline::get_max(double s_start, double s_end) const
