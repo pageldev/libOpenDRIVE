@@ -18,7 +18,7 @@ struct OpenDriveMapConfig
     bool with_laneHeight = true;
     bool with_road_objects = true;
     bool center_map = true;
-    bool abs_z_for_for_local_road_obj_outline = true;
+    bool abs_z_for_for_local_road_obj_outline = false;
 };
 
 class OpenDriveMap
