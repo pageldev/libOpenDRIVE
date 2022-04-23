@@ -2,8 +2,8 @@
 #include "Math.hpp"
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace odr
 {
