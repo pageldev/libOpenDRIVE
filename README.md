@@ -21,8 +21,11 @@ odr::Vec3D pt_xyz = odr_road.get_xyz(0.1 /*s*/, 1.0 /*t*/, 0.0 /*h*/);
 // access road network attributes
 std::string lane_type = odr_road.get_lanesection(0.0).id_to_lane.at(-1).type;
 
-// get routing graph
+// use routing graph
 odr::RoutingGraph routing_graph = odr_map.get_routing_graph();
+odr::LaneKey from("515" /*road id*/, 0.0 /*lane section s0*/, 1 /*lane id*/);
+odr::LaneKey to("41", 0.0, -1)
+std::vector<odr::LaneKey> path = routing_graph.shortest_path(from, to);
 ```
 
 
