@@ -91,6 +91,7 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& start, const Lan
         }
     }
 
+    std::reverse(path.begin(), path.end());
     return path;
 }
 
