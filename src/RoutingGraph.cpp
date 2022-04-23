@@ -1,43 +1,97 @@
 #include "RoutingGraph.h"
 
+#include <algorithm>
+#include <limits>
 #include <utility>
 
 namespace odr
 {
 
-RoutingGraphEdge::RoutingGraphEdge(LaneKey from, LaneKey to, double length) : from(from), to(to), length(length) {}
+RoutingGraphEdge::RoutingGraphEdge(LaneKey from, LaneKey to, double weight) : from(from), to(to), weight(weight) {}
+
+WeightedLaneKey::WeightedLaneKey(const LaneKey& lane_key, double weight) : LaneKey(lane_key), weight(weight) {}
+
+WeightedLaneKey::WeightedLaneKey(std::string road_id, double lanesection_s0, int lane_id, double weight) :
+    LaneKey(road_id, lanesection_s0, lane_id), weight(weight)
+{
+}
 
 void RoutingGraph::add_edge(const RoutingGraphEdge& edge)
 {
     this->edges.insert(edge);
-    this->successors[edge.from].insert(edge.to);
-    this->predecessors[edge.to].insert(edge.from);
+    this->lane_key_to_successors[edge.from].insert(WeightedLaneKey(edge.to, edge.weight));
+    this->lane_key_to_predecessors[edge.to].insert(WeightedLaneKey(edge.from, edge.weight));
 }
 
-const std::unordered_set<LaneKey>* RoutingGraph::get_lane_successors(const LaneKey& lane) const
+std::vector<LaneKey> RoutingGraph::get_lane_successors(const LaneKey& lane_key) const
 {
-    auto successors_iter = this->successors.find(lane);
-    if (successors_iter == this->successors.end())
-        return nullptr;
-    return &(successors_iter->second);
+    std::vector<LaneKey> successors;
+    for (const auto& lane_key_successors : this->lane_key_to_successors)
+        successors.insert(successors.end(), lane_key_successors.second.begin(), lane_key_successors.second.end());
+    return successors;
 }
 
-std::unordered_set<LaneKey>* RoutingGraph::get_lane_successors(const LaneKey& lane)
+std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key) const
 {
-    return const_cast<std::unordered_set<LaneKey>*>(static_cast<const RoutingGraph&>(*this).get_lane_successors(lane));
+    std::vector<LaneKey> predecessors;
+    for (const auto& lane_key_predecessors : this->lane_key_to_predecessors)
+        predecessors.insert(predecessors.end(), lane_key_predecessors.second.begin(), lane_key_predecessors.second.end());
+    return predecessors;
 }
 
-const std::unordered_set<LaneKey>* RoutingGraph::get_lane_predecessors(const LaneKey& lane) const
+std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& start, const LaneKey& finish) const
 {
-    auto predecessors_iter = this->predecessors.find(lane);
-    if (predecessors_iter == this->predecessors.end())
-        return nullptr;
-    return &(predecessors_iter->second);
-}
+    std::vector<LaneKey>                 nodes;
+    std::vector<LaneKey>                 path;
+    std::unordered_map<LaneKey, double>  weights;
+    std::unordered_map<LaneKey, LaneKey> previous;
 
-std::unordered_set<LaneKey>* RoutingGraph::get_lane_predecessors(const LaneKey& lane)
-{
-    return const_cast<std::unordered_set<LaneKey>*>(static_cast<const RoutingGraph&>(*this).get_lane_predecessors(lane));
+    auto comparator = [&](const LaneKey& lhs, const LaneKey& rhs) { return weights[lhs] > weights[rhs]; };
+
+    for (const auto& lane_key_successors : this->lane_key_to_successors)
+    {
+        const LaneKey& lane_key = lane_key_successors.first;
+        if (std::equal_to<odr::LaneKey>{}(lane_key, start))
+            weights[lane_key] = 0;
+        else
+            weights[lane_key] = std::numeric_limits<double>::max();
+
+        nodes.push_back(lane_key);
+        std::push_heap(nodes.begin(), nodes.end(), comparator);
+    }
+
+    while (nodes.empty() == false)
+    {
+        std::pop_heap(nodes.begin(), nodes.end(), comparator);
+        LaneKey smallest = nodes.back();
+        nodes.pop_back();
+
+        if (std::equal_to<LaneKey>{}(smallest, finish))
+        {
+            while (previous.find(smallest) != previous.end())
+            {
+                path.push_back(smallest);
+                smallest = previous.at(smallest);
+            }
+            break;
+        }
+
+        if (weights.at(smallest) == std::numeric_limits<double>::max())
+            break;
+
+        for (const auto& successor : this->lane_key_to_successors.at(smallest))
+        {
+            const double alt = weights.at(smallest) + successor.weight;
+            if (alt < weights.at(successor))
+            {
+                weights[successor] = alt;
+                previous.insert({successor, smallest});
+                std::make_heap(nodes.begin(), nodes.end(), comparator);
+            }
+        }
+    }
+
+    return path;
 }
 
 } // namespace odr
