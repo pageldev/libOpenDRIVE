@@ -90,18 +90,14 @@ std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, co
     return {start_idx, end_idx};
 }
 
-template<typename K, typename V>
-V try_get_val(const std::map<K, V>& m, const K& key, const V& default_val)
+template<template <typename...> class Map, typename K, typename V>
+V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
 {
-    typename std::map<K, V>::const_iterator it = m.find(key);
-    if (it == m.end())
-    {
+    auto iter = m.find(key);
+    if (iter == m.end())
         return default_val;
-    }
     else
-    {
-        return it->second;
-    }
+        return iter->second;
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>

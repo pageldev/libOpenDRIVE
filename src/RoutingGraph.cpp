@@ -25,18 +25,16 @@ void RoutingGraph::add_edge(const RoutingGraphEdge& edge)
 
 std::vector<LaneKey> RoutingGraph::get_lane_successors(const LaneKey& lane_key) const
 {
-    std::vector<LaneKey> successors;
-    for (const auto& lane_key_successors : this->lane_key_to_successors)
-        successors.insert(successors.end(), lane_key_successors.second.begin(), lane_key_successors.second.end());
-    return successors;
+    std::unordered_set<WeightedLaneKey> res = try_get_val(this->lane_key_to_successors, lane_key, std::unordered_set<WeightedLaneKey>{});
+    std::vector<LaneKey> successor_lane_keys(res.begin(), res.end());
+    return successor_lane_keys;
 }
 
 std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key) const
 {
-    std::vector<LaneKey> predecessors;
-    for (const auto& lane_key_predecessors : this->lane_key_to_predecessors)
-        predecessors.insert(predecessors.end(), lane_key_predecessors.second.begin(), lane_key_predecessors.second.end());
-    return predecessors;
+    std::unordered_set<WeightedLaneKey> res = try_get_val(this->lane_key_to_predecessors, lane_key, std::unordered_set<WeightedLaneKey>{});
+    std::vector<LaneKey> predecessor_lane_keys(res.begin(), res.end());
+    return predecessor_lane_keys;
 }
 
 std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& start, const LaneKey& finish) const
