@@ -71,3 +71,18 @@ struct std::equal_to<odr::LaneKey>
         return (lhs.road_id == rhs.road_id) && (lhs.lanesection_s0 == rhs.lanesection_s0) && (lhs.lane_id == rhs.lane_id);
     }
 };
+
+template<>
+struct std::less<odr::LaneKey>
+{
+    bool operator()(const odr::LaneKey& lhs, const odr::LaneKey& rhs) const
+    {
+        if (lhs.road_id != rhs.road_id)
+            return lhs.road_id < rhs.road_id;
+        if (lhs.lanesection_s0 != rhs.lanesection_s0)
+            return lhs.lanesection_s0 < rhs.lanesection_s0;
+        if (lhs.lane_id != rhs.lane_id)
+            return lhs.lane_id < rhs.lane_id;
+        return false;
+    }
+};
