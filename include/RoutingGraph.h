@@ -76,7 +76,7 @@ public:
 
     std::vector<LaneKey> get_lane_successors(const LaneKey& lane_key) const;
     std::vector<LaneKey> get_lane_predecessors(const LaneKey& lane_key) const;
-    std::vector<LaneKey> shortest_path(const LaneKey& start, const LaneKey& finish) const;
+    std::vector<LaneKey> shortest_path(const LaneKey& from, const LaneKey& to) const;
 
     std::unordered_set<RoutingGraphEdge>                             edges;
     std::unordered_map<LaneKey, std::unordered_set<WeightedLaneKey>> lane_key_to_successors;
