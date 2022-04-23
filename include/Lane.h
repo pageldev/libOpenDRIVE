@@ -25,6 +25,7 @@ struct HeightOffset
 struct LaneKey
 {
     LaneKey(std::string road_id, double lanesection_s0, int lane_id);
+    std::string to_string() const;
 
     std::string road_id = "";
     double      lanesection_s0 = 0;
