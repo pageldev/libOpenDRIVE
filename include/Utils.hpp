@@ -11,6 +11,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <stdexcept>
 
 #define CHECK(expr, msg)                                                                                                                             \
     {                                                                                                                                                \
