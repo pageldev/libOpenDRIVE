@@ -86,10 +86,10 @@ struct JunctionController
 class Junction : public XmlNode
 {
 public:
-    Junction(std::string name, std::string id);
+    Junction(std::string id, std::string name);
 
-    std::string name = "";
     std::string id = "";
+    std::string name = "";
 
     std::map<std::string, JunctionConnection> id_to_connection;
     std::map<std::string, JunctionController> id_to_controller;

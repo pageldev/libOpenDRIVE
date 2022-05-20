@@ -14,6 +14,6 @@ JunctionPriority::JunctionPriority(std::string high, std::string low) : high(hig
 
 JunctionController::JunctionController(std::string id, std::string type, std::uint32_t sequence) : id(id), type(type), sequence(sequence) {}
 
-Junction::Junction(std::string name, std::string id) : name(name), id(id) {}
+Junction::Junction(std::string id, std::string name) : id(id), name(name) {}
 
 } // namespace odr
