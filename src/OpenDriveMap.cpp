@@ -62,7 +62,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         const std::string junction_id = junction_node.attribute("id").as_string("");
 
         Junction& junction =
-            this->id_to_junction.insert({junction_id, Junction(junction_id, junction_node.attribute("name").as_string(""))}).first->second;
+            this->id_to_junction.insert({junction_id, Junction(junction_node.attribute("name").as_string(""), junction_id)}).first->second;
         junction.xml_node = junction_node;
 
         for (pugi::xml_node connection_node : junction_node.children("connection"))
