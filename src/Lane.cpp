@@ -27,7 +27,7 @@ std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
         std::upper_bound(this->roadmark_groups.begin(),
                          this->roadmark_groups.end(),
                          s_start,
-                         [](const double& s, const RoadMarkGroup& rmg) -> bool { return (rmg.lanesection_s0 + rmg.s_offset) < s; });
+                         [](const double& s, const RoadMarkGroup& rmg) -> bool { return s < (rmg.lanesection_s0 + rmg.s_offset); });
     if (s_start_rm_iter != this->roadmark_groups.begin())
         s_start_rm_iter--;
 
