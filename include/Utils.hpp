@@ -8,10 +8,10 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <stdexcept>
 
 #define CHECK(expr, msg)                                                                                                                             \
     {                                                                                                                                                \
@@ -91,7 +91,7 @@ std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, co
     return {start_idx, end_idx};
 }
 
-template<template <typename...> class Map, typename K, typename V>
+template<template<typename...> class Map, typename K, typename V>
 V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
 {
     auto iter = m.find(key);

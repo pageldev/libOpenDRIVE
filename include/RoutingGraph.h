@@ -30,10 +30,12 @@ struct WeightedLaneKey : public LaneKey
 
 } // namespace odr
 
-template<>
-struct std::hash<odr::RoutingGraphEdge>
+namespace std
 {
-    std::size_t operator()(const odr::RoutingGraphEdge& e) const
+template<>
+struct hash<odr::RoutingGraphEdge>
+{
+    size_t operator()(const odr::RoutingGraphEdge& e) const
     {
         // shift bits to prevent xor canceling out same values, e.g. hash("a","a",1) == hash("b","b",1)
         return ((hash<odr::LaneKey>()(e.from) ^ (hash<odr::LaneKey>()(e.to) << 1)) >> 1) ^ (hash<double>()(e.weight) << 1);
@@ -41,29 +43,29 @@ struct std::hash<odr::RoutingGraphEdge>
 };
 
 template<>
-struct std::equal_to<odr::RoutingGraphEdge>
+struct equal_to<odr::RoutingGraphEdge>
 {
-    std::size_t operator()(const odr::RoutingGraphEdge& lhs, const odr::RoutingGraphEdge& rhs) const
+    size_t operator()(const odr::RoutingGraphEdge& lhs, const odr::RoutingGraphEdge& rhs) const
     {
-        return std::equal_to<odr::LaneKey>{}(lhs.from, rhs.from) && std::equal_to<odr::LaneKey>{}(lhs.to, rhs.to) &&
-               std::equal_to<double>{}(lhs.weight, rhs.weight);
+        return equal_to<odr::LaneKey>{}(lhs.from, rhs.from) && equal_to<odr::LaneKey>{}(lhs.to, rhs.to) && equal_to<double>{}(lhs.weight, rhs.weight);
     }
 };
 
 template<>
-struct std::hash<odr::WeightedLaneKey>
+struct hash<odr::WeightedLaneKey>
 {
-    std::size_t operator()(const odr::WeightedLaneKey& w_key) const { return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1)); }
+    size_t operator()(const odr::WeightedLaneKey& w_key) const { return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1)); }
 };
 
 template<>
-struct std::equal_to<odr::WeightedLaneKey>
+struct equal_to<odr::WeightedLaneKey>
 {
-    std::size_t operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
+    size_t operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
     {
-        return std::equal_to<odr::LaneKey>{}(lhs, rhs) && std::equal_to<double>{}(lhs.weight, rhs.weight);
+        return equal_to<odr::LaneKey>{}(lhs, rhs) && equal_to<double>{}(lhs.weight, rhs.weight);
     }
 };
+} // namespace std
 
 namespace odr
 {

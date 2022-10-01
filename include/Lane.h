@@ -55,17 +55,19 @@ struct Lane : public XmlNode
 
 } // namespace odr
 
-template<>
-struct std::hash<odr::LaneKey>
+namespace std
 {
-    std::size_t operator()(const odr::LaneKey& key) const
+template<>
+struct hash<odr::LaneKey>
+{
+    size_t operator()(const odr::LaneKey& key) const
     {
-        return ((std::hash<string>()(key.road_id) ^ (std::hash<double>()(key.lanesection_s0) << 1)) >> 1) ^ (std::hash<int>()(key.lane_id) << 1);
+        return ((hash<string>()(key.road_id) ^ (hash<double>()(key.lanesection_s0) << 1)) >> 1) ^ (hash<int>()(key.lane_id) << 1);
     }
 };
 
 template<>
-struct std::equal_to<odr::LaneKey>
+struct equal_to<odr::LaneKey>
 {
     bool operator()(const odr::LaneKey& lhs, const odr::LaneKey& rhs) const
     {
@@ -74,7 +76,7 @@ struct std::equal_to<odr::LaneKey>
 };
 
 template<>
-struct std::less<odr::LaneKey>
+struct less<odr::LaneKey>
 {
     bool operator()(const odr::LaneKey& lhs, const odr::LaneKey& rhs) const
     {
@@ -87,3 +89,4 @@ struct std::less<odr::LaneKey>
         return false;
     }
 };
+} // namespace std

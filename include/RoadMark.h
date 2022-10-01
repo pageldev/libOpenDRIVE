@@ -42,14 +42,16 @@ struct RoadMarksLine : public XmlNode
 
 } // namespace odr
 
+namespace std
+{
 template<>
-struct std::less<odr::RoadMarksLine>
+struct less<odr::RoadMarksLine>
 {
     bool operator()(const odr::RoadMarksLine& lhs, const odr::RoadMarksLine& rhs) const
     {
         return odr::compare_class_members(lhs,
                                           rhs,
-                                          std::less<void>(),
+                                          less<void>(),
                                           &odr::RoadMarksLine::road_id,
                                           &odr::RoadMarksLine::lanesection_s0,
                                           &odr::RoadMarksLine::lane_id,
@@ -63,6 +65,7 @@ struct std::less<odr::RoadMarksLine>
                                           &odr::RoadMarksLine::rule);
     }
 };
+} // namespace std
 
 namespace odr
 {
@@ -125,14 +128,16 @@ struct RoadMark
 
 } // namespace odr
 
+namespace std
+{
 template<>
-struct std::less<odr::RoadMarkGroup>
+struct less<odr::RoadMarkGroup>
 {
     bool operator()(const odr::RoadMarkGroup& lhs, const odr::RoadMarkGroup& rhs) const
     {
         return odr::compare_class_members(lhs,
                                           rhs,
-                                          std::less<void>(),
+                                          less<void>(),
                                           &odr::RoadMarkGroup::road_id,
                                           &odr::RoadMarkGroup::lanesection_s0,
                                           &odr::RoadMarkGroup::lane_id,
@@ -146,3 +151,4 @@ struct std::less<odr::RoadMarkGroup>
                                           &odr::RoadMarkGroup::lane_change);
     }
 };
+} // namespace std

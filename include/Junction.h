@@ -21,14 +21,17 @@ struct JunctionLaneLink
 
 } // namespace odr
 
+namespace std
+{
 template<>
-struct std::less<odr::JunctionLaneLink>
+struct less<odr::JunctionLaneLink>
 {
     bool operator()(const odr::JunctionLaneLink& lhs, const odr::JunctionLaneLink& rhs) const
     {
-        return odr::compare_class_members(lhs, rhs, std::less<void>(), &odr::JunctionLaneLink::from, &odr::JunctionLaneLink::to);
+        return odr::compare_class_members(lhs, rhs, less<void>(), &odr::JunctionLaneLink::from, &odr::JunctionLaneLink::to);
     }
 };
+} // namespace std
 
 namespace odr
 {
@@ -62,14 +65,17 @@ struct JunctionPriority
 
 } // namespace odr
 
+namespace std
+{
 template<>
-struct std::less<odr::JunctionPriority>
+struct less<odr::JunctionPriority>
 {
     bool operator()(const odr::JunctionPriority& lhs, const odr::JunctionPriority& rhs) const
     {
-        return odr::compare_class_members(lhs, rhs, std::less<void>(), &odr::JunctionPriority::high, &odr::JunctionPriority::low);
+        return odr::compare_class_members(lhs, rhs, less<void>(), &odr::JunctionPriority::high, &odr::JunctionPriority::low);
     }
 };
+} // namespace std
 
 namespace odr
 {
