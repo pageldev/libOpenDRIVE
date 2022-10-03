@@ -37,7 +37,7 @@ struct PtrCmp
 };
 
 template<class K, class V>
-std::set<K> get_map_keys(std::map<K, V> const& input_map)
+std::set<K> get_map_keys(const std::map<K, V>& input_map)
 {
     std::set<K> retval;
     std::transform(input_map.begin(), input_map.end(), std::inserter(retval, retval.end()), [](auto pair) { return pair.first; });
@@ -45,7 +45,7 @@ std::set<K> get_map_keys(std::map<K, V> const& input_map)
 }
 
 template<class K, class V>
-std::vector<V> get_map_values(std::map<K, V> const& input_map)
+std::vector<V> get_map_values(const std::map<K, V>& input_map)
 {
     std::vector<V> retval;
     std::transform(input_map.begin(), input_map.end(), std::back_inserter(retval), [](const auto& pair) { return pair.second; });
@@ -53,7 +53,7 @@ std::vector<V> get_map_values(std::map<K, V> const& input_map)
 }
 
 template<class K, class V>
-V get_nearest_lower_val(std::map<K, V> const& input_map, const K k)
+V get_nearest_lower_val(const std::map<K, V>& input_map, const K& k)
 {
     auto kv_iter = input_map.upper_bound(k);
     if (kv_iter != input_map.begin())
@@ -62,7 +62,7 @@ V get_nearest_lower_val(std::map<K, V> const& input_map, const K k)
 }
 
 template<class K, class V>
-K get_nearest_key(std::map<K, V> const& input_map, const K k)
+K get_nearest_key(const std::map<K, V>& input_map, const K& k)
 {
     if (input_map.empty())
         throw std::runtime_error("map empty");
@@ -80,7 +80,7 @@ K get_nearest_key(std::map<K, V> const& input_map, const K k)
 }
 
 template<class K, class V>
-std::array<K, 2> get_key_interval(std::map<K, V> const& input_map, const K k, const K end_k)
+std::array<K, 2> get_key_interval(const std::map<K, V>& input_map, const K& k, const K& end_k)
 {
     auto kv_iter = input_map.upper_bound(k);
     if (kv_iter != input_map.begin())
@@ -102,7 +102,7 @@ V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
+T golden_section_search(const std::function<T(T)>& f, T a, T b, const T& tol)
 {
     const T invphi = (std::sqrt(5) - 1) / 2;
     const T invphi2 = (3 - std::sqrt(5)) / 2;
@@ -149,11 +149,11 @@ T golden_section_search(const std::function<T(T)>& f, T a, T b, const T tol)
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 void rdp(const std::vector<Vec<T, Dim>>& points,
-         const T                         epsilon,
+         const T&                        epsilon,
          std::vector<Vec<T, Dim>>&       out,
-         std::size_t                     start_idx = 0,
-         std::size_t                     step = 1,
-         int                             _end_idx = -1)
+         const std::size_t               start_idx = 0,
+         const std::size_t               step = 1,
+         const int                       _end_idx = -1)
 {
     std::size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
     std::size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
@@ -231,7 +231,7 @@ void rdp(const std::vector<Vec<T, Dim>>& points,
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, T eps)
+std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, const T& eps)
 {
     Vec<T, Dim> param_c;
     for (std::size_t dim = 0; dim < Dim; dim++)

@@ -36,7 +36,7 @@ struct Lane : public XmlNode
 {
     Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
 
-    std::vector<RoadMark> get_roadmarks(double s_start, double s_end) const;
+    std::vector<RoadMark> get_roadmarks(const double s_start, const double s_end) const;
 
     LaneKey     key;
     int         id;

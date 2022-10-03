@@ -17,14 +17,14 @@ struct CubicBezier
     CubicBezier() = default;
     CubicBezier(std::array<Vec<T, Dim>, 4> control_points);
 
-    Vec<T, Dim>                get(T t) const;
-    Vec<T, Dim>                get_grad(T t) const;
-    T                          get_t(T arclen) const;
+    Vec<T, Dim>                get(const T t) const;
+    Vec<T, Dim>                get_grad(const T t) const;
+    T                          get_t(const T arclen) const;
     T                          get_length() const;
-    std::array<Vec<T, Dim>, 4> get_subcurve(T t_start, T t_end) const;
-    std::set<T>                approximate_linear(T eps) const;
+    std::array<Vec<T, Dim>, 4> get_subcurve(const T t_start, const T t_end) const;
+    std::set<T>                approximate_linear(const T eps) const;
 
-    static std::array<Vec<T, Dim>, 4> get_control_points(const std::array<Vec<T, Dim>, 4> coefficients)
+    static std::array<Vec<T, Dim>, 4> get_control_points(const std::array<Vec<T, Dim>, 4>& coefficients)
     {
         /* a + b*x + c*x^2 +d*x^3 */
         const Vec<T, Dim>& a = coefficients[0];
@@ -47,7 +47,7 @@ struct CubicBezier
         return ctrl_pts;
     }
 
-    static std::array<Vec<T, Dim>, 4> get_coefficients(const std::array<Vec<T, Dim>, 4> control_points)
+    static std::array<Vec<T, Dim>, 4> get_coefficients(const std::array<Vec<T, Dim>, 4>& control_points)
     {
         const Vec<T, Dim>& pA = control_points[0];
         const Vec<T, Dim>& pB = control_points[1];
@@ -98,7 +98,7 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::get(T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::get(const T t) const
 {
     Vec<T, Dim> out_pt;
     for (std::size_t dim = 0; dim < Dim; dim++)
@@ -108,22 +108,22 @@ Vec<T, Dim> CubicBezier<T, Dim>::get(T t) const
 }
 
 template<typename T, std::size_t Dim>
-T CubicBezier<T, Dim>::get_t(T arclen) const
+T CubicBezier<T, Dim>::get_t(const T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
         throw std::runtime_error(string_format("arc length %.3f out of range; valid length: %.3f", arclen, this->valid_length));
     }
 
-    arclen = std::min<T>(arclen, this->valid_length);
+    const T arclen_adj = std::min<T>(arclen, this->valid_length);
 
-    auto arclen_t_iter = this->arclen_t.upper_bound(arclen);
+    auto arclen_t_iter = this->arclen_t.upper_bound(arclen_adj);
     if (arclen_t_iter != this->arclen_t.begin())
         arclen_t_iter--;
 
     const T arcl_lower_bound = arclen_t_iter->first;
     const T t_lower_bound = arclen_t_iter->second;
-    if (arclen == arcl_lower_bound)
+    if (arclen_adj == arcl_lower_bound)
         return t_lower_bound;
 
     const T arcl_upper_bound = std::next(arclen_t_iter)->first;
@@ -131,7 +131,7 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
     const T seg_arc_len = arcl_upper_bound - arcl_lower_bound;
     const T seg_t_len = t_upper_bound - t_lower_bound;
 
-    return t_lower_bound + ((arclen - arcl_lower_bound) / seg_arc_len) * seg_t_len;
+    return t_lower_bound + ((arclen_adj - arcl_lower_bound) / seg_arc_len) * seg_t_len;
 }
 
 template<typename T, std::size_t Dim>
@@ -141,7 +141,7 @@ T CubicBezier<T, Dim>::get_length() const
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::get_grad(T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::get_grad(const T t) const
 {
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
 
@@ -153,7 +153,7 @@ Vec<T, Dim> CubicBezier<T, Dim>::get_grad(T t) const
 }
 
 template<typename T, std::size_t Dim>
-std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end) const
+std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, const T t_end) const
 {
     /* modified get(T t) allowing different t values for segments */
     auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
@@ -179,7 +179,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end)
 }
 
 template<typename T, std::size_t Dim>
-std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
+std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
 {
     /* approximate cubic bezier by splitting into quadratic ones */
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);

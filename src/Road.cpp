@@ -20,7 +20,7 @@
 
 namespace odr
 {
-double Crossfall::get_crossfall(double s, bool on_left_side) const
+double Crossfall::get_crossfall(const double s, const bool on_left_side) const
 {
     if (this->s0_to_poly.size() > 0)
     {
@@ -58,7 +58,7 @@ Road::Road(std::string id, double length, std::string junction, std::string name
 {
 }
 
-double Road::get_lanesection_s0(double s) const
+double Road::get_lanesection_s0(const double s) const
 {
     if (this->s_to_lanesection.empty())
         return NAN;
@@ -74,7 +74,7 @@ double Road::get_lanesection_s0(double s) const
     return lanesec.s0;
 }
 
-LaneSection Road::get_lanesection(double s) const
+LaneSection Road::get_lanesection(const double s) const
 {
     const double lanesec_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesec_s0))
@@ -84,7 +84,7 @@ LaneSection Road::get_lanesection(double s) const
 
 double Road::get_lanesection_end(const LaneSection& lanesection) const { return this->get_lanesection_end(lanesection.s0); }
 
-double Road::get_lanesection_end(const double& lanesection_s0) const
+double Road::get_lanesection_end(const double lanesection_s0) const
 {
     auto s_lanesec_iter = this->s_to_lanesection.find(lanesection_s0);
     if (s_lanesec_iter == this->s_to_lanesection.end())
@@ -102,13 +102,13 @@ double Road::get_lanesection_length(const LaneSection& lanesection) const
     return s_end - lanesection.s0;
 }
 
-double Road::get_lanesection_length(const double& lanesection_s0) const
+double Road::get_lanesection_length(const double lanesection_s0) const
 {
     const double s_end = this->get_lanesection_end(lanesection_s0);
     return s_end - lanesection_s0;
 }
 
-Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
+Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
 {
     const Vec3D  s_vec = this->ref_line.get_grad(s);
     const double theta = this->superelevation.get(s);
@@ -133,13 +133,13 @@ Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn) const
+Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 {
     CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
     CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
-    if (std::isnan(lanesection_s0))
+    if (std::isnan<double>(lanesection_s0))
     {
         throw std::runtime_error(string_format("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
     }
@@ -190,7 +190,8 @@ Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn) const
     return this->get_xyz(s, t, h_t, nullptr, nullptr, vn);
 }
 
-std::set<double> Road::approximate_lane_border_linear(const Lane& lane, double s_start, double s_end, double eps, bool outer) const
+std::set<double>
+Road::approximate_lane_border_linear(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer) const
 {
     std::set<double> s_vals = this->ref_line.approximate_linear(eps, s_start, s_end);
 
@@ -208,13 +209,13 @@ std::set<double> Road::approximate_lane_border_linear(const Lane& lane, double s
     return s_vals;
 }
 
-std::set<double> Road::approximate_lane_border_linear(const Lane& lane, double eps, bool outer) const
+std::set<double> Road::approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer) const
 {
     const double s_end = this->get_lanesection_end(lane.key.lanesection_s0);
     return this->approximate_lane_border_linear(lane, lane.key.lanesection_s0, s_end, outer);
 }
 
-Line3D Road::get_lane_border_line(const Lane& lane, double s_start, double s_end, double eps, bool outer) const
+Line3D Road::get_lane_border_line(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer) const
 {
     std::set<double> s_vals = this->approximate_lane_border_linear(lane, s_start, s_end, eps, outer);
 
@@ -228,13 +229,13 @@ Line3D Road::get_lane_border_line(const Lane& lane, double s_start, double s_end
     return border_line;
 }
 
-Line3D Road::get_lane_border_line(const Lane& lane, double eps, bool outer) const
+Line3D Road::get_lane_border_line(const Lane& lane, const double eps, const bool outer) const
 {
     const double s_end = this->get_lanesection_end(lane.key.lanesection_s0);
     return this->get_lane_border_line(lane, lane.key.lanesection_s0, s_end, eps, outer);
 }
 
-Mesh3D Road::get_lane_mesh(const Lane& lane, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices) const
+Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double s_end, const double eps, std::vector<uint32_t>* outline_indices) const
 {
     std::set<double> s_vals = this->ref_line.approximate_linear(eps, s_start, s_end);
     std::set<double> s_vals_outer_brdr = lane.outer_border.approximate_linear(eps, s_start, s_end);
@@ -296,13 +297,13 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, double s_start, double s_end, doubl
     return out_mesh;
 }
 
-Mesh3D Road::get_lane_mesh(const Lane& lane, double eps, std::vector<uint32_t>* outline_indices) const
+Mesh3D Road::get_lane_mesh(const Lane& lane, const double eps, std::vector<uint32_t>* outline_indices) const
 {
     const double s_end = this->get_lanesection_end(lane.key.lanesection_s0);
     return this->get_lane_mesh(lane, lane.key.lanesection_s0, s_end, eps, outline_indices);
 }
 
-Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, double eps) const
+Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const double eps) const
 {
     const std::set<double> s_vals = this->approximate_lane_border_linear(lane, roadmark.s_start, roadmark.s_end, eps, true);
 
@@ -330,7 +331,7 @@ Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, doubl
     return out_mesh;
 }
 
-Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, double eps) const
+Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double eps) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_object.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_object.outline.empty())          // handle single object as 1 object repeat

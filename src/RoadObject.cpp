@@ -49,14 +49,15 @@ RoadObject::RoadObject(std::string road_id,
 {
 }
 
-Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
+Mesh3D RoadObject::get_cylinder(const double eps, const double radius, const double height)
 {
     Mesh3D cylinder_mesh;
     cylinder_mesh.vertices.push_back({0, 0, 0});
     cylinder_mesh.vertices.push_back({0, 0, height});
 
-    eps = 0.5 * eps; // reduce eps a bit, cylinders more subsceptible to low resolution
-    const double eps_angle = (radius <= eps) ? M_PI / 6 : std::acos((radius * radius - 4 * radius * eps + 2 * eps * eps) / (radius * radius));
+    const double eps_adj = 0.5 * eps; // reduce eps a bit, cylinders more subsceptible to low resolution
+    const double eps_angle =
+        (radius <= eps_adj) ? M_PI / 6 : std::acos((radius * radius - 4 * radius * eps_adj + 2 * eps_adj * eps_adj) / (radius * radius));
 
     std::vector<double> angles;
     for (double alpha = 0; alpha < 2 * M_PI; alpha += eps_angle)
@@ -83,7 +84,7 @@ Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
     return cylinder_mesh;
 }
 
-Mesh3D RoadObject::get_box(double w, double l, double h)
+Mesh3D RoadObject::get_box(const double w, const double l, const double h)
 {
     Mesh3D box_mesh;
     box_mesh.vertices = {Vec3D{l / 2, w / 2, 0},

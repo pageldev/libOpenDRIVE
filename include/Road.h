@@ -29,7 +29,7 @@ struct Crossfall : public CubicSpline
 
     Crossfall() = default;
 
-    double get_crossfall(double s, bool on_left_side) const;
+    double get_crossfall(const double s, const bool on_left_side) const;
 
     std::map<double, Side> sides;
 };
@@ -83,28 +83,30 @@ public:
     std::vector<LaneSection> get_lanesections() const;
     std::vector<RoadObject>  get_road_objects() const;
 
-    double      get_lanesection_s0(double s) const;
-    LaneSection get_lanesection(double s) const;
+    double      get_lanesection_s0(const double s) const;
+    LaneSection get_lanesection(const double s) const;
 
     double get_lanesection_end(const LaneSection& lanesection) const;
-    double get_lanesection_end(const double& lanesection_s0) const;
+    double get_lanesection_end(const double lanesection_s0) const;
     double get_lanesection_length(const LaneSection& lanesection) const;
-    double get_lanesection_length(const double& lanesection_s0) const;
+    double get_lanesection_length(const double lanesection_s0) const;
 
-    Vec3D get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr) const;
-    Vec3D get_surface_pt(double s, double t, Vec3D* vn = nullptr) const;
+    Vec3D get_xyz(const double s, const double t, const double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr) const;
+    Vec3D get_surface_pt(double s, const double t, Vec3D* vn = nullptr) const;
 
-    Line3D get_lane_border_line(const Lane& lane, double s_start, double s_end, double eps, bool outer = true) const;
-    Line3D get_lane_border_line(const Lane& lane, double eps, bool outer = true) const;
+    Line3D get_lane_border_line(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer = true) const;
+    Line3D get_lane_border_line(const Lane& lane, const double eps, const bool outer = true) const;
 
-    Mesh3D get_lane_mesh(const Lane& lane, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
-    Mesh3D get_lane_mesh(const Lane& lane, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    Mesh3D get_lane_mesh(
+        const Lane& lane, const double s_start, const double s_end, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    Mesh3D get_lane_mesh(const Lane& lane, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
 
-    Mesh3D get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, double eps) const;
-    Mesh3D get_road_object_mesh(const RoadObject& road_object, double eps) const;
+    Mesh3D get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const double eps) const;
+    Mesh3D get_road_object_mesh(const RoadObject& road_object, const double eps) const;
 
-    std::set<double> approximate_lane_border_linear(const Lane& lane, double s_start, double s_end, double eps, bool outer = true) const;
-    std::set<double> approximate_lane_border_linear(const Lane& lane, double eps, bool outer = true) const;
+    std::set<double>
+    approximate_lane_border_linear(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer = true) const;
+    std::set<double> approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer = true) const;
 
     double      length = 0;
     std::string id = "";

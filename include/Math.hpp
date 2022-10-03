@@ -27,7 +27,7 @@ using Mat = std::array<std::array<T, Dim>, Dim>;
 using Mat3D = Mat<double, 3>;
 
 template<typename T>
-int sign(T val)
+int sign(const T& val)
 {
     return (T(0) < val) - (val < T(0));
 }
@@ -96,19 +96,19 @@ constexpr T euclDistance(const Vec<T, Dim> a, const Vec<T, Dim> b)
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr T squaredNorm(const Vec<T, Dim> v)
+constexpr T squaredNorm(const Vec<T, Dim>& v)
 {
     return std::inner_product(v.begin(), v.end(), v.begin(), T(0));
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr T norm(const Vec<T, Dim> v)
+constexpr T norm(const Vec<T, Dim>& v)
 {
     return std::sqrt(squaredNorm<T, Dim>(v));
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr Vec<T, Dim> normalize(const Vec<T, Dim> v)
+constexpr Vec<T, Dim> normalize(const Vec<T, Dim>& v)
 {
     Vec<T, Dim> e_v{};
     const T     n = norm(v);
@@ -117,23 +117,23 @@ constexpr Vec<T, Dim> normalize(const Vec<T, Dim> v)
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr Vec<T, 3> crossProduct(const Vec<T, 3> a, const Vec<T, 3> b)
+constexpr Vec<T, 3> crossProduct(const Vec<T, 3>& a, const Vec<T, 3>& b)
 {
     return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr Vec<T, Dim> MatVecMultiplication(const Mat<T, Dim> m, const Vec<T, Dim> v)
+constexpr Vec<T, Dim> MatVecMultiplication(const Mat<T, Dim>& m, const Vec<T, Dim>& v)
 {
     Vec<T, Dim> res{};
     res.fill(T{0});
     for (std::size_t idx = 0; idx < Dim * Dim; idx++)
-        res[idx / Dim] += ((double*)m.data())[idx] * v[idx % Dim];
+        res[idx / Dim] += ((const T*)m.data())[idx] * v[idx % Dim];
     return res;
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-constexpr Mat<T, 3> EulerAnglesToMatrix(T r_x, T r_y, T r_z)
+constexpr Mat<T, 3> EulerAnglesToMatrix(const T& r_x, const T& r_y, const T& r_z)
 {
     /* precompute sines and cosines of Euler angles */
     const T su = std::sin(r_x);

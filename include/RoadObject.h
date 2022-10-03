@@ -71,8 +71,8 @@ struct RoadObject : public XmlNode
                std::string name,
                std::string orientation);
 
-    static Mesh3D get_cylinder(double eps, double radius, double height);
-    static Mesh3D get_box(double width, double length, double height);
+    static Mesh3D get_cylinder(const double eps, const double radius, const double height);
+    static Mesh3D get_box(const double width, const double length, const double height);
 
     std::string road_id = "";
 

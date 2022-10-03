@@ -18,7 +18,7 @@ Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::
 {
 }
 
-std::vector<RoadMark> Lane::get_roadmarks(double s_start, double s_end) const
+std::vector<RoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
 {
     if ((s_start == s_end) || this->roadmark_groups.empty())
         return {};

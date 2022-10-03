@@ -37,7 +37,7 @@ std::set<RoadGeometry*> RefLine::get_geometries()
     return geometries;
 }
 
-double RefLine::get_geometry_s0(double s) const
+double RefLine::get_geometry_s0(const double s) const
 {
     if (this->s0_to_geometry.empty())
         return NAN;
@@ -47,21 +47,21 @@ double RefLine::get_geometry_s0(double s) const
     return target_geom_iter->first;
 }
 
-const RoadGeometry* RefLine::get_geometry(double s) const
+const RoadGeometry* RefLine::get_geometry(const double s) const
 {
     const double geom_s0 = this->get_geometry_s0(s);
-    if (std::isnan(geom_s0))
+    if (std::isnan<double>(geom_s0))
         return nullptr;
     return this->s0_to_geometry.at(geom_s0).get();
 }
 
-RoadGeometry* RefLine::get_geometry(double s)
+RoadGeometry* RefLine::get_geometry(const double s)
 {
     RoadGeometry* road_geometry = const_cast<RoadGeometry*>(static_cast<const RefLine&>(*this).get_geometry(s));
     return road_geometry;
 }
 
-Vec3D RefLine::get_xyz(double s) const
+Vec3D RefLine::get_xyz(const double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
 
@@ -72,7 +72,7 @@ Vec3D RefLine::get_xyz(double s) const
     return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.get(s)};
 }
 
-Vec3D RefLine::get_grad(double s) const
+Vec3D RefLine::get_grad(const double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
 
@@ -83,7 +83,7 @@ Vec3D RefLine::get_grad(double s) const
     return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.get_grad(s)};
 }
 
-double RefLine::match(double x, double y) const
+double RefLine::match(const double x, const double y) const
 {
     std::function<double(double)> f_dist = [&](const double s)
     {
@@ -93,7 +93,7 @@ double RefLine::match(double x, double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
-Line3D RefLine::get_line(double s_start, double s_end, double eps) const
+Line3D RefLine::get_line(const double s_start, const double s_end, const double eps) const
 {
     std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end);
 
@@ -103,7 +103,7 @@ Line3D RefLine::get_line(double s_start, double s_end, double eps) const
     return out_line;
 }
 
-std::set<double> RefLine::approximate_linear(double eps, double s_start, double s_end) const
+std::set<double> RefLine::approximate_linear(const double eps, const double s_start, const double s_end) const
 {
     if ((s_start == s_end) || this->s0_to_geometry.empty())
         return {};

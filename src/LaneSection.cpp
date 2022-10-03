@@ -10,7 +10,7 @@ LaneSection::LaneSection(std::string road_id, double s0) : road_id(road_id), s0(
 
 std::vector<Lane> LaneSection::get_lanes() const { return get_map_values(this->id_to_lane); }
 
-int LaneSection::get_lane_id(double s, double t) const
+int LaneSection::get_lane_id(const double s, const double t) const
 {
     if (this->id_to_lane.at(0).outer_border.get(s) == t) // exactly on lane #0
         return 0;
@@ -32,6 +32,6 @@ int LaneSection::get_lane_id(double s, double t) const
     return target_iter->second;
 }
 
-Lane LaneSection::get_lane(double s, double t) const { return this->id_to_lane.at(this->get_lane_id(s, t)); }
+Lane LaneSection::get_lane(const double s, const double t) const { return this->id_to_lane.at(this->get_lane_id(s, t)); }
 
 } // namespace odr
