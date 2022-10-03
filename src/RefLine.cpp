@@ -18,7 +18,7 @@ RefLine::RefLine(std::string road_id, double length) : road_id(road_id), length(
 RefLine::RefLine(const RefLine& other) : road_id(other.road_id), length(other.length), elevation_profile(other.elevation_profile)
 {
     for (const auto& s0_geometry : other.s0_to_geometry)
-        this->s0_to_geometry.insert({s0_geometry.first, s0_geometry.second->clone()});
+        this->s0_to_geometry.emplace(s0_geometry.first, s0_geometry.second->clone());
 }
 
 std::set<const RoadGeometry*> RefLine::get_geometries() const
