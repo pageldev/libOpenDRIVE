@@ -139,7 +139,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
     CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
-    if (std::isnan<double>(lanesection_s0))
+    if (std::isnan(lanesection_s0))
     {
         throw std::runtime_error(string_format("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
     }

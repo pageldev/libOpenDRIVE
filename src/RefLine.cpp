@@ -50,7 +50,7 @@ double RefLine::get_geometry_s0(const double s) const
 const RoadGeometry* RefLine::get_geometry(const double s) const
 {
     const double geom_s0 = this->get_geometry_s0(s);
-    if (std::isnan<double>(geom_s0))
+    if (std::isnan(geom_s0))
         return nullptr;
     return this->s0_to_geometry.at(geom_s0).get();
 }
