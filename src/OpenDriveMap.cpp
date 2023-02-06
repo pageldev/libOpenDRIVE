@@ -542,6 +542,44 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                 }
             }
         }
+        if (config.with_road_signals)
+        {
+            for (pugi::xml_node signal_node : road_node.child("signals").children("signal"))
+            {
+                std::string road_signal_id = signal_node.attribute("id").as_string("");
+                CHECK_AND_REPAIR(road.id_to_signal.find(road_signal_id) == road.id_to_signal.end(),
+                                 (std::string("object::id already exists - ") + road_signal_id).c_str(),
+                                 road_signal_id = road_signal_id + std::string("_dup"));
+
+                RoadSignal& signal_object = road.id_to_signal
+                                                .insert({road_signal_id,
+                                                         RoadSignal(road_id,
+                                                                    road_signal_id,
+                                                                    signal_node.attribute("s").as_double(0),
+                                                                    signal_node.attribute("t").as_double(0),
+                                                                    signal_node.attribute("zOffset").as_double(0),
+                                                                    signal_node.attribute("width").as_double(0),
+                                                                    signal_node.attribute("height").as_double(0),
+                                                                    signal_node.attribute("roll").as_double(0),
+                                                                    signal_node.attribute("pitch").as_double(0),
+                                                                    signal_node.attribute("yaw").as_double(0),
+                                                                    signal_node.attribute("hOffset").as_double(0),
+                                                                    signal_node.attribute("value").as_double(0),
+                                                                    signal_node.attribute("country").as_string(""),
+                                                                    signal_node.attribute("countryRevision").as_string(""),
+                                                                    signal_node.attribute("type").as_string(""),
+                                                                    signal_node.attribute("subtype").as_string(""),
+                                                                    signal_node.attribute("text").as_string(""),
+                                                                    signal_node.attribute("unit").as_string(""),
+                                                                    signal_node.attribute("name").as_string(""),
+                                                                    signal_node.attribute("dynamic").as_bool())})
+                                                .first->second;
+                signal_object.xml_node = signal_node;
+
+                CHECK_AND_REPAIR(signal_object.s0 >= 0, "signal::s < 0", signal_object.s0 = 0);
+
+            }
+        }
     }
 }
 
