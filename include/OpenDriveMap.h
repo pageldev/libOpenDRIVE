@@ -12,19 +12,15 @@
 namespace odr
 {
 
-struct OpenDriveMapConfig
-{
-    bool with_lateralProfile = true;
-    bool with_laneHeight = true;
-    bool with_road_objects = true;
-    bool center_map = true;
-    bool abs_z_for_for_local_road_obj_outline = false;
-};
-
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfig& config = OpenDriveMapConfig{});
+    OpenDriveMap(const std::string& xodr_file,
+                 const bool         center_map = false,
+                 const bool         with_road_objects = true,
+                 const bool         with_lateralProfile = true,
+                 const bool         with_laneHeight = true,
+                 const bool         abs_z_for_for_local_road_obj_outline = false);
 
     std::vector<Road>     get_roads() const;
     std::vector<Junction> get_junctions() const;

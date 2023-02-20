@@ -67,5 +67,5 @@ cp ModuleOpenDrive.* ../Viewer
 Refer to the code in [main.js](Viewer/main.js) for an example.
 
 ```js
-odr_map = new Module.OpenDriveMap("./data.xodr", odr_map_config);
+odr_map = new Module.OpenDriveMap("./data.xodr");
 ```
