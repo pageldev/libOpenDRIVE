@@ -19,7 +19,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
 
 include_directories(include)
-include_directories(Thirdparty)
+include_directories(thirdparty)
 
 add_library(OpenDrive SHARED
     src/Geometries/Arc.cpp
@@ -39,7 +39,7 @@ add_library(OpenDrive SHARED
     src/RoadMark.cpp
     src/RoadObject.cpp
     src/RoutingGraph.cpp
-    Thirdparty/pugixml/pugixml.cpp
+    thirdparty/pugixml/pugixml.cpp
 )
 
 add_executable(test-xodr test.cpp)

@@ -4,3 +4,4 @@ settings.json
 compile_commands.json
 .vscode/
 build/
+viewer/
