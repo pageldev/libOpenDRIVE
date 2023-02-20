@@ -4,7 +4,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-project(libOpenDrive VERSION 0.1.0 DESCRIPTION ".xodr library")
+project(libOpenDrive VERSION 0.3.0 DESCRIPTION ".xodr library")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -42,27 +42,5 @@ add_library(OpenDrive SHARED
     Thirdparty/pugixml/pugixml.cpp
 )
 
-if(EMSCRIPTEN)
-    set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    add_executable(ModuleOpenDrive
-        src/Embind.cpp
-        Viewer/RoadNetworkMesh.cpp
-        Viewer/ViewerUtils.cpp
-    )
-    target_include_directories(ModuleOpenDrive PUBLIC Viewer)
-    target_link_libraries(ModuleOpenDrive OpenDrive)
-    set_target_properties(ModuleOpenDrive PROPERTIES LINK_FLAGS "\
-        --bind \
-        -s ENVIRONMENT=web \
-        -s MODULARIZE=1 \
-        -s EXPORT_NAME='\"libOpenDrive\"' \
-        -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' \
-        -s FORCE_FILESYSTEM=1 \
-        -s ALLOW_MEMORY_GROWTH=1 \
-    ")
-endif()
-
-if(NOT EMSCRIPTEN)
-    add_executable(test-xodr test.cpp)
-    target_link_libraries(test-xodr OpenDrive)
-endif()
+add_executable(test-xodr test.cpp)
+target_link_libraries(test-xodr OpenDrive)

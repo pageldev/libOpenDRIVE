@@ -1,14 +1,14 @@
 # libOpenDRIVE
 libOpenDRIVE is a **lightweight, dependency-free, fast C++ library** providing OpenDRIVE file parsing and 3D model generation. 
 
-It's small and can be easily integrated in other projects. It can be compiled to a **WebAssembly** library and includes JavaScript bindings. A core function is the parsing of OpenDRIVE files and the generation of 3D models. The library targets OpenDRIVE version 1.4.
+It's small and can be easily integrated in other projects. A core function is the parsing of OpenDRIVE files and the generation of 3D models. The library targets OpenDRIVE version 1.4.
 
 ## Example
 Here's an example of how code using libOpenDRIVE looks. For a more complete example refer to [test.cpp](test.cpp).
 
 ```c++
 // load map
-odr::OpenDriveMap odr_map("data.xodr");
+odr::OpenDriveMap odr_map("test.xodr");
 
 // iterate roads
 for (odr::Road road : odr_map.get_roads())
@@ -28,13 +28,6 @@ odr::LaneKey to("501", 0.0, -1);
 std::vector<odr::LaneKey> path = routing_graph.shortest_path(from, to);
 ```
 
-
-## Viewer
-To use the included viewer **first build the WebAssembly library** and then run a webserver in the _Viewer/_ directory (e.g. `python3 -m http.server`). Or you can test the [viewer online](https://sebastian-pagel.net/odrviewer/index.html). 
-
-Also check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library.
-
-
 ## Build
 To build the library simply run:
 ```bash
@@ -45,27 +38,5 @@ make
 
 This also builds an executable to test the library:
 ```bash
-./build/test-xodr Viewer/data.xodr
-```
-
-
-## WebAssembly
-Install [emsdk](https://github.com/emscripten-core/emsdk) and run the following commands to build the WebAssembly library:
-
-```bash
-mkdir build && cd build
-emcmake cmake ..
-emmake make
-```
-
-This will create the files _ModuleOpenDrive.js/.wasm_. To run the viewer copy them to the _Viewer/_ directory.
-```bash
-cp ModuleOpenDrive.* ../Viewer
-```
-
-### Javascript Example
-Refer to the code in [main.js](Viewer/main.js) for an example.
-
-```js
-odr_map = new Module.OpenDriveMap("./data.xodr");
+./build/test-xodr test.xodr
 ```
