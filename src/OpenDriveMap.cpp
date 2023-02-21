@@ -34,7 +34,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_road_objects,
                            const bool         with_lateral_profile,
                            const bool         with_lane_height,
-                           const bool         abs_z_for_for_local_road_obj_outline) :
+                           const bool         abs_z_for_for_local_road_obj_outline,
+                           const bool         fix_spiral_edge_cases) :
     xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
@@ -215,20 +216,27 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             {
                 double curv_start = geometry_node.attribute("curvStart").as_double(0.0);
                 double curv_end = geometry_node.attribute("curvEnd").as_double(0.0);
-                if (abs(curv_start) < 1e-6 && abs(curv_end) < 1e-6)
+                if (!fix_spiral_edge_cases)
                 {
-                    // In effect a line
-                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
-                }
-                else if (abs(curv_end - curv_start) < 1e-6)
-                {
-                    // In effect an arc
-                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
                 }
                 else
                 {
-                    // True spiral
-                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                    if (abs(curv_start) < 1e-6 && abs(curv_end) < 1e-6)
+                    {
+                        // In effect a line
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
+                    }
+                    else if (abs(curv_end - curv_start) < 1e-6)
+                    {
+                        // In effect an arc
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                    }
+                    else
+                    {
+                        // True spiral
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                    }
                 }
             }
             else if (geometry_type == "arc")

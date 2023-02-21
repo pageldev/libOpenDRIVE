@@ -20,7 +20,8 @@ public:
                  const bool         with_road_objects = true,
                  const bool         with_lateral_profile = true,
                  const bool         with_lane_height = true,
-                 const bool         abs_z_for_for_local_road_obj_outline = false);
+                 const bool         abs_z_for_for_local_road_obj_outline = false,
+                 const bool         fix_spiral_edge_cases = true);
 
     std::vector<Road>     get_roads() const;
     std::vector<Junction> get_junctions() const;
