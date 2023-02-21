@@ -215,7 +215,21 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             {
                 double curv_start = geometry_node.attribute("curvStart").as_double(0.0);
                 double curv_end = geometry_node.attribute("curvEnd").as_double(0.0);
-                road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                if (abs(curv_start) < 1e-6 && abs(curv_end) < 1e-6)
+                {
+                    // In effect a line
+                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
+                }
+                else if (abs(curv_end - curv_start) < 1e-6)
+                {
+                    // In effect an arc
+                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                }
+                else
+                {
+                    // True spiral
+                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                }
             }
             else if (geometry_type == "arc")
             {
