@@ -93,7 +93,7 @@ double Road::get_lanesection_end(const double lanesection_s0) const
     const bool   is_last = (s_lanesec_iter == std::prev(this->s_to_lanesection.end()));
     const double next_s0 = is_last ? this->length : std::next(s_lanesec_iter)->first;
 
-    return next_s0 - std::numeric_limits<double>::min(); // should be within lane section
+    return std::nextafter(next_s0, std::numeric_limits<double>::lowest()); // should be within lane section
 }
 
 double Road::get_lanesection_length(const LaneSection& lanesection) const
