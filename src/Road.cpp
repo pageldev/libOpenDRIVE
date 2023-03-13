@@ -90,9 +90,11 @@ double Road::get_lanesection_end(const double lanesection_s0) const
     if (s_lanesec_iter == this->s_to_lanesection.end())
         return NAN;
 
-    const bool   is_last = (s_lanesec_iter == std::prev(this->s_to_lanesection.end()));
-    const double next_s0 = is_last ? this->length : std::next(s_lanesec_iter)->first;
+    const bool is_last = (s_lanesec_iter == std::prev(this->s_to_lanesection.end()));
+    if (is_last)
+        return this->length;
 
+    const double next_s0 = std::next(s_lanesec_iter)->first;
     return std::nextafter(next_s0, std::numeric_limits<double>::lowest()); // should be within lane section
 }
 
