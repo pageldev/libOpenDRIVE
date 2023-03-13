@@ -285,6 +285,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         /* parse elevation profiles, lane offsets, superelevation */
         for (auto entry : cubic_spline_fields)
         {
+            /* handle splines not starting at s=0, assume value 0 until start */
+            entry.second.s0_to_poly[0.0] = Poly3(0.0, 0.0, 0.0, 0.0, 0.0);
+
             pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
             for (pugi::xpath_node node : nodes)
             {
