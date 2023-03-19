@@ -26,6 +26,10 @@ odr::RoutingGraph routing_graph = odr_map.get_routing_graph();
 odr::LaneKey from("516" /*road id*/, 0.0 /*lane section s0*/, 1 /*lane id*/);
 odr::LaneKey to("501", 0.0, -1);
 std::vector<odr::LaneKey> path = routing_graph.shortest_path(from, to);
+
+// get road network mesh
+odr::RoadNetworkMesh road_network_mesh = odr_map.get_road_network_mesh(0.1 /*eps*/);
+std::cout << road_network_mesh.get_mesh().get_obj() << std::endl;
 ```
 
 ## Build
@@ -40,3 +44,8 @@ This also builds an executable to test the library:
 ```bash
 ./build/test-xodr test.xodr
 ```
+
+## Viewer
+Check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library.
+
+<sub>Info: The Viewer and WebAssembly bindings are no longer part of this project. This is to focus more on the library functionality and avoid having to keep the bindings up-to-date. Use [v0.3.0](https://github.com/grepthat/libOpenDRIVE/releases/tag/0.3.0) to get the last version that still includes Viewer and WebAssembly bindings. </sub>
