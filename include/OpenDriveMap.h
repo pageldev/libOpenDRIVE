@@ -1,6 +1,7 @@
 #pragma once
 #include "Junction.h"
 #include "Road.h"
+#include "RoadNetworkMesh.h"
 #include "RoutingGraph.h"
 
 #include <pugixml/pugixml.hpp>
@@ -26,7 +27,8 @@ public:
     std::vector<Road>     get_roads() const;
     std::vector<Junction> get_junctions() const;
 
-    RoutingGraph get_routing_graph() const;
+    RoadNetworkMesh get_road_network_mesh(const double eps) const;
+    RoutingGraph    get_routing_graph() const;
 
     std::string        proj4 = "";
     double             x_offs = 0;
