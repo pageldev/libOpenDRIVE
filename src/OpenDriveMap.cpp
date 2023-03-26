@@ -493,6 +493,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                  (std::string("object::id already exists - ") + road_object_id).c_str(),
                                  road_object_id = road_object_id + std::string("_dup"));
 
+                const bool  is_dynamic_object = std::string(object_node.attribute("dynamic").as_string("no")) == "yes" ? true : false;
                 RoadObject& road_object = road.id_to_object
                                               .insert({road_object_id,
                                                        RoadObject(road_id,
@@ -510,7 +511,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                                   object_node.attribute("roll").as_double(0),
                                                                   object_node.attribute("type").as_string(""),
                                                                   object_node.attribute("name").as_string(""),
-                                                                  object_node.attribute("orientation").as_string(""))})
+                                                                  object_node.attribute("orientation").as_string(""),
+                                                                  object_node.attribute("subtype").as_string(""),
+                                                                  is_dynamic_object)})
                                               .first->second;
                 road_object.xml_node = object_node;
 
@@ -549,27 +552,46 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     road_object.repeats.push_back(road_object_repeat);
                 }
 
-                for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
+                /* since v1.45 multiple <outline> are allowed and parent tag is <outlines>, not <object>; this supports v1.4 and v1.45+ */
+                pugi::xml_node outlines_parent_node = object_node.child("outlines") ? object_node.child("outlines") : object_node;
+                for (pugi::xml_node outline_node : outlines_parent_node.children("outline"))
                 {
-                    const Vec3D pt_local{corner_local_node.attribute("u").as_double(0),
-                                         corner_local_node.attribute("v").as_double(0),
-                                         corner_local_node.attribute("z").as_double(0)};
+                    RoadObjectOutline road_object_outline(outline_node.attribute("id").as_int(-1),
+                                                          outline_node.attribute("fillType").as_string(""),
+                                                          outline_node.attribute("laneType").as_string(""),
+                                                          outline_node.attribute("outer").as_bool(true),
+                                                          outline_node.attribute("closed").as_bool(true));
+                    road_object_outline.xml_node = outline_node;
 
-                    RoadObjectCorner road_object_corner_local(
-                        pt_local, corner_local_node.attribute("height").as_double(0), default_local_outline_type);
-                    road_object_corner_local.xml_node = corner_local_node;
-                    road_object.outline.push_back(road_object_corner_local);
-                }
+                    for (pugi::xml_node corner_local_node : outline_node.children("cornerLocal"))
+                    {
+                        const Vec3D pt_local{corner_local_node.attribute("u").as_double(0),
+                                             corner_local_node.attribute("v").as_double(0),
+                                             corner_local_node.attribute("z").as_double(0)};
 
-                for (pugi::xml_node corner_road_node : object_node.child("outline").children("cornerRoad"))
-                {
-                    const Vec3D pt_road{corner_road_node.attribute("s").as_double(0),
-                                        corner_road_node.attribute("t").as_double(0),
-                                        corner_road_node.attribute("dz").as_double(0)};
+                        RoadObjectCorner road_object_corner_local(corner_local_node.attribute("id").as_int(-1),
+                                                                  pt_local,
+                                                                  corner_local_node.attribute("height").as_double(0),
+                                                                  default_local_outline_type);
+                        road_object_corner_local.xml_node = corner_local_node;
+                        road_object_outline.outline.push_back(road_object_corner_local);
+                    }
 
-                    RoadObjectCorner road_object_corner_road(pt_road, corner_road_node.attribute("height").as_double(0), RoadObjectCorner::Type_Road);
-                    road_object_corner_road.xml_node = corner_road_node;
-                    road_object.outline.push_back(road_object_corner_road);
+                    for (pugi::xml_node corner_road_node : outline_node.children("cornerRoad"))
+                    {
+                        const Vec3D pt_road{corner_road_node.attribute("s").as_double(0),
+                                            corner_road_node.attribute("t").as_double(0),
+                                            corner_road_node.attribute("dz").as_double(0)};
+
+                        RoadObjectCorner road_object_corner_road(corner_road_node.attribute("id").as_int(-1),
+                                                                 pt_road,
+                                                                 corner_road_node.attribute("height").as_double(0),
+                                                                 RoadObjectCorner::Type_Road);
+                        road_object_corner_road.xml_node = corner_road_node;
+                        road_object_outline.outline.push_back(road_object_corner_road);
+                    }
+
+                    road_object.outlines.push_back(road_object_outline);
                 }
             }
         }
