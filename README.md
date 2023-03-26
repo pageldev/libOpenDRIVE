@@ -1,4 +1,7 @@
 # libOpenDRIVE
+
+[![DOI](https://zenodo.org/badge/310851592.svg)](https://zenodo.org/badge/latestdoi/310851592)
+
 libOpenDRIVE is a **lightweight, dependency-free, fast C++ library** providing OpenDRIVE file parsing and 3D model generation. 
 
 It's small and can be easily integrated in other projects. A core function is the parsing of OpenDRIVE files and the generation of 3D models. The library targets OpenDRIVE version 1.4.
