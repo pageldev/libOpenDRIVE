@@ -6,6 +6,7 @@
 #include <numeric>
 #include <type_traits>
 #include <vector>
+#include <functional>
 
 namespace odr
 {
