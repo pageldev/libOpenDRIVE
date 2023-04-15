@@ -18,9 +18,6 @@ else()
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
 
-include_directories(include)
-include_directories(thirdparty)
-
 add_library(OpenDrive SHARED
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
@@ -43,5 +40,28 @@ add_library(OpenDrive SHARED
     thirdparty/pugixml/pugixml.cpp
 )
 
+
+
+target_include_directories(OpenDrive
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/thirdparty>)
+
+
 add_executable(test-xodr test.cpp)
 target_link_libraries(test-xodr OpenDrive)
+
+install(
+    TARGETS OpenDrive test-xodr
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION "include")
+install(FILES
+    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugixml.hpp
+    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugiconfig.hpp DESTINATION "include/pugixml/")
+
+install(TARGETS OpenDrive EXPORT OpenDriveConfig)
+install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
