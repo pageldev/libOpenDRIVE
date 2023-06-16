@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "RefLine.h"
 #include "RoadObject.h"
+#include "Signal.h"
 #include "XmlNode.h"
 
 #include <cstddef>
@@ -82,6 +83,7 @@ public:
 
     std::vector<LaneSection> get_lanesections() const;
     std::vector<RoadObject>  get_road_objects() const;
+    std::vector<Signal>      get_signals() const;
 
     double      get_lanesection_s0(const double s) const;
     LaneSection get_lanesection(const double s) const;
@@ -126,6 +128,7 @@ public:
     std::map<double, std::string>     s_to_type;
     std::map<double, SpeedRecord>     s_to_speed;
     std::map<std::string, RoadObject> id_to_object;
+    std::map<std::string, Signal>     id_to_signal;
 };
 
 } // namespace odr

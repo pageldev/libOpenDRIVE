@@ -8,14 +8,17 @@
 #include "Junction.h"
 #include "Lane.h"
 #include "LaneSection.h"
+#include "LaneValidityRecord.h"
 #include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
 #include "RoadMark.h"
 #include "RoadObject.h"
+#include "Signal.h"
 #include "Utils.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <iterator>
 #include <memory>
@@ -29,9 +32,32 @@
 
 namespace odr
 {
+std::vector<LaneValidityRecord> extract_lane_validity_records(const pugi::xml_node& xml_node)
+{
+    std::vector<LaneValidityRecord> lane_validities;
+    for (const auto& validity_node : xml_node.children("validity"))
+    {
+        LaneValidityRecord lane_validity{validity_node.attribute("fromLane").as_int(INT_MIN), validity_node.attribute("toLane").as_int(INT_MAX)};
+        lane_validity.xml_node = validity_node;
+
+        // fromLane should not be greater than toLane, since the standard defines them as follows:
+        // fromLane - the minimum ID of lanes for which the object is valid
+        // toLane - the maximum ID of lanes for which the object is valid
+        // If we find such a violation, we set both IDs to 0 which means the
+        // object is only applicable to the centerlane.
+        CHECK_AND_REPAIR(
+            lane_validity.from_lane <= lane_validity.to_lane, "lane_validity::from_lane > lane_validity.to_lane", lane_validity.from_lane = 0;
+            lane_validity.to_lane = 0)
+
+        lane_validities.push_back(std::move(lane_validity));
+    }
+    return lane_validities;
+}
+
 OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         center_map,
                            const bool         with_road_objects,
+                           const bool         with_signals,
                            const bool         with_lateral_profile,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
@@ -593,6 +619,50 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                     road_object.outlines.push_back(road_object_outline);
                 }
+
+                road_object.lane_validities = extract_lane_validity_records(object_node);
+            }
+        }
+        /* parse signals */
+        if (with_signals)
+        {
+            for (pugi::xml_node signal_node : road_node.child("signals").children("signal"))
+            {
+                std::string signal_id = signal_node.attribute("id").as_string("");
+                CHECK_AND_REPAIR(road.id_to_signal.find(signal_id) == road.id_to_signal.end(),
+                                 (std::string("signal::id already exists - ") + signal_id).c_str(),
+                                 signal_id = signal_id + std::string("_dup"));
+
+                const bool is_dynamic_signal = std::string(signal_node.attribute("dynamic").as_string("no")) == "yes";
+                Signal&    signal = road.id_to_signal
+                                     .insert({signal_id,
+                                              Signal(road_id,
+                                                     signal_id,
+                                                     signal_node.attribute("name").as_string(""),
+                                                     signal_node.attribute("s").as_double(0),
+                                                     signal_node.attribute("t").as_double(0),
+                                                     is_dynamic_signal,
+                                                     signal_node.attribute("zOffset").as_double(0),
+                                                     signal_node.attribute("value").as_double(0),
+                                                     signal_node.attribute("height").as_double(0),
+                                                     signal_node.attribute("width").as_double(0),
+                                                     signal_node.attribute("hOffset").as_double(0),
+                                                     signal_node.attribute("pitch").as_double(0),
+                                                     signal_node.attribute("roll").as_double(0),
+                                                     signal_node.attribute("orientation").as_string(""),
+                                                     signal_node.attribute("country").as_string(""),
+                                                     signal_node.attribute("type").as_string(""),
+                                                     signal_node.attribute("subtype").as_string(""),
+                                                     signal_node.attribute("unit").as_string(""),
+                                                     signal_node.attribute("text").as_string(""))})
+                                     .first->second;
+                signal.xml_node = signal_node;
+
+                CHECK_AND_REPAIR(signal.s0 >= 0, "signal::s < 0", signal.s0 = 0);
+                CHECK_AND_REPAIR(signal.height >= 0, "signal::height < 0", signal.height = 0);
+                CHECK_AND_REPAIR(signal.width >= 0, "signal::width < 0", signal.width = 0);
+
+                signal.lane_validities = extract_lane_validity_records(signal_node);
             }
         }
     }

@@ -1,4 +1,5 @@
 #pragma once
+#include "LaneValidityRecord.h"
 #include "Math.hpp"
 #include "Mesh.h"
 #include "XmlNode.h"
@@ -111,8 +112,9 @@ struct RoadObject : public XmlNode
     double roll = 0;
     bool   is_dynamic = false;
 
-    std::vector<RoadObjectRepeat>  repeats;
-    std::vector<RoadObjectOutline> outlines;
+    std::vector<RoadObjectRepeat>   repeats;
+    std::vector<RoadObjectOutline>  outlines;
+    std::vector<LaneValidityRecord> lane_validities;
 };
 
 } // namespace odr
