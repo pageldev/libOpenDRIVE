@@ -57,11 +57,11 @@ std::vector<LaneValidityRecord> extract_lane_validity_records(const pugi::xml_no
 OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         center_map,
                            const bool         with_road_objects,
-                           const bool         with_signals,
                            const bool         with_lateral_profile,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
-                           const bool         fix_spiral_edge_cases) :
+                           const bool         fix_spiral_edge_cases,
+                           const bool         with_signals) :
     xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
@@ -649,12 +649,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                      signal_node.attribute("hOffset").as_double(0),
                                                      signal_node.attribute("pitch").as_double(0),
                                                      signal_node.attribute("roll").as_double(0),
-                                                     signal_node.attribute("orientation").as_string(""),
+                                                     signal_node.attribute("orientation").as_string("none"),
                                                      signal_node.attribute("country").as_string(""),
-                                                     signal_node.attribute("type").as_string(""),
-                                                     signal_node.attribute("subtype").as_string(""),
+                                                     signal_node.attribute("type").as_string("none"),
+                                                     signal_node.attribute("subtype").as_string("none"),
                                                      signal_node.attribute("unit").as_string(""),
-                                                     signal_node.attribute("text").as_string(""))})
+                                                     signal_node.attribute("text").as_string("none"))})
                                      .first->second;
                 signal.xml_node = signal_node;
 

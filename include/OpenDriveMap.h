@@ -19,11 +19,11 @@ public:
     OpenDriveMap(const std::string& xodr_file,
                  const bool         center_map = false,
                  const bool         with_road_objects = true,
-                 const bool         with_signals = true,
                  const bool         with_lateral_profile = true,
                  const bool         with_lane_height = true,
                  const bool         abs_z_for_for_local_road_obj_outline = false,
-                 const bool         fix_spiral_edge_cases = true);
+                 const bool         fix_spiral_edge_cases = true,
+                 const bool         with_signals = true);
 
     std::vector<Road>     get_roads() const;
     std::vector<Junction> get_junctions() const;
