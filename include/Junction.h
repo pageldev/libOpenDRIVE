@@ -3,10 +3,10 @@
 #include "XmlNode.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <set>
-#include <cstdint>
 #include <string>
 
 namespace odr
