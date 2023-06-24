@@ -6,6 +6,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <cstdint>
 #include <string>
 
 namespace odr
