@@ -147,8 +147,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
     for (pugi::xml_node road_node : odr_node.children("road"))
     {
         /* make road */
-        const std::string road_id = road_node.attribute("id").as_string("");
-        std::string       rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
+        std::string road_id = road_node.attribute("id").as_string("");
+        CHECK_AND_REPAIR(this->id_to_road.find(road_id) == this->id_to_road.end(),
+                         (std::string("road::id already exists - ") + road_id).c_str(),
+                         road_id = road_id + std::string("_dup"));
+
+        std::string rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
         std::transform(rule_str.begin(), rule_str.end(), rule_str.begin(), [](unsigned char c) { return std::tolower(c); });
         const bool is_left_hand_traffic = (rule_str == "lht");
 
