@@ -148,13 +148,17 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
     {
         /* make road */
         const std::string road_id = road_node.attribute("id").as_string("");
+        std::string       rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
+        std::transform(rule_str.begin(), rule_str.end(), rule_str.begin(), [](unsigned char c) { return std::tolower(c); });
+        const bool is_left_hand_traffic = (rule_str == "lht");
 
         Road& road = this->id_to_road
                          .insert({road_id,
                                   Road(road_id,
                                        road_node.attribute("length").as_double(0.0),
                                        road_node.attribute("junction").as_string(""),
-                                       road_node.attribute("name").as_string(""))})
+                                       road_node.attribute("name").as_string(""),
+                                       is_left_hand_traffic)})
                          .first->second;
         road.xml_node = road_node;
 
