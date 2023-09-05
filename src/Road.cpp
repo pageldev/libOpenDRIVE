@@ -50,11 +50,12 @@ RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string directi
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
 
 std::vector<LaneSection> Road::get_lanesections() const { return get_map_values(this->s_to_lanesection); }
-std::vector<RoadSignal> Road::get_road_signals() const { return get_map_values(this->id_to_signal); }
 std::vector<RoadObject> Road::get_road_objects() const { return get_map_values(this->id_to_object); }
 
-Road::Road(std::string id, double length, std::string junction, std::string name) :
-    length(length), id(id), junction(junction), name(name), ref_line(id, length)
+std::vector<Signal> Road::get_signals() const { return get_map_values(this->id_to_signal); }
+
+Road::Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic) :
+    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(id, length)
 {
 }
 
@@ -90,10 +91,12 @@ double Road::get_lanesection_end(const double lanesection_s0) const
     if (s_lanesec_iter == this->s_to_lanesection.end())
         return NAN;
 
-    const bool   is_last = (s_lanesec_iter == std::prev(this->s_to_lanesection.end()));
-    const double next_s0 = is_last ? this->length : std::next(s_lanesec_iter)->first;
+    const bool is_last = (s_lanesec_iter == std::prev(this->s_to_lanesection.end()));
+    if (is_last)
+        return this->length;
 
-    return next_s0 - std::numeric_limits<double>::min(); // should be within lane section
+    const double next_s0 = std::next(s_lanesec_iter)->first;
+    return std::nextafter(next_s0, std::numeric_limits<double>::lowest()); // should be within lane section
 }
 
 double Road::get_lanesection_length(const LaneSection& lanesection) const
@@ -331,34 +334,34 @@ Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const
     return out_mesh;
 }
 
-Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
+Mesh3D Road::get_signal_mesh(const Signal& signal) const
 {
-    const Mat3D rot_mat = EulerAnglesToMatrix<double>(road_signal.roll, road_signal.pitch, road_signal.hdg);
-    const double s = road_signal.s0;
-    const double t = road_signal.t0;
-    const double z = road_signal.z0;
-    const double height = road_signal.height;
-    const double width = road_signal.width;
-    Mesh3D road_signal_mesh;
-    road_signal_mesh = road_signal.get_box(width, 0.2, height);
+    const Mat3D rot_mat = EulerAnglesToMatrix<double>(signal.roll, signal.pitch, signal.hOffset);
+    const double s = signal.s0;
+    const double t = signal.t0;
+    const double z = signal.zOffset;
+    const double height = signal.height;
+    const double width = signal.width;
+    Mesh3D signal_mesh;
+    signal_mesh = signal.get_box(width, 0.2, height);
     Vec3D       e_s, e_t, e_h;
     const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h);
     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
-    for (Vec3D& pt_uvz : road_signal_mesh.vertices)
+    for (Vec3D& pt_uvz : signal_mesh.vertices)
     {
         pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
         pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
         pt_uvz = add(pt_uvz, p0);
 
-        road_signal_mesh.st_coordinates.push_back({s, t});
+        signal_mesh.st_coordinates.push_back({s, t});
     }
-    return road_signal_mesh;
+    return signal_mesh;
 }
 
 Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double eps) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_object.repeats; // make copy to keep method const
-    if (repeats_copy.empty() && road_object.outline.empty())          // handle single object as 1 object repeat
+    if (repeats_copy.empty() && road_object.outlines.empty())         // handle single object as 1 object repeat
     {
         RoadObjectRepeat rp(NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN);
         rp.xml_node = this->xml_node;
@@ -385,6 +388,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
 
     Mesh3D road_obj_mesh;
 
+    /* outline objects are not repeated, repeats only apply to the generic road object (box or cylinder) */
+    /* note: if road object has an outline object AND repeat this will create generic objects at repeat AND the outline object (non-repeated) */
     for (const RoadObjectRepeat& repeat : repeats_copy)
     {
         const double s_start = std::isnan(repeat.s0) ? road_object.s0 : repeat.s0;
@@ -470,8 +475,12 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         }
     }
 
-    if (road_object.outline.size() > 1)
+    for (const RoadObjectOutline& road_object_outline : road_object.outlines)
     {
+        /* can't add point object */
+        if (road_object_outline.outline.size() < 2)
+            continue;
+
         Vec3D       e_s, e_t, e_h;
         const Vec3D p0 = this->get_xyz(road_object.s0, road_object.t0, road_object.z0, &e_s, &e_t, &e_h);
 
@@ -480,11 +489,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         Mesh3D outline_road_obj_mesh;
 
         /* add top outline first - ensure the top vertices are at the front */
-        const bool is_flat_object =
-            std::all_of(road_object.outline.begin(), road_object.outline.end(), [](const RoadObjectCorner& c) { return c.height == 0; });
+        const bool is_flat_object = std::all_of(
+            road_object_outline.outline.begin(), road_object_outline.outline.end(), [](const RoadObjectCorner& c) { return c.height == 0; });
         if (!is_flat_object)
         {
-            for (const RoadObjectCorner& corner : road_object.outline)
+            for (const RoadObjectCorner& corner : road_object_outline.outline)
             {
                 Vec3D pt_top;
                 if (corner.type == RoadObjectCorner::Type_Local_AbsZ || corner.type == RoadObjectCorner::Type_Local_RelZ)
@@ -506,7 +515,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         }
 
         /* add bottom outline */
-        for (const RoadObjectCorner& corner : road_object.outline)
+        for (const RoadObjectCorner& corner : road_object_outline.outline)
         {
             Vec3D pt_base;
             if (corner.type == RoadObjectCorner::Type_Local_AbsZ || corner.type == RoadObjectCorner::Type_Local_RelZ)
@@ -526,13 +535,13 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         }
 
         /* run 2D triangulation on top vertices */
-        const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(outline_road_obj_mesh.vertices.data(), road_object.outline.size());
+        const std::vector<size_t> idx_patch_top = mapbox::earcut<size_t>(outline_road_obj_mesh.vertices.data(), road_object_outline.outline.size());
         outline_road_obj_mesh.indices.insert(outline_road_obj_mesh.indices.end(), idx_patch_top.begin(), idx_patch_top.end());
 
         /* add walls */
         if (!is_flat_object)
         {
-            const std::size_t N = road_object.outline.size();
+            const std::size_t N = road_object_outline.outline.size();
             for (std::size_t idx = 0; idx < N - 1; idx++)
             {
                 std::array<size_t, 6> wall_idx_patch = {idx, idx + N, idx + 1, idx + 1, idx + N, idx + N + 1};

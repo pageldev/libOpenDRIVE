@@ -18,7 +18,8 @@ namespace odr
 {
 Poly3::Poly3(double s0, double a, double b, double c, double d)
 {
-    /* s = s - s0 => resolve to polynomial form */
+    /* ds = s - s0 => resolve to polynomial form */
+    /* make poly3s work on absolute s position => makes CubicSpline::add work */
     this->a = a - b * s0 + c * s0 * s0 - d * s0 * s0 * s0;
     this->b = b - 2 * c * s0 + 3 * d * s0 * s0;
     this->c = c - 3 * d * s0;

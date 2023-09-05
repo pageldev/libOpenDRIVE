@@ -8,14 +8,17 @@
 #include "Junction.h"
 #include "Lane.h"
 #include "LaneSection.h"
+#include "LaneValidityRecord.h"
 #include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
 #include "RoadMark.h"
 #include "RoadObject.h"
+#include "Signal.h"
 #include "Utils.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <iterator>
 #include <memory>
@@ -29,7 +32,37 @@
 
 namespace odr
 {
-OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfig& config) : xodr_file(xodr_file)
+std::vector<LaneValidityRecord> extract_lane_validity_records(const pugi::xml_node& xml_node)
+{
+    std::vector<LaneValidityRecord> lane_validities;
+    for (const auto& validity_node : xml_node.children("validity"))
+    {
+        LaneValidityRecord lane_validity{validity_node.attribute("fromLane").as_int(INT_MIN), validity_node.attribute("toLane").as_int(INT_MAX)};
+        lane_validity.xml_node = validity_node;
+
+        // fromLane should not be greater than toLane, since the standard defines them as follows:
+        // fromLane - the minimum ID of lanes for which the object is valid
+        // toLane - the maximum ID of lanes for which the object is valid
+        // If we find such a violation, we set both IDs to 0 which means the
+        // object is only applicable to the centerlane.
+        CHECK_AND_REPAIR(
+            lane_validity.from_lane <= lane_validity.to_lane, "lane_validity::from_lane > lane_validity.to_lane", lane_validity.from_lane = 0;
+            lane_validity.to_lane = 0)
+
+        lane_validities.push_back(std::move(lane_validity));
+    }
+    return lane_validities;
+}
+
+OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
+                           const bool         center_map,
+                           const bool         with_road_objects,
+                           const bool         with_lateral_profile,
+                           const bool         with_lane_height,
+                           const bool         abs_z_for_for_local_road_obj_outline,
+                           const bool         fix_spiral_edge_cases,
+                           const bool         with_signals) :
+    xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
     if (!result)
@@ -41,7 +74,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         this->proj4 = geoReference_node.text().as_string("");
 
     std::size_t cnt = 1;
-    if (config.center_map)
+    if (center_map)
     {
         for (pugi::xml_node road_node : odr_node.children("road"))
         {
@@ -114,14 +147,22 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
     for (pugi::xml_node road_node : odr_node.children("road"))
     {
         /* make road */
-        const std::string road_id = road_node.attribute("id").as_string("");
+        std::string road_id = road_node.attribute("id").as_string("");
+        CHECK_AND_REPAIR(this->id_to_road.find(road_id) == this->id_to_road.end(),
+                         (std::string("road::id already exists - ") + road_id).c_str(),
+                         road_id = road_id + std::string("_dup"));
+
+        std::string rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
+        std::transform(rule_str.begin(), rule_str.end(), rule_str.begin(), [](unsigned char c) { return std::tolower(c); });
+        const bool is_left_hand_traffic = (rule_str == "lht");
 
         Road& road = this->id_to_road
                          .insert({road_id,
                                   Road(road_id,
                                        road_node.attribute("length").as_double(0.0),
                                        road_node.attribute("junction").as_string(""),
-                                       road_node.attribute("name").as_string(""))})
+                                       road_node.attribute("name").as_string(""),
+                                       is_left_hand_traffic)})
                          .first->second;
         road.xml_node = road_node;
 
@@ -209,7 +250,28 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
             {
                 double curv_start = geometry_node.attribute("curvStart").as_double(0.0);
                 double curv_end = geometry_node.attribute("curvEnd").as_double(0.0);
-                road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                if (!fix_spiral_edge_cases)
+                {
+                    road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                }
+                else
+                {
+                    if (abs(curv_start) < 1e-6 && abs(curv_end) < 1e-6)
+                    {
+                        // In effect a line
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
+                    }
+                    else if (abs(curv_end - curv_start) < 1e-6)
+                    {
+                        // In effect an arc
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                    }
+                    else
+                    {
+                        // True spiral
+                        road.ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                    }
+                }
             }
             else if (geometry_type == "arc")
             {
@@ -251,12 +313,15 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         std::map<std::string /*x path query*/, CubicSpline&> cubic_spline_fields{{".//elevationProfile//elevation", road.ref_line.elevation_profile},
                                                                                  {".//lanes//laneOffset", road.lane_offset}};
 
-        if (config.with_lateralProfile)
+        if (with_lateral_profile)
             cubic_spline_fields.insert({".//lateralProfile//superelevation", road.superelevation});
 
         /* parse elevation profiles, lane offsets, superelevation */
         for (auto entry : cubic_spline_fields)
         {
+            /* handle splines not starting at s=0, assume value 0 until start */
+            entry.second.s0_to_poly[0.0] = Poly3(0.0, 0.0, 0.0, 0.0, 0.0);
+
             pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
             for (pugi::xpath_node node : nodes)
             {
@@ -273,7 +338,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         }
 
         /* parse crossfall - has extra attribute side */
-        if (config.with_lateralProfile)
+        if (with_lateral_profile)
         {
             for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
             {
@@ -341,7 +406,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                     lane.lane_width.s0_to_poly[s0 + s_offset] = Poly3(s0 + s_offset, a, b, c, d);
                 }
 
-                if (config.with_laneHeight)
+                if (with_lane_height)
                 {
                     for (pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
@@ -450,10 +515,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
         }
 
         /* parse road objects */
-        if (config.with_road_objects)
+        if (with_road_objects)
         {
             const RoadObjectCorner::Type default_local_outline_type =
-                config.abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type_Local_AbsZ : RoadObjectCorner::Type_Local_RelZ;
+                abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type_Local_AbsZ : RoadObjectCorner::Type_Local_RelZ;
 
             for (pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
@@ -462,6 +527,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                                  (std::string("object::id already exists - ") + road_object_id).c_str(),
                                  road_object_id = road_object_id + std::string("_dup"));
 
+                const bool  is_dynamic_object = std::string(object_node.attribute("dynamic").as_string("no")) == "yes" ? true : false;
                 RoadObject& road_object = road.id_to_object
                                               .insert({road_object_id,
                                                        RoadObject(road_id,
@@ -479,7 +545,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                                                                   object_node.attribute("roll").as_double(0),
                                                                   object_node.attribute("type").as_string(""),
                                                                   object_node.attribute("name").as_string(""),
-                                                                  object_node.attribute("orientation").as_string(""))})
+                                                                  object_node.attribute("orientation").as_string(""),
+                                                                  object_node.attribute("subtype").as_string(""),
+                                                                  is_dynamic_object)})
                                               .first->second;
                 road_object.xml_node = object_node;
 
@@ -518,66 +586,90 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
                     road_object.repeats.push_back(road_object_repeat);
                 }
 
-                for (pugi::xml_node corner_local_node : object_node.child("outline").children("cornerLocal"))
+                /* since v1.45 multiple <outline> are allowed and parent tag is <outlines>, not <object>; this supports v1.4 and v1.45+ */
+                pugi::xml_node outlines_parent_node = object_node.child("outlines") ? object_node.child("outlines") : object_node;
+                for (pugi::xml_node outline_node : outlines_parent_node.children("outline"))
                 {
-                    const Vec3D pt_local{corner_local_node.attribute("u").as_double(0),
-                                         corner_local_node.attribute("v").as_double(0),
-                                         corner_local_node.attribute("z").as_double(0)};
+                    RoadObjectOutline road_object_outline(outline_node.attribute("id").as_int(-1),
+                                                          outline_node.attribute("fillType").as_string(""),
+                                                          outline_node.attribute("laneType").as_string(""),
+                                                          outline_node.attribute("outer").as_bool(true),
+                                                          outline_node.attribute("closed").as_bool(true));
+                    road_object_outline.xml_node = outline_node;
 
-                    RoadObjectCorner road_object_corner_local(
-                        pt_local, corner_local_node.attribute("height").as_double(0), default_local_outline_type);
-                    road_object_corner_local.xml_node = corner_local_node;
-                    road_object.outline.push_back(road_object_corner_local);
+                    for (pugi::xml_node corner_local_node : outline_node.children("cornerLocal"))
+                    {
+                        const Vec3D pt_local{corner_local_node.attribute("u").as_double(0),
+                                             corner_local_node.attribute("v").as_double(0),
+                                             corner_local_node.attribute("z").as_double(0)};
+
+                        RoadObjectCorner road_object_corner_local(corner_local_node.attribute("id").as_int(-1),
+                                                                  pt_local,
+                                                                  corner_local_node.attribute("height").as_double(0),
+                                                                  default_local_outline_type);
+                        road_object_corner_local.xml_node = corner_local_node;
+                        road_object_outline.outline.push_back(road_object_corner_local);
+                    }
+
+                    for (pugi::xml_node corner_road_node : outline_node.children("cornerRoad"))
+                    {
+                        const Vec3D pt_road{corner_road_node.attribute("s").as_double(0),
+                                            corner_road_node.attribute("t").as_double(0),
+                                            corner_road_node.attribute("dz").as_double(0)};
+
+                        RoadObjectCorner road_object_corner_road(corner_road_node.attribute("id").as_int(-1),
+                                                                 pt_road,
+                                                                 corner_road_node.attribute("height").as_double(0),
+                                                                 RoadObjectCorner::Type_Road);
+                        road_object_corner_road.xml_node = corner_road_node;
+                        road_object_outline.outline.push_back(road_object_corner_road);
+                    }
+
+                    road_object.outlines.push_back(road_object_outline);
                 }
 
-                for (pugi::xml_node corner_road_node : object_node.child("outline").children("cornerRoad"))
-                {
-                    const Vec3D pt_road{corner_road_node.attribute("s").as_double(0),
-                                        corner_road_node.attribute("t").as_double(0),
-                                        corner_road_node.attribute("dz").as_double(0)};
-
-                    RoadObjectCorner road_object_corner_road(pt_road, corner_road_node.attribute("height").as_double(0), RoadObjectCorner::Type_Road);
-                    road_object_corner_road.xml_node = corner_road_node;
-                    road_object.outline.push_back(road_object_corner_road);
-                }
+                road_object.lane_validities = extract_lane_validity_records(object_node);
             }
         }
-        if (config.with_road_signals)
+        /* parse signals */
+        if (with_signals)
         {
             for (pugi::xml_node signal_node : road_node.child("signals").children("signal"))
             {
-                std::string road_signal_id = signal_node.attribute("id").as_string("");
-                CHECK_AND_REPAIR(road.id_to_signal.find(road_signal_id) == road.id_to_signal.end(),
-                                 (std::string("object::id already exists - ") + road_signal_id).c_str(),
-                                 road_signal_id = road_signal_id + std::string("_dup"));
+                std::string signal_id = signal_node.attribute("id").as_string("");
+                CHECK_AND_REPAIR(road.id_to_signal.find(signal_id) == road.id_to_signal.end(),
+                                 (std::string("signal::id already exists - ") + signal_id).c_str(),
+                                 signal_id = signal_id + std::string("_dup"));
 
-                RoadSignal& signal_object = road.id_to_signal
-                                                .insert({road_signal_id,
-                                                         RoadSignal(road_id,
-                                                                    road_signal_id,
-                                                                    signal_node.attribute("s").as_double(0),
-                                                                    signal_node.attribute("t").as_double(0),
-                                                                    signal_node.attribute("zOffset").as_double(0),
-                                                                    signal_node.attribute("width").as_double(0),
-                                                                    signal_node.attribute("height").as_double(0),
-                                                                    signal_node.attribute("roll").as_double(0),
-                                                                    signal_node.attribute("pitch").as_double(0),
-                                                                    signal_node.attribute("yaw").as_double(0),
-                                                                    signal_node.attribute("hOffset").as_double(0),
-                                                                    signal_node.attribute("value").as_double(0),
-                                                                    signal_node.attribute("country").as_string(""),
-                                                                    signal_node.attribute("countryRevision").as_string(""),
-                                                                    signal_node.attribute("type").as_string(""),
-                                                                    signal_node.attribute("subtype").as_string(""),
-                                                                    signal_node.attribute("text").as_string(""),
-                                                                    signal_node.attribute("unit").as_string(""),
-                                                                    signal_node.attribute("name").as_string(""),
-                                                                    signal_node.attribute("dynamic").as_bool())})
-                                                .first->second;
-                signal_object.xml_node = signal_node;
+                Signal&    signal = road.id_to_signal
+                                     .insert({signal_id,
+                                              Signal(road_id,
+                                                     signal_id,
+                                                     signal_node.attribute("name").as_string(""),
+                                                     signal_node.attribute("s").as_double(0),
+                                                     signal_node.attribute("t").as_double(0),
+                                                     signal_node.attribute("dynamic").as_bool(),
+                                                     signal_node.attribute("zOffset").as_double(0),
+                                                     signal_node.attribute("value").as_double(0),
+                                                     signal_node.attribute("height").as_double(0),
+                                                     signal_node.attribute("width").as_double(0),
+                                                     signal_node.attribute("hOffset").as_double(0),
+                                                     signal_node.attribute("pitch").as_double(0),
+                                                     signal_node.attribute("roll").as_double(0),
+                                                     signal_node.attribute("orientation").as_string("none"),
+                                                     signal_node.attribute("country").as_string(""),
+                                                     signal_node.attribute("type").as_string("none"),
+                                                     signal_node.attribute("subtype").as_string("none"),
+                                                     signal_node.attribute("unit").as_string(""),
+                                                     signal_node.attribute("text").as_string("none"))})
+                                     .first->second;
+                signal.xml_node = signal_node;
 
-                CHECK_AND_REPAIR(signal_object.s0 >= 0, "signal::s < 0", signal_object.s0 = 0);
+                CHECK_AND_REPAIR(signal.s0 >= 0, "signal::s < 0", signal.s0 = 0);
+                CHECK_AND_REPAIR(signal.height >= 0, "signal::height < 0", signal.height = 0);
+                CHECK_AND_REPAIR(signal.width >= 0, "signal::width < 0", signal.width = 0);
 
+                signal.lane_validities = extract_lane_validity_records(signal_node);
             }
         }
     }
@@ -586,6 +678,56 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfi
 std::vector<Road> OpenDriveMap::get_roads() const { return get_map_values(this->id_to_road); }
 
 std::vector<Junction> OpenDriveMap::get_junctions() const { return get_map_values(this->id_to_junction); }
+
+RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
+{
+    RoadNetworkMesh  out_mesh;
+    LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
+    RoadmarksMesh&   roadmarks_mesh = out_mesh.roadmarks_mesh;
+    RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
+
+    for (const auto& id_road : this->id_to_road)
+    {
+        const Road& road = id_road.second;
+        lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road.id;
+        roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road.id;
+        road_objects_mesh.road_start_indices[road_objects_mesh.vertices.size()] = road.id;
+
+        for (const auto& s_lanesec : road.s_to_lanesection)
+        {
+            const LaneSection& lanesec = s_lanesec.second;
+            lanes_mesh.lanesec_start_indices[lanes_mesh.vertices.size()] = lanesec.s0;
+            roadmarks_mesh.lanesec_start_indices[roadmarks_mesh.vertices.size()] = lanesec.s0;
+            for (const auto& id_lane : lanesec.id_to_lane)
+            {
+                const Lane&       lane = id_lane.second;
+                const std::size_t lanes_idx_offset = lanes_mesh.vertices.size();
+                lanes_mesh.lane_start_indices[lanes_idx_offset] = lane.id;
+                lanes_mesh.add_mesh(road.get_lane_mesh(lane, eps));
+
+                std::size_t roadmarks_idx_offset = roadmarks_mesh.vertices.size();
+                roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane.id;
+                const std::vector<RoadMark> roadmarks = lane.get_roadmarks(lanesec.s0, road.get_lanesection_end(lanesec));
+                for (const RoadMark& roadmark : roadmarks)
+                {
+                    roadmarks_idx_offset = roadmarks_mesh.vertices.size();
+                    roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
+                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane, roadmark, eps));
+                }
+            }
+        }
+
+        for (const auto& id_road_object : road.id_to_object)
+        {
+            const RoadObject& road_object = id_road_object.second;
+            const std::size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
+            road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object.id;
+            road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps));
+        }
+    }
+
+    return out_mesh;
+}
 
 RoutingGraph OpenDriveMap::get_routing_graph() const
 {

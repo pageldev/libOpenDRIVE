@@ -1,6 +1,7 @@
 #pragma once
 #include "Junction.h"
 #include "Road.h"
+#include "RoadNetworkMesh.h"
 #include "RoutingGraph.h"
 
 #include <pugixml/pugixml.hpp>
@@ -12,25 +13,23 @@
 namespace odr
 {
 
-struct OpenDriveMapConfig
-{
-    bool with_lateralProfile = true;
-    bool with_laneHeight = true;
-    bool with_road_objects = true;
-    bool with_road_signals = true;
-    bool center_map = true;
-    bool abs_z_for_for_local_road_obj_outline = false;
-};
-
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(const std::string& xodr_file, const OpenDriveMapConfig& config = OpenDriveMapConfig{});
+    OpenDriveMap(const std::string& xodr_file,
+                 const bool         center_map = false,
+                 const bool         with_road_objects = true,
+                 const bool         with_lateral_profile = true,
+                 const bool         with_lane_height = true,
+                 const bool         abs_z_for_for_local_road_obj_outline = false,
+                 const bool         fix_spiral_edge_cases = true,
+                 const bool         with_signals = true);
 
     std::vector<Road>     get_roads() const;
     std::vector<Junction> get_junctions() const;
 
-    RoutingGraph get_routing_graph() const;
+    RoadNetworkMesh get_road_network_mesh(const double eps) const;
+    RoutingGraph    get_routing_graph() const;
 
     std::string        proj4 = "";
     double             x_offs = 0;

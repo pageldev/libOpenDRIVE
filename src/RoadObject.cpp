@@ -25,7 +25,12 @@ RoadObjectRepeat::RoadObjectRepeat(double s0,
 {
 }
 
-RoadObjectCorner::RoadObjectCorner(Vec3D pt, double height, Type type) : pt(pt), height(height), type(type) {}
+RoadObjectCorner::RoadObjectCorner(int id, Vec3D pt, double height, Type type) : id(id), pt(pt), height(height), type(type) {}
+
+RoadObjectOutline::RoadObjectOutline(int id, std::string fill_type, std::string lane_type, bool outer, bool closed) :
+    id(id), fill_type(fill_type), lane_type(lane_type), outer(outer), closed(closed)
+{
+}
 
 RoadObject::RoadObject(std::string road_id,
                        std::string id,
@@ -42,10 +47,12 @@ RoadObject::RoadObject(std::string road_id,
                        double      roll,
                        std::string type,
                        std::string name,
-                       std::string orientation) :
+                       std::string orientation,
+                       std::string subtype,
+                       bool        is_dynamic) :
     road_id(road_id),
-    id(id), type(type), name(name), orientation(orientation), s0(s0), t0(t0), z0(z0), length(length), valid_length(valid_length), width(width),
-    radius(radius), height(height), hdg(hdg), pitch(pitch), roll(roll)
+    id(id), type(type), name(name), orientation(orientation), subtype(subtype), s0(s0), t0(t0), z0(z0), length(length), valid_length(valid_length),
+    width(width), radius(radius), height(height), hdg(hdg), pitch(pitch), roll(roll), is_dynamic(is_dynamic)
 {
 }
 

@@ -5,6 +5,8 @@
 #include "OpenDriveMap.h"
 #include "Road.h"
 
+#include <fstream>
+#include <iostream>
 #include <stdio.h>
 #include <vector>
 
@@ -45,5 +47,14 @@ int main(int argc, char** argv)
     }
 
     printf("Finished, got %lu lane points, %lu roadmark points\n", lane_pts.size(), roadmark_pts.size());
+
+    odr::RoadNetworkMesh road_network_mesh = odr_map.get_road_network_mesh(eps);
+    printf("Got road network mesh\n");
+
+    // std::ofstream out_file("out.obj");
+    // out_file << road_network_mesh.get_mesh().get_obj() << std::endl;
+    // out_file.close();
+    // printf("Wrote .obj file to 'out.obj'\n");
+
     return 0;
 }

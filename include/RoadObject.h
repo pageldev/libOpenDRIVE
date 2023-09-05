@@ -1,4 +1,5 @@
 #pragma once
+#include "LaneValidityRecord.h"
 #include "Math.hpp"
 #include "Mesh.h"
 #include "XmlNode.h"
@@ -45,11 +46,25 @@ struct RoadObjectCorner : public XmlNode
         Type_Road
     };
 
-    RoadObjectCorner(Vec3D pt, double height, Type type);
+    RoadObjectCorner(int id, Vec3D pt, double height, Type type);
 
+    int    id = 0;
     Vec3D  pt;
     double height = 0;
     Type   type = Type_Road;
+};
+
+struct RoadObjectOutline : public XmlNode
+{
+    RoadObjectOutline(int id, std::string fill_type, std::string lane_type, bool outer, bool closed);
+
+    int         id = 0;
+    std::string fill_type = "";
+    std::string lane_type = "";
+    bool        outer = true;
+    bool        closed = true;
+
+    std::vector<RoadObjectCorner> outline;
 };
 
 struct RoadObject : public XmlNode
@@ -69,7 +84,9 @@ struct RoadObject : public XmlNode
                double      roll,
                std::string type,
                std::string name,
-               std::string orientation);
+               std::string orientation,
+               std::string subtype,
+               bool        is_dynamic);
 
     static Mesh3D get_cylinder(const double eps, const double radius, const double height);
     static Mesh3D get_box(const double width, const double length, const double height);
@@ -80,6 +97,7 @@ struct RoadObject : public XmlNode
     std::string type = "";
     std::string name = "";
     std::string orientation = "";
+    std::string subtype = "";
 
     double s0 = 0;
     double t0 = 0;
@@ -92,9 +110,11 @@ struct RoadObject : public XmlNode
     double hdg = 0;
     double pitch = 0;
     double roll = 0;
+    bool   is_dynamic = false;
 
-    std::vector<RoadObjectRepeat> repeats;
-    std::vector<RoadObjectCorner> outline;
+    std::vector<RoadObjectRepeat>   repeats;
+    std::vector<RoadObjectOutline>  outlines;
+    std::vector<LaneValidityRecord> lane_validities;
 };
 
 } // namespace odr

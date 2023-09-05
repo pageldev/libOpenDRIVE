@@ -4,7 +4,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-project(libOpenDrive VERSION 0.1.0 DESCRIPTION ".xodr library")
+project(libOpenDrive VERSION 0.3.0 DESCRIPTION ".xodr library")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -17,9 +17,6 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
 else()
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
-
-include_directories(include)
-include_directories(Thirdparty)
 
 add_library(OpenDrive SHARED
     src/Geometries/Arc.cpp
@@ -37,33 +34,35 @@ add_library(OpenDrive SHARED
     src/RefLine.cpp
     src/Road.cpp
     src/RoadMark.cpp
-    src/RoadSignal.cpp
+    src/RoadNetworkMesh.cpp
     src/RoadObject.cpp
+    src/Signal.cpp
     src/RoutingGraph.cpp
-    Thirdparty/pugixml/pugixml.cpp
+    thirdparty/pugixml/pugixml.cpp
 )
 
-if(EMSCRIPTEN)
-    set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    add_executable(ModuleOpenDrive
-        src/Embind.cpp
-        Viewer/RoadNetworkMesh.cpp
-        Viewer/ViewerUtils.cpp
-    )
-    target_include_directories(ModuleOpenDrive PUBLIC Viewer)
-    target_link_libraries(ModuleOpenDrive OpenDrive)
-    set_target_properties(ModuleOpenDrive PROPERTIES LINK_FLAGS "\
-        --bind \
-        -s ENVIRONMENT=web \
-        -s MODULARIZE=1 \
-        -s EXPORT_NAME='\"libOpenDrive\"' \
-        -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]' \
-        -s FORCE_FILESYSTEM=1 \
-        -s ALLOW_MEMORY_GROWTH=1 \
-    ")
-endif()
 
-if(NOT EMSCRIPTEN)
-    add_executable(test-xodr test.cpp)
-    target_link_libraries(test-xodr OpenDrive)
-endif()
+
+target_include_directories(OpenDrive
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/thirdparty>)
+
+
+add_executable(test-xodr test.cpp)
+target_link_libraries(test-xodr OpenDrive)
+
+install(
+    TARGETS OpenDrive test-xodr
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION "include")
+install(FILES
+    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugixml.hpp
+    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugiconfig.hpp DESTINATION "include/pugixml/")
+
+install(TARGETS OpenDrive EXPORT OpenDriveConfig)
+install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)

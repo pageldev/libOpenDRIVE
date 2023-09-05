@@ -1,12 +1,8 @@
 *.wasm
-*.xodr
 *.so
 settings.json
 compile_commands.json
 .vscode/
 build/
 build-wasm/
-Viewer/libOpenDrive.*
-Viewer/OpenDrive.*
-Viewer/ModuleOpenDrive.*
-Viewer/*.data
+viewer/
