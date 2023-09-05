@@ -685,6 +685,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
     LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
     RoadmarksMesh&   roadmarks_mesh = out_mesh.roadmarks_mesh;
     RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
+    SignalsMesh&     signals_mesh = out_mesh.signals_mesh;
 
     for (const auto& id_road : this->id_to_road)
     {
@@ -723,6 +724,14 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
             const std::size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
             road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object.id;
             road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps));
+        }
+
+        for (const auto& id_signal : road.id_to_signal)
+        {
+            const Signal& signal = id_signal.second;
+            const std::size_t signals_idx_offset = signals_mesh.vertices.size();
+            signals_mesh.signal_start_indices[signals_idx_offset] = signal.id;
+            signals_mesh.add_mesh(road.get_signal_mesh(signal));
         }
     }
 
