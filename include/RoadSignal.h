@@ -9,27 +9,27 @@
 namespace odr
 {
 
-struct Signal : public XmlNode
+struct RoadSignal : public XmlNode
 {
-    Signal(std::string road_id,
-           std::string id,
-           std::string name,
-           double      s0,
-           double      t0,
-           bool        is_dynamic,
-           double      zOffset,
-           double      value,
-           double      height,
-           double      width,
-           double      hOffset,
-           double      pitch,
-           double      roll,
-           std::string orientation,
-           std::string country,
-           std::string type,
-           std::string subtype,
-           std::string unit,
-           std::string text);
+    RoadSignal(std::string road_id,
+               std::string id,
+               std::string name,
+               double      s0,
+               double      t0,
+               bool        is_dynamic,
+               double      zOffset,
+               double      value,
+               double      height,
+               double      width,
+               double      hOffset,
+               double      pitch,
+               double      roll,
+               std::string orientation,
+               std::string country,
+               std::string type,
+               std::string subtype,
+               std::string unit,
+               std::string text);
 
     static Mesh3D get_box(const double width, const double length, const double height);
 

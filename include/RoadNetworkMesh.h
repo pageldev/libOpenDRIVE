@@ -56,12 +56,12 @@ struct RoadObjectsMesh : public RoadsMesh
     std::map<size_t, std::string> road_object_start_indices;
 };
 
-struct SignalsMesh : public RoadsMesh
+struct RoadSignalsMesh : public RoadsMesh
 {
-    std::string           get_signal_id(const std::size_t vert_idx) const;
+    std::string           get_road_signal_id(const std::size_t vert_idx) const;
     std::array<size_t, 2> get_idx_interval_signal(const std::size_t vert_idx) const;
 
-    std::map<size_t, std::string> signal_start_indices;
+    std::map<size_t, std::string> road_signal_start_indices;
 };
 
 struct RoadNetworkMesh
@@ -71,7 +71,7 @@ struct RoadNetworkMesh
     LanesMesh       lanes_mesh;
     RoadmarksMesh   roadmarks_mesh;
     RoadObjectsMesh road_objects_mesh;
-    SignalsMesh     signals_mesh;
+    RoadSignalsMesh road_signals_mesh;
 };
 
 } // namespace odr
