@@ -36,7 +36,7 @@ add_library(OpenDrive SHARED
     src/RoadMark.cpp
     src/RoadNetworkMesh.cpp
     src/RoadObject.cpp
-    src/Signal.cpp
+    src/RoadSignal.cpp
     src/RoutingGraph.cpp
     thirdparty/pugixml/pugixml.cpp
 )

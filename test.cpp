@@ -22,6 +22,8 @@ int main(int argc, char** argv)
 
     std::vector<odr::Vec3D> lane_pts;
     std::vector<odr::Vec3D> roadmark_pts;
+    std::vector<odr::Vec3D> road_object_pts;
+    std::vector<odr::Vec3D> road_signal_pts;
 
     for (odr::Road road : odr_map.get_roads())
     {
@@ -44,9 +46,22 @@ int main(int argc, char** argv)
                 }
             }
         }
+
+        for (odr::RoadObject road_object: road.get_road_objects())
+        {
+            auto road_object_mesh = road.get_road_object_mesh(road_object, eps);
+            road_object_pts.insert(road_object_pts.end(), road_object_mesh.vertices.begin(), road_object_mesh.vertices.end());
+        }
+
+        for (odr::RoadSignal road_signal: road.get_road_signals())
+        {
+            auto road_signal_mesh = road.get_road_signal_mesh(road_signal);
+            road_signal_pts.insert(road_signal_pts.end(), road_signal_mesh.vertices.begin(), road_signal_mesh.vertices.end());
+        }
     }
 
-    printf("Finished, got %lu lane points, %lu roadmark points\n", lane_pts.size(), roadmark_pts.size());
+    printf("Finished, got %llu lane points, %llu roadmark points, %llu road object points, %llu road signal points\n",
+           lane_pts.size(), roadmark_pts.size(), road_object_pts.size(), road_signal_pts.size());
 
     odr::RoadNetworkMesh road_network_mesh = odr_map.get_road_network_mesh(eps);
     printf("Got road network mesh\n");

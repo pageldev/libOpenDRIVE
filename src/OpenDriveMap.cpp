@@ -14,7 +14,7 @@
 #include "Road.h"
 #include "RoadMark.h"
 #include "RoadObject.h"
-#include "Signal.h"
+#include "RoadSignal.h"
 #include "Utils.hpp"
 
 #include <algorithm>
@@ -61,7 +61,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
                            const bool         fix_spiral_edge_cases,
-                           const bool         with_signals) :
+                           const bool         with_road_signals) :
     xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
@@ -632,45 +632,44 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
         /* parse signals */
-        if (with_signals)
+        if (with_road_signals)
         {
             for (pugi::xml_node signal_node : road_node.child("signals").children("signal"))
             {
-                std::string signal_id = signal_node.attribute("id").as_string("");
-                CHECK_AND_REPAIR(road.id_to_signal.find(signal_id) == road.id_to_signal.end(),
-                                 (std::string("signal::id already exists - ") + signal_id).c_str(),
-                                 signal_id = signal_id + std::string("_dup"));
+                std::string road_signal_id = signal_node.attribute("id").as_string("");
+                CHECK_AND_REPAIR(road.id_to_signal.find(road_signal_id) == road.id_to_signal.end(),
+                                 (std::string("signal::id already exists - ") + road_signal_id).c_str(),
+                                 road_signal_id = road_signal_id + std::string("_dup"));
 
-                const bool is_dynamic_signal = std::string(signal_node.attribute("dynamic").as_string("no")) == "yes";
-                Signal&    signal = road.id_to_signal
-                                     .insert({signal_id,
-                                              Signal(road_id,
-                                                     signal_id,
-                                                     signal_node.attribute("name").as_string(""),
-                                                     signal_node.attribute("s").as_double(0),
-                                                     signal_node.attribute("t").as_double(0),
-                                                     is_dynamic_signal,
-                                                     signal_node.attribute("zOffset").as_double(0),
-                                                     signal_node.attribute("value").as_double(0),
-                                                     signal_node.attribute("height").as_double(0),
-                                                     signal_node.attribute("width").as_double(0),
-                                                     signal_node.attribute("hOffset").as_double(0),
-                                                     signal_node.attribute("pitch").as_double(0),
-                                                     signal_node.attribute("roll").as_double(0),
-                                                     signal_node.attribute("orientation").as_string("none"),
-                                                     signal_node.attribute("country").as_string(""),
-                                                     signal_node.attribute("type").as_string("none"),
-                                                     signal_node.attribute("subtype").as_string("none"),
-                                                     signal_node.attribute("unit").as_string(""),
-                                                     signal_node.attribute("text").as_string("none"))})
-                                     .first->second;
-                signal.xml_node = signal_node;
+                RoadSignal& road_signal = road.id_to_signal
+                                              .insert({road_signal_id,
+                                                       RoadSignal(road_id,
+                                                                  road_signal_id,
+                                                                  signal_node.attribute("name").as_string(""),
+                                                                  signal_node.attribute("s").as_double(0),
+                                                                  signal_node.attribute("t").as_double(0),
+                                                                  signal_node.attribute("dynamic").as_bool(),
+                                                                  signal_node.attribute("zOffset").as_double(0),
+                                                                  signal_node.attribute("value").as_double(0),
+                                                                  signal_node.attribute("height").as_double(0),
+                                                                  signal_node.attribute("width").as_double(0),
+                                                                  signal_node.attribute("hOffset").as_double(0),
+                                                                  signal_node.attribute("pitch").as_double(0),
+                                                                  signal_node.attribute("roll").as_double(0),
+                                                                  signal_node.attribute("orientation").as_string("none"),
+                                                                  signal_node.attribute("country").as_string(""),
+                                                                  signal_node.attribute("type").as_string("none"),
+                                                                  signal_node.attribute("subtype").as_string("none"),
+                                                                  signal_node.attribute("unit").as_string(""),
+                                                                  signal_node.attribute("text").as_string("none"))})
+                                              .first->second;
+                road_signal.xml_node = signal_node;
 
-                CHECK_AND_REPAIR(signal.s0 >= 0, "signal::s < 0", signal.s0 = 0);
-                CHECK_AND_REPAIR(signal.height >= 0, "signal::height < 0", signal.height = 0);
-                CHECK_AND_REPAIR(signal.width >= 0, "signal::width < 0", signal.width = 0);
+                CHECK_AND_REPAIR(road_signal.s0 >= 0, "signal::s < 0", road_signal.s0 = 0);
+                CHECK_AND_REPAIR(road_signal.height >= 0, "signal::height < 0", road_signal.height = 0);
+                CHECK_AND_REPAIR(road_signal.width >= 0, "signal::width < 0", road_signal.width = 0);
 
-                signal.lane_validities = extract_lane_validity_records(signal_node);
+                road_signal.lane_validities = extract_lane_validity_records(signal_node);
             }
         }
     }
@@ -686,6 +685,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
     LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
     RoadmarksMesh&   roadmarks_mesh = out_mesh.roadmarks_mesh;
     RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
+    RoadSignalsMesh& road_signals_mesh = out_mesh.road_signals_mesh;
 
     for (const auto& id_road : this->id_to_road)
     {
@@ -724,6 +724,14 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
             const std::size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
             road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object.id;
             road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps));
+        }
+
+        for (const auto& id_signal : road.id_to_signal)
+        {
+            const RoadSignal& road_signal = id_signal.second;
+            const std::size_t signals_idx_offset = road_signals_mesh.vertices.size();
+            road_signals_mesh.road_signal_start_indices[signals_idx_offset] = road_signal.id;
+            road_signals_mesh.add_mesh(road.get_road_signal_mesh(road_signal));
         }
     }
 
