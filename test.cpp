@@ -60,7 +60,7 @@ int main(int argc, char** argv)
         }
     }
 
-    printf("Finished, got %llu lane points, %llu roadmark points, %llu road object points, %llu road signal points\n",
+    printf("Finished, got %lu lane points, %lu roadmark points, %lu road object points, %lu road signal points\n",
            lane_pts.size(),
            roadmark_pts.size(),
            road_object_pts.size(),
