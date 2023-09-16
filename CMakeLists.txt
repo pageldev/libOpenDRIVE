@@ -45,8 +45,8 @@ add_library(OpenDrive SHARED
 
 target_include_directories(OpenDrive
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/thirdparty>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
 
 
 add_executable(test-xodr test.cpp)
@@ -59,10 +59,10 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION "include")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "include")
 install(FILES
-    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugixml.hpp
-    ${CMAKE_SOURCE_DIR}/thirdparty/pugixml/pugiconfig.hpp DESTINATION "include/pugixml/")
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml/pugixml.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml/pugiconfig.hpp DESTINATION "include/pugixml/")
 
 install(TARGETS OpenDrive EXPORT OpenDriveConfig)
 install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
