@@ -50,7 +50,7 @@ RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string directi
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
 
 std::vector<LaneSection> Road::get_lanesections() const { return get_map_values(this->s_to_lanesection); }
-std::vector<RoadObject> Road::get_road_objects() const { return get_map_values(this->id_to_object); }
+std::vector<RoadObject>  Road::get_road_objects() const { return get_map_values(this->id_to_object); }
 
 std::vector<RoadSignal> Road::get_road_signals() const { return get_map_values(this->id_to_signal); }
 
@@ -336,13 +336,13 @@ Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const
 
 Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
 {
-    const Mat3D rot_mat = EulerAnglesToMatrix<double>(road_signal.roll, road_signal.pitch, road_signal.hOffset);
+    const Mat3D  rot_mat = EulerAnglesToMatrix<double>(road_signal.roll, road_signal.pitch, road_signal.hOffset);
     const double s = road_signal.s0;
     const double t = road_signal.t0;
     const double z = road_signal.zOffset;
     const double height = road_signal.height;
     const double width = road_signal.width;
-    Mesh3D road_signal_mesh;
+    Mesh3D       road_signal_mesh;
     road_signal_mesh = road_signal.get_box(width, 0.2, height);
     Vec3D       e_s, e_t, e_h;
     const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h);
