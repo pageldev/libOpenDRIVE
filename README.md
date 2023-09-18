@@ -50,6 +50,6 @@ This also builds an executable to test the library:
 ```
 
 ## Viewer
-Check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library. Use the [odrviewer project](https://github.com/grepthat/odrviewer) to post issues and feature requests for odrviewer.io.
+Check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library. Use the [odrviewer project](https://github.com/pageldev/odrviewer) to post issues and feature requests for odrviewer.io.
 
-<sub>Info: The Viewer and WebAssembly bindings are no longer part of this project. This is to focus more on the library functionality and avoid having to keep the bindings up-to-date. Use [v0.3.0](https://github.com/grepthat/libOpenDRIVE/releases/tag/0.3.0) to get the last version that still includes Viewer and WebAssembly bindings. </sub>
+<sub>Info: The Viewer and WebAssembly bindings are no longer part of this project. This is to focus more on the library functionality and avoid having to keep the bindings up-to-date. Use [v0.3.0](https://github.com/pageldev/libOpenDRIVE/releases/tag/0.3.0) to get the last version that still includes Viewer and WebAssembly bindings. </sub>
