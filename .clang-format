@@ -31,7 +31,6 @@ IndentCaseLabels: false
 IndentGotoLabels: false
 IndentPPDirectives: BeforeHash
 IndentWidth: 4
-IndentWidth: 4
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 NamespaceIndentation: None
