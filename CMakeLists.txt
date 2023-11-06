@@ -47,7 +47,7 @@ target_include_directories(OpenDrive
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
 
-add_library(OpenDriveStatic SHARED ${SOURCES})
+add_library(OpenDriveStatic STATIC ${SOURCES})
 target_include_directories(OpenDriveStatic
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
