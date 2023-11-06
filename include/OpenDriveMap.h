@@ -30,10 +30,9 @@ public:
 
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;
-    RoutingGraph    create_routing_graph() const;
 
-    std::vector<Lane> get_lane_predecessors(const Lane& lane) const;
-    std::vector<Lane> get_lane_successors(const Lane& lane) const;
+    std::vector<Lane> find_lane_predecessors(const Lane& lane) const;
+    std::vector<Lane> find_lane_successors(const Lane& lane) const;
 
     std::string        proj4 = "";
     double             x_offs = 0;
