@@ -50,8 +50,8 @@ target_include_directories(OpenDrive
 add_library(OpenDriveStatic SHARED ${SOURCES})
 target_include_directories(OpenDriveStatic
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/thirdparty>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
 set_target_properties(OpenDriveStatic PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_executable(test-xodr test.cpp)
