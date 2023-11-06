@@ -18,7 +18,7 @@ else()
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
 
-add_library(OpenDrive SHARED
+SET (SOURCES 
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
     src/Geometries/Line.cpp
@@ -41,13 +41,18 @@ add_library(OpenDrive SHARED
     thirdparty/pugixml/pugixml.cpp
 )
 
-
-
+add_library(OpenDrive SHARED ${SOURCES})
 target_include_directories(OpenDrive
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
 
+add_library(OpenDriveStatic SHARED ${SOURCES})
+target_include_directories(OpenDriveStatic
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/thirdparty>)
+set_target_properties(OpenDriveStatic PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_executable(test-xodr test.cpp)
 target_link_libraries(test-xodr OpenDrive)
