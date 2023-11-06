@@ -557,5 +557,31 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
 
     return road_obj_mesh;
 }
-
+std::optional<LaneSection> Road::get_next_lanesection(const LaneSection& lanesection) const
+{
+    auto it = s_to_lanesection.upper_bound(lanesection.s0);
+    if (it != s_to_lanesection.end())
+    {
+        return (it->second);
+    }
+    else
+    {
+        // If there is no next lanesection, return a null pointer.
+        return std::nullopt;
+    }
+}
+std::optional<LaneSection> Road::get_previous_lanesection(const LaneSection& lanesection) const
+{
+    if (s_to_lanesection.size() <= 1)
+    {
+        return std::nullopt; // No previous section if this is the only one or map is empty
+    }
+    auto it = s_to_lanesection.lower_bound(lanesection.s0);
+    if (it != s_to_lanesection.begin())
+    {
+        --it; // Safe to decrement since we're not at the beginning
+        return (it->second);
+    }
+    return std::nullopt; // If at the beginning, no previous section exists
+}
 } // namespace odr

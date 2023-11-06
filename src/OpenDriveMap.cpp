@@ -858,5 +858,96 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
     return routing_graph;
 }
+RoutingGraph OpenDriveMap::create_routing_graph() const
+{
+    RoutingGraph routing_graph;
+    // for each road
+    for (const auto& id_road : id_to_road)
+    {
+        const Road& road = id_road.second;
+        // for each lanesection
+        for (auto s_lanesec_iter = road.s_to_lanesection.begin(); s_lanesec_iter != road.s_to_lanesection.end(); s_lanesec_iter++)
+        {
+            const LaneSection& lanesec = s_lanesec_iter->second;
+            // for each lane
+            for (const auto& id_lane : lanesec.id_to_lane)
+            {
+                const Lane& lane = id_lane.second;
+                // get lane successors
+                // get lane predecessors
+                auto predecessors = get_lane_predecessors(lane);
 
+                for (const auto& predecessor : predecessors)
+                {
+                    routing_graph.add_edge(RoutingGraphEdge(predecessor.key, lane.key, 1.0)); // TODO choose correct road length
+                }
+
+                auto successors = get_lane_successors(lane);
+
+                for (const auto& predecessor : predecessors)
+                {
+                    routing_graph.add_edge(RoutingGraphEdge(predecessor.key, lane.key, 1.0)); // TODO choose correct road length
+                }
+
+                // add to graph
+            }
+        }
+
+        return routing_graph;
+    }
+}
+std::vector<Lane> OpenDriveMap::get_lane_predecessors(const Lane& lane) const
+{
+    std::vector<Lane> predecessor_lanes;
+    bool              lane_follows_road_direction = lane.key.lane_id < 0; // ASSUMES NOT IN UK or other left lane drivers.
+
+    auto current_road = id_to_road.at(lane.key.road_id);
+    auto current_lanesection = current_road.get_lanesection(lane.key.lanesection_s0);
+
+    std::optional<LaneSection> prev_lanesection = std::nullopt;
+
+    if (lane_follows_road_direction)
+        prev_lanesection = current_road.get_previous_lanesection(current_lanesection);
+    else
+        prev_lanesection = current_road.get_next_lanesection(current_lanesection);
+
+    if (prev_lanesection)
+    {
+        // get lane on prev lanesection.
+        if (lane_follows_road_direction)
+            predecessor_lanes.push_back(prev_lanesection.value().id_to_lane.at(lane.predecessor));
+        else
+            predecessor_lanes.push_back(prev_lanesection.value().id_to_lane.at(lane.successor));
+    }
+
+    // if other lanes on lanesection in correct direction - use those
+
+    // if roadlinks at the correct end use those
+
+    // check junctions for road
+}
+std::vector<Lane> OpenDriveMap::get_lane_successors(const Lane& lane) const
+{
+    std::vector<Lane> successor_lanes;
+    bool              lane_follows_road_direction = lane.key.lane_id < 0; // ASSUMES NOT IN UK or other left lane drivers.
+
+    auto current_road = id_to_road.at(lane.key.road_id);
+    auto current_lanesection = current_road.get_lanesection(lane.key.lanesection_s0);
+
+    std::optional<LaneSection> next_lanesection = std::nullopt;
+
+    if (lane_follows_road_direction)
+        next_lanesection = current_road.get_next_lanesection(current_lanesection);
+    else
+        next_lanesection = current_road.get_previous_lanesection(current_lanesection);
+
+    if (next_lanesection)
+    {
+        // get lane on prev lanesection.
+        if (lane_follows_road_direction)
+            successor_lanes.push_back(next_lanesection.value().id_to_lane.at(lane.successor));
+        else
+            successor_lanes.push_back(next_lanesection.value().id_to_lane.at(lane.predecessor));
+    }
+}
 } // namespace odr
