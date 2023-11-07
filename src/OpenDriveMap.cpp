@@ -761,14 +761,16 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
                 // add to graph
                 for (const auto& predecessor : predecessors)
                 {
-                    routing_graph.add_edge(RoutingGraphEdge(predecessor.key, lane.key, 1.0)); // TODO choose correct road length
+                    double lane_length = road.get_lanesection_length(predecessor.key.lanesection_s0);
+                    routing_graph.add_edge(RoutingGraphEdge(predecessor.key, lane.key, lane_length));
                 }
                 // get lane successors
                 auto successors = find_lane_successors(lane);
                 // add to graph
                 for (const auto& successor : successors)
                 {
-                    routing_graph.add_edge(RoutingGraphEdge(lane.key, successor.key, 1.0)); // TODO choose correct road length
+                    double lane_length = road.get_lanesection_length(lane.key.lanesection_s0);
+                    routing_graph.add_edge(RoutingGraphEdge(lane.key, successor.key, lane_length));
                 }
             }
         }
