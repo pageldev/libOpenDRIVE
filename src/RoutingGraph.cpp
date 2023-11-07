@@ -4,6 +4,7 @@
 #include <limits>
 #include <utility>
 #include <queue>
+#include <iostream>
 namespace odr
 {
 
@@ -38,6 +39,7 @@ std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key
 }
 std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) const
 {
+    std::cout << "calculating route" << std::endl;
     // Using a min-heap to represent the open set
     std::priority_queue<WeightedLaneKey, std::vector<WeightedLaneKey>, CompareLaneKey> open_set;
 
@@ -65,6 +67,7 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
             }
             path.push_back(from);
             std::reverse(path.begin(), path.end());
+            std::cout << "found route" << std::endl;
             return path;
         }
         // Check if this is a stale entry
@@ -72,15 +75,25 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
         {
             continue; // Skip processing this node because we have found a better path
         }
-        // Explore the neighbors
-        for (const auto& weighted_successor : this->lane_key_to_successors.at(current))
+        // Access successors safely
+        auto succ_itr = this->lane_key_to_successors.find(current);
+        if (succ_itr == this->lane_key_to_successors.end())
+        {
+            continue; // No successors for the current node, skip it
+        }
+
+        // Iterate over successors
+        for (const auto& weighted_successor : succ_itr->second)
         {
             LaneKey neighbor = weighted_successor;
             double  weight = weighted_successor.weight;
-            double  alternative_path_cost = cost_from_start[current] + weight;
+            // ...
+            // Check if neighbor is in cost_from_start before using at()
+            double current_cost =
+                (cost_from_start.find(neighbor) != cost_from_start.end()) ? cost_from_start[neighbor] : std::numeric_limits<double>::max();
 
-            // If new cost is better, or the neighbor is not in cost_from_start, update the cost and path
-            if (cost_from_start.find(neighbor) == cost_from_start.end() || alternative_path_cost < cost_from_start[neighbor])
+            double alternative_path_cost = cost_from_start[current] + weight;
+            if (alternative_path_cost < current_cost)
             {
                 cost_from_start[neighbor] = alternative_path_cost;
                 came_from[neighbor] = current;
@@ -88,7 +101,7 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
             }
         }
     }
-
+    std::cout << "did not find route" << std::endl;
     // No path found
     return {};
 }
