@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 namespace odr
 {
@@ -742,6 +743,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
 
 RoutingGraph OpenDriveMap::get_routing_graph() const
 {
+    std::cout << "create routing graph \n";
     RoutingGraph routing_graph;
     // for each road
     for (const auto& id_road : id_to_road)
@@ -775,7 +777,7 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             }
         }
     }
-
+    std::cout << "create routing graph 2\n";
     /* parse junctions */
     for (const auto& id_junc : this->id_to_junction)
     {
@@ -818,11 +820,13 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             }
         }
     }
+    std::cout << "create routing graph 3\n";
 
     return routing_graph;
 }
 std::vector<Lane> OpenDriveMap::find_lane_predecessors(const Lane& lane) const
 {
+    std::cout << "lane pred\n";
     std::vector<Lane> predecessor_lanes;
     bool              lane_follows_road_direction = lane.key.lane_id < 0; // ASSUMES NOT IN UK or other left lane drivers.
 
@@ -850,31 +854,50 @@ std::vector<Lane> OpenDriveMap::find_lane_predecessors(const Lane& lane) const
     }
     if (prev_lanesection)
     {
-        // get lane on prev lanesection.
+        // Check if the optional next_lanesection has a value
+        const LaneSection& next_lane_section_value = prev_lanesection.value();
+
         if (lane_follows_road_direction)
-            predecessor_lanes.push_back(prev_lanesection.value().id_to_lane.at(lane.predecessor));
+        {
+            // Check if lane.successor is a valid key before using at
+            auto it = next_lane_section_value.id_to_lane.find(lane.predecessor);
+            if (it != next_lane_section_value.id_to_lane.end())
+            {
+                predecessor_lanes.push_back(it->second);
+            }
+        }
         else
-            predecessor_lanes.push_back(prev_lanesection.value().id_to_lane.at(lane.successor));
+        {
+            // Check if lane.predecessor is a valid key before using at
+            auto it = next_lane_section_value.id_to_lane.find(lane.successor);
+            if (it != next_lane_section_value.id_to_lane.end())
+            {
+                predecessor_lanes.push_back(it->second);
+            }
+        }
     }
 
     // check junctions for road
-
+    std::cout << "lane pred 2\n";
     return predecessor_lanes;
 }
 std::vector<Lane> OpenDriveMap::find_lane_successors(const Lane& lane) const
 {
+    std::cout << "lane suc\n";
     std::vector<Lane> successor_lanes;
     bool              lane_follows_road_direction = lane.key.lane_id < 0; // ASSUMES NOT IN UK or other left lane drivers.
-
+    std::cout << "lane suc a\n";
     auto current_road = id_to_road.at(lane.key.road_id);
     auto current_lanesection = current_road.get_lanesection(lane.key.lanesection_s0);
-
+    std::cout << "lane suc b\n";
     std::optional<LaneSection> next_lanesection = std::nullopt;
 
     if (lane_follows_road_direction)
         next_lanesection = current_road.get_next_lanesection(current_lanesection);
     else
         next_lanesection = current_road.get_previous_lanesection(current_lanesection);
+
+    std::cout << "lane suc c\n";
     // if roadlinks at the correct end use those
     const RoadLink& road_link = lane_follows_road_direction ? current_road.successor : current_road.predecessor;
 
@@ -888,15 +911,32 @@ std::vector<Lane> OpenDriveMap::find_lane_successors(const Lane& lane) const
                                                                                          : next_road.s_to_lanesection.rbegin()->second;
         }
     }
+    std::cout << "lane suc d\n";
     if (next_lanesection)
     {
-        // get lane on prev lanesection.
-        if (lane_follows_road_direction)
-            successor_lanes.push_back(next_lanesection.value().id_to_lane.at(lane.successor));
-        else
-            successor_lanes.push_back(next_lanesection.value().id_to_lane.at(lane.predecessor));
-    }
+        // Check if the optional next_lanesection has a value
+        const LaneSection& next_lane_section_value = next_lanesection.value();
 
+        if (lane_follows_road_direction)
+        {
+            // Check if lane.successor is a valid key before using at
+            auto it = next_lane_section_value.id_to_lane.find(lane.successor);
+            if (it != next_lane_section_value.id_to_lane.end())
+            {
+                successor_lanes.push_back(it->second);
+            }
+        }
+        else
+        {
+            // Check if lane.predecessor is a valid key before using at
+            auto it = next_lane_section_value.id_to_lane.find(lane.predecessor);
+            if (it != next_lane_section_value.id_to_lane.end())
+            {
+                successor_lanes.push_back(it->second);
+            }
+        }
+    }
+    std::cout << "lane suc 2\n";
     return successor_lanes;
 }
 } // namespace odr
