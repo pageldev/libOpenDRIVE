@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <limits>
 #include <utility>
-
+#include <queue>
+#include <iostream>
 namespace odr
 {
 
@@ -36,76 +37,73 @@ std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key
     std::vector<LaneKey>                predecessor_lane_keys(res.begin(), res.end());
     return predecessor_lane_keys;
 }
-
 std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) const
 {
-    std::vector<LaneKey> path;
-    if (this->lane_key_to_successors.count(from) == 0)
-        return path;
+    std::cout << "calculating route" << std::endl;
+    // Using a min-heap to represent the open set
+    std::priority_queue<WeightedLaneKey, std::vector<WeightedLaneKey>, CompareLaneKey> open_set;
 
-    std::unordered_set<LaneKey> vertices;
-    for (const auto& lane_key_successors : this->lane_key_to_successors)
+    // Maps to keep track of the best cost from start to a node and the best previous node to reach a node
+    std::unordered_map<LaneKey, double>  cost_from_start;
+    std::unordered_map<LaneKey, LaneKey> came_from;
+
+    // Initialize the start node in the open set with zero cost
+    cost_from_start[from] = 0.0;
+    open_set.push(WeightedLaneKey(from, 0.0));
+
+    while (!open_set.empty())
     {
-        vertices.insert(lane_key_successors.first);
-        vertices.insert(lane_key_successors.second.begin(), lane_key_successors.second.end());
-    }
+        WeightedLaneKey current_weighted = open_set.top();
+        LaneKey         current = current_weighted;
+        open_set.pop();
 
-    if (vertices.count(to) == 0)
-        return path;
-
-    std::vector<LaneKey>                 nodes;
-    std::unordered_map<LaneKey, double>  weights;
-    std::unordered_map<LaneKey, LaneKey> previous;
-
-    auto comparator = [&](const LaneKey& lhs, const LaneKey& rhs) { return weights[lhs] > weights[rhs]; };
-    for (const auto& lane_key : vertices)
-    {
-        if (std::equal_to<odr::LaneKey>{}(lane_key, from))
-            weights[lane_key] = 0;
-        else
-            weights[lane_key] = std::numeric_limits<double>::max();
-        nodes.push_back(lane_key);
-        std::push_heap(nodes.begin(), nodes.end(), comparator);
-    }
-
-    while (nodes.empty() == false)
-    {
-        std::pop_heap(nodes.begin(), nodes.end(), comparator);
-        LaneKey smallest = nodes.back();
-        nodes.pop_back();
-
-        if (std::equal_to<LaneKey>{}(smallest, to))
+        // If the goal is reached, stop and construct the path
+        if (current == to)
         {
-            while (previous.find(smallest) != previous.end())
+            std::vector<LaneKey> path;
+            for (LaneKey at = to; at != from; at = came_from[at])
             {
-                path.push_back(smallest);
-                smallest = previous.at(smallest);
+                path.push_back(at);
             }
-            break;
+            path.push_back(from);
+            std::reverse(path.begin(), path.end());
+            std::cout << "found route" << std::endl;
+            return path;
+        }
+        // Check if this is a stale entry
+        if (current_weighted.weight > cost_from_start[current])
+        {
+            continue; // Skip processing this node because we have found a better path
+        }
+        // Access successors safely
+        auto succ_itr = this->lane_key_to_successors.find(current);
+        if (succ_itr == this->lane_key_to_successors.end())
+        {
+            continue; // No successors for the current node, skip it
         }
 
-        if (weights.at(smallest) == std::numeric_limits<double>::max())
-            break;
-
-        auto smallest_succ_iter = this->lane_key_to_successors.find(smallest);
-        if (smallest_succ_iter == this->lane_key_to_successors.end())
-            continue;
-
-        for (const auto& successor : smallest_succ_iter->second)
+        // Iterate over successors
+        for (const auto& weighted_successor : succ_itr->second)
         {
-            const double alt = weights.at(smallest) + successor.weight;
-            if (alt < weights.at(successor))
+            LaneKey neighbor = weighted_successor;
+            double  weight = weighted_successor.weight;
+            // ...
+            // Check if neighbor is in cost_from_start before using at()
+            double current_cost =
+                (cost_from_start.find(neighbor) != cost_from_start.end()) ? cost_from_start[neighbor] : std::numeric_limits<double>::max();
+
+            double alternative_path_cost = cost_from_start[current] + weight;
+            if (alternative_path_cost < current_cost)
             {
-                weights[successor] = alt;
-                previous.insert({successor, smallest});
-                std::make_heap(nodes.begin(), nodes.end(), comparator);
+                cost_from_start[neighbor] = alternative_path_cost;
+                came_from[neighbor] = current;
+                open_set.push(WeightedLaneKey(neighbor, alternative_path_cost));
             }
         }
     }
-
-    path.push_back(from);
-    std::reverse(path.begin(), path.end());
-    return path;
+    std::cout << "did not find route" << std::endl;
+    // No path found
+    return {};
 }
 
 } // namespace odr
