@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <iostream>
 
 namespace odr
 {
@@ -39,6 +40,13 @@ struct LaneKey
     }
 
     bool operator!=(const LaneKey& other) const { return !(*this == other); }
+
+    // Overload the << operator for printing
+    friend std::ostream& operator<<(std::ostream& os, const LaneKey& laneKey)
+    {
+        os << "road_id: " << laneKey.road_id << ", lanesection_s0: " << laneKey.lanesection_s0 << ", lane_id: " << laneKey.lane_id;
+        return os;
+    }
 };
 
 struct Lane : public XmlNode
