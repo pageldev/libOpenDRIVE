@@ -16,6 +16,7 @@ struct LaneSection : public XmlNode
     std::vector<Lane> get_lanes() const;
 
     int  get_lane_id(const double s, const double t) const;
+    int  get_lane_id(const double s, const double t, const double h) const;
     Lane get_lane(const double s, const double t) const;
 
     std::string         road_id = "";
