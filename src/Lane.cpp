@@ -95,20 +95,4 @@ std::vector<RoadMark> Lane::get_roadmarks(const double s_start, const double s_e
     return roadmarks;
 }
 
-HeightOffset Lane::get_height_offset(const double s) const
-{
-    if (!this->s_to_height_offset.empty())
-    {
-        auto height_offs_iter{this->s_to_height_offset.upper_bound(s)};
-
-        if (height_offs_iter != this->s_to_height_offset.begin())
-        {
-            height_offs_iter--;
-            return height_offs_iter->second;
-        }
-    }
-
-    return HeightOffset{0.0, 0.0};
-}
-
 } // namespace odr
