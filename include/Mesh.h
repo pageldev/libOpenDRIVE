@@ -19,6 +19,7 @@ struct Mesh3D
     std::vector<uint32_t> indices;
     std::vector<Vec3D>    normals;
     std::vector<Vec2D>    st_coordinates;
+    std::vector<Vec3D>    center;
 };
 
 } // namespace odr

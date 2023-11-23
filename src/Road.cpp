@@ -278,6 +278,8 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
+
+        out_mesh.center.push_back(this->get_surface_pt(s, (t_inner_brdr + t_outer_brdr) / 2));
     }
 
     const std::size_t num_pts = out_mesh.vertices.size();
