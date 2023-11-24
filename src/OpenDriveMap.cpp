@@ -256,12 +256,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 }
                 else
                 {
-                    if (abs(curv_start) < 1e-6 && abs(curv_end) < 1e-6)
+                    if (std::abs(curv_start) < 1e-6 && std::abs(curv_end) < 1e-6)
                     {
                         // In effect a line
                         road.ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
                     }
-                    else if (abs(curv_end - curv_start) < 1e-6)
+                    else if (std::abs(curv_end - curv_start) < 1e-6)
                     {
                         // In effect an arc
                         road.ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
