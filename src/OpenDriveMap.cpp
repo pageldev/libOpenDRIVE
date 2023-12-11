@@ -62,7 +62,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
                            const bool         fix_spiral_edge_cases,
-                           const bool         with_road_signals) :
+                           const bool         with_road_signals,
+                           const bool         exclude_non_driving_lanes) :
     xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
@@ -384,6 +385,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             {
                 pugi::xml_node lane_node = lane_xpath_node.node();
                 const int      lane_id = lane_node.attribute("id").as_int(0);
+
+                if (exclude_non_driving_lanes && !(std::string(lane_node.attribute("type").as_string("")) == "driving" || lane_id == 0))
+                    continue;
+                std::cout << lane_node.attribute("type").as_string("") << std::endl;
 
                 Lane& lane =
                     lanesection.id_to_lane
