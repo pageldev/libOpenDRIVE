@@ -259,10 +259,11 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
     s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
 
     const double lanesection_s0 = this->get_lanesection_s0(s_start);
-    if (!std::isnan(lanesection_s0)) {
+    if (!std::isnan(lanesection_s0))
+    {
         const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
         const Lane&        inner_lane = lanesection.id_to_lane.at(lanesection.get_lane_id(s_start, lane.inner_border.get(s_start)));
-        std::set<double> s_vals_inner_lane_height = get_map_keys(inner_lane.s_to_height_offset);
+        std::set<double>   s_vals_inner_lane_height = get_map_keys(inner_lane.s_to_height_offset);
         s_vals.insert(s_vals_inner_lane_height.begin(), s_vals_inner_lane_height.end());
     }
 
