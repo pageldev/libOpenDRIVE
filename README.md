@@ -37,14 +37,19 @@ std::cout << road_network_mesh.get_mesh().get_obj() << std::endl;
 ```
 
 ## Build
-To build the library simply run:
+To build a static library by default, simply run:
 ```bash
 mkdir build && cd build
 cmake ..
 make
 ```
 
-This also builds an executable to test the library:
+If requiring a shared library, use:
+```bash
+cmake .. -DBUILD_SHARED_LIBS=ON
+```
+
+The build also provides an executable to test the library:
 ```bash
 ./build/test-xodr test.xodr
 ```
