@@ -776,8 +776,8 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
                 }
                 else
                 {
-                    predecessor = get_connecting_lane(lane, true, next_lanesection);
-                    successor = get_connecting_lane(lane, false, prev_lanesection);
+                    predecessor = get_connecting_lane(lane, false, next_lanesection);
+                    successor = get_connecting_lane(lane, true, prev_lanesection);
                 }
                 if (predecessor)
                 {
