@@ -36,6 +36,7 @@ public:
     double             y_offs = 0;
     const std::string  xodr_file = "";
     pugi::xml_document xml_doc;
+    pugi::xml_parse_result xml_parse_result;
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;
