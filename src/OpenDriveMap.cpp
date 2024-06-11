@@ -63,8 +63,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         abs_z_for_for_local_road_obj_outline,
                            const bool         fix_spiral_edge_cases,
                            const bool         with_road_signals,
-                           const bool         exclude_non_driving_lanes) :
-    xodr_file(xodr_file)
+                           const bool         exclude_non_driving_lanes) : xodr_file(xodr_file)
 {
     pugi::xml_parse_result result = xml_doc.load_file(xodr_file.c_str());
     if (!result)
