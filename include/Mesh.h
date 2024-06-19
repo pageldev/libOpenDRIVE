@@ -20,7 +20,8 @@ struct Mesh3D
     std::vector<Vec3D>    normals;
     std::vector<Vec2D>    st_coordinates;
     std::vector<Vec3D>    center;
-    std::vector<double>   curvatures; // New member to store curvature values
+    std::vector<double>   curvatures;
+    std::vector<double>    center_s;
 };
 
 } // namespace odr

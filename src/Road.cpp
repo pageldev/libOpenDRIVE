@@ -282,6 +282,7 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
         const double t_center = (t_inner_brdr + t_outer_brdr) / 2.0;
         auto         point = this->get_surface_pt(s, t_center);
         out_mesh.center.push_back(point);
+        out_mesh.center_s.push_back(s);
     }
 
     // Calculate curvatures and add first & last curvature so there are as many curvatures as center points
