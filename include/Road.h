@@ -115,6 +115,30 @@ public:
     approximate_lane_border_linear(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer = true) const;
     std::set<double> approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer = true) const;
 
+    template<typename Point>
+    double calculate_curvature(const Point& p1, const Point& p2, const Point& p3) const
+    {
+        double x1 = p1[0], y1 = p1[1];
+        double x2 = p2[0], y2 = p2[1];
+        double x3 = p3[0], y3 = p3[1];
+
+        double a = std::sqrt((x2 - x3) * (x2 - x3) + (y2 - y3) * (y2 - y3));
+        double b = std::sqrt((x1 - x3) * (x1 - x3) + (y1 - y3) * (y1 - y3));
+        double c = std::sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+
+        double s = (a + b + c) / 2.0;
+        double area = std::fabs(0.5 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)));
+
+        if (area == 0.0)
+        {
+            return 0.0;
+        }
+
+        double curvature = (4.0 * area) / (a * b * c);
+
+        return curvature;
+    }
+
     double      length = 0;
     std::string id = "";
     std::string junction = "";
