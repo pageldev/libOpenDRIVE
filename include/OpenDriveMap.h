@@ -26,7 +26,7 @@ public:
                  const bool         with_lane_height = false,
                  const bool         abs_z_for_for_local_road_obj_outline = false,
                  const bool         fix_spiral_edge_cases = true,
-                 const bool         with_road_signals = false,
+                 const bool         with_road_signals = true,
                  const bool         exclude_non_driving_lanes = false);
 
     std::vector<Road>     get_roads() const;
