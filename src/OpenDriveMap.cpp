@@ -64,9 +64,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_road_signals) :
     xodr_file(xodr_file)
 {
-    pugi::xml_parse_result result = this->xml_doc.load_file(xodr_file.c_str());
-    if (!result)
-        printf("%s\n", result.description());
+    this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
+    if (!this->xml_parse_result)
+        printf("%s\n", this->xml_parse_result.description());
 
     pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
 
