@@ -35,19 +35,15 @@ public:
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;
 
-<<<<<<< HEAD
-    std::vector<Lane> find_lane_predecessors(const Lane& lane) const;
-    std::vector<Lane> find_lane_successors(const Lane& lane) const;
-=======
     std::optional<Lane>        get_connecting_lane(const Lane& lane, bool predecessors, std::optional<LaneSection> target_lanesection) const;
     std::optional<LaneSection> adjacent_lanesection(const Road& current_road, const LaneSection& current_lanesection, bool predecessors) const;
->>>>>>> second-repo/devel
 
-    std::string        proj4 = "";
-    double             x_offs = 0;
-    double             y_offs = 0;
-    const std::string  xodr_file = "";
-    pugi::xml_document xml_doc;
+    std::string            proj4 = "";
+    double                 x_offs = 0;
+    double                 y_offs = 0;
+    const std::string      xodr_file = "";
+    pugi::xml_document     xml_doc;
+    pugi::xml_parse_result xml_parse_result;
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;

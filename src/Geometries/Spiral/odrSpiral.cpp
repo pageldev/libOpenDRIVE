@@ -39,6 +39,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+namespace odr
+{
+
 /* ====== LOCAL VARIABLES ====== */
 
 /* S(x) for small x */
@@ -241,3 +244,5 @@ void odrSpiral(double s, double cDot, double* x, double* y, double* t)
 
     *t = s * s * cDot * 0.5;
 }
+
+}; // namespace odr
