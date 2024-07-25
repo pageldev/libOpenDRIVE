@@ -5,7 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 project(libOpenDrive VERSION 0.4.0 DESCRIPTION ".xodr library")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
@@ -48,7 +48,7 @@ target_include_directories(OpenDrive
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
 
 add_executable(test-xodr test.cpp)
-target_link_libraries(test-xodr OpenDrive)
+target_link_libraries(test-xodr OpenDrive) 
 
 install(
     TARGETS OpenDrive test-xodr

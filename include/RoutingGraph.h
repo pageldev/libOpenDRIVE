@@ -69,6 +69,10 @@ struct equal_to<odr::WeightedLaneKey>
 
 namespace odr
 {
+struct CompareLaneKey
+{
+    bool operator()(const WeightedLaneKey& lhs, const WeightedLaneKey& rhs) const { return lhs.weight > rhs.weight; }
+};
 
 class RoutingGraph
 {
