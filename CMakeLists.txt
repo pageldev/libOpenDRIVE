@@ -50,7 +50,7 @@ target_include_directories(OpenDrive
 
 
 add_executable(test-xodr test.cpp)
-target_link_libraries(test-xodr OpenDrive)
+target_link_libraries(test-xodr OpenDrive) 
 
 install(
     TARGETS OpenDrive test-xodr
