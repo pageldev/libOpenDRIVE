@@ -4,7 +4,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-project(libOpenDrive VERSION 0.4.0 DESCRIPTION ".xodr library")
+project(libOpenDrive VERSION 0.6.0 DESCRIPTION ".xodr library")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
