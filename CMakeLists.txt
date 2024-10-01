@@ -6,6 +6,7 @@ endif()
 
 project(libOpenDrive VERSION 0.4.0 DESCRIPTION ".xodr library")
 set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
