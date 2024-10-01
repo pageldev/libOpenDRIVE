@@ -278,6 +278,35 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
+
+        const double t_center = (t_inner_brdr + t_outer_brdr) / 2.0;
+        auto         point = this->get_surface_pt(s, t_center);
+        out_mesh.center.push_back(point);
+        out_mesh.center_s.push_back(s);
+    }
+
+    // Calculate curvatures and add first & last curvature so there are as many curvatures as center points
+    if (out_mesh.center.size() > 2)
+    {
+        double first_curvature = calculate_curvature(out_mesh.center[0], out_mesh.center[1], out_mesh.center[2]);
+        out_mesh.curvatures.push_back(first_curvature);
+
+        for (size_t i = 1; i < out_mesh.center.size() - 1; ++i)
+        {
+            double curvature = calculate_curvature(out_mesh.center[i - 1], out_mesh.center[i], out_mesh.center[i + 1]);
+            out_mesh.curvatures.push_back(curvature);
+        }
+
+        double last_curvature =
+            calculate_curvature(out_mesh.center[out_mesh.center.size() - 3], out_mesh.center[out_mesh.center.size() - 2], out_mesh.center.back());
+        out_mesh.curvatures.push_back(last_curvature);
+    }
+    else
+    {
+        for (const auto& x : out_mesh.center)
+        {
+            out_mesh.curvatures.push_back(0.0);
+        }
     }
 
     const std::size_t num_pts = out_mesh.vertices.size();
@@ -557,5 +586,31 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
 
     return road_obj_mesh;
 }
-
+std::optional<LaneSection> Road::get_next_lanesection(const LaneSection& lanesection) const
+{
+    auto it = s_to_lanesection.upper_bound(lanesection.s0);
+    if (it != s_to_lanesection.end())
+    {
+        return (it->second);
+    }
+    else
+    {
+        // If there is no next lanesection, return a null pointer.
+        return std::nullopt;
+    }
+}
+std::optional<LaneSection> Road::get_previous_lanesection(const LaneSection& lanesection) const
+{
+    if (s_to_lanesection.size() <= 1)
+    {
+        return std::nullopt; // No previous section if this is the only one or map is empty
+    }
+    auto it = s_to_lanesection.lower_bound(lanesection.s0);
+    if (it != s_to_lanesection.begin())
+    {
+        --it; // Safe to decrement since we're not at the beginning
+        return (it->second);
+    }
+    return std::nullopt; // If at the beginning, no previous section exists
+}
 } // namespace odr
