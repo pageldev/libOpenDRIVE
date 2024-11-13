@@ -4,7 +4,7 @@
 #include "RoadMark.h"
 #include "Utils.hpp"
 
-#include "earcut/earcut.hpp"
+#include "earcut.hpp"
 
 #include <algorithm>
 #include <array>

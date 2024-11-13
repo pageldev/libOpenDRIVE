@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml.hpp"
 
 namespace odr
 {

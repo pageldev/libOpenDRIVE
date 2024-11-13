@@ -4,7 +4,7 @@
 #include "RoadNetworkMesh.h"
 #include "RoutingGraph.h"
 
-#include <pugixml/pugixml.hpp>
+#include "pugixml.hpp"
 
 #include <map>
 #include <string>

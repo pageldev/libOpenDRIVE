@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -18,7 +18,17 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
-set(SOURCES 
+include(GNUInstallDirs)
+include(FetchContent)
+
+FetchContent_Declare(
+    pugixml
+    GIT_REPOSITORY https://github.com/zeux/pugixml.git
+    GIT_TAG v1.14
+)
+FetchContent_MakeAvailable(pugixml)
+
+set(SOURCES
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
     src/Geometries/Line.cpp
@@ -38,14 +48,16 @@ set(SOURCES
     src/RoadObject.cpp
     src/RoadSignal.cpp
     src/RoutingGraph.cpp
-    thirdparty/pugixml/pugixml.cpp
+    ${pugixml_SOURCE_DIR}/src/pugixml.cpp
 )
 
 add_library(OpenDrive ${SOURCES})
-target_include_directories(OpenDrive
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty>)
+target_include_directories(
+    OpenDrive PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
+)
 
 add_executable(test-xodr test.cpp)
 target_link_libraries(test-xodr OpenDrive)
@@ -57,10 +69,12 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "include")
-install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml/pugixml.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pugixml/pugiconfig.hpp DESTINATION "include/pugixml/")
-
+install(
+    FILES
+    ${pugixml_SOURCE_DIR}/src/pugixml.hpp
+    ${pugixml_SOURCE_DIR}/src/pugiconfig.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS OpenDrive EXPORT OpenDriveConfig)
 install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
