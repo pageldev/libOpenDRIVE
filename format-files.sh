@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-find -E . -type f \
-    -regex '.*\.(cpp|c|hpp|h|js)' \
+find . -type f \
+    \( -name "*.cpp" -o -name "*.c" -o -name "*.hpp" -o -name "*.h" \) \
     -not -path "./build/*" \
-    -not -path "./thirdparty/*" \
-    -exec clang-format --style=file -i '{}' \;
+    -print -exec clang-format --style=file -i '{}' \;
