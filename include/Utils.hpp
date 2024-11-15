@@ -16,14 +16,14 @@
 #define CHECK(expr, msg)                                                                                                                             \
     {                                                                                                                                                \
         if (!(expr))                                                                                                                                 \
-            printf("[%s] check failed: %s\n", __FUNCTION__, msg);                                                                                    \
+            log_msg(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
     }
 
 #define CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                               \
     {                                                                                                                                                \
         if (!(check_expr))                                                                                                                           \
         {                                                                                                                                            \
-            printf("[%s] check failed: %s\n", __FUNCTION__, msg);                                                                                    \
+            log_msg(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
             repair_expr;                                                                                                                             \
         }                                                                                                                                            \
     }

@@ -9,6 +9,7 @@
 #include "Lane.h"
 #include "LaneSection.h"
 #include "LaneValidityRecord.h"
+#include "Log.h"
 #include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
@@ -66,7 +67,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 {
     this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
     if (!this->xml_parse_result)
-        printf("%s\n", this->xml_parse_result.description());
+        log_msg(LogLevel::Error, "%s", this->xml_parse_result.description());
 
     pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
 
@@ -303,7 +304,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
             else
             {
-                printf("Could not parse %s\n", geometry_type.c_str());
+                log_msg(LogLevel::Error, "Could not parse %s", geometry_type.c_str());
                 continue;
             }
 
@@ -368,7 +369,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             /* check for lateralProfile shape - not implemented yet */
             if (road_node.child("lateralProfile").child("shape"))
             {
-                printf("Lateral Profile Shape not supported\n");
+                log_msg(LogLevel::Error, "Lateral Profile Shape not supported");
             }
         }
 
