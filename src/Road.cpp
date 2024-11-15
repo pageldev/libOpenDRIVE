@@ -138,10 +138,8 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
 
 Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 {
-    CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
-    CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
-
     const double lanesection_s0 = this->get_lanesection_s0(s);
+
     if (std::isnan(lanesection_s0))
     {
         throw std::runtime_error(string_format("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
@@ -149,8 +147,17 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.id_to_lane.at(lanesection.get_lane_id(s, t));
-    const double       t_inner_brdr = lane.inner_border.get(s);
-    double             h_t = 0;
+
+    return this->get_surface_pt(lane, s, t, vn);
+}
+
+Vec3D Road::get_surface_pt(const Lane& lane, double s, const double t, Vec3D* vn) const
+{
+    CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
+    CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
+
+    const double t_inner_brdr = lane.inner_border.get(s);
+    double       h_t = 0;
 
     if (lane.level)
     {
@@ -251,6 +258,15 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
     std::set<double> s_vals_lane_height = get_map_keys(lane.s_to_height_offset);
     s_vals.insert(s_vals_lane_height.begin(), s_vals_lane_height.end());
 
+    const double lanesection_s0 = this->get_lanesection_s0(s_start);
+    if (!std::isnan(lanesection_s0))
+    {
+        const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
+        const Lane&        inner_lane = lanesection.id_to_lane.at(lanesection.get_lane_id(s_start, lane.inner_border.get(s_start)));
+        std::set<double>   s_vals_inner_lane_height = get_map_keys(inner_lane.s_to_height_offset);
+        s_vals.insert(s_vals_inner_lane_height.begin(), s_vals_inner_lane_height.end());
+    }
+
     const double     t_max = lane.outer_border.get_max(s_start, s_end);
     std::set<double> s_vals_superelev = this->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
     s_vals.insert(s_vals_superelev.begin(), s_vals_superelev.end());
@@ -272,23 +288,26 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
         out_mesh.normals.push_back(vn_inner_brdr);
         out_mesh.st_coordinates.push_back({s, t_inner_brdr});
+        out_mesh.vertices.push_back(this->get_surface_pt(lane, s, t_inner_brdr, &vn_inner_brdr));
+        out_mesh.normals.push_back(vn_inner_brdr);
+        out_mesh.st_coordinates.push_back({s, t_inner_brdr});
 
         Vec3D        vn_outer_brdr{0, 0, 0};
         const double t_outer_brdr = lane.outer_border.get(s);
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
+        out_mesh.vertices.push_back(this->get_surface_pt(lane, s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
     }
 
     const std::size_t num_pts = out_mesh.vertices.size();
     const bool        ccw = lane.id > 0;
-    for (std::size_t idx = 3; idx < num_pts; idx += 2)
+    for (std::size_t idx = 5; idx < num_pts; idx += 3)
     {
-        std::array<size_t, 6> indicies_patch;
+        std::array<size_t, 12> indicies_patch;
         if (ccw)
-            indicies_patch = {idx - 3, idx - 1, idx, idx - 3, idx, idx - 2};
+            indicies_patch = {idx - 4, idx - 1, idx, idx - 4, idx, idx - 3, idx - 5, idx - 2, idx - 1, idx - 5, idx - 1, idx - 4};
         else
-            indicies_patch = {idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
+            indicies_patch = {idx - 4, idx, idx - 1, idx - 4, idx - 3, idx, idx - 5, idx - 1, idx - 2, idx - 5, idx - 4, idx - 1};
         out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
     }
 
