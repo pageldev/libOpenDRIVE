@@ -13,13 +13,13 @@
 #include <type_traits>
 #include <vector>
 
-#define CHECK(expr, msg)                                                                                                                             \
+#define ODR_CHECK(expr, msg)                                                                                                                         \
     {                                                                                                                                                \
         if (!(expr))                                                                                                                                 \
             log_msg(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
     }
 
-#define CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                               \
+#define ODR_CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                           \
     {                                                                                                                                                \
         if (!(check_expr))                                                                                                                           \
         {                                                                                                                                            \

@@ -139,8 +139,8 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
 
 Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 {
-    CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
-    CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
+    ODR_CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
+    ODR_CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesection_s0))
