@@ -8,7 +8,7 @@ libOpenDRIVE is a **lightweight, dependency-free, fast C++ library** providing O
 It's small and can be easily integrated in other projects. A core function is the parsing of OpenDRIVE files and the generation of 3D models. The library targets OpenDRIVE version 1.4.
 
 ## Example
-Here's an example of how code using libOpenDRIVE looks. For a more complete example refer to [test.cpp](test.cpp).
+Here's an example of how code using libOpenDRIVE looks. For a more complete example refer to [tests/test.cpp](tests/test.cpp).
 
 ```c++
 // load map
@@ -39,19 +39,15 @@ std::cout << road_network_mesh.get_mesh().get_obj() << std::endl;
 ## Build
 To build a static library by default, simply run:
 ```bash
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make
 ```
 
 If requiring a shared library, use:
 ```bash
-cmake .. -DBUILD_SHARED_LIBS=ON
-```
-
-The build also provides an executable to test the library:
-```bash
-./build/test-xodr test.xodr
+cmake -DBUILD_SHARED_LIBS=ON ..
 ```
 
 ## Viewer

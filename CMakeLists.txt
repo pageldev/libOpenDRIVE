@@ -18,8 +18,9 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
-include(GNUInstallDirs)
+include(CTest)
 include(FetchContent)
+include(GNUInstallDirs)
 
 FetchContent_Declare(
     pugixml
@@ -27,6 +28,14 @@ FetchContent_Declare(
     GIT_TAG v1.14
 )
 FetchContent_MakeAvailable(pugixml)
+
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.4.0
+)
+FetchContent_MakeAvailable(Catch2)
+include(Catch)
 
 set(SOURCES
     src/Geometries/Arc.cpp
@@ -60,11 +69,18 @@ target_include_directories(
     $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
 )
 
-add_executable(test-xodr test.cpp)
-target_link_libraries(test-xodr OpenDrive)
+add_executable(tests tests/test.cpp)
+target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
+catch_discover_tests(tests)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.xodr
+    ${CMAKE_CURRENT_BINARY_DIR}/
+    COPYONLY
+)
 
 install(
-    TARGETS OpenDrive test-xodr
+    TARGETS OpenDrive
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
