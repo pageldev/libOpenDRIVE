@@ -6,15 +6,22 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-vscode.cpptools",
-                "ms-vscode.cpptools-extension-pack",
+                "donjayamanne.githistory",
                 "ms-python.python",
-                "donjayamanne.githistory"
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cpptools"
             ],
             "settings": {
                 "C_Cpp.intelliSenseEngine": "default",
                 "C_Cpp.clang_format_style": "file",
-                "cmake.preferredGenerators": ["Unix Makefiles"]
+                "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+                "cmake.preferredGenerators": ["Unix Makefiles"],
+                "[cpp]": {
+                    "editor.defaultFormatter": "ms-vscode.cpptools"
+                },
+                "[c]": {
+                    "editor.defaultFormatter": "ms-vscode.cpptools"
+                }
             }
         }
     },
