@@ -385,6 +385,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const pugi::xml_node lane_node = lane_xpath_node.node();
                 const int            lane_id = lane_node.attribute("id").as_int(0);
 
+                ODR_CHECK(!lane_node.child("border"), "lane::border definitions not supported");
+
                 Lane& lane =
                     lanesection.id_to_lane
                         .insert({lane_id,
