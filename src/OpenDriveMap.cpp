@@ -689,6 +689,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
     }
 }
 
+Road OpenDriveMap::get_road(const std::string& id) const { return this->id_to_road.at(id); }
+
+Junction OpenDriveMap::get_junction(const std::string& id) const { return this->id_to_junction.at(id); }
+
 std::vector<Road> OpenDriveMap::get_roads() const { return get_map_values(this->id_to_road); }
 
 std::vector<Junction> OpenDriveMap::get_junctions() const { return get_map_values(this->id_to_junction); }

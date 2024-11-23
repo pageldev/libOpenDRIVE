@@ -25,7 +25,9 @@ public:
                  const bool         fix_spiral_edge_cases = true,
                  const bool         with_road_signals = true);
 
+    Road                  get_road(const std::string& id) const;
     std::vector<Road>     get_roads() const;
+    Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
