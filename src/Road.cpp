@@ -149,7 +149,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
     }
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
-    const Lane&        lane = lanesection.id_to_lane.at(lanesection.get_lane_id(s, t));
+    const Lane&        lane = lanesection.get_lane(s, t);
     const double       t_inner_brdr = lane.inner_border.get(s);
     double             h_t = 0;
 

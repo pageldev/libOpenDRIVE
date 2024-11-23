@@ -38,6 +38,8 @@ int LaneSection::get_lane_id(const double s, const double t) const
     return target_iter->second;
 }
 
+Lane LaneSection::get_lane(const int id) const { return this->id_to_lane.at(id); }
+
 Lane LaneSection::get_lane(const double s, const double t) const { return this->id_to_lane.at(this->get_lane_id(s, t)); }
 
 } // namespace odr
