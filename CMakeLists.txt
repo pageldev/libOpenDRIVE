@@ -71,13 +71,7 @@ target_include_directories(
 
 add_executable(tests tests/test.cpp)
 target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
-catch_discover_tests(tests)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test.xodr
-    ${CMAKE_CURRENT_BINARY_DIR}/
-    COPYONLY
-)
+catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 install(
     TARGETS OpenDrive
