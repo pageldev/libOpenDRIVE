@@ -406,7 +406,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     const double d = lane_width_node.attribute("d").as_double(0.0);
 
                     ODR_CHECK_AND_REPAIR(s_offset >= 0, "lane::width::sOffset < 0", s_offset = 0);
-                    lane.lane_width.s0_to_poly[s0 + s_offset] = Poly3(s0 + s_offset, a, b, c, d);
+                    Poly3 width_poly3(s0 + s_offset, a, b, c, d);
+
+                    // OpenDRIVE Format Specification, Rev. 1.4, 3.3.1 General:
+                    // "The reference line itself is defined as lane zero and must not have a width entry (i.e. its width must always be 0.0)."
+                    if (lane_id == 0)
+                        ODR_CHECK_AND_REPAIR(width_poly3.is_zero(), "lane #0 width must be 0", width_poly3.set_zero());
+
+                    lane.lane_width.s0_to_poly[s0 + s_offset] = width_poly3;
                 }
 
                 if (with_lane_height)
@@ -484,7 +491,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const auto id_lane_iter1 = std::next(id_lane_iter0);
             for (auto iter = id_lane_iter1; iter != lanesection.id_to_lane.end(); iter++)
             {
-                if (iter == id_lane_iter0)
+                if (iter == id_lane_iter1)
                 {
                     iter->second.outer_border = iter->second.lane_width;
                 }
@@ -510,6 +517,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 }
             }
 
+            // OpenDRIVE® Format Specification, Rev. 1.4, 3.3.2 Lane Offset:
+            // "... lane 0 may be offset using a cubic polynom"
             for (auto& id_lane : lanesection.id_to_lane)
             {
                 id_lane.second.inner_border = id_lane.second.inner_border.add(road.lane_offset);

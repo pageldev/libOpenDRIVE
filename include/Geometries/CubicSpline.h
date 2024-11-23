@@ -15,6 +15,8 @@ struct Poly3
     double get_grad(double s) const;
     double get_max(double s_start, double s_end) const;
     void   negate();
+    bool   is_zero() const;
+    void   set_zero();
     bool   isnan() const;
 
     std::set<double> approximate_linear(double eps, double s_start, double s_end) const;

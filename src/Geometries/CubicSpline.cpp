@@ -102,6 +102,16 @@ void Poly3::negate()
     d = -d;
 }
 
+bool Poly3::is_zero() const { return (a == 0) && (b == 0) && (c == 0) && (d == 0); }
+
+void Poly3::set_zero()
+{
+    a = 0;
+    b = 0;
+    c = 0;
+    d = 0;
+}
+
 bool Poly3::isnan() const { return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d)); }
 
 bool CubicSpline::empty() const { return this->s0_to_poly.empty(); }
