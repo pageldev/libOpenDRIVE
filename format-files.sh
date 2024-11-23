@@ -24,4 +24,4 @@ fi
 find "${PROJ_ROOT}" -type f \
     \( -name "*.cpp" -o -name "*.c" -o -name "*.hpp" -o -name "*.h" \) \
     -not -path "${PROJ_ROOT}/build/*" \
-    -print -exec clang-format-13 --style=file -i '{}' \;
+    -print -exec clang-format --style=file -i '{}' \;
