@@ -489,41 +489,32 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             if (id_lane_iter0 == lanesection.id_to_lane.end())
                 throw std::runtime_error("lane section does not have lane #0");
 
-            /* iterate from id #0 towards +inf */
+            /* iterate from id #1 towards +inf */
             const auto id_lane_iter1 = std::next(id_lane_iter0);
             for (auto iter = id_lane_iter1; iter != lanesection.id_to_lane.end(); iter++)
             {
                 if (iter == id_lane_iter1)
-                {
                     iter->second.outer_border = iter->second.lane_width;
-                }
                 else
-                {
-                    iter->second.inner_border = std::prev(iter)->second.outer_border;
                     iter->second.outer_border = std::prev(iter)->second.outer_border.add(iter->second.lane_width);
-                }
             }
 
-            /* iterate from id #0 towards -inf */
-            const std::map<int, Lane>::reverse_iterator r_id_lane_iter_1(id_lane_iter0);
-            for (auto r_iter = r_id_lane_iter_1; r_iter != lanesection.id_to_lane.rend(); r_iter++)
+            /* iterate from id #-1 towards -inf */
+            // "For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1) is always true"
+            // The reverse iterator points to the element that is one before the element referred by the id_lane_iter0!
+            const std::map<int, Lane>::reverse_iterator r_id_lane_iter1(id_lane_iter0);
+            for (auto r_iter = r_id_lane_iter1; r_iter != lanesection.id_to_lane.rend(); r_iter++)
             {
-                if (r_iter == r_id_lane_iter_1)
-                {
+                if (r_iter == r_id_lane_iter1)
                     r_iter->second.outer_border = r_iter->second.lane_width.negate();
-                }
                 else
-                {
-                    r_iter->second.inner_border = std::prev(r_iter)->second.outer_border;
                     r_iter->second.outer_border = std::prev(r_iter)->second.outer_border.add(r_iter->second.lane_width.negate());
-                }
             }
 
             // OpenDRIVE® Format Specification, Rev. 1.4, 3.3.2 Lane Offset:
             // "... lane 0 may be offset using a cubic polynom"
             for (auto& id_lane : lanesection.id_to_lane)
             {
-                id_lane.second.inner_border = id_lane.second.inner_border.add(road.lane_offset);
                 id_lane.second.outer_border = id_lane.second.outer_border.add(road.lane_offset);
             }
         }

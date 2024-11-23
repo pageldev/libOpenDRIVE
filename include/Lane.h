@@ -47,7 +47,6 @@ struct Lane : public XmlNode
 
     CubicSpline lane_width;
     CubicSpline outer_border;
-    CubicSpline inner_border;
 
     std::map<double, HeightOffset> s_to_height_offset;
     std::set<RoadMarkGroup>        roadmark_groups;

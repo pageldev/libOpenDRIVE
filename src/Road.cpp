@@ -150,7 +150,8 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.get_lane(s, t);
-    const double       t_inner_brdr = lane.inner_border.get(s);
+    const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
+    const double       t_inner_brdr = inner_neighbor_lane.outer_border.get(s);
     double             h_t = 0;
 
     if (lane.level)
@@ -199,8 +200,15 @@ Road::approximate_lane_border_linear(const Lane& lane, const double s_start, con
 {
     std::set<double> s_vals = this->ref_line.approximate_linear(eps, s_start, s_end);
 
-    const CubicSpline& border = outer ? lane.outer_border : lane.inner_border;
-    std::set<double>   s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
+    CubicSpline border = lane.outer_border;
+    if (!outer)
+    {
+        const LaneSection& lanesection = this->s_to_lanesection.at(lane.key.lanesection_s0);
+        const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
+        border = inner_neighbor_lane.outer_border;
+    }
+
+    std::set<double> s_vals_brdr = border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_brdr.begin(), s_vals_brdr.end());
 
     std::set<double> s_vals_lane_height = get_map_keys(lane.s_to_height_offset);
@@ -223,10 +231,20 @@ Line3D Road::get_lane_border_line(const Lane& lane, const double s_start, const 
 {
     std::set<double> s_vals = this->approximate_lane_border_linear(lane, s_start, s_end, eps, outer);
 
+    CubicSpline border = lane.outer_border;
+    if (!outer)
+    {
+        const LaneSection& lanesection = this->s_to_lanesection.at(lane.key.lanesection_s0);
+        const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
+        border = inner_neighbor_lane.outer_border;
+    }
+
     Line3D border_line;
     for (const double& s : s_vals)
     {
-        const double t = outer ? lane.outer_border.get(s) : lane.inner_border.get(s);
+        double t = border.get(s);
+        if (!outer)
+            t = std::nextafter(t, lane.outer_border.get(s)); // ensure t is not on lane boundary but within lane
         border_line.push_back(this->get_surface_pt(s, t));
     }
 
@@ -244,7 +262,10 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
     std::set<double> s_vals = this->ref_line.approximate_linear(eps, s_start, s_end);
     std::set<double> s_vals_outer_brdr = lane.outer_border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_outer_brdr.begin(), s_vals_outer_brdr.end());
-    std::set<double> s_vals_inner_brdr = lane.inner_border.approximate_linear(eps, s_start, s_end);
+
+    const LaneSection& lanesection = this->s_to_lanesection.at(lane.key.lanesection_s0);
+    const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
+    std::set<double>   s_vals_inner_brdr = inner_neighbor_lane.outer_border.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_inner_brdr.begin(), s_vals_inner_brdr.end());
     std::set<double> s_vals_lane_offset = this->lane_offset.approximate_linear(eps, s_start, s_end);
     s_vals.insert(s_vals_lane_offset.begin(), s_vals_lane_offset.end());
@@ -268,21 +289,22 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
     Mesh3D out_mesh;
     for (const double& s : s_vals)
     {
-        Vec3D        vn_inner_brdr{0, 0, 0};
-        const double t_inner_brdr = lane.inner_border.get(s);
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
-        out_mesh.normals.push_back(vn_inner_brdr);
-        out_mesh.st_coordinates.push_back({s, t_inner_brdr});
-
         Vec3D        vn_outer_brdr{0, 0, 0};
         const double t_outer_brdr = lane.outer_border.get(s);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
+
+        Vec3D        vn_inner_brdr{0, 0, 0};
+        const double t_inner_brdr =
+            std::nextafter(inner_neighbor_lane.outer_border.get(s), t_outer_brdr); // ensure t is not on lane boundary but within lane
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
+        out_mesh.normals.push_back(vn_inner_brdr);
+        out_mesh.st_coordinates.push_back({s, t_inner_brdr});
     }
 
     const std::size_t num_pts = out_mesh.vertices.size();
-    const bool        ccw = lane.id > 0;
+    const bool        ccw = lane.id < 0;
     for (std::size_t idx = 3; idx < num_pts; idx += 2)
     {
         std::array<size_t, 6> indicies_patch;

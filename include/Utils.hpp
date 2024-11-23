@@ -316,4 +316,17 @@ bool check_class_members_equal(const T& obj_a, const T& obj_b, S field, Ss... fi
     return check_class_members_equal(obj_a, obj_b, fields...);
 };
 
+inline int next_towards_zero(const int value)
+{
+    if (value > 0)
+    {
+        return value - 1;
+    }
+    else if (value < 0)
+    {
+        return value + 1;
+    }
+    return 0;
+}
+
 } // namespace odr
