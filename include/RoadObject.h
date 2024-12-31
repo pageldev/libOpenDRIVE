@@ -1,6 +1,6 @@
 #pragma once
-#include "LaneValidityRecord.h"
 #include "Math.hpp"
+#include "LaneValidityRecord.h"
 #include "Mesh.h"
 #include "XmlNode.h"
 
