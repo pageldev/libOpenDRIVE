@@ -66,13 +66,13 @@ struct equal_to<odr::WeightedLaneKey>
     }
 };
 template<>
-struct less<odr::WeightedLaneKey>
+struct greater<odr::WeightedLaneKey>
 {
     bool operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
     {
         if (lhs.weight != rhs.weight)
         {
-            return lhs.weight < rhs.weight; // Compare by weight first
+            return lhs.weight > rhs.weight; // Compare by weight first
         }
         // Tie-breaker: use LaneKey's natural ordering
         return less<odr::LaneKey>{}(lhs, rhs); // Assuming LaneKey has a std::less specialization

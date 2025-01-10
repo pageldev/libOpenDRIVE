@@ -755,23 +755,37 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
     auto get_adjacent_lanesection =
         [&](const Road& current_road, const LaneSection& current_lanesection, bool predecessors) -> std::optional<LaneSection>
     {
-        auto it = current_road.s_to_lanesection.find(current_lanesection.s0);
-        if (it == current_road.s_to_lanesection.end())
-            return std::nullopt;
+        std::optional<LaneSection> lanesection;
+        auto                       it = current_road.s_to_lanesection.find(current_lanesection.s0);
 
         if (predecessors)
         {
-            if (it == current_road.s_to_lanesection.begin())
-                return std::nullopt;      // No previous section
-            return std::prev(it)->second; // Safe to decrement and return previous section
+            if (it != current_road.s_to_lanesection.begin())
+                lanesection = std::prev(it)->second; // Safe to decrement and return previous section
         }
         else
         {
             auto next_it = std::next(it);
-            if (next_it == current_road.s_to_lanesection.end())
-                return std::nullopt; // No next section
-            return next_it->second;  // Return next section
+            if (next_it != current_road.s_to_lanesection.end())
+                lanesection = next_it->second; // Return next section
         }
+
+        if (!lanesection)
+        {
+            const RoadLink& road_link = predecessors ? current_road.predecessor : current_road.successor;
+            if (road_link.type == RoadLink::Type_Road && road_link.contact_point != RoadLink::ContactPoint_None)
+            {
+                auto next_road_iter = id_to_road.find(road_link.id);
+                if (next_road_iter != id_to_road.end())
+                {
+                    const Road& next_road = next_road_iter->second;
+                    lanesection = (road_link.contact_point == RoadLink::ContactPoint_Start) ? next_road.s_to_lanesection.begin()->second
+                                                                                            : next_road.s_to_lanesection.rbegin()->second;
+                }
+            }
+        }
+
+        return lanesection;
     };
 
     // Lambda to find connecting lane
@@ -807,8 +821,11 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
         auto prev_lanesection = get_adjacent_lanesection(road, lanesec, true);
         auto next_lanesection = get_adjacent_lanesection(road, lanesec, false);
 
-        std::optional<Lane> predecessor = get_connecting_lane(lane, lane_follows_road_direction, prev_lanesection);
-        std::optional<Lane> successor = get_connecting_lane(lane, !lane_follows_road_direction, next_lanesection);
+        std::optional<Lane> predecessor =
+            get_connecting_lane(lane, lane_follows_road_direction, lane_follows_road_direction ? prev_lanesection : next_lanesection);
+
+        std::optional<Lane> successor =
+            get_connecting_lane(lane, !lane_follows_road_direction, lane_follows_road_direction ? next_lanesection : prev_lanesection);
 
         add_edge_to_graph(predecessor ? std::optional<LaneKey>(predecessor->key) : std::nullopt, lane.key, road);
         add_edge_to_graph(std::optional<LaneKey>(lane.key), successor ? std::optional<LaneKey>(successor->key) : std::nullopt, road);

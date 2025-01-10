@@ -33,7 +33,7 @@ struct LaneKey
 
     bool operator==(const LaneKey& other) const
     {
-        return road_id == other.road_id && lanesection_s0 == other.lanesection_s0 && lane_id == other.lane_id;
+        return this->road_id == other.road_id && this->lanesection_s0 == other.lanesection_s0 && this->lane_id == other.lane_id;
     }
 
     bool operator!=(const LaneKey& other) const { return !(*this == other); }

@@ -4,7 +4,6 @@
 #include <limits>
 #include <queue>
 #include <utility>
-
 namespace odr
 {
 
@@ -45,8 +44,7 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
     }
 
     // Priority queue to maintain open set
-    std::priority_queue<WeightedLaneKey> open_set;
-
+    std::priority_queue<WeightedLaneKey, std::vector<WeightedLaneKey>, std::greater<odr::WeightedLaneKey>> open_set;
     // Maps to store costs and previous nodes
     std::unordered_map<LaneKey, double>  cost_from_start;
     std::unordered_map<LaneKey, LaneKey> came_from;
@@ -108,9 +106,28 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
             double alternative_path_cost = current_cost_itr->second + weight;
             if (alternative_path_cost < current_cost)
             {
-                // Update cost and path
-                cost_from_start[neighbor] = alternative_path_cost;
-                came_from.emplace(neighbor, current);
+                // Update cost_from_start
+                if (neighbor_cost_itr == cost_from_start.end())
+                {
+                    cost_from_start.emplace(neighbor, alternative_path_cost);
+                }
+                else
+                {
+                    neighbor_cost_itr->second = alternative_path_cost;
+                }
+
+                // Update came_from
+                auto came_from_itr = came_from.find(neighbor);
+                if (came_from_itr == came_from.end())
+                {
+                    came_from.emplace(neighbor, current);
+                }
+                else
+                {
+                    came_from_itr->second = current;
+                }
+
+                // Add the neighbor to the open set
                 open_set.emplace(neighbor, alternative_path_cost);
             }
         }
