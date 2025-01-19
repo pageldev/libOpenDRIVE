@@ -15,6 +15,7 @@
                 "C_Cpp.intelliSenseEngine": "default",
                 "C_Cpp.clang_format_style": "file",
                 "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+                "C_Cpp.default.cppStandard": "c++17",
                 "cmake.preferredGenerators": ["Unix Makefiles"],
                 "[cpp]": {
                     "editor.defaultFormatter": "ms-vscode.cpptools"
