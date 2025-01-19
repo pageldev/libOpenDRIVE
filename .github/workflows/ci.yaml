@@ -6,11 +6,14 @@ jobs:
   build:
     name: ubuntu:22.04-release
     runs-on: ubuntu-22.04
+    env:
+      CMAKE_GENERATOR: Ninja
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - name: install dependencies
         run: |
-          apt-get update
-          apt-get install -y \
+          sudo apt update
+          sudo apt install -y \
             build-essential \
             clang-format \
             cmake \
