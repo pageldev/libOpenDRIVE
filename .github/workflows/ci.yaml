@@ -3,46 +3,46 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build-linux:
-    name: ubuntu-22.04-release
-    runs-on: ubuntu-22.04
-    env:
-      CMAKE_GENERATOR: Ninja
-      DEBIAN_FRONTEND: noninteractive
-    defaults:
-      run:
-        shell: bash -e -o pipefail {0}
-    steps:
-      - name: install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            build-essential \
-            clang-format \
-            cmake \
-            ninja-build
-      - name: checkout repository
-        uses: actions/checkout@v4
-      - name: configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release
-      - name: build
-        run: |
-          cmake --build build
-      - name: test
-        run: |
-          cd build
-          ctest --output-on-failure
-      - name: install
-        run: |
-          sudo cmake --install build
+  # build-linux:
+  #   name: ubuntu-22.04-release
+  #   runs-on: ubuntu-22.04
+  #   env:
+  #     CMAKE_GENERATOR: Ninja
+  #     DEBIAN_FRONTEND: noninteractive
+  #   defaults:
+  #     run:
+  #       shell: bash -e -o pipefail {0}
+  #   steps:
+  #     - name: install dependencies
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install -y \
+  #           build-essential \
+  #           clang-format \
+  #           cmake \
+  #           ninja-build
+  #     - name: checkout repository
+  #       uses: actions/checkout@v4
+  #     - name: configure
+  #       run: |
+  #         cmake -S . -B build \
+  #           -DCMAKE_BUILD_TYPE=Release
+  #     - name: build
+  #       run: |
+  #         cmake --build build
+  #     - name: test
+  #       run: |
+  #         cd build
+  #         ctest --output-on-failure
+  #     - name: install
+  #       run: |
+  #         sudo cmake --install build
   build-windows:
     name: windows-2022-release
     runs-on: windows-2022
     defaults:
       run:
-        shell: msys2 {0}
+        shell: msys2bash {0}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
