@@ -20,6 +20,17 @@ jobs:
             ninja-build
       - name: checkout repository
         uses: actions/checkout@v4
-      - name: compile
+      - name: configure
         run: |
-          cmake -B build -S .
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release
+      - name: build
+        run: |
+          cmake --build build
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+      - name: install
+        run: |
+          sudo cmake --install build
