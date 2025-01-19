@@ -42,7 +42,7 @@ jobs:
     runs-on: windows-2022
     defaults:
       run:
-        shell: C:\msys64 {0}
+        shell: C:\msys64\usr\bin\bash.exe {0}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
