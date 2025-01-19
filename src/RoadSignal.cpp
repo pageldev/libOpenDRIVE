@@ -22,8 +22,24 @@ RoadSignal::RoadSignal(std::string road_id,
                        std::string unit,
                        std::string text) :
     road_id(road_id),
-    id(id), name(name), s0(s0), t0(t0), is_dynamic(is_dynamic), zOffset(zOffset), value(value), height(height), width(width), hOffset(hOffset),
-    pitch(pitch), roll(roll), orientation(orientation), country(country), type(type), subtype(subtype), unit(unit), text(text)
+    id(id),
+    name(name),
+    s0(s0),
+    t0(t0),
+    is_dynamic(is_dynamic),
+    zOffset(zOffset),
+    value(value),
+    height(height),
+    width(width),
+    hOffset(hOffset),
+    pitch(pitch),
+    roll(roll),
+    orientation(orientation),
+    country(country),
+    type(type),
+    subtype(subtype),
+    unit(unit),
+    text(text)
 {
 }
 

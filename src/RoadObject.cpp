@@ -20,8 +20,16 @@ RoadObjectRepeat::RoadObjectRepeat(double s0,
                                    double z_offset_start,
                                    double z_offset_end) :
     s0(s0),
-    length(length), distance(distance), t_start(t_start), t_end(t_end), width_start(width_start), width_end(width_end), height_start(height_start),
-    height_end(height_end), z_offset_start(z_offset_start), z_offset_end(z_offset_end)
+    length(length),
+    distance(distance),
+    t_start(t_start),
+    t_end(t_end),
+    width_start(width_start),
+    width_end(width_end),
+    height_start(height_start),
+    height_end(height_end),
+    z_offset_start(z_offset_start),
+    z_offset_end(z_offset_end)
 {
 }
 
@@ -51,8 +59,23 @@ RoadObject::RoadObject(std::string road_id,
                        std::string subtype,
                        bool        is_dynamic) :
     road_id(road_id),
-    id(id), type(type), name(name), orientation(orientation), subtype(subtype), s0(s0), t0(t0), z0(z0), length(length), valid_length(valid_length),
-    width(width), radius(radius), height(height), hdg(hdg), pitch(pitch), roll(roll), is_dynamic(is_dynamic)
+    id(id),
+    type(type),
+    name(name),
+    orientation(orientation),
+    subtype(subtype),
+    s0(s0),
+    t0(t0),
+    z0(z0),
+    length(length),
+    valid_length(valid_length),
+    width(width),
+    radius(radius),
+    height(height),
+    hdg(hdg),
+    pitch(pitch),
+    roll(roll),
+    is_dynamic(is_dynamic)
 {
 }
 

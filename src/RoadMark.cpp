@@ -14,8 +14,16 @@ RoadMarksLine::RoadMarksLine(std::string road_id,
                              std::string name,
                              std::string rule) :
     road_id(road_id),
-    lanesection_s0(lanesection_s0), lane_id(lane_id), group_s0(group_s0), width(width), length(length), space(space), t_offset(t_offset),
-    s_offset(s_offset), name(name), rule(rule)
+    lanesection_s0(lanesection_s0),
+    lane_id(lane_id),
+    group_s0(group_s0),
+    width(width),
+    length(length),
+    space(space),
+    t_offset(t_offset),
+    s_offset(s_offset),
+    name(name),
+    rule(rule)
 {
 }
 
@@ -31,8 +39,16 @@ RoadMarkGroup::RoadMarkGroup(std::string road_id,
                              std::string material,
                              std::string lane_change) :
     road_id(road_id),
-    lanesection_s0(lanesection_s0), lane_id(lane_id), width(width), height(height), s_offset(s_offset), type(type), weight(weight), color(color),
-    material(material), lane_change(lane_change)
+    lanesection_s0(lanesection_s0),
+    lane_id(lane_id),
+    width(width),
+    height(height),
+    s_offset(s_offset),
+    type(type),
+    weight(weight),
+    color(color),
+    material(material),
+    lane_change(lane_change)
 {
 }
 
@@ -46,7 +62,14 @@ RoadMark::RoadMark(std::string road_id,
                    double      width,
                    std::string type) :
     road_id(road_id),
-    lanesection_s0(lanesection_s0), lane_id(lane_id), group_s0(group_s0), s_start(s_start), s_end(s_end), t_offset(t_offset), width(width), type(type)
+    lanesection_s0(lanesection_s0),
+    lane_id(lane_id),
+    group_s0(group_s0),
+    s_start(s_start),
+    s_end(s_end),
+    t_offset(t_offset),
+    width(width),
+    type(type)
 {
 }
 
