@@ -3,8 +3,8 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build:
-    name: ubuntu:22.04-release
+  build-linux:
+    name: ubuntu-22.04-release
     runs-on: ubuntu-22.04
     env:
       CMAKE_GENERATOR: Ninja
@@ -37,3 +37,20 @@ jobs:
       - name: install
         run: |
           sudo cmake --install build
+  build-windows:
+    name: windows-2022-release
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+      - name: build
+        run: |
+          cmake --build build
