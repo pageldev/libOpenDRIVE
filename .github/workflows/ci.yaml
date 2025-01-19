@@ -13,19 +13,13 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
       - name: configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: build
-        run: |
-          cmake --build build
+        run: cmake --build build
       - name: test
-        run: |
-          cd build
-          ctest --output-on-failure
+        run: ctest --test-dir build --output-on-failure
       - name: install
-        run: |
-          sudo cmake --install build
+        run: sudo cmake --install build
   build-windows:
     name: windows-2022-release
     runs-on: windows-2022
@@ -36,16 +30,10 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
       - name: configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G "Visual Studio 17 2022"
       - name: build
-        run: |
-          cmake --build build
+        run: cmake --build build --config Release
       - name: test
-        run: |
-          cd build
-          ctest --output-on-failure
+        run: ctest --test-dir build --output-on-failure --config Release
       - name: install
-        run: |
-          cmake --install build
+        run: cmake --install build --config Release
