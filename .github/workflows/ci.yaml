@@ -9,6 +9,9 @@ jobs:
     env:
       CMAKE_GENERATOR: Ninja
       DEBIAN_FRONTEND: noninteractive
+    defaults:
+      run:
+        shell: bash -e -o pipefail {0}
     steps:
       - name: install dependencies
         run: |
