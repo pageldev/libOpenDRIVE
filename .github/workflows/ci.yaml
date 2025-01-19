@@ -1,0 +1,41 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    name: ubuntu-22.04-release
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash -e -o pipefail {0}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: check format
+        run: ./format-files.sh check
+      - name: configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: ctest --test-dir build --output-on-failure
+      - name: install
+        run: sudo cmake --install build
+  build-windows:
+    name: windows-2022-release
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: C:\msys64\usr\bin\bash.exe {0}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022"
+      - name: build
+        run: cmake --build build --config Release
+      - name: test
+        run: ctest --test-dir build --output-on-failure
+      - name: install
+        run: cmake --install build --config Release

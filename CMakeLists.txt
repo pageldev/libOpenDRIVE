@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "/EHsc /Wall")
+    set(CMAKE_CXX_FLAGS "/EHsc /W3")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2")
     add_compile_definitions(_USE_MATH_DEFINES)
