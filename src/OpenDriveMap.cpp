@@ -63,7 +63,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
                            const bool         fix_spiral_edge_cases,
-                           const bool         with_road_signals) : xodr_file(xodr_file)
+                           const bool         with_road_signals) :
+    xodr_file(xodr_file)
 {
     this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
     if (!this->xml_parse_result)
