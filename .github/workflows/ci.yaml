@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
-      - name: check format
-        run: ./format-files.sh check
       - name: configure
         run: cmake -S . -B build -G "Visual Studio 17 2022"
       - name: build
