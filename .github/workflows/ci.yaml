@@ -49,8 +49,7 @@ jobs:
       - name: configure
         run: |
           cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -G Ninja
+            -DCMAKE_BUILD_TYPE=Release
       - name: build
         run: |
           cmake --build build
