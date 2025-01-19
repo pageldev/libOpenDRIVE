@@ -53,3 +53,10 @@ jobs:
       - name: build
         run: |
           cmake --build build
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+      - name: install
+        run: |
+          sudo cmake --install build
