@@ -30,6 +30,13 @@ struct LaneKey
     std::string road_id = "";
     double      lanesection_s0 = 0;
     int         lane_id = 0;
+
+    bool operator==(const LaneKey& other) const
+    {
+        return this->road_id == other.road_id && this->lanesection_s0 == other.lanesection_s0 && this->lane_id == other.lane_id;
+    }
+
+    bool operator!=(const LaneKey& other) const { return !(*this == other); }
 };
 
 struct Lane : public XmlNode

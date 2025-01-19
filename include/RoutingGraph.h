@@ -65,6 +65,19 @@ struct equal_to<odr::WeightedLaneKey>
         return equal_to<odr::LaneKey>{}(lhs, rhs) && equal_to<double>{}(lhs.weight, rhs.weight);
     }
 };
+template<>
+struct greater<odr::WeightedLaneKey>
+{
+    bool operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
+    {
+        if (lhs.weight != rhs.weight)
+        {
+            return lhs.weight > rhs.weight; // Compare by weight first
+        }
+        // Tie-breaker: use LaneKey's natural ordering
+        return less<odr::LaneKey>{}(lhs, rhs); // Assuming LaneKey has a std::less specialization
+    }
+};
 } // namespace std
 
 namespace odr

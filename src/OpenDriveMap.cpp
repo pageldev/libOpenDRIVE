@@ -23,6 +23,7 @@
 #include <cmath>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <stdio.h>
@@ -62,8 +63,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_lane_height,
                            const bool         abs_z_for_for_local_road_obj_outline,
                            const bool         fix_spiral_edge_cases,
-                           const bool         with_road_signals) :
-    xodr_file(xodr_file)
+                           const bool         with_road_signals) : xodr_file(xodr_file)
 {
     this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
     if (!this->xml_parse_result)
@@ -751,116 +751,148 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 {
     RoutingGraph routing_graph;
 
-    /* find lane successors/predecessors */
-    for (const bool find_successor : {true, false})
+    // Lambda to find adjacent lanesection
+    auto get_adjacent_lanesection =
+        [&](const Road& current_road, const LaneSection& current_lanesection, bool predecessors) -> std::optional<LaneSection>
     {
-        for (const auto& id_road : this->id_to_road)
+        std::optional<LaneSection> lanesection;
+        auto                       it = current_road.s_to_lanesection.find(current_lanesection.s0);
+
+        if (predecessors)
         {
-            const Road&     road = id_road.second;
-            const RoadLink& road_link = find_successor ? road.successor : road.predecessor;
-            if (road_link.type != RoadLink::Type_Road || road_link.contact_point == RoadLink::ContactPoint_None)
-                continue;
+            if (it != current_road.s_to_lanesection.begin())
+                lanesection = std::prev(it)->second; // Safe to decrement and return previous section
+        }
+        else
+        {
+            auto next_it = std::next(it);
+            if (next_it != current_road.s_to_lanesection.end())
+                lanesection = next_it->second; // Return next section
+        }
 
-            auto next_road_iter = this->id_to_road.find(road_link.id);
-            if (next_road_iter == this->id_to_road.end())
-                continue;
-            const Road&        next_road = next_road_iter->second;
-            const LaneSection& next_road_contact_lanesec = (road_link.contact_point == RoadLink::ContactPoint_Start)
-                                                               ? next_road.s_to_lanesection.begin()->second
-                                                               : next_road.s_to_lanesection.rbegin()->second;
-
-            for (auto s_lanesec_iter = road.s_to_lanesection.begin(); s_lanesec_iter != road.s_to_lanesection.end(); s_lanesec_iter++)
+        if (!lanesection)
+        {
+            const RoadLink& road_link = predecessors ? current_road.predecessor : current_road.successor;
+            if (road_link.type == RoadLink::Type_Road && road_link.contact_point != RoadLink::ContactPoint_None)
             {
-                const LaneSection& lanesec = s_lanesec_iter->second;
-                const LaneSection* next_lanesec = nullptr;
-                const Road*        next_lanesecs_road = nullptr;
-
-                if (find_successor && std::next(s_lanesec_iter) == road.s_to_lanesection.end())
+                auto next_road_iter = id_to_road.find(road_link.id);
+                if (next_road_iter != id_to_road.end())
                 {
-                    next_lanesec = &next_road_contact_lanesec; // take next road to find successor
-                    next_lanesecs_road = &next_road;
+                    const Road& next_road = next_road_iter->second;
+                    lanesection = (road_link.contact_point == RoadLink::ContactPoint_Start) ? next_road.s_to_lanesection.begin()->second
+                                                                                            : next_road.s_to_lanesection.rbegin()->second;
                 }
-                else if (!find_successor && s_lanesec_iter == road.s_to_lanesection.begin())
-                {
-                    next_lanesec = &next_road_contact_lanesec; // take prev. road to find predecessor
-                    next_lanesecs_road = &next_road;
-                }
-                else
-                {
-                    next_lanesec = find_successor ? &(std::next(s_lanesec_iter)->second) : &(std::prev(s_lanesec_iter)->second);
-                    next_lanesecs_road = &road;
-                }
+            }
+        }
 
-                for (const auto& id_lane : lanesec.id_to_lane)
-                {
-                    const Lane& lane = id_lane.second;
-                    const int   next_lane_id = find_successor ? lane.successor : lane.predecessor;
-                    if (next_lane_id == 0)
-                        continue;
+        return lanesection;
+    };
 
-                    auto next_lane_iter = next_lanesec->id_to_lane.find(next_lane_id);
-                    if (next_lane_iter == next_lanesec->id_to_lane.end())
-                        continue;
-                    const Lane& next_lane = next_lane_iter->second;
+    // Lambda to find connecting lane
+    auto get_connecting_lane = [&](const Lane& lane, bool predecessors, const std::optional<LaneSection>& target_lanesection) -> std::optional<Lane>
+    {
+        if (target_lanesection)
+        {
+            int  target_lane_id = predecessors ? lane.predecessor : lane.successor;
+            auto it = target_lanesection->id_to_lane.find(target_lane_id);
+            if (it != target_lanesection->id_to_lane.end())
+            {
+                return it->second;
+            }
+        }
+        return std::nullopt;
+    };
 
-                    const Lane&        from_lane = find_successor ? lane : next_lane;
-                    const LaneSection& from_lanesection = find_successor ? lanesec : *next_lanesec;
-                    const Road&        from_road = find_successor ? road : *next_lanesecs_road;
+    // Lambda to add an edge to the graph
+    auto add_edge_to_graph = [&](const std::optional<LaneKey>& from, const std::optional<LaneKey>& to, const Road& road)
+    {
+        if (from && to)
+        {
+            double lane_length = road.get_lanesection_length(from->lanesection_s0);
+            routing_graph.add_edge(RoutingGraphEdge(*from, *to, lane_length));
+        }
+    };
 
-                    const Lane&        to_lane = find_successor ? next_lane : lane;
-                    const LaneSection& to_lanesection = find_successor ? *next_lanesec : lanesec;
-                    const Road&        to_road = find_successor ? *next_lanesecs_road : road;
+    // Lambda to process a single lane
+    auto process_lane = [&](const Road& road, const LaneSection& lanesec, const Lane& lane)
+    {
+        bool lane_follows_road_direction = lane.key.lane_id < 0;
 
-                    const LaneKey from(from_road.id, from_lanesection.s0, from_lane.id);
-                    const LaneKey to(to_road.id, to_lanesection.s0, to_lane.id);
-                    const double  lane_length = road.get_lanesection_length(from_lanesection);
-                    routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
-                }
+        auto prev_lanesection = get_adjacent_lanesection(road, lanesec, true);
+        auto next_lanesection = get_adjacent_lanesection(road, lanesec, false);
+
+        std::optional<Lane> predecessor =
+            get_connecting_lane(lane, lane_follows_road_direction, lane_follows_road_direction ? prev_lanesection : next_lanesection);
+
+        std::optional<Lane> successor =
+            get_connecting_lane(lane, !lane_follows_road_direction, lane_follows_road_direction ? next_lanesection : prev_lanesection);
+
+        add_edge_to_graph(predecessor ? std::optional<LaneKey>(predecessor->key) : std::nullopt, lane.key, road);
+        add_edge_to_graph(std::optional<LaneKey>(lane.key), successor ? std::optional<LaneKey>(successor->key) : std::nullopt, road);
+    };
+
+    // Parse roads
+    for (const auto& id_road : id_to_road)
+    {
+        const Road& road = id_road.second;
+        for (const auto& s_lanesection : road.s_to_lanesection)
+        {
+            const LaneSection& lanesec = s_lanesection.second;
+            for (const auto& id_lane : lanesec.id_to_lane)
+            {
+                process_lane(road, lanesec, id_lane.second);
             }
         }
     }
 
-    /* parse junctions */
-    for (const auto& id_junc : this->id_to_junction)
+    // Lambda to process a single junction
+    auto process_junction = [&](const Junction& junction)
     {
-        for (const auto& id_conn : id_junc.second.id_to_connection)
+        for (const auto& id_conn : junction.id_to_connection)
         {
             const JunctionConnection& conn = id_conn.second;
 
-            auto incoming_road_iter = this->id_to_road.find(conn.incoming_road);
-            auto connecting_road_iter = this->id_to_road.find(conn.connecting_road);
-            if (incoming_road_iter == this->id_to_road.end() || connecting_road_iter == this->id_to_road.end())
+            auto incoming_road_iter = id_to_road.find(conn.incoming_road);
+            auto connecting_road_iter = id_to_road.find(conn.connecting_road);
+            if (incoming_road_iter == id_to_road.end() || connecting_road_iter == id_to_road.end())
                 continue;
+
             const Road& incoming_road = incoming_road_iter->second;
             const Road& connecting_road = connecting_road_iter->second;
 
-            const bool is_succ_junc = incoming_road.successor.type == RoadLink::Type_Junction && incoming_road.successor.id == id_junc.first;
-            const bool is_pred_junc = incoming_road.predecessor.type == RoadLink::Type_Junction && incoming_road.predecessor.id == id_junc.first;
-            if (!is_succ_junc && !is_pred_junc)
-                continue;
-
             const LaneSection& incoming_lanesec =
-                is_succ_junc ? incoming_road.s_to_lanesection.rbegin()->second : incoming_road.s_to_lanesection.begin()->second;
+                (incoming_road.successor.type == RoadLink::Type_Junction && incoming_road.successor.id == junction.id)
+                    ? incoming_road.s_to_lanesection.rbegin()->second
+                    : incoming_road.s_to_lanesection.begin()->second;
+
             const LaneSection& connecting_lanesec = (conn.contact_point == JunctionConnection::ContactPoint_Start)
                                                         ? connecting_road.s_to_lanesection.begin()->second
                                                         : connecting_road.s_to_lanesection.rbegin()->second;
+
             for (const JunctionLaneLink& lane_link : conn.lane_links)
             {
                 if (lane_link.from == 0 || lane_link.to == 0)
                     continue;
+
                 auto from_lane_iter = incoming_lanesec.id_to_lane.find(lane_link.from);
                 auto to_lane_iter = connecting_lanesec.id_to_lane.find(lane_link.to);
+
                 if (from_lane_iter == incoming_lanesec.id_to_lane.end() || to_lane_iter == connecting_lanesec.id_to_lane.end())
                     continue;
-                const Lane& from_lane = from_lane_iter->second;
-                const Lane& to_lane = to_lane_iter->second;
 
-                const LaneKey from(incoming_road.id, incoming_lanesec.s0, from_lane.id);
-                const LaneKey to(connecting_road.id, connecting_lanesec.s0, to_lane.id);
-                const double  lane_length = incoming_road.get_lanesection_length(incoming_lanesec);
+                const LaneKey from(incoming_road.id, incoming_lanesec.s0, from_lane_iter->second.id);
+                const LaneKey to(connecting_road.id, connecting_lanesec.s0, to_lane_iter->second.id);
+                double        lane_length = incoming_road.get_lanesection_length(incoming_lanesec);
+
                 routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }
         }
+    };
+
+    // Parse junctions
+    for (const auto& id_junc : id_to_junction)
+    {
+        process_junction(id_junc.second);
     }
 
     return routing_graph;
