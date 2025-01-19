@@ -1,0 +1,22 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ubuntu:22.04-release
+    runs-on: ubuntu-22.04
+    steps:
+      - name: install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            clang-format \
+            cmake \
+            ninja-build
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: compile
+        run: |
+          cmake -B build -S .
