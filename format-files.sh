@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
+MODE="${1:-default}"
+
 PROJ_ROOT=$(dirname $0)
 
 if ! type -p clang-format >/dev/null; then
@@ -21,7 +25,13 @@ else
     exit 1
 fi
 
+EXTRA_FLAGS=""
+if [[ "$MODE" == "check" ]]; then
+    echo "check mode enabled, not formatting files, only checking"
+    EXTRA_FLAGS="--dry-run --Werror"
+fi
+
 find "${PROJ_ROOT}" -type f \
     \( -name "*.cpp" -o -name "*.c" -o -name "*.hpp" -o -name "*.h" \) \
     -not -path "${PROJ_ROOT}/build/*" \
-    -print -exec clang-format --style=file -i '{}' \;
+    -print0 | xargs -0 clang-format $EXTRA_FLAGS --style=file --verbose -i
