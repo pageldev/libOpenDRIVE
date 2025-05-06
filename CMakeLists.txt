@@ -88,7 +88,10 @@ if(BUILD_PYTHON_BINDINGS)
     # Define binding sources
     set(BINDING_SOURCES
         bindings/bindings.cpp
-        #bindings/opendrivemap.cpp
+        bindings/opendrivemap.cpp
+        bindings/junction.cpp
+        bindings/lane.cpp
+        bindings/lanesection.h
         #bindings/road.cpp
         #bindings/geometry.cpp
         # Add other binding files as needed
