@@ -38,15 +38,5 @@ ext_modules = [
 ]
 
 setup(
-    name="opendrive",
-    version="0.0.1",
-    description="Python bindings for libOpenDRIVE",
-    long_description=open("README.md").read(),
-    long_description_content_type="text/markdown",
-    author="Christian Contreras",
-    author_email="chrisjcc.physics@gmail.com",
-    url="https://github.com/pageldev/libOpenDRIVE",
-    license="Apache License",
     ext_modules=ext_modules,
-    install_requires=["pybind11>=2.9"],
 )
