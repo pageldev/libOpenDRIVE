@@ -79,6 +79,16 @@ To build the Python bindings using pybind11 and enable installation via pip in e
    ```
    This command uses the generated Python bindings and sets up the package in your environment so that changes to the source code reflect immediately without reinstalling.
 
+5. **Import and use the package in Python:**
+After installation, you can import the opendrive module in Python:
+
+```
+import opendrive
+
+# Example: List available attributes
+print(dir(opendrive))
+```
+This verifies the bindings are available and provides an overview of the exposed classes and functions.
 
 ## Viewer
 Check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library. Use the [odrviewer project](https://github.com/pageldev/odrviewer) to post issues and feature requests for odrviewer.io.
