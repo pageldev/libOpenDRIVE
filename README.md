@@ -50,6 +50,36 @@ If requiring a shared library, use:
 cmake -DBUILD_SHARED_LIBS=ON ..
 ```
 
+### Python Bindings with pybind11
+
+To build the Python bindings using pybind11 and enable installation via pip in editable mode (`pip install -e .`), follow these steps:
+
+1. **Create and enter the build directory:**
+
+   ```bash
+   mkdir build
+   cd build
+
+2. **Configure the build with Python bindings enabled, specifying your Python interpreter:**
+
+   ```
+   cmake -DBUILD_SHARED_LIBS=ON -DBUILD_PYTHON_BINDINGS=ON -DPython3_EXECUTABLE=$(which python) ..
+   ```
+
+3. **Build the project:**
+   ```
+   make
+   ```
+
+4. **Install the Python package in editable mode:**
+   From the root directory of the repository (not inside `build`), run:
+
+   ```
+   pip install -e .
+   ```
+   This command uses the generated Python bindings and sets up the package in your environment so that changes to the source code reflect immediately without reinstalling.
+
+
 ## Viewer
 Check out the viewer at [odrviewer.io](https://odrviewer.io) which uses this library. Use the [odrviewer project](https://github.com/pageldev/odrviewer) to post issues and feature requests for odrviewer.io.
 

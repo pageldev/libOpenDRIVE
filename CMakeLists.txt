@@ -23,6 +23,7 @@ include(CTest)
 include(FetchContent)
 include(GNUInstallDirs)
 
+# Fetch pugixml
 FetchContent_Declare(
     pugixml
     GIT_REPOSITORY https://github.com/zeux/pugixml.git
@@ -30,6 +31,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pugixml)
 
+# Fetch Catch2 for tests
 FetchContent_Declare(
     Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -38,6 +40,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 include(Catch)
 
+# Define libOpenDRIVE sources
 set(SOURCES
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
@@ -62,6 +65,7 @@ set(SOURCES
     ${pugixml_SOURCE_DIR}/src/pugixml.cpp
 )
 
+# Build libOpenDRIVE
 add_library(OpenDrive ${SOURCES})
 target_include_directories(
     OpenDrive PUBLIC
@@ -70,10 +74,54 @@ target_include_directories(
     $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
 )
 
+# Build tests
 add_executable(tests tests/test.cpp)
 target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
 catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
+# Add Python bindings (optional, controlled by option)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings for libOpenDRIVE" OFF)
+if(BUILD_PYTHON_BINDINGS)
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    find_package(pybind11 CONFIG REQUIRED)
+
+    # Define binding sources
+    set(BINDING_SOURCES
+        bindings/bindings.cpp
+        bindings/opendrivemap.cpp
+        bindings/junction.cpp
+        bindings/lane.cpp
+        bindings/lanesection.cpp
+        bindings/road.cpp
+        bindings/refline.cpp
+        bindings/mesh.cpp
+        bindings/routinggraph.cpp
+        bindings/roadmark.cpp
+        bindings/roadnetworkmesh.cpp
+        bindings/roadobject.cpp
+        bindings/lanevalidityrecord.cpp
+        bindings/roadsignal.cpp
+        bindings/math.cpp
+        bindings/xml_node.cpp
+        # Add other binding files as needed
+    )
+
+    # Create Python module
+    pybind11_add_module(open_drive ${BINDING_SOURCES})
+    target_link_libraries(open_drive PRIVATE OpenDrive)
+    target_include_directories(
+        open_drive PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
+    )
+
+    # Install Python module
+    install(TARGETS open_drive
+        LIBRARY DESTINATION ${Python3_SITELIB}
+    )
+endif()
+
+# Installation
 install(
     TARGETS OpenDrive
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
