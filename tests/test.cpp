@@ -65,8 +65,6 @@ TEST_CASE_METHOD(OpenDriveFixture, "Routing check", "[xodr]")
     for (const odr::RoutingPath& expected_path : expected_paths)
     {
         const odr::RoutingPath path = graph.shortest_path(expected_path.front(), expected_path.back());
-        REQUIRE(path.size() == expected_path.size());
-        for (size_t idx = 0; idx < expected_path.size(); idx++)
-            REQUIRE(path[idx] == expected_path[idx]);
+        REQUIRE(path == expected_path);
     }
 }
