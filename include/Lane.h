@@ -39,6 +39,8 @@ struct LaneKey
     bool operator!=(const LaneKey& other) const { return !(*this == other); }
 };
 
+inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk) { return os << lk.to_string(); }
+
 struct Lane : public XmlNode
 {
     Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
