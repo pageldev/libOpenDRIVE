@@ -39,3 +39,34 @@ TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
         }
     }
 }
+
+TEST_CASE_METHOD(OpenDriveFixture, "Routing check", "[xodr]")
+{
+    const std::vector<odr::RoutingPath> expected_paths = {
+        {{"37", 0, 1}, {"215", 0, -1}, {"47", 0, -1}},
+        {{"24", 0, -1}, {"447", 0, -1}, {"20", 0, -1}, {"765", 0, -1}, {"21", 0, -1}, {"39", 0, -1}},
+        {{"17", 0, -1},
+         {"18", 0, -1},
+         {"747", 0, -1},
+         {"747", 1.7623724829973639, -1},
+         {"41", 0, 1},
+         {"388", 0, -1},
+         {"35", 0, 1},
+         {"480", 0, -1},
+         {"480", 20.515904612542592, -1},
+         {"480", 20.858538341635004, -1},
+         {"53", 0, 1},
+         {"817", 0, -1},
+         {"63", 0, -4},
+         {"64", 0, -4},
+         {"65", 0, -4}}};
+
+    const odr::RoutingGraph graph = odr_map.get_routing_graph();
+    for (const odr::RoutingPath& expected_path : expected_paths)
+    {
+        const odr::RoutingPath path = graph.shortest_path(expected_path.front(), expected_path.back());
+        REQUIRE(path.size() == expected_path.size());
+        for (size_t idx = 0; idx < expected_path.size(); idx++)
+            REQUIRE(path[idx] == expected_path[idx]);
+    }
+}
