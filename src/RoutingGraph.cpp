@@ -36,7 +36,7 @@ std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key
     std::vector<LaneKey>                predecessor_lane_keys(res.begin(), res.end());
     return predecessor_lane_keys;
 }
-std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) const
+RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) const
 {
     if (from == to)
     {
@@ -70,8 +70,8 @@ std::vector<LaneKey> RoutingGraph::shortest_path(const LaneKey& from, const Lane
         // If the goal is reached, reconstruct the path
         if (current == to)
         {
-            std::vector<LaneKey> path;
-            LaneKey              at = to;
+            RoutingPath path;
+            LaneKey     at = to;
             while (true)
             {
                 path.push_back(at);
