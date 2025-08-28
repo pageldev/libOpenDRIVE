@@ -15,7 +15,10 @@ CLANG_FORMAT_VERSION=$(clang-format --version 2>/dev/null)
 if [[ $CLANG_FORMAT_VERSION =~ ([0-9]+)\. ]]; then
     MAJOR_VERSION=${BASH_REMATCH[1]}
     if (( MAJOR_VERSION < 13 )); then
-        echo "clang-format version >= 13 required, got $MAJOR_VERSION"
+        echo "clang-format version >= 13 and < 18 required, got $MAJOR_VERSION"
+        exit 1
+    elif (( MAJOR_VERSION > 18 )); then # PointerAlignment: Left, v18 wants `T C::* member` v14 wants `T C::*member`
+        echo "clang-format version >= 13 and < 18 required, got $MAJOR_VERSION"
         exit 1
     else
         echo "clang-format version $MAJOR_VERSION"
