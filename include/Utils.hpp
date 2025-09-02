@@ -273,18 +273,16 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
     return out_indices;
 }
 
-template<typename... Args>
-std::string string_format(const std::string& format, Args... args)
+template<class... Args>
+std::string string_format(std::string_view fmt, const Args&... args)
 {
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
-    if (size_s <= 0)
-    {
-        throw std::runtime_error("Error during formatting.");
-    }
-    auto size = static_cast<size_t>(size_s);
-    auto buf = std::make_unique<char[]>(size);
-    std::snprintf(buf.get(), size, format.c_str(), args...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+    const int n = std::snprintf(nullptr, 0, fmt.data(), args...);
+    if (n < 0)
+        throw std::runtime_error("formatting failed");
+    std::string out;
+    out.resize(static_cast<size_t>(n));
+    std::snprintf(out.data(), out.size() + 1, fmt.data(), args...);
+    return out;
 }
 
 template<class T, typename F>
