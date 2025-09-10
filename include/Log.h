@@ -1,6 +1,9 @@
 #pragma once
+#include "Utils.hpp"
 
-#include <functional>
+#include <atomic>
+#include <cstdio>
+#include <string>
 
 namespace odr
 {
@@ -12,11 +15,45 @@ enum LogLevel
     Error = 2
 };
 
-const char* log_level_to_string(const LogLevel level);
+inline const char* log_level_to_string(const LogLevel level)
+{
+    switch (level)
+    {
+    case LogLevel::Info:
+        return "INFO";
+    case LogLevel::Warn:
+        return "WARN";
+    case LogLevel::Error:
+        return "ERROR";
+    default:
+        return "UNKNOWN";
+    }
+}
 
-using LogFunction = std::function<void(const LogLevel level, const char* message)>;
+using LogFunction = void (*)(LogLevel, const char*);
 
-void set_log_callback(LogFunction log_function);
-void log_msg(const LogLevel level, const char* format, ...);
+inline void default_log_function(LogLevel lvl, const char* msg)
+{
+    std::fprintf(stderr, "[%s] %s\n", log_level_to_string(lvl), msg);
+}
+
+inline std::atomic<LogFunction> g_log_function{&default_log_function};
+
+inline void set_log_callback(LogFunction log_function)
+{
+    g_log_function.store(log_function, std::memory_order_relaxed);
+}
+
+inline void log(LogLevel lvl, const char* msg)
+{
+    g_log_function.load(std::memory_order_relaxed)(lvl, msg);
+}
+
+template<class... Args>
+inline void logf(LogLevel lvl, const char* fmt, Args&&... args)
+{
+    std::string s = string_format(fmt, std::forward<Args>(args)...);
+    log(lvl, s.c_str());
+}
 
 } // namespace odr

@@ -49,7 +49,6 @@ set(SOURCES
     src/Junction.cpp
     src/Lane.cpp
     src/LaneSection.cpp
-    src/Log.cpp
     src/Mesh.cpp
     src/OpenDriveMap.cpp
     src/RefLine.cpp
