@@ -67,6 +67,7 @@ SpacesInSquareBrackets: false
 TabWidth: 4
 UseCRLF: false
 UseTab: Never
+AllowShortFunctionsOnASingleLine: Empty
 ---
 Language: JavaScript
 BasedOnStyle: WebKit
