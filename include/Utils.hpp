@@ -277,14 +277,13 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
 }
 
 template<class... Args>
-std::string string_format(std::string_view fmt, const Args&... args)
+std::string string_format(const char* fmt, Args&&... args)
 {
-    const int n = std::snprintf(nullptr, 0, fmt.data(), args...);
+    const int n = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
     if (n < 0)
         throw std::runtime_error("formatting failed");
-    std::string out;
-    out.resize(static_cast<size_t>(n));
-    std::snprintf(out.data(), out.size() + 1, fmt.data(), args...);
+    std::string out(static_cast<size_t>(n), '\0'); // since c++11: str[str.size()] is '\0'
+    std::snprintf(&out[0], out.size() + 1, fmt, std::forward<Args>(args)...);
     return out;
 }
 
