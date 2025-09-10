@@ -18,7 +18,10 @@ Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, doub
     odrSpiral(s0_spiral, c_dot, &x0_spiral, &y0_spiral, &a0_spiral);
 }
 
-std::unique_ptr<RoadGeometry> Spiral::clone() const { return std::make_unique<Spiral>(*this); }
+std::unique_ptr<RoadGeometry> Spiral::clone() const
+{
+    return std::make_unique<Spiral>(*this);
+}
 
 Vec2D Spiral::get_xy(double s) const
 {

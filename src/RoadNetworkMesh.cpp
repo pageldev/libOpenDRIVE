@@ -40,7 +40,10 @@ double LanesMesh::get_lanesec_s0(const std::size_t vert_idx) const
     return get_nearest_lower_val<size_t, double>(this->lanesec_start_indices, vert_idx);
 }
 
-int LanesMesh::get_lane_id(const std::size_t vert_idx) const { return get_nearest_lower_val<size_t, int>(this->lane_start_indices, vert_idx); }
+int LanesMesh::get_lane_id(const std::size_t vert_idx) const
+{
+    return get_nearest_lower_val<size_t, int>(this->lane_start_indices, vert_idx);
+}
 
 std::array<size_t, 2> RoadsMesh::get_idx_interval_road(const std::size_t vert_idx) const
 {
@@ -57,7 +60,10 @@ std::array<size_t, 2> LanesMesh::get_idx_interval_lane(const std::size_t vert_id
     return get_key_interval<size_t, int>(this->lane_start_indices, vert_idx, this->vertices.size());
 }
 
-std::vector<size_t> LanesMesh::get_lane_outline_indices() const { return get_outline_indices<int>(this->lane_start_indices, this->vertices.size()); }
+std::vector<size_t> LanesMesh::get_lane_outline_indices() const
+{
+    return get_outline_indices<int>(this->lane_start_indices, this->vertices.size());
+}
 
 std::string RoadmarksMesh::get_roadmark_type(const std::size_t vert_idx) const
 {

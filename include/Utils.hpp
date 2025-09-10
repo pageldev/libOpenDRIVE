@@ -33,7 +33,10 @@ namespace odr
 template<class C, class T, T C::*member>
 struct PtrCmp
 {
-    bool operator()(const C* lhs, const C* rhs) const { return (*lhs).*member < (*rhs).*member; }
+    bool operator()(const C* lhs, const C* rhs) const
+    {
+        return (*lhs).*member < (*rhs).*member;
+    }
 };
 
 template<class K, class V>

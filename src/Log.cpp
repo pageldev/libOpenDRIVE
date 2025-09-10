@@ -24,7 +24,10 @@ const char* log_level_to_string(const LogLevel level)
 
 static LogFunction _log_callback = [](const LogLevel level, const char* message) { printf("[%s] %s\n", log_level_to_string(level), message); };
 
-void set_log_callback(LogFunction log_function) { _log_callback = log_function; }
+void set_log_callback(LogFunction log_function)
+{
+    _log_callback = log_function;
+}
 
 void log_msg(const LogLevel level, const char* format, ...)
 {

@@ -54,7 +54,10 @@ struct equal_to<odr::RoutingGraphEdge>
 template<>
 struct hash<odr::WeightedLaneKey>
 {
-    size_t operator()(const odr::WeightedLaneKey& w_key) const { return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1)); }
+    size_t operator()(const odr::WeightedLaneKey& w_key) const
+    {
+        return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1));
+    }
 };
 
 template<>

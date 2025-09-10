@@ -50,10 +50,19 @@ RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string directi
 
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
 
-std::vector<LaneSection> Road::get_lanesections() const { return get_map_values(this->s_to_lanesection); }
-std::vector<RoadObject>  Road::get_road_objects() const { return get_map_values(this->id_to_object); }
+std::vector<LaneSection> Road::get_lanesections() const
+{
+    return get_map_values(this->s_to_lanesection);
+}
+std::vector<RoadObject> Road::get_road_objects() const
+{
+    return get_map_values(this->id_to_object);
+}
 
-std::vector<RoadSignal> Road::get_road_signals() const { return get_map_values(this->id_to_signal); }
+std::vector<RoadSignal> Road::get_road_signals() const
+{
+    return get_map_values(this->id_to_signal);
+}
 
 Road::Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic) :
     length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(id, length)
@@ -84,7 +93,10 @@ LaneSection Road::get_lanesection(const double s) const
     return this->s_to_lanesection.at(lanesec_s0);
 }
 
-double Road::get_lanesection_end(const LaneSection& lanesection) const { return this->get_lanesection_end(lanesection.s0); }
+double Road::get_lanesection_end(const LaneSection& lanesection) const
+{
+    return this->get_lanesection_end(lanesection.s0);
+}
 
 double Road::get_lanesection_end(const double lanesection_s0) const
 {

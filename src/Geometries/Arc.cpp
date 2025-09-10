@@ -10,7 +10,10 @@ Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double cur
 {
 }
 
-std::unique_ptr<RoadGeometry> Arc::clone() const { return std::make_unique<Arc>(*this); }
+std::unique_ptr<RoadGeometry> Arc::clone() const
+{
+    return std::make_unique<Arc>(*this);
+}
 
 Vec2D Arc::get_xy(double s) const
 {

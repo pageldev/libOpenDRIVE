@@ -8,7 +8,10 @@ namespace odr
 {
 LaneSection::LaneSection(std::string road_id, double s0) : road_id(road_id), s0(s0) {}
 
-std::vector<Lane> LaneSection::get_lanes() const { return get_map_values(this->id_to_lane); }
+std::vector<Lane> LaneSection::get_lanes() const
+{
+    return get_map_values(this->id_to_lane);
+}
 
 int LaneSection::get_lane_id(const double s, const double t) const
 {
@@ -38,8 +41,14 @@ int LaneSection::get_lane_id(const double s, const double t) const
     return target_iter->second;
 }
 
-Lane LaneSection::get_lane(const int id) const { return this->id_to_lane.at(id); }
+Lane LaneSection::get_lane(const int id) const
+{
+    return this->id_to_lane.at(id);
+}
 
-Lane LaneSection::get_lane(const double s, const double t) const { return this->id_to_lane.at(this->get_lane_id(s, t)); }
+Lane LaneSection::get_lane(const double s, const double t) const
+{
+    return this->id_to_lane.at(this->get_lane_id(s, t));
+}
 
 } // namespace odr

@@ -11,7 +11,10 @@ HeightOffset::HeightOffset(double inner, double outer) : inner(inner), outer(out
 
 LaneKey::LaneKey(std::string road_id, double lanesection_s0, int lane_id) : road_id(road_id), lanesection_s0(lanesection_s0), lane_id(lane_id) {}
 
-std::string LaneKey::to_string() const { return string_format("%s/%.17g/%d", this->road_id.c_str(), this->lanesection_s0, this->lane_id); }
+std::string LaneKey::to_string() const
+{
+    return string_format("%s/%.17g/%d", this->road_id.c_str(), this->lanesection_s0, this->lane_id);
+}
 
 Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type) :
     key(road_id, lanesection_s0, id), id(id), level(level), type(type)
