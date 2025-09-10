@@ -276,7 +276,12 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
     return out_indices;
 }
 
-template<class... Args>
+inline std::string string_format(const char* fmt)
+{
+    return fmt ? std::string(fmt) : std::string();
+}
+
+template<class... Args, typename std::enable_if<(sizeof...(Args) > 0), int>::type = 0>
 std::string string_format(const char* fmt, Args&&... args)
 {
     const int n = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
