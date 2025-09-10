@@ -9,7 +9,7 @@
 #include "Lane.h"
 #include "LaneSection.h"
 #include "LaneValidityRecord.h"
-#include "Log.h"
+#include "Log.hpp"
 #include "Math.hpp"
 #include "RefLine.h"
 #include "Road.h"
