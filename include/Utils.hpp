@@ -16,14 +16,14 @@
 #define ODR_CHECK(expr, msg)                                                                                                                         \
     {                                                                                                                                                \
         if (!(expr))                                                                                                                                 \
-            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
+            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                        \
     }
 
 #define ODR_CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                           \
     {                                                                                                                                                \
         if (!(check_expr))                                                                                                                           \
         {                                                                                                                                            \
-            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
+            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                        \
             repair_expr;                                                                                                                             \
         }                                                                                                                                            \
     }
