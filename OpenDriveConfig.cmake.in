@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+
+# Dependencies
+find_dependency(pugixml CONFIG)
+
+# Targets
+include("${CMAKE_CURRENT_LIST_DIR}/OpenDriveTargets.cmake")
+

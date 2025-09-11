@@ -4,6 +4,7 @@ project(libOpenDrive VERSION 0.6.0 DESCRIPTION ".xodr library")
 
 include(FetchContent)
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 option(OPENDRIVE_BUILD_TESTS "Build OpenDrive tests" OFF)
 
@@ -89,7 +90,30 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(FILES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(TARGETS OpenDrive EXPORT OpenDriveConfig)
-install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
+
+install(
+    EXPORT OpenDriveTargets
+    NAMESPACE OpenDrive::
+    FILE OpenDriveTargets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY ExactVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/OpenDriveConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)
