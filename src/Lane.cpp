@@ -13,7 +13,7 @@ LaneKey::LaneKey(std::string road_id, double lanesection_s0, int lane_id) : road
 
 std::string LaneKey::to_string() const
 {
-    return string_format("%s/%.17g/%d", this->road_id.c_str(), this->lanesection_s0, this->lane_id);
+    return strfmt("%s/%.17g/%d", this->road_id.c_str(), this->lanesection_s0, this->lane_id);
 }
 
 Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type) :

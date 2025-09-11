@@ -112,7 +112,7 @@ T CubicBezier<T, Dim>::get_t(const T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
-        throw std::runtime_error(string_format("arc length %.3f out of range; valid length: %.3f", arclen, this->valid_length));
+        throw std::runtime_error(strfmt("arc length %.3f out of range; valid length: %.3f", arclen, this->valid_length));
     }
 
     const T arclen_adj = std::min<T>(arclen, this->valid_length);

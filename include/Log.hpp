@@ -58,9 +58,9 @@ inline void log(LogLevel lvl, const char* msg)
 }
 
 template<class... Args>
-inline void logf(LogLevel lvl, const char* fmt, Args&&... args)
+void logf(LogLevel lvl, const char* fmt, Args&&... args)
 {
-    std::string s = string_format(fmt, std::forward<Args>(args)...);
+    std::string s = strfmt(fmt, std::forward<Args>(args)...);
     log(lvl, s.c_str());
 }
 
