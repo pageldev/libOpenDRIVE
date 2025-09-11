@@ -38,14 +38,22 @@ inline void default_log_function(LogLevel lvl, const char* msg)
 }
 
 inline std::atomic<LogFunction> g_log_function{&default_log_function};
+inline std::atomic<LogLevel>    g_log_level{LogLevel::Warn};
 
 inline void set_log_callback(LogFunction log_function)
 {
     g_log_function.store(log_function, std::memory_order_relaxed);
 }
 
+inline void set_log_level(LogLevel lvl)
+{
+    g_log_level.store(lvl, std::memory_order_relaxed);
+}
+
 inline void log(LogLevel lvl, const char* msg)
 {
+    if (lvl < g_log_level.load(std::memory_order_relaxed))
+        return;
     g_log_function.load(std::memory_order_relaxed)(lvl, msg);
 }
 
