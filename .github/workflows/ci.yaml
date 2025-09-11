@@ -15,7 +15,7 @@ jobs:
       - name: check format
         run: ./format-files.sh check
       - name: configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DOPENDRIVE_BUILD_TESTS=1
       - name: build
         run: cmake --build build
       - name: test
@@ -38,7 +38,7 @@ jobs:
       - name: check format
         run: ./format-files.sh check
       - name: configure
-        run: cmake -S . -B build -G "Visual Studio 17 2022"
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -DOPENDRIVE_BUILD_TESTS=1
       - name: build
         run: cmake --build build --config Release
       - name: test

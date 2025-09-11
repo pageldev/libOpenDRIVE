@@ -1,23 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
 project(libOpenDrive VERSION 0.6.0 DESCRIPTION ".xodr library")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "/EHsc /W3")
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
-    add_compile_definitions(_USE_MATH_DEFINES)
-else()
-    set(CMAKE_CXX_FLAGS "-Wall")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-endif()
 
 include(CTest)
 include(FetchContent)
@@ -29,14 +12,6 @@ FetchContent_Declare(
     GIT_TAG v1.14
 )
 FetchContent_MakeAvailable(pugixml)
-
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.4.0
-)
-FetchContent_MakeAvailable(Catch2)
-include(Catch)
 
 set(SOURCES
     src/Geometries/Arc.cpp
@@ -62,6 +37,17 @@ set(SOURCES
 )
 
 add_library(OpenDrive ${SOURCES})
+set_target_properties(OpenDrive PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(MSVC)
+    target_compile_options(OpenDrive PRIVATE /W3 /EHsc)
+    target_compile_definitions(OpenDrive PRIVATE _USE_MATH_DEFINES)
+else()
+    target_compile_options(OpenDrive PRIVATE -Wall)
+endif()
+
 target_include_directories(
     OpenDrive PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -69,9 +55,19 @@ target_include_directories(
     $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
 )
 
-add_executable(tests tests/test.cpp)
-target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
-catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+if(OPENDRIVE_BUILD_TESTS)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.4.0
+    )
+    FetchContent_MakeAvailable(Catch2)
+    include(Catch)
+
+    add_executable(tests tests/test.cpp)
+    target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
+    catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
 
 install(
     TARGETS OpenDrive
