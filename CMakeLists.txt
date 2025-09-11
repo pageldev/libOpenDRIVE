@@ -6,12 +6,16 @@ include(CTest)
 include(FetchContent)
 include(GNUInstallDirs)
 
-FetchContent_Declare(
-    pugixml
-    GIT_REPOSITORY https://github.com/zeux/pugixml.git
-    GIT_TAG v1.14
-)
-FetchContent_MakeAvailable(pugixml)
+find_package(pugixml QUIET CONFIG)
+if(NOT pugixml_FOUND)
+    FetchContent_Declare(
+        pugixml
+        GIT_REPOSITORY https://github.com/zeux/pugixml.git
+        GIT_TAG v1.14
+    )
+    FetchContent_MakeAvailable(pugixml)
+    add_library(pugixml::pugixml ALIAS pugixml)
+endif()
 
 set(SOURCES
     src/Geometries/Arc.cpp
@@ -33,7 +37,6 @@ set(SOURCES
     src/RoadObject.cpp
     src/RoadSignal.cpp
     src/RoutingGraph.cpp
-    ${pugixml_SOURCE_DIR}/src/pugixml.cpp
 )
 
 add_library(OpenDrive ${SOURCES})
@@ -48,11 +51,12 @@ else()
     target_compile_options(OpenDrive PRIVATE -Wall)
 endif()
 
+target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
+
 target_include_directories(
     OpenDrive PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
 )
 
 if(OPENDRIVE_BUILD_TESTS)
@@ -76,12 +80,7 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(
-    FILES
-    ${pugixml_SOURCE_DIR}/src/pugixml.hpp
-    ${pugixml_SOURCE_DIR}/src/pugiconfig.hpp
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+install(FILES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS OpenDrive EXPORT OpenDriveConfig)
 install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
