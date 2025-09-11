@@ -1,20 +1,25 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 
 project(libOpenDrive VERSION 0.6.0 DESCRIPTION ".xodr library")
 
-include(CTest)
 include(FetchContent)
 include(GNUInstallDirs)
 
+option(OPENDRIVE_BUILD_TESTS "Build OpenDrive tests" OFF)
+
 find_package(pugixml QUIET CONFIG)
-if(NOT pugixml_FOUND)
-    FetchContent_Declare(
-        pugixml
-        GIT_REPOSITORY https://github.com/zeux/pugixml.git
-        GIT_TAG v1.14
-    )
-    FetchContent_MakeAvailable(pugixml)
-    add_library(pugixml::pugixml ALIAS pugixml)
+if(NOT TARGET pugixml::pugixml)
+    if(TARGET pugixml)
+        add_library(pugixml::pugixml ALIAS pugixml)
+    else()
+        FetchContent_Declare(
+            pugixml
+            GIT_REPOSITORY https://github.com/zeux/pugixml.git
+            GIT_TAG v1.14
+        )
+        FetchContent_MakeAvailable(pugixml)
+        add_library(pugixml::pugixml ALIAS pugixml)
+    endif()
 endif()
 
 set(SOURCES
@@ -40,9 +45,11 @@ set(SOURCES
 )
 
 add_library(OpenDrive ${SOURCES})
+add_library(OpenDrive::OpenDrive ALIAS OpenDrive)
 set_target_properties(OpenDrive PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
+    POSITION_INDEPENDENT_CODE ON
 )
 if(MSVC)
     target_compile_options(OpenDrive PRIVATE /W3 /EHsc)
@@ -60,6 +67,7 @@ target_include_directories(
 )
 
 if(OPENDRIVE_BUILD_TESTS)
+    include(CTest)
     FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -75,6 +83,7 @@ endif()
 
 install(
     TARGETS OpenDrive
+    EXPORT OpenDriveTargets
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
