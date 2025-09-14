@@ -78,6 +78,10 @@ if(OPENDRIVE_BUILD_TESTS)
     include(Catch)
 
     add_executable(tests tests/test.cpp)
+    set_target_properties(tests PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
     target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
     catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
