@@ -1,4 +1,5 @@
 #pragma once
+#include "Log.hpp"
 #include "Math.hpp"
 
 #include <algorithm>
@@ -13,23 +14,26 @@
 #include <type_traits>
 #include <vector>
 
-#define ODR_CHECK(expr, msg)                                                                                                                         \
-    {                                                                                                                                                \
-        if (!(expr))                                                                                                                                 \
-            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                        \
-    }
-
-#define ODR_CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                           \
-    {                                                                                                                                                \
-        if (!(check_expr))                                                                                                                           \
-        {                                                                                                                                            \
-            logf(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                        \
-            repair_expr;                                                                                                                             \
-        }                                                                                                                                            \
-    }
-
 namespace odr
 {
+
+template<class... Args>
+inline void check(const bool ok, const char* fmt, Args&&... args)
+{
+    if (!ok)
+        logf(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+}
+
+template<class Repair, class... Args>
+inline void check_and_repair(const bool ok, Repair&& repair, const char* fmt, Args&&... args)
+{
+    if (!ok)
+    {
+        logf(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+        std::forward<Repair>(repair)();
+    }
+}
+
 template<class C, class T, T C::*member>
 struct PtrCmp
 {
