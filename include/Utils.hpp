@@ -276,22 +276,6 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
     return out_indices;
 }
 
-inline std::string strfmt(const char* fmt)
-{
-    return fmt ? std::string(fmt) : std::string();
-}
-
-template<class... Args, typename std::enable_if<(sizeof...(Args) > 0), int>::type = 0>
-std::string strfmt(const char* fmt, Args&&... args)
-{
-    const int n = std::snprintf(nullptr, 0, fmt, std::forward<Args>(args)...);
-    if (n < 0)
-        throw std::runtime_error("formatting failed");
-    std::string out(static_cast<size_t>(n), '\0'); // since c++11: str[str.size()] is '\0'
-    std::snprintf(&out[0], out.size() + 1, fmt, std::forward<Args>(args)...);
-    return out;
-}
-
 template<class T, typename F>
 bool compare_class_members(const T& obj_a, const T& obj_b, F cmp)
 {
