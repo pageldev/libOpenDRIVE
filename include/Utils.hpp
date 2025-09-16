@@ -21,7 +21,7 @@ template<class... Args>
 inline void check(const bool ok, const char* fmt, Args&&... args)
 {
     if (!ok)
-        logf(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+        log::warn(fmt, std::forward<Args>(args)...);
 }
 
 template<class Repair, class... Args>
@@ -29,7 +29,7 @@ inline void check_and_repair(const bool ok, Repair&& repair, const char* fmt, Ar
 {
     if (!ok)
     {
-        logf(LogLevel::Warn, fmt, std::forward<Args>(args)...);
+        log::warn(fmt, std::forward<Args>(args)...);
         std::forward<Repair>(repair)();
     }
 }

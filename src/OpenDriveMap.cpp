@@ -75,7 +75,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 {
     this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
     if (!this->xml_parse_result)
-        logf(LogLevel::Error, "%s", this->xml_parse_result.description());
+        log::error("Error parsing xml: %s", this->xml_parse_result.description());
 
     const pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
 
@@ -156,6 +156,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
     }
 
+    odr::check(odr_node.child("road"), "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
         /* make road */
@@ -329,7 +330,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
             else
             {
-                logf(LogLevel::Error, "Could not parse %s", geometry_type.c_str());
+                log::error("Could not parse %s", geometry_type.c_str());
                 continue;
             }
 
@@ -396,7 +397,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             /* check for lateralProfile shape - not implemented yet */
             if (road_node.child("lateralProfile").child("shape"))
             {
-                logf(LogLevel::Error, "Lateral Profile Shape not supported");
+                log::error("Lateral Profile Shape not supported");
             }
         }
 

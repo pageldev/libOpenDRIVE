@@ -8,60 +8,78 @@
 namespace odr
 {
 
-enum LogLevel
+namespace log
+{
+
+enum Level
 {
     Info = 0,
     Warn = 1,
     Error = 2
 };
 
-inline const char* log_level_to_string(const LogLevel level)
+inline const char* level_to_string(const Level level)
 {
     switch (level)
     {
-    case LogLevel::Info:
+    case Level::Info:
         return "INFO";
-    case LogLevel::Warn:
+    case Level::Warn:
         return "WARN";
-    case LogLevel::Error:
+    case Level::Error:
         return "ERROR";
     default:
         return "UNKNOWN";
     }
 }
 
-using LogFunction = void (*)(LogLevel, const char*);
+using LogFunction = void (*)(Level, const char*);
 
-inline void default_log_function(LogLevel lvl, const char* msg)
+inline void default_log_function(Level lvl, const char* msg)
 {
-    std::fprintf(stderr, "[%s] %s\n", log_level_to_string(lvl), msg);
+    std::fprintf(stderr, "[%s] %s\n", level_to_string(lvl), msg);
 }
 
 inline std::atomic<LogFunction> g_log_function{&default_log_function};
-inline std::atomic<LogLevel>    g_log_level{LogLevel::Warn};
+inline std::atomic<Level>       g_log_level{Level::Warn};
 
-inline void set_log_callback(LogFunction log_function)
+inline void set_callback(LogFunction log_function)
 {
     g_log_function.store(log_function, std::memory_order_relaxed);
 }
 
-inline void set_log_level(LogLevel lvl)
+inline void set_level(Level lvl)
 {
     g_log_level.store(lvl, std::memory_order_relaxed);
 }
 
-inline void log(LogLevel lvl, const char* msg)
+template<class... Args>
+void log(Level lvl, const char* fmt, Args&&... args)
 {
     if (lvl < g_log_level.load(std::memory_order_relaxed))
         return;
-    g_log_function.load(std::memory_order_relaxed)(lvl, msg);
+    std::string s = strfmt(fmt, std::forward<Args>(args)...);
+    g_log_function.load(std::memory_order_relaxed)(lvl, s.c_str());
 }
 
 template<class... Args>
-void logf(LogLevel lvl, const char* fmt, Args&&... args)
+void info(const char* fmt, Args&&... args)
 {
-    std::string s = strfmt(fmt, std::forward<Args>(args)...);
-    log(lvl, s.c_str());
+    log(Level::Info, fmt, std::forward<Args>(args)...);
 }
+
+template<class... Args>
+void warn(const char* fmt, Args&&... args)
+{
+    log(Level::Warn, fmt, std::forward<Args>(args)...);
+}
+
+template<class... Args>
+void error(const char* fmt, Args&&... args)
+{
+    log(Level::Error, fmt, std::forward<Args>(args)...);
+}
+
+} // namespace log
 
 } // namespace odr
