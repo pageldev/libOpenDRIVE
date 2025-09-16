@@ -56,7 +56,7 @@ if(MSVC)
     target_compile_options(OpenDrive PRIVATE /W3 /EHsc)
     target_compile_definitions(OpenDrive PRIVATE _USE_MATH_DEFINES)
 else()
-    target_compile_options(OpenDrive PRIVATE -Wall)
+    target_compile_options(OpenDrive PRIVATE -Wall -Wextra)
 endif()
 
 target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
