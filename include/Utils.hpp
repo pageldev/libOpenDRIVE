@@ -281,7 +281,7 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
 }
 
 template<class T, typename F>
-bool compare_class_members(const T& obj_a, const T& obj_b, F cmp)
+bool compare_class_members(const T&, const T&, F)
 {
     return false;
 };
@@ -295,7 +295,7 @@ bool compare_class_members(const T& obj_a, const T& obj_b, F cmp, S field, Ss...
 };
 
 template<class T>
-bool check_class_members_equal(const T& obj_a, const T& obj_b)
+bool check_class_members_equal(const T&, const T&)
 {
     return true;
 };
