@@ -243,7 +243,7 @@ Road::approximate_lane_border_linear(const Lane& lane, const double s_start, con
 std::set<double> Road::approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer) const
 {
     const double s_end = this->get_lanesection_end(lane.key.lanesection_s0);
-    return this->approximate_lane_border_linear(lane, lane.key.lanesection_s0, s_end, outer);
+    return this->approximate_lane_border_linear(lane, lane.key.lanesection_s0, s_end, eps, outer);
 }
 
 Line3D Road::get_lane_border_line(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer) const
