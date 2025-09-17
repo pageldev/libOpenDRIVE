@@ -13,15 +13,18 @@ namespace log
 
 enum Level
 {
-    Info = 0,
-    Warn = 1,
-    Error = 2
+    Debug = 0,
+    Info = 1,
+    Warn = 2,
+    Error = 3
 };
 
 inline const char* level_to_string(const Level level)
 {
     switch (level)
     {
+    case Level::Debug:
+        return "DEBUG";
     case Level::Info:
         return "INFO";
     case Level::Warn:
@@ -60,6 +63,12 @@ void log(Level lvl, const char* fmt, Args&&... args)
         return;
     std::string s = strfmt(fmt, std::forward<Args>(args)...);
     g_log_function.load(std::memory_order_relaxed)(lvl, s.c_str());
+}
+
+template<class... Args>
+void debug(const char* fmt, Args&&... args)
+{
+    log(Level::Debug, fmt, std::forward<Args>(args)...);
 }
 
 template<class... Args>
