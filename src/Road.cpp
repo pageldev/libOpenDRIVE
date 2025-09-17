@@ -65,7 +65,7 @@ std::vector<RoadSignal> Road::get_road_signals() const
 }
 
 Road::Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic) :
-    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(id, length)
+    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(length)
 {
 }
 

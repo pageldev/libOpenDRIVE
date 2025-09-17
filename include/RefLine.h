@@ -13,7 +13,7 @@ namespace odr
 
 struct RefLine
 {
-    RefLine(std::string road_id, double length);
+    RefLine(double length);
     RefLine(const RefLine& other);
 
     std::set<const RoadGeometry*> get_geometries() const;
@@ -29,7 +29,6 @@ struct RefLine
     double           match(const double x, const double y) const;
     std::set<double> approximate_linear(const double eps, const double s_start, const double s_end) const;
 
-    std::string road_id = "";
     double      length = 0;
     CubicSpline elevation_profile;
 
