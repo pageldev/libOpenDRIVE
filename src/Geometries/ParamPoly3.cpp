@@ -51,7 +51,10 @@ ParamPoly3::ParamPoly3(double s0,
     this->cubic_bezier.valid_length = length;
 }
 
-std::unique_ptr<RoadGeometry> ParamPoly3::clone() const { return std::make_unique<ParamPoly3>(*this); }
+std::unique_ptr<RoadGeometry> ParamPoly3::clone() const
+{
+    return std::make_unique<ParamPoly3>(*this);
+}
 
 Vec2D ParamPoly3::get_xy(double s) const
 {

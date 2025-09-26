@@ -1,6 +1,6 @@
 #include "Road.h"
 #include "Lane.h"
-#include "Log.h"
+#include "Log.hpp"
 #include "RefLine.h"
 #include "RoadMark.h"
 #include "Utils.hpp"
@@ -50,13 +50,22 @@ RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string directi
 
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
 
-std::vector<LaneSection> Road::get_lanesections() const { return get_map_values(this->s_to_lanesection); }
-std::vector<RoadObject>  Road::get_road_objects() const { return get_map_values(this->id_to_object); }
+std::vector<LaneSection> Road::get_lanesections() const
+{
+    return get_map_values(this->s_to_lanesection);
+}
+std::vector<RoadObject> Road::get_road_objects() const
+{
+    return get_map_values(this->id_to_object);
+}
 
-std::vector<RoadSignal> Road::get_road_signals() const { return get_map_values(this->id_to_signal); }
+std::vector<RoadSignal> Road::get_road_signals() const
+{
+    return get_map_values(this->id_to_signal);
+}
 
 Road::Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic) :
-    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(id, length)
+    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(length)
 {
 }
 
@@ -84,7 +93,10 @@ LaneSection Road::get_lanesection(const double s) const
     return this->s_to_lanesection.at(lanesec_s0);
 }
 
-double Road::get_lanesection_end(const LaneSection& lanesection) const { return this->get_lanesection_end(lanesection.s0); }
+double Road::get_lanesection_end(const LaneSection& lanesection) const
+{
+    return this->get_lanesection_end(lanesection.s0);
+}
 
 double Road::get_lanesection_end(const double lanesection_s0) const
 {
@@ -139,13 +151,20 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
 
 Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 {
-    ODR_CHECK_AND_REPAIR(s >= 0, "s < 0", s = 0);
-    ODR_CHECK_AND_REPAIR(s <= this->length, "s > Road::length", s = this->length);
+    odr::check_and_repair(
+        s >= 0, [&]() { s = 0; }, "Road #%s: get_surface_pt for s < 0 invalid (s=%f), getting for s=0", this->id.c_str(), s);
+    odr::check_and_repair(
+        s <= this->length,
+        [&]() { s = this->length; },
+        "Road #%s: get_surface_pt for s > length invalid (s=%f, length=%f), getting for s=length",
+        this->id.c_str(),
+        s,
+        this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesection_s0))
     {
-        throw std::runtime_error(string_format("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
+        throw std::runtime_error(strfmt("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
     }
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
@@ -224,7 +243,7 @@ Road::approximate_lane_border_linear(const Lane& lane, const double s_start, con
 std::set<double> Road::approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer) const
 {
     const double s_end = this->get_lanesection_end(lane.key.lanesection_s0);
-    return this->approximate_lane_border_linear(lane, lane.key.lanesection_s0, s_end, outer);
+    return this->approximate_lane_border_linear(lane, lane.key.lanesection_s0, s_end, eps, outer);
 }
 
 Line3D Road::get_lane_border_line(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer) const

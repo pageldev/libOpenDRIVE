@@ -38,7 +38,10 @@ namespace util
 template<std::size_t I, typename T>
 struct nth
 {
-    inline static typename std::tuple_element<I, T>::type get(const T& t) { return std::get<I>(t); };
+    inline static typename std::tuple_element<I, T>::type get(const T& t)
+    {
+        return std::get<I>(t);
+    };
 };
 
 } // namespace util
@@ -122,8 +125,14 @@ private:
     {
     public:
         ObjectPool() {}
-        ObjectPool(std::size_t blockSize_) { reset(blockSize_); }
-        ~ObjectPool() { clear(); }
+        ObjectPool(std::size_t blockSize_)
+        {
+            reset(blockSize_);
+        }
+        ~ObjectPool()
+        {
+            clear();
+        }
         template<typename... Args>
         T* construct(Args&&... args)
         {
@@ -148,7 +157,10 @@ private:
             currentBlock = nullptr;
             currentIndex = blockSize;
         }
-        void clear() { reset(blockSize); }
+        void clear()
+        {
+            reset(blockSize);
+        }
 
     private:
         T*                                            currentBlock = nullptr;
@@ -302,12 +314,9 @@ void Earcut<N>::earcutLinked(Node* ear, int pass)
     Node* prev;
     Node* next;
 
-    int iterations = 0;
-
     // iterate through ears, slicing them one by one
     while (ear->prev != ear->next)
     {
-        iterations++;
         prev = ear->prev;
         next = ear->next;
 

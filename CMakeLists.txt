@@ -1,44 +1,29 @@
-cmake_minimum_required(VERSION 3.13)
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+cmake_minimum_required(VERSION 3.14)
 
 project(libOpenDrive VERSION 0.6.0 DESCRIPTION ".xodr library")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "/EHsc /W3")
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
-    add_compile_definitions(_USE_MATH_DEFINES)
-else()
-    set(CMAKE_CXX_FLAGS "-Wall")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-endif()
-
-include(CTest)
 include(FetchContent)
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
-# Fetch pugixml
-FetchContent_Declare(
-    pugixml
-    GIT_REPOSITORY https://github.com/zeux/pugixml.git
-    GIT_TAG v1.14
-)
-FetchContent_MakeAvailable(pugixml)
+option(OPENDRIVE_BUILD_TESTS "Build OpenDrive tests" OFF)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings for libOpenDRIVE" OFF)
 
-# Fetch Catch2 for tests
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.4.0
-)
-FetchContent_MakeAvailable(Catch2)
-include(Catch)
+# Try to use an installed pugixml first; otherwise fetch it
+find_package(pugixml QUIET CONFIG)
+if(NOT TARGET pugixml::pugixml)
+    if(TARGET pugixml)
+        add_library(pugixml::pugixml ALIAS pugixml)
+    else()
+        FetchContent_Declare(
+            pugixml
+            GIT_REPOSITORY https://github.com/zeux/pugixml.git
+            GIT_TAG v1.14
+        )
+        FetchContent_MakeAvailable(pugixml)
+        add_library(pugixml::pugixml ALIAS pugixml)
+    endif()
+endif()
 
 # Define libOpenDRIVE sources
 set(SOURCES
@@ -52,7 +37,6 @@ set(SOURCES
     src/Junction.cpp
     src/Lane.cpp
     src/LaneSection.cpp
-    src/Log.cpp
     src/Mesh.cpp
     src/OpenDriveMap.cpp
     src/RefLine.cpp
@@ -62,25 +46,58 @@ set(SOURCES
     src/RoadObject.cpp
     src/RoadSignal.cpp
     src/RoutingGraph.cpp
-    ${pugixml_SOURCE_DIR}/src/pugixml.cpp
 )
 
 # Build libOpenDRIVE
 add_library(OpenDrive ${SOURCES})
+add_library(OpenDrive::OpenDrive ALIAS OpenDrive)
+set_target_properties(OpenDrive PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    POSITION_INDEPENDENT_CODE ON
+)
+
+if(MSVC)
+    target_compile_options(OpenDrive PRIVATE /W3 /EHsc)
+    target_compile_definitions(OpenDrive PRIVATE _USE_MATH_DEFINES)
+else()
+    target_compile_options(OpenDrive PRIVATE -Wall -Wextra)
+endif()
+
+target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
+
 target_include_directories(
     OpenDrive PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
 )
 
-# Build tests
-add_executable(tests tests/test.cpp)
-target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
-catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+# Tests (optional)
+if(OPENDRIVE_BUILD_TESTS)
+    include(CTest)
+
+    # Prefer an installed Catch2, fallback to fetching it
+    find_package(Catch2 QUIET CONFIG)
+    if(NOT TARGET Catch2::Catch2WithMain)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.4.0
+        )
+        FetchContent_MakeAvailable(Catch2)
+    endif()
+    include(Catch)
+
+    add_executable(tests tests/test.cpp)
+    set_target_properties(tests PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
+    target_link_libraries(tests PRIVATE OpenDrive Catch2::Catch2WithMain)
+    catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
 
 # Add Python bindings (optional, controlled by option)
-option(BUILD_PYTHON_BINDINGS "Build Python bindings for libOpenDRIVE" OFF)
 if(BUILD_PYTHON_BINDINGS)
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
     find_package(pybind11 CONFIG REQUIRED)
@@ -109,10 +126,11 @@ if(BUILD_PYTHON_BINDINGS)
     # Create Python module
     pybind11_add_module(open_drive ${BINDING_SOURCES})
     target_link_libraries(open_drive PRIVATE OpenDrive)
+
+    # Public include dir for the module (OpenDrive already exposes its include dir)
     target_include_directories(
         open_drive PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${pugixml_SOURCE_DIR}/src>
     )
 
     # Install Python module
@@ -124,17 +142,36 @@ endif()
 # Installation
 install(
     TARGETS OpenDrive
+    EXPORT OpenDriveTargets
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(
-    FILES
-    ${pugixml_SOURCE_DIR}/src/pugixml.hpp
-    ${pugixml_SOURCE_DIR}/src/pugiconfig.hpp
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(TARGETS OpenDrive EXPORT OpenDriveConfig)
-install(EXPORT OpenDriveConfig NAMESPACE OpenDrive:: DESTINATION cmake)
+
+install(
+    EXPORT OpenDriveTargets
+    NAMESPACE OpenDrive::
+    FILE OpenDriveTargets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY ExactVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/OpenDriveConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+)

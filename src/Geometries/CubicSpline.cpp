@@ -26,9 +26,15 @@ Poly3::Poly3(double s0, double a, double b, double c, double d)
     this->d = d;
 }
 
-double Poly3::get(double s) const { return a + b * s + c * s * s + d * s * s * s; }
+double Poly3::get(double s) const
+{
+    return a + b * s + c * s * s + d * s * s * s;
+}
 
-double Poly3::get_grad(double s) const { return b + 2 * c * s + 3 * d * s * s; }
+double Poly3::get_grad(double s) const
+{
+    return b + 2 * c * s + 3 * d * s * s;
+}
 
 double Poly3::get_max(double s_start, double s_end) const
 {
@@ -102,7 +108,10 @@ void Poly3::negate()
     d = -d;
 }
 
-bool Poly3::is_zero() const { return (a == 0) && (b == 0) && (c == 0) && (d == 0); }
+bool Poly3::is_zero() const
+{
+    return (a == 0) && (b == 0) && (c == 0) && (d == 0);
+}
 
 void Poly3::set_zero()
 {
@@ -112,11 +121,20 @@ void Poly3::set_zero()
     d = 0;
 }
 
-bool Poly3::isnan() const { return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d)); }
+bool Poly3::isnan() const
+{
+    return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d));
+}
 
-bool CubicSpline::empty() const { return this->s0_to_poly.empty(); }
+bool CubicSpline::empty() const
+{
+    return this->s0_to_poly.empty();
+}
 
-std::size_t CubicSpline::size() const { return this->s0_to_poly.size(); }
+std::size_t CubicSpline::size() const
+{
+    return this->s0_to_poly.size();
+}
 
 double CubicSpline::get(double s, double default_val, bool extend_start) const
 {

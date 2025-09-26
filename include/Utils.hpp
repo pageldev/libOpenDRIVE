@@ -1,4 +1,5 @@
 #pragma once
+#include "Log.hpp"
 #include "Math.hpp"
 
 #include <algorithm>
@@ -13,27 +14,33 @@
 #include <type_traits>
 #include <vector>
 
-#define ODR_CHECK(expr, msg)                                                                                                                         \
-    {                                                                                                                                                \
-        if (!(expr))                                                                                                                                 \
-            log_msg(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
-    }
-
-#define ODR_CHECK_AND_REPAIR(check_expr, msg, repair_expr)                                                                                           \
-    {                                                                                                                                                \
-        if (!(check_expr))                                                                                                                           \
-        {                                                                                                                                            \
-            log_msg(LogLevel::Warn, "[%s] check failed: %s", __FUNCTION__, msg);                                                                     \
-            repair_expr;                                                                                                                             \
-        }                                                                                                                                            \
-    }
-
 namespace odr
 {
+
+template<class... Args>
+inline void check(const bool ok, const char* fmt, Args&&... args)
+{
+    if (!ok)
+        log::warn(fmt, std::forward<Args>(args)...);
+}
+
+template<class Repair, class... Args>
+inline void check_and_repair(const bool ok, Repair&& repair, const char* fmt, Args&&... args)
+{
+    if (!ok)
+    {
+        log::warn(fmt, std::forward<Args>(args)...);
+        std::forward<Repair>(repair)();
+    }
+}
+
 template<class C, class T, T C::*member>
 struct PtrCmp
 {
-    bool operator()(const C* lhs, const C* rhs) const { return (*lhs).*member < (*rhs).*member; }
+    bool operator()(const C* lhs, const C* rhs) const
+    {
+        return (*lhs).*member < (*rhs).*member;
+    }
 };
 
 template<class K, class V>
@@ -273,22 +280,8 @@ inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_v
     return out_indices;
 }
 
-template<typename... Args>
-std::string string_format(const std::string& format, Args... args)
-{
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
-    if (size_s <= 0)
-    {
-        throw std::runtime_error("Error during formatting.");
-    }
-    auto size = static_cast<size_t>(size_s);
-    auto buf = std::make_unique<char[]>(size);
-    std::snprintf(buf.get(), size, format.c_str(), args...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-
 template<class T, typename F>
-bool compare_class_members(const T& obj_a, const T& obj_b, F cmp)
+bool compare_class_members(const T&, const T&, F)
 {
     return false;
 };
@@ -302,7 +295,7 @@ bool compare_class_members(const T& obj_a, const T& obj_b, F cmp, S field, Ss...
 };
 
 template<class T>
-bool check_class_members_equal(const T& obj_a, const T& obj_b)
+bool check_class_members_equal(const T&, const T&)
 {
     return true;
 };

@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <set>
 #include <string>
 #include <vector>
@@ -36,8 +37,16 @@ struct LaneKey
         return this->road_id == other.road_id && this->lanesection_s0 == other.lanesection_s0 && this->lane_id == other.lane_id;
     }
 
-    bool operator!=(const LaneKey& other) const { return !(*this == other); }
+    bool operator!=(const LaneKey& other) const
+    {
+        return !(*this == other);
+    }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
+{
+    return os << lk.to_string();
+}
 
 struct Lane : public XmlNode
 {

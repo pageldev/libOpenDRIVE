@@ -10,7 +10,10 @@ Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double cur
 {
 }
 
-std::unique_ptr<RoadGeometry> Arc::clone() const { return std::make_unique<Arc>(*this); }
+std::unique_ptr<RoadGeometry> Arc::clone() const
+{
+    return std::make_unique<Arc>(*this);
+}
 
 Vec2D Arc::get_xy(double s) const
 {
@@ -28,7 +31,7 @@ Vec2D Arc::get_grad(double s) const
     return {{dx, dy}};
 }
 
-std::set<double> Arc::approximate_linear(double eps) const
+std::set<double> Arc::approximate_linear([[maybe_unused]] double eps) const
 {
     // TODO: properly implement
     const double     s_step = 0.01 / std::abs(this->curvature); // sample at approx. every 1°

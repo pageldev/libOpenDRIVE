@@ -54,7 +54,10 @@ struct equal_to<odr::RoutingGraphEdge>
 template<>
 struct hash<odr::WeightedLaneKey>
 {
-    size_t operator()(const odr::WeightedLaneKey& w_key) const { return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1)); }
+    size_t operator()(const odr::WeightedLaneKey& w_key) const
+    {
+        return (hash<odr::LaneKey>()(w_key) ^ (hash<double>()(w_key.weight) << 1));
+    }
 };
 
 template<>
@@ -82,6 +85,7 @@ struct greater<odr::WeightedLaneKey>
 
 namespace odr
 {
+using RoutingPath = std::vector<LaneKey>;
 
 class RoutingGraph
 {
@@ -91,7 +95,7 @@ public:
 
     std::vector<LaneKey> get_lane_successors(const LaneKey& lane_key) const;
     std::vector<LaneKey> get_lane_predecessors(const LaneKey& lane_key) const;
-    std::vector<LaneKey> shortest_path(const LaneKey& from, const LaneKey& to) const;
+    RoutingPath          shortest_path(const LaneKey& from, const LaneKey& to) const;
 
     std::unordered_set<RoutingGraphEdge>                             edges;
     std::unordered_map<LaneKey, std::unordered_set<WeightedLaneKey>> lane_key_to_successors;

@@ -13,9 +13,9 @@
 
 namespace odr
 {
-RefLine::RefLine(std::string road_id, double length) : road_id(road_id), length(length) {}
+RefLine::RefLine(double length) : length(length) {}
 
-RefLine::RefLine(const RefLine& other) : road_id(other.road_id), length(other.length), elevation_profile(other.elevation_profile)
+RefLine::RefLine(const RefLine& other) : length(other.length), elevation_profile(other.elevation_profile)
 {
     for (const auto& s0_geometry : other.s0_to_geometry)
         this->s0_to_geometry.emplace(s0_geometry.first, s0_geometry.second->clone());
