@@ -1,11 +1,12 @@
 #include "Road.h"
+#include "Fmt.hpp"
 #include "Lane.h"
-#include "Log.hpp"
 #include "RefLine.h"
 #include "RoadMark.h"
 #include "Utils.hpp"
 
 #include "earcut.hpp"
+#include "pugixml.hpp"
 
 #include <algorithm>
 #include <array>
@@ -14,13 +15,12 @@
 #include <cstdint>
 #include <iterator>
 #include <limits>
-#include <sstream>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 
 namespace odr
 {
+
 double Crossfall::get_crossfall(const double s, const bool on_left_side) const
 {
     if (this->s0_to_poly.size() > 0)

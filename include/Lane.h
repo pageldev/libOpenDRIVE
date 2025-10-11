@@ -6,10 +6,10 @@
 #include <cstddef>
 #include <functional>
 #include <map>
-#include <memory>
 #include <ostream>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace odr

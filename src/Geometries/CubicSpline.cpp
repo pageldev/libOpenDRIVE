@@ -10,12 +10,12 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace odr
 {
+
 Poly3::Poly3(double s0, double a, double b, double c, double d)
 {
     /* ds = s - s0 => resolve to polynomial form */

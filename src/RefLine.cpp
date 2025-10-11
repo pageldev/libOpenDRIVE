@@ -1,18 +1,18 @@
 #include "RefLine.h"
-#include "Geometries/RoadGeometry.h"
 #include "Math.hpp"
 #include "Utils.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <iterator>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace odr
 {
+
 RefLine::RefLine(double length) : length(length) {}
 
 RefLine::RefLine(const RefLine& other) : length(other.length), elevation_profile(other.elevation_profile)

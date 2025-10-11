@@ -19,21 +19,22 @@
 #include "Utils.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <memory>
 #include <optional>
 #include <set>
 #include <stdexcept>
-#include <stdio.h>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace odr
 {
+
 std::vector<LaneValidityRecord> extract_lane_validity_records(const pugi::xml_node& xml_node)
 {
     std::vector<LaneValidityRecord> lane_validities;

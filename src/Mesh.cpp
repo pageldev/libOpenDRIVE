@@ -1,12 +1,13 @@
 #include "Mesh.h"
 
-#include <array>
+#include <algorithm>
 #include <cstddef>
 #include <sstream>
 #include <string>
 
 namespace odr
 {
+
 void Mesh3D::add_mesh(const Mesh3D& other)
 {
     const std::size_t idx_offset = this->vertices.size();

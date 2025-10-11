@@ -1,8 +1,12 @@
 #include "RoadNetworkMesh.h"
 #include "Utils.hpp"
 
+#include <algorithm>
+#include <iterator>
+
 namespace odr
 {
+
 template<typename T>
 std::vector<size_t> get_outline_indices(const std::map<size_t, T>& start_indices, const std::size_t num_vertices)
 {

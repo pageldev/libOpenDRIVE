@@ -1,7 +1,12 @@
 #include "RoadSignal.h"
+#include "Math.hpp"
+
+#include <algorithm>
+#include <cstdint>
 
 namespace odr
 {
+
 RoadSignal::RoadSignal(std::string road_id,
                        std::string id,
                        std::string name,

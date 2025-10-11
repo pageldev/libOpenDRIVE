@@ -8,9 +8,10 @@
 #include "RoadSignal.h"
 #include "XmlNode.h"
 
-#include <cstddef>
 #include <map>
 #include <set>
+#include <stdint.h>
+#include <string>
 #include <vector>
 
 namespace odr

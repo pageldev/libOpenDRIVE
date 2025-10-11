@@ -2,12 +2,14 @@
 #include "Mesh.h"
 
 #include <array>
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
 
 namespace odr
 {
+
 struct RoadsMesh : public Mesh3D
 {
     RoadsMesh() = default;
