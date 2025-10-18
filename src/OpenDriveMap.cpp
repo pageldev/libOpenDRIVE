@@ -74,11 +74,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                            const bool         with_road_signals) :
     xodr_file(xodr_file)
 {
-    this->xml_parse_result = this->xml_doc.load_file(xodr_file.c_str());
-    if (!this->xml_parse_result)
-        log::error("Error parsing xml: %s", this->xml_parse_result.description());
+    pugi::xml_document           xml_doc;
+    const pugi::xml_parse_result xml_parse_result = xml_doc.load_file(xodr_file.c_str());
+    if (!xml_parse_result)
+        log::error("Error parsing xml: %s", xml_parse_result.description());
 
-    const pugi::xml_node odr_node = this->xml_doc.child("OpenDRIVE");
+    const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
     if (const auto geoReference_node = odr_node.child("header").child("geoReference"))
         this->proj4 = geoReference_node.text().as_string("");
