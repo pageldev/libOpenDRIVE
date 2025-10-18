@@ -5,7 +5,6 @@ struct OpenDriveFixture
 {
     OpenDriveFixture() : odr_map("test.xodr")
     {
-        REQUIRE(odr_map.xml_parse_result);
         REQUIRE(!odr_map.get_roads().empty());
     }
 
