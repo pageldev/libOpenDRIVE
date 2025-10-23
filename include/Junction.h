@@ -1,6 +1,5 @@
 #pragma once
 #include "Utils.hpp"
-#include "XmlNode.h"
 
 #include <cstdint>
 #include <functional>
@@ -89,7 +88,7 @@ struct JunctionController
     std::uint32_t sequence = 0;
 };
 
-class Junction : public XmlNode
+class Junction
 {
 public:
     Junction(std::string name, std::string id);

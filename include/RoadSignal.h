@@ -1,7 +1,6 @@
 #pragma once
 #include "LaneValidityRecord.h"
 #include "Mesh.h"
-#include "XmlNode.h"
 
 #include <string>
 #include <vector>
@@ -9,7 +8,7 @@
 namespace odr
 {
 
-struct RoadSignal : public XmlNode
+struct RoadSignal
 {
     RoadSignal(std::string road_id,
                std::string id,

@@ -406,7 +406,6 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
     if (repeats_copy.empty() && road_object.outlines.empty())         // handle single object as 1 object repeat
     {
         RoadObjectRepeat rp(NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN);
-        rp.xml_node = this->xml_node;
         repeats_copy.push_back(rp);
     }
 

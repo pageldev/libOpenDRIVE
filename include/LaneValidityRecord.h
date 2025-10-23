@@ -1,12 +1,10 @@
 #pragma once
-#include "XmlNode.h"
-
 #include <climits>
 
 namespace odr
 {
 
-struct LaneValidityRecord : public XmlNode
+struct LaneValidityRecord
 {
     LaneValidityRecord(int from_lane, int to_lane) : from_lane(from_lane), to_lane(to_lane) {}
 

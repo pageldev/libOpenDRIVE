@@ -41,7 +41,6 @@ std::vector<LaneValidityRecord> extract_lane_validity_records(const pugi::xml_no
     for (const auto& validity_node : xml_node.children("validity"))
     {
         LaneValidityRecord lane_validity{validity_node.attribute("fromLane").as_int(INT_MIN), validity_node.attribute("toLane").as_int(INT_MAX)};
-        lane_validity.xml_node = validity_node;
 
         // fromLane should not be greater than toLane, since the standard defines them as follows:
         // fromLane - the minimum ID of lanes for which the object is valid
@@ -107,7 +106,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
         Junction& junction =
             this->id_to_junction.insert({junction_id, Junction(junction_node.attribute("name").as_string(""), junction_id)}).first->second;
-        junction.xml_node = junction_node;
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
@@ -181,7 +179,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                        road_node.attribute("name").as_string(""),
                                        is_left_hand_traffic)})
                          .first->second;
-        road.xml_node = road_node;
 
         odr::check_and_repair(
             road.length >= 0, [&]() { road.length = 0; }, "Road #%s: length %f < 0, set length = 0", road_id.c_str(), road.length);
@@ -219,8 +216,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                         contact_point_str.c_str());
                     link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint_Start : RoadLink::ContactPoint_End;
                 }
-
-                link.xml_node = road_link_node;
             }
         }
 
@@ -231,7 +226,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const std::string road_neighbor_side = road_neighbor_node.attribute("side").as_string("");
             const std::string road_neighbor_direction = road_neighbor_node.attribute("direction").as_string("");
             RoadNeighbor      road_neighbor(road_neighbor_id, road_neighbor_side, road_neighbor_direction);
-            road_neighbor.xml_node = road_neighbor_node;
             road.neighbors.push_back(road_neighbor);
         }
 
@@ -250,7 +244,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const std::string speed_record_max = node.attribute("max").as_string("");
                 const std::string speed_record_unit = node.attribute("unit").as_string("");
                 SpeedRecord       speed_record(speed_record_max, speed_record_unit);
-                speed_record.xml_node = node;
                 road.s_to_speed.insert({s, speed_record});
             }
         }
@@ -335,8 +328,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 log::error("Could not parse %s", geometry_type.c_str());
                 continue;
             }
-
-            road.ref_line.s0_to_geometry.at(s0)->xml_node = geometry_node;
         }
 
         std::map<std::string /*x path query*/, CubicSpline&> cubic_spline_fields{{".//elevationProfile//elevation", road.ref_line.elevation_profile},
@@ -408,7 +399,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         {
             const double s0 = lanesection_node.attribute("s").as_double(0.0);
             LaneSection& lanesection = road.s_to_lanesection.insert({s0, LaneSection(road_id, s0)}).first->second;
-            lanesection.xml_node = lanesection_node;
 
             for (const pugi::xpath_node lane_xpath_node : lanesection_node.select_nodes(".//lane"))
             {
@@ -428,7 +418,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     lane.predecessor = node.attribute("id").as_int(0);
                 if (const pugi::xml_node node = lane_node.child("link").child("successor"))
                     lane.successor = node.attribute("id").as_int(0);
-                lane.xml_node = lane_node;
 
                 for (const pugi::xml_node lane_width_node : lane_node.children("width"))
                 {
@@ -494,7 +483,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                  roadmark_node.attribute("color").as_string("standard"),
                                                  roadmark_node.attribute("material").as_string("standard"),
                                                  roadmark_node.attribute("laneChange").as_string("both"));
-                    roadmark_group.xml_node = roadmark_node;
 
                     odr::check_and_repair(
                         roadmark_group.s_offset >= 0,
@@ -527,7 +515,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                          roadmarks_line_node.attribute("sOffset").as_double(0),
                                                          name,
                                                          roadmarks_line_node.attribute("rule").as_string("none"));
-                            roadmarks_line.xml_node = roadmarks_line_node;
 
                             for (auto [val_name, val_ptr] : {std::pair{"length", &(roadmarks_line.length)},
                                                              std::pair{"space", &(roadmarks_line.space)},
@@ -626,7 +613,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                                   object_node.attribute("subtype").as_string(""),
                                                                   is_dynamic_object)})
                                               .first->second;
-                road_object.xml_node = object_node;
 
                 for (auto [val_name, val_ptr] : {std::pair{"s0", &(road_object.s0)},
                                                  std::pair{"valid_length", &(road_object.valid_length)},
@@ -656,7 +642,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                         repeat_node.attribute("heightEnd").as_double(NAN),
                                                         repeat_node.attribute("zOffsetStart").as_double(NAN),
                                                         repeat_node.attribute("zOffsetEnd").as_double(NAN));
-                    road_object_repeat.xml_node = repeat_node;
 
                     for (auto [val_name, val_ptr] : {std::pair{"s0", &(road_object_repeat.s0)},
                                                      std::pair{"width_start", &(road_object_repeat.width_start)},
@@ -697,7 +682,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                           outline_node.attribute("laneType").as_string(""),
                                                           outline_node.attribute("outer").as_bool(true),
                                                           outline_node.attribute("closed").as_bool(true));
-                    road_object_outline.xml_node = outline_node;
 
                     for (const pugi::xml_node corner_local_node : outline_node.children("cornerLocal"))
                     {
@@ -709,7 +693,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                                   pt_local,
                                                                   corner_local_node.attribute("height").as_double(0),
                                                                   default_local_outline_type);
-                        road_object_corner_local.xml_node = corner_local_node;
                         road_object_outline.outline.push_back(road_object_corner_local);
                     }
 
@@ -723,7 +706,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                                  pt_road,
                                                                  corner_road_node.attribute("height").as_double(0),
                                                                  RoadObjectCorner::Type_Road);
-                        road_object_corner_road.xml_node = corner_road_node;
                         road_object_outline.outline.push_back(road_object_corner_road);
                     }
 
@@ -768,7 +750,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                                                   signal_node.attribute("unit").as_string(""),
                                                                   signal_node.attribute("text").as_string("none"))})
                                               .first->second;
-                road_signal.xml_node = signal_node;
 
                 for (auto [val_name, val_ptr] :
                      {std::pair{"s", &(road_signal.s0)}, std::pair{"height", &(road_signal.height)}, std::pair{"width", &(road_signal.width)}})

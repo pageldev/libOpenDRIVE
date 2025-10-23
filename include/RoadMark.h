@@ -1,6 +1,5 @@
 #pragma once
 #include "Utils.hpp"
-#include "XmlNode.h"
 
 #include <functional>
 #include <set>
@@ -11,7 +10,7 @@ namespace odr
 const double ROADMARK_WEIGHT_STANDARD_WIDTH = 0.12;
 const double ROADMARK_WEIGHT_BOLD_WIDTH = 0.25;
 
-struct RoadMarksLine : public XmlNode
+struct RoadMarksLine
 {
     RoadMarksLine(std::string road_id,
                   double      lanesection_s0,
@@ -70,7 +69,7 @@ struct less<odr::RoadMarksLine>
 namespace odr
 {
 
-struct RoadMarkGroup : public XmlNode
+struct RoadMarkGroup
 {
     RoadMarkGroup(std::string road_id,
                   double      lanesection_s0,

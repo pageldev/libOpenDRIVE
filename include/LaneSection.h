@@ -1,6 +1,5 @@
 #pragma once
 #include "Lane.h"
-#include "XmlNode.h"
 
 #include <map>
 #include <string>
@@ -9,7 +8,7 @@
 namespace odr
 {
 
-struct LaneSection : public XmlNode
+struct LaneSection
 {
     LaneSection(std::string road_id, double s0);
 

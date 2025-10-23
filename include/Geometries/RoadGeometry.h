@@ -1,6 +1,5 @@
 #pragma once
 #include "Math.hpp"
-#include "XmlNode.h"
 
 #include <memory>
 #include <set>
@@ -16,7 +15,7 @@ enum GeometryType
     GeometryType_ParamPoly3
 };
 
-struct RoadGeometry : public XmlNode
+struct RoadGeometry
 {
     RoadGeometry(double s0, double x0, double y0, double hdg0, double length, GeometryType type);
     virtual ~RoadGeometry() = default;

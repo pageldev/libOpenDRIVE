@@ -1,7 +1,6 @@
 #pragma once
 #include "Geometries/CubicSpline.h"
 #include "RoadMark.h"
-#include "XmlNode.h"
 
 #include <cstddef>
 #include <functional>
@@ -48,7 +47,7 @@ inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
     return os << lk.to_string();
 }
 
-struct Lane : public XmlNode
+struct Lane
 {
     Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
 

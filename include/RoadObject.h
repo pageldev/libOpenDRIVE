@@ -2,7 +2,6 @@
 #include "LaneValidityRecord.h"
 #include "Math.hpp"
 #include "Mesh.h"
-#include "XmlNode.h"
 
 #include <string>
 #include <vector>
@@ -10,7 +9,7 @@
 namespace odr
 {
 
-struct RoadObjectRepeat : public XmlNode
+struct RoadObjectRepeat
 {
     RoadObjectRepeat(double s0,
                      double length,
@@ -37,7 +36,7 @@ struct RoadObjectRepeat : public XmlNode
     double z_offset_end = 0;
 };
 
-struct RoadObjectCorner : public XmlNode
+struct RoadObjectCorner
 {
     enum Type
     {
@@ -54,7 +53,7 @@ struct RoadObjectCorner : public XmlNode
     Type   type = Type_Road;
 };
 
-struct RoadObjectOutline : public XmlNode
+struct RoadObjectOutline
 {
     RoadObjectOutline(int id, std::string fill_type, std::string lane_type, bool outer, bool closed);
 
@@ -67,7 +66,7 @@ struct RoadObjectOutline : public XmlNode
     std::vector<RoadObjectCorner> outline;
 };
 
-struct RoadObject : public XmlNode
+struct RoadObject
 {
     RoadObject(std::string road_id,
                std::string id,

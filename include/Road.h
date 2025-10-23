@@ -6,7 +6,6 @@
 #include "RefLine.h"
 #include "RoadObject.h"
 #include "RoadSignal.h"
-#include "XmlNode.h"
 
 #include <map>
 #include <set>
@@ -36,7 +35,7 @@ struct Crossfall : public CubicSpline
     std::map<double, Side> sides;
 };
 
-struct RoadLink : public XmlNode
+struct RoadLink
 {
     enum ContactPoint
     {
@@ -60,7 +59,7 @@ struct RoadLink : public XmlNode
     ContactPoint contact_point = ContactPoint_None;
 };
 
-struct RoadNeighbor : public XmlNode
+struct RoadNeighbor
 {
     RoadNeighbor(std::string id, std::string side, std::string direction);
 
@@ -69,7 +68,7 @@ struct RoadNeighbor : public XmlNode
     std::string direction = "";
 };
 
-struct SpeedRecord : public XmlNode
+struct SpeedRecord
 {
     SpeedRecord(std::string max, std::string unit);
 
@@ -77,7 +76,7 @@ struct SpeedRecord : public XmlNode
     std::string unit = "";
 };
 
-class Road : public XmlNode
+class Road
 {
 public:
     Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic = false);
