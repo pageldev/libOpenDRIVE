@@ -37,11 +37,11 @@ namespace odr
 
 struct JunctionConnection
 {
-    enum ContactPoint
+    enum class ContactPoint
     {
-        ContactPoint_None,
-        ContactPoint_Start,
-        ContactPoint_End
+        None,
+        Start,
+        End
     };
 
     JunctionConnection(std::string id, std::string incoming_road, std::string connecting_road, ContactPoint contact_point);
@@ -49,7 +49,7 @@ struct JunctionConnection
     std::string  id = "";
     std::string  incoming_road = "";
     std::string  connecting_road = "";
-    ContactPoint contact_point = ContactPoint_None;
+    ContactPoint contact_point = ContactPoint::None;
 
     std::set<JunctionLaneLink> lane_links;
 };

@@ -21,11 +21,11 @@ struct RoadMark;
 
 struct Crossfall : public CubicSpline
 {
-    enum Side
+    enum class Side
     {
-        Side_Both,
-        Side_Left,
-        Side_Right
+        Both,
+        Left,
+        Right
     };
 
     Crossfall() = default;
@@ -37,26 +37,26 @@ struct Crossfall : public CubicSpline
 
 struct RoadLink
 {
-    enum ContactPoint
+    enum class ContactPoint
     {
-        ContactPoint_None,
-        ContactPoint_Start,
-        ContactPoint_End
+        None,
+        Start,
+        End
     };
 
-    enum Type
+    enum class Type
     {
-        Type_None,
-        Type_Road,
-        Type_Junction
+        None,
+        Road,
+        Junction
     };
 
     RoadLink() = default;
     RoadLink(std::string id, Type type, ContactPoint contact_point);
 
     std::string  id = "";
-    Type         type = Type_None;
-    ContactPoint contact_point = ContactPoint_None;
+    Type         type = Type::None;
+    ContactPoint contact_point = ContactPoint::None;
 };
 
 struct RoadNeighbor

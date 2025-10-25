@@ -11,7 +11,7 @@ namespace odr
 namespace log
 {
 
-enum Level
+enum class Level
 {
     Debug = 0,
     Info = 1,

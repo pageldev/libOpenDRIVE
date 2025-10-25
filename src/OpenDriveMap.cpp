@@ -117,7 +117,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 junction_id.c_str(),
                 contact_point_str.c_str());
             const JunctionConnection::ContactPoint junction_conn_contact_point =
-                (contact_point_str == "start") ? JunctionConnection::ContactPoint_Start : JunctionConnection::ContactPoint_End;
+                (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
 
             const std::string   junction_connection_id = connection_node.attribute("id").as_string("");
             JunctionConnection& junction_connection = junction.id_to_connection
@@ -201,9 +201,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     road_id.c_str(),
                     is_predecessor ? "predecessor" : "successor",
                     type_str.c_str());
-                link.type = (type_str == "road") ? RoadLink::Type_Road : RoadLink::Type_Junction;
+                link.type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
 
-                if (link.type == RoadLink::Type_Road)
+                if (link.type == RoadLink::Type::Road)
                 {
                     // junction connection has no contact point
                     std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
@@ -214,7 +214,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                         road_id.c_str(),
                         is_predecessor ? "predecessor" : "successor",
                         contact_point_str.c_str());
-                    link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint_Start : RoadLink::ContactPoint_End;
+                    link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
                 }
             }
         }
@@ -379,11 +379,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     std::string side_str = side.as_string("");
                     std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
                     if (side_str == "left")
-                        road.crossfall.sides[s0] = Crossfall::Side_Left;
+                        road.crossfall.sides[s0] = Crossfall::Side::Left;
                     else if (side_str == "right")
-                        road.crossfall.sides[s0] = Crossfall::Side_Right;
+                        road.crossfall.sides[s0] = Crossfall::Side::Right;
                     else
-                        road.crossfall.sides[s0] = Crossfall::Side_Both;
+                        road.crossfall.sides[s0] = Crossfall::Side::Both;
                 }
             }
 
@@ -579,7 +579,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         if (with_road_objects)
         {
             const RoadObjectCorner::Type default_local_outline_type =
-                abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type_Local_AbsZ : RoadObjectCorner::Type_Local_RelZ;
+                abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type::Local_AbsZ : RoadObjectCorner::Type::Local_RelZ;
 
             for (pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
@@ -705,7 +705,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                         RoadObjectCorner road_object_corner_road(corner_road_node.attribute("id").as_int(-1),
                                                                  pt_road,
                                                                  corner_road_node.attribute("height").as_double(0),
-                                                                 RoadObjectCorner::Type_Road);
+                                                                 RoadObjectCorner::Type::Road);
                         road_object_outline.outline.push_back(road_object_corner_road);
                     }
 
@@ -875,14 +875,14 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
         if (!lanesection)
         {
             const RoadLink& road_link = predecessors ? current_road.predecessor : current_road.successor;
-            if (road_link.type == RoadLink::Type_Road && road_link.contact_point != RoadLink::ContactPoint_None)
+            if (road_link.type == RoadLink::Type::Road && road_link.contact_point != RoadLink::ContactPoint::None)
             {
                 auto next_road_iter = id_to_road.find(road_link.id);
                 if (next_road_iter != id_to_road.end())
                 {
                     const Road& next_road = next_road_iter->second;
-                    lanesection = (road_link.contact_point == RoadLink::ContactPoint_Start) ? next_road.s_to_lanesection.begin()->second
-                                                                                            : next_road.s_to_lanesection.rbegin()->second;
+                    lanesection = (road_link.contact_point == RoadLink::ContactPoint::Start) ? next_road.s_to_lanesection.begin()->second
+                                                                                             : next_road.s_to_lanesection.rbegin()->second;
                 }
             }
         }
@@ -963,11 +963,11 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             const Road& connecting_road = connecting_road_iter->second;
 
             const LaneSection& incoming_lanesec =
-                (incoming_road.successor.type == RoadLink::Type_Junction && incoming_road.successor.id == junction.id)
+                (incoming_road.successor.type == RoadLink::Type::Junction && incoming_road.successor.id == junction.id)
                     ? incoming_road.s_to_lanesection.rbegin()->second
                     : incoming_road.s_to_lanesection.begin()->second;
 
-            const LaneSection& connecting_lanesec = (conn.contact_point == JunctionConnection::ContactPoint_Start)
+            const LaneSection& connecting_lanesec = (conn.contact_point == JunctionConnection::ContactPoint::Start)
                                                         ? connecting_road.s_to_lanesection.begin()->second
                                                         : connecting_road.s_to_lanesection.rbegin()->second;
 

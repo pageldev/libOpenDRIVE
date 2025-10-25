@@ -7,12 +7,12 @@
 namespace odr
 {
 
-enum GeometryType
+enum class GeometryType
 {
-    GeometryType_Line,
-    GeometryType_Spiral,
-    GeometryType_Arc,
-    GeometryType_ParamPoly3
+    Line,
+    Spiral,
+    Arc,
+    ParamPoly3
 };
 
 struct RoadGeometry

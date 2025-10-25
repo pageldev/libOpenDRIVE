@@ -29,13 +29,13 @@ double Crossfall::get_crossfall(const double s, const bool on_left_side) const
         if (target_poly_iter != this->s0_to_poly.begin())
             target_poly_iter--;
 
-        Side side = Side_Both; // applicable side of the road
+        Side side = Side::Both; // applicable side of the road
         if (this->sides.find(target_poly_iter->first) != this->sides.end())
             side = this->sides.at(target_poly_iter->first);
 
-        if (on_left_side && side == Side_Right)
+        if (on_left_side && side == Side::Right)
             return 0;
-        else if (!on_left_side && side == Side_Left)
+        else if (!on_left_side && side == Side::Left)
             return 0;
 
         return target_poly_iter->second.get(s);
@@ -537,10 +537,10 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
             for (const RoadObjectCorner& corner : road_object_outline.outline)
             {
                 Vec3D pt_top;
-                if (corner.type == RoadObjectCorner::Type_Local_AbsZ || corner.type == RoadObjectCorner::Type_Local_RelZ)
+                if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
                     pt_top = {corner.pt[0], corner.pt[1], corner.pt[2]};
-                    if (corner.type == RoadObjectCorner::Type_Local_AbsZ)
+                    if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
                         pt_top[2] -= p0[2]; // make road relative
                     pt_top = add(pt_top, Vec3D{0, 0, corner.height});
                     pt_top = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_top)), p0);
@@ -559,10 +559,10 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         for (const RoadObjectCorner& corner : road_object_outline.outline)
         {
             Vec3D pt_base;
-            if (corner.type == RoadObjectCorner::Type_Local_AbsZ || corner.type == RoadObjectCorner::Type_Local_RelZ)
+            if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
             {
                 pt_base = {corner.pt[0], corner.pt[1], corner.pt[2]};
-                if (corner.type == RoadObjectCorner::Type_Local_AbsZ)
+                if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
                     pt_base[2] -= p0[2]; // make road relative
                 pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
             }

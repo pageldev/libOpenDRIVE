@@ -38,11 +38,11 @@ struct RoadObjectRepeat
 
 struct RoadObjectCorner
 {
-    enum Type
+    enum class Type
     {
-        Type_Local_RelZ, // z relative to road’s reference line
-        Type_Local_AbsZ, // absolute z value
-        Type_Road
+        Local_RelZ, // z relative to road’s reference line
+        Local_AbsZ, // absolute z value
+        Road
     };
 
     RoadObjectCorner(int id, Vec3D pt, double height, Type type);
@@ -50,7 +50,7 @@ struct RoadObjectCorner
     int    id = 0;
     Vec3D  pt;
     double height = 0;
-    Type   type = Type_Road;
+    Type   type = Type::Road;
 };
 
 struct RoadObjectOutline

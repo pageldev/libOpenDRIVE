@@ -7,7 +7,7 @@
 namespace odr
 {
 
-Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType_Line) {}
+Line::Line(double s0, double x0, double y0, double hdg0, double length) : RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::Line) {}
 
 std::unique_ptr<RoadGeometry> Line::clone() const
 {
