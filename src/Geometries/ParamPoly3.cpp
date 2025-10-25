@@ -23,16 +23,7 @@ ParamPoly3::ParamPoly3(double s0,
                        double cV,
                        double dV,
                        bool   pRange_normalized) :
-    RoadGeometry(s0, x0, y0, hdg0, length, GeometryType::ParamPoly3),
-    aU(aU),
-    bU(bU),
-    cU(cU),
-    dU(dU),
-    aV(aV),
-    bV(bV),
-    cV(cV),
-    dV(dV),
-    pRange_normalized(pRange_normalized)
+    RoadGeometry(s0, x0, y0, hdg0, length), aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV), pRange_normalized(pRange_normalized)
 {
     if (!pRange_normalized)
     {
