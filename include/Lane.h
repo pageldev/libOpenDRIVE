@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <optional>
 #include <ostream>
 #include <set>
 #include <string>
@@ -56,9 +57,10 @@ struct Lane
     LaneKey     key;
     int         id;
     bool        level = false;
-    int         predecessor = 0;
-    int         successor = 0;
     std::string type = "";
+
+    std::optional<int> predecessor;
+    std::optional<int> successor;
 
     CubicSpline lane_width;
     CubicSpline outer_border;

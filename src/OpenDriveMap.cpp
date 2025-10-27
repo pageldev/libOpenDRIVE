@@ -414,10 +414,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                                  Lane(road_id, s0, lane_id, lane_node.attribute("level").as_bool(false), lane_node.attribute("type").as_string(""))})
                         .first->second;
 
-                if (const pugi::xml_node node = lane_node.child("link").child("predecessor"))
-                    lane.predecessor = node.attribute("id").as_int(0);
-                if (const pugi::xml_node node = lane_node.child("link").child("successor"))
-                    lane.successor = node.attribute("id").as_int(0);
+                if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
+                    lane.predecessor = id_attr.as_int();
+                if (const pugi::xml_attribute id_attr = lane_node.child("link").child("successor").attribute("id"))
+                    lane.successor = id_attr.as_int();
 
                 for (const pugi::xml_node lane_width_node : lane_node.children("width"))
                 {
@@ -895,11 +895,12 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
     {
         if (target_lanesection)
         {
-            int  target_lane_id = predecessors ? lane.predecessor : lane.successor;
-            auto it = target_lanesection->id_to_lane.find(target_lane_id);
-            if (it != target_lanesection->id_to_lane.end())
+            std::optional<int> target_lane_id = predecessors ? lane.predecessor : lane.successor;
+            if (target_lane_id)
             {
-                return it->second;
+                auto it = target_lanesection->id_to_lane.find(target_lane_id.value());
+                if (it != target_lanesection->id_to_lane.end())
+                    return it->second;
             }
         }
         return std::nullopt;
