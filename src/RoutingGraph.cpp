@@ -41,9 +41,7 @@ std::vector<LaneKey> RoutingGraph::get_lane_predecessors(const LaneKey& lane_key
 RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) const
 {
     if (from == to)
-    {
         return {from};
-    }
 
     // Priority queue to maintain open set
     std::priority_queue<WeightedLaneKey, std::vector<WeightedLaneKey>, std::greater<odr::WeightedLaneKey>> open_set;
@@ -65,9 +63,7 @@ RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) 
         // Skip stale entries
         auto current_cost_itr = cost_from_start.find(current);
         if (current_cost_itr == cost_from_start.end() || current_weighted.weight > current_cost_itr->second)
-        {
             continue;
-        }
 
         // If the goal is reached, reconstruct the path
         if (current == to)
@@ -79,9 +75,7 @@ RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) 
                 path.push_back(at);
                 auto it = came_from.find(at);
                 if (it == came_from.end())
-                {
                     break;
-                }
                 at = it->second;
             }
             std::reverse(path.begin(), path.end());
@@ -91,9 +85,7 @@ RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) 
         // Get successors of the current node
         auto succ_itr = lane_key_to_successors.find(current);
         if (succ_itr == lane_key_to_successors.end())
-        {
             continue;
-        }
 
         for (const auto& weighted_successor : succ_itr->second)
         {
@@ -110,24 +102,16 @@ RoutingPath RoutingGraph::shortest_path(const LaneKey& from, const LaneKey& to) 
             {
                 // Update cost_from_start
                 if (neighbor_cost_itr == cost_from_start.end())
-                {
                     cost_from_start.emplace(neighbor, alternative_path_cost);
-                }
                 else
-                {
                     neighbor_cost_itr->second = alternative_path_cost;
-                }
 
                 // Update came_from
                 auto came_from_itr = came_from.find(neighbor);
                 if (came_from_itr == came_from.end())
-                {
                     came_from.emplace(neighbor, current);
-                }
                 else
-                {
                     came_from_itr->second = current;
-                }
 
                 // Add the neighbor to the open set
                 open_set.emplace(neighbor, alternative_path_cost);

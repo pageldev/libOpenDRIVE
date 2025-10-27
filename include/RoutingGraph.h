@@ -47,7 +47,7 @@ struct hash<odr::RoutingGraphEdge>
 template<>
 struct equal_to<odr::RoutingGraphEdge>
 {
-    size_t operator()(const odr::RoutingGraphEdge& lhs, const odr::RoutingGraphEdge& rhs) const
+    bool operator()(const odr::RoutingGraphEdge& lhs, const odr::RoutingGraphEdge& rhs) const
     {
         return equal_to<odr::LaneKey>{}(lhs.from, rhs.from) && equal_to<odr::LaneKey>{}(lhs.to, rhs.to) && equal_to<double>{}(lhs.weight, rhs.weight);
     }
@@ -65,7 +65,7 @@ struct hash<odr::WeightedLaneKey>
 template<>
 struct equal_to<odr::WeightedLaneKey>
 {
-    size_t operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
+    bool operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
     {
         return equal_to<odr::LaneKey>{}(lhs, rhs) && equal_to<double>{}(lhs.weight, rhs.weight);
     }
@@ -76,9 +76,7 @@ struct greater<odr::WeightedLaneKey>
     bool operator()(const odr::WeightedLaneKey& lhs, const odr::WeightedLaneKey& rhs) const
     {
         if (lhs.weight != rhs.weight)
-        {
             return lhs.weight > rhs.weight; // Compare by weight first
-        }
         // Tie-breaker: use LaneKey's natural ordering
         return less<odr::LaneKey>{}(lhs, rhs); // Assuming LaneKey has a std::less specialization
     }
