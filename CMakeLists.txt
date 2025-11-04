@@ -7,7 +7,9 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(OPENDRIVE_BUILD_TESTS "Build OpenDrive tests" OFF)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings for libOpenDRIVE" OFF)
 
+# Try to use an installed pugixml first; otherwise fetch it
 find_package(pugixml QUIET CONFIG)
 if(NOT TARGET pugixml::pugixml)
     if(TARGET pugixml)
@@ -23,6 +25,7 @@ if(NOT TARGET pugixml::pugixml)
     endif()
 endif()
 
+# Define libOpenDRIVE sources
 set(SOURCES
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
@@ -45,6 +48,7 @@ set(SOURCES
     src/RoutingGraph.cpp
 )
 
+# Build libOpenDRIVE
 add_library(OpenDrive ${SOURCES})
 add_library(OpenDrive::OpenDrive ALIAS OpenDrive)
 set_target_properties(OpenDrive PROPERTIES
@@ -52,6 +56,7 @@ set_target_properties(OpenDrive PROPERTIES
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
 )
+
 if(MSVC)
     target_compile_options(OpenDrive PRIVATE /W3 /EHsc)
     target_compile_definitions(OpenDrive PRIVATE _USE_MATH_DEFINES)
@@ -67,14 +72,20 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+# Tests (optional)
 if(OPENDRIVE_BUILD_TESTS)
     include(CTest)
-    FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.4.0
-    )
-    FetchContent_MakeAvailable(Catch2)
+
+    # Prefer an installed Catch2, fallback to fetching it
+    find_package(Catch2 QUIET CONFIG)
+    if(NOT TARGET Catch2::Catch2WithMain)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.4.0
+        )
+        FetchContent_MakeAvailable(Catch2)
+    endif()
     include(Catch)
 
     add_executable(tests tests/test.cpp)
@@ -86,6 +97,49 @@ if(OPENDRIVE_BUILD_TESTS)
     catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
 
+# Add Python bindings (optional, controlled by option)
+if(BUILD_PYTHON_BINDINGS)
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    find_package(pybind11 CONFIG REQUIRED)
+
+    # Define binding sources
+    set(BINDING_SOURCES
+        bindings/bindings.cpp
+        bindings/opendrivemap.cpp
+        bindings/junction.cpp
+        bindings/lane.cpp
+        bindings/lanesection.cpp
+        bindings/road.cpp
+        bindings/refline.cpp
+        bindings/mesh.cpp
+        bindings/routinggraph.cpp
+        bindings/roadmark.cpp
+        bindings/roadnetworkmesh.cpp
+        bindings/roadobject.cpp
+        bindings/lanevalidityrecord.cpp
+        bindings/roadsignal.cpp
+        bindings/math.cpp
+        bindings/xml_node.cpp
+        # Add other binding files as needed
+    )
+
+    # Create Python module
+    pybind11_add_module(open_drive ${BINDING_SOURCES})
+    target_link_libraries(open_drive PRIVATE OpenDrive)
+
+    # Public include dir for the module (OpenDrive already exposes its include dir)
+    target_include_directories(
+        open_drive PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
+    # Install Python module
+    install(TARGETS open_drive
+        LIBRARY DESTINATION ${Python3_SITELIB}
+    )
+endif()
+
+# Installation
 install(
     TARGETS OpenDrive
     EXPORT OpenDriveTargets
