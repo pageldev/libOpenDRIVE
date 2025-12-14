@@ -907,54 +907,46 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
     };
 
     // Lambda to add an edge to the graph
-    auto add_edge_to_graph = [&](const std::optional<LaneKey>& from, const std::optional<LaneKey>& to, const Road& road)
+    auto add_edge_to_graph = [&](const LaneKey& from, const LaneKey& to, const Road& road)
     {
-        if (from && to)
-        {
-            double lane_length = road.get_lanesection_length(from->lanesection_s0);
-            routing_graph.add_edge(RoutingGraphEdge(*from, *to, lane_length));
-        }
+        const double lane_length = road.get_lanesection_length(from.lanesection_s0);
+        routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
     };
 
     // Lambda to process a single lane
-    auto process_lane = [&](const Road& road, const LaneSection& lanesec, const Lane& lane)
+    auto process_lane = [&](const Road& road, const LaneSection& lanesection, const Lane& lane)
     {
-        bool lane_follows_road_direction = lane.key.lane_id < 0;
+        const bool lane_follows_road_direction = lane.key.lane_id < 0;
 
-        auto prev_lanesection = get_adjacent_lanesection(road, lanesec, true);
-        auto next_lanesection = get_adjacent_lanesection(road, lanesec, false);
+        auto prev_lanesection = get_adjacent_lanesection(road, lanesection, true);
+        auto next_lanesection = get_adjacent_lanesection(road, lanesection, false);
 
         std::optional<Lane> predecessor =
             get_connecting_lane(lane, lane_follows_road_direction, lane_follows_road_direction ? prev_lanesection : next_lanesection);
+        if (predecessor && this->id_to_road.count(predecessor->key.road_id))
+            add_edge_to_graph(predecessor->key, lane.key, this->get_road(predecessor->key.road_id));
 
         std::optional<Lane> successor =
             get_connecting_lane(lane, !lane_follows_road_direction, lane_follows_road_direction ? next_lanesection : prev_lanesection);
-
-        add_edge_to_graph(predecessor ? std::optional<LaneKey>(predecessor->key) : std::nullopt, lane.key, road);
-        add_edge_to_graph(std::optional<LaneKey>(lane.key), successor ? std::optional<LaneKey>(successor->key) : std::nullopt, road);
+        if (successor)
+            add_edge_to_graph(lane.key, successor->key, road);
     };
 
     // Parse roads
-    for (const auto& id_road : id_to_road)
+    for (const auto& [_, road] : id_to_road)
     {
-        const Road& road = id_road.second;
-        for (const auto& s_lanesection : road.s_to_lanesection)
+        for (const auto& [_, lanesection] : road.s_to_lanesection)
         {
-            const LaneSection& lanesec = s_lanesection.second;
-            for (const auto& id_lane : lanesec.id_to_lane)
-            {
-                process_lane(road, lanesec, id_lane.second);
-            }
+            for (const auto& [_, lane] : lanesection.id_to_lane)
+                process_lane(road, lanesection, lane);
         }
     }
 
     // Lambda to process a single junction
     auto process_junction = [&](const Junction& junction)
     {
-        for (const auto& id_conn : junction.id_to_connection)
+        for (const auto& [_, conn] : junction.id_to_connection)
         {
-            const JunctionConnection& conn = id_conn.second;
-
             auto incoming_road_iter = id_to_road.find(conn.incoming_road);
             auto connecting_road_iter = id_to_road.find(conn.connecting_road);
             if (incoming_road_iter == id_to_road.end() || connecting_road_iter == id_to_road.end())
@@ -985,7 +977,7 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
                 const LaneKey from(incoming_road.id, incoming_lanesec.s0, from_lane_iter->second.id);
                 const LaneKey to(connecting_road.id, connecting_lanesec.s0, to_lane_iter->second.id);
-                double        lane_length = incoming_road.get_lanesection_length(incoming_lanesec);
+                const double  lane_length = incoming_road.get_lanesection_length(incoming_lanesec);
 
                 routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }
@@ -994,9 +986,7 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
     // Parse junctions
     for (const auto& id_junc : id_to_junction)
-    {
         process_junction(id_junc.second);
-    }
 
     return routing_graph;
 }
