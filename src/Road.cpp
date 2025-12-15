@@ -95,6 +95,8 @@ LaneSection Road::get_lanesection(const double s) const
 
 double Road::get_lanesection_end(const LaneSection& lanesection) const
 {
+    if (lanesection.road_id != this->id)
+        log::error("LaneSection %f in Road #%s, not in Road #%s", lanesection.s0, lanesection.road_id.c_str(), this->id.c_str());
     return this->get_lanesection_end(lanesection.s0);
 }
 
