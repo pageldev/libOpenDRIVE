@@ -337,12 +337,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             cubic_spline_fields.insert({".//lateralProfile//superelevation", road.superelevation});
 
         /* parse elevation profiles, lane offsets, superelevation */
-        for (auto entry : cubic_spline_fields)
+        for (const auto& [xpath_query_str, cubic_spline] : cubic_spline_fields)
         {
             /* handle splines not starting at s=0, assume value 0 until start */
-            entry.second.s0_to_poly[0.0] = Poly3(0.0, 0.0, 0.0, 0.0, 0.0);
+            cubic_spline.s0_to_poly[0.0] = Poly3(0.0, 0.0, 0.0, 0.0, 0.0);
 
-            pugi::xpath_node_set nodes = road_node.select_nodes(entry.first.c_str());
+            pugi::xpath_node_set nodes = road_node.select_nodes(xpath_query_str.c_str());
             for (pugi::xpath_node node : nodes)
             {
                 double       s0 = node.node().attribute("s").as_double(0.0);
@@ -352,9 +352,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const double d = node.node().attribute("d").as_double(0.0);
 
                 odr::check_and_repair(
-                    s0 >= 0, [&]() { s0 = 0; }, "Road #%s: %s s %f < 0, set s=0", road_id.c_str(), entry.first.c_str(), s0);
+                    s0 >= 0, [&]() { s0 = 0; }, "Road #%s: %s s %f < 0, set s=0", road_id.c_str(), xpath_query_str.c_str(), s0);
 
-                entry.second.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
+                cubic_spline.s0_to_poly[s0] = Poly3(s0, a, b, c, d);
             }
         }
 
