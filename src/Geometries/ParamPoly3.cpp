@@ -50,7 +50,7 @@ std::unique_ptr<RoadGeometry> ParamPoly3::clone() const
 Vec2D ParamPoly3::get_xy(double s) const
 {
     const double p = this->cubic_bezier.get_t(s - s0);
-    const Vec2D  pt = this->cubic_bezier.get(p);
+    const Vec2D  pt = this->cubic_bezier.evaluate(p);
 
     const double xt = (std::cos(hdg0) * pt[0]) - (std::sin(hdg0) * pt[1]) + x0;
     const double yt = (std::sin(hdg0) * pt[0]) + (std::cos(hdg0) * pt[1]) + y0;
@@ -58,10 +58,10 @@ Vec2D ParamPoly3::get_xy(double s) const
     return Vec2D{xt, yt};
 }
 
-Vec2D ParamPoly3::get_grad(double s) const
+Vec2D ParamPoly3::derivative(double s) const
 {
     const double p = this->cubic_bezier.get_t(s - s0);
-    const Vec2D  dxy = this->cubic_bezier.get_grad(p);
+    const Vec2D  dxy = this->cubic_bezier.derivative(p);
 
     const double h1 = std::cos(hdg0);
     const double h2 = std::sin(hdg0);

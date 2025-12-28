@@ -34,7 +34,7 @@ Vec2D Spiral::get_xy(double s) const
     return Vec2D{xt, yt};
 }
 
-Vec2D Spiral::get_grad(double s) const
+Vec2D Spiral::derivative(double s) const
 {
     double xs_spiral, ys_spiral, as_spiral;
     odrSpiral(s - s0 + s0_spiral, c_dot, &xs_spiral, &ys_spiral, &as_spiral);

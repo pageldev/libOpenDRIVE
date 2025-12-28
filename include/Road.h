@@ -19,7 +19,7 @@ namespace odr
 struct Lane;
 struct RoadMark;
 
-struct Crossfall : public CubicSpline
+struct Crossfall : public CubicProfile
 {
     enum class Side
     {
@@ -121,10 +121,10 @@ public:
     RoadLink                  successor;
     std::vector<RoadNeighbor> neighbors;
 
-    CubicSpline lane_offset;
-    CubicSpline superelevation;
-    Crossfall   crossfall;
-    RefLine     ref_line;
+    CubicProfile lane_offset;
+    CubicProfile superelevation;
+    Crossfall    crossfall;
+    RefLine      ref_line;
 
     std::map<double, LaneSection>     s_to_lanesection;
     std::map<double, std::string>     s_to_type;

@@ -6,20 +6,21 @@
 namespace odr
 {
 
-struct Poly3
+struct CubicPoly
 {
-    Poly3() = default;
-    Poly3(double s0, double a, double b, double c, double d);
+    CubicPoly() = default;
+    CubicPoly(double a, double b, double c, double d, double s_origin = 0.0); // constructs a global cubic from local coefficients in (s - s_origin)
 
-    double get(double s) const;
-    double get_grad(double s) const;
-    double get_max(double s_start, double s_end) const;
-    void   negate();
-    bool   is_zero() const;
-    void   set_zero();
-    bool   isnan() const;
+    double evaluate(const double s) const;
+    double derivative(const double s) const;
+    double max_value(const double s_start, const double s_end) const;
 
-    std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
+    void negate();
+    bool is_zero() const;
+    void set_zero();
+    bool isnan() const;
+
+    std::set<double> approximate_linear(const double eps, const double s_start, const double s_end) const;
 
     double a = 0;
     double b = 0;
@@ -27,23 +28,22 @@ struct Poly3
     double d = 0;
 };
 
-struct CubicSpline
+struct CubicProfile
 {
-    CubicSpline() = default;
+    CubicProfile() = default;
 
-    double get(double s, double default_val = 0.0, bool extend_start = true) const;
-    double get_grad(double s, double default_val = 0.0, bool extend_start = true) const;
-    double get_max(double s_start, double s_end) const;
-    Poly3  get_poly(double s, bool extend_start = true) const;
+    double evaluate(const double s, const double default_val = 0.0, const bool extend_start = true) const;
+    double derivative(const double s, const double default_val = 0.0, const bool extend_start = true) const;
+    double max_value(const double s_start, const double s_end) const;
 
-    bool        empty() const;
-    std::size_t size() const;
-    CubicSpline negate() const;
-    CubicSpline add(const CubicSpline& other) const;
+    CubicPoly get_poly(const double s, const bool extend_start = true) const;
+
+    [[nodiscard]] CubicProfile negate() const;
+    [[nodiscard]] CubicProfile add(const CubicProfile& other) const;
 
     std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 
-    std::map<double, Poly3> s0_to_poly;
+    std::map<double /* s0 */, CubicPoly> segments;
 };
 
 } // namespace odr

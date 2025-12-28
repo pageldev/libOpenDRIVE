@@ -62,8 +62,8 @@ struct Lane
     std::optional<int> predecessor;
     std::optional<int> successor;
 
-    CubicSpline lane_width;
-    CubicSpline outer_border;
+    CubicProfile lane_width;
+    CubicProfile outer_border;
 
     std::map<double, HeightOffset> s_to_height_offset;
     std::set<RoadMarkGroup>        roadmark_groups;

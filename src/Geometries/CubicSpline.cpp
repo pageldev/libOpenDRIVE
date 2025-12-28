@@ -16,45 +16,45 @@
 namespace odr
 {
 
-Poly3::Poly3(double s0, double a, double b, double c, double d)
+CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin)
 {
-    /* ds = s - s0 => resolve to polynomial form */
-    /* make poly3s work on absolute s position => makes CubicSpline::add work */
-    this->a = a - b * s0 + c * s0 * s0 - d * s0 * s0 * s0;
-    this->b = b - 2 * c * s0 + 3 * d * s0 * s0;
-    this->c = c - 3 * d * s0;
+    // ds = s - s0 => resolve to polynomial form
+    // make CubicPolys work on absolute s position => makes CubicProfile::add work
+    this->a = a - b * s_origin + c * s_origin * s_origin - d * s_origin * s_origin * s_origin;
+    this->b = b - 2 * c * s_origin + 3 * d * s_origin * s_origin;
+    this->c = c - 3 * d * s_origin;
     this->d = d;
 }
 
-double Poly3::get(double s) const
+double CubicPoly::evaluate(const double s) const
 {
     return a + b * s + c * s * s + d * s * s * s;
 }
 
-double Poly3::get_grad(double s) const
+double CubicPoly::derivative(const double s) const
 {
     return b + 2 * c * s + 3 * d * s * s;
 }
 
-double Poly3::get_max(double s_start, double s_end) const
+double CubicPoly::max_value(const double s_start, const double s_end) const
 {
     if (this->d != 0)
     {
         const double s_extr = (std::sqrt(c * c - 3 * b * d) - c) / (3 * d);
-        const double max_val1 = this->get(std::min(std::max(s_extr, s_start), s_end));
-        const double max_val2 = this->get(std::min(std::max(-s_extr, s_start), s_end));
+        const double max_val1 = this->evaluate(std::min(std::max(s_extr, s_start), s_end));
+        const double max_val2 = this->evaluate(std::min(std::max(-s_extr, s_start), s_end));
         return std::max(max_val1, max_val2);
     }
     else if (this->c != 0)
     {
         const double s_extr = (-b) / (2 * c);
-        return this->get(std::min(std::max(s_extr, s_start), s_end));
+        return this->evaluate(std::min(std::max(s_extr, s_start), s_end));
     }
 
-    return this->get(s_start);
+    return this->evaluate(s_start);
 }
 
-std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_end) const
+std::set<double> CubicPoly::approximate_linear(const double eps, const double s_start, const double s_end) const
 {
     if (s_start == s_end)
         return {};
@@ -74,7 +74,7 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
     }
     else
     {
-        /* transform to parametric form */
+        // transform to parametric form
         const double& s_0 = s_start;
         const double& s_1 = s_end;
         const double  d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3 * d * s_0 * s_1 * s_1 + 3 * d * s_0 * s_0 * s_1;
@@ -100,7 +100,7 @@ std::set<double> Poly3::approximate_linear(double eps, double s_start, double s_
     return s_vals_set;
 }
 
-void Poly3::negate()
+void CubicPoly::negate()
 {
     a = -a;
     b = -b;
@@ -108,12 +108,12 @@ void Poly3::negate()
     d = -d;
 }
 
-bool Poly3::is_zero() const
+bool CubicPoly::is_zero() const
 {
     return (a == 0) && (b == 0) && (c == 0) && (d == 0);
 }
 
-void Poly3::set_zero()
+void CubicPoly::set_zero()
 {
     a = 0;
     b = 0;
@@ -121,101 +121,91 @@ void Poly3::set_zero()
     d = 0;
 }
 
-bool Poly3::isnan() const
+bool CubicPoly::isnan() const
 {
     return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d));
 }
 
-bool CubicSpline::empty() const
+double CubicProfile::evaluate(const double s, const double default_val, const bool extend_start) const
 {
-    return this->s0_to_poly.empty();
-}
-
-std::size_t CubicSpline::size() const
-{
-    return this->s0_to_poly.size();
-}
-
-double CubicSpline::get(double s, double default_val, bool extend_start) const
-{
-    const Poly3& poly = this->get_poly(s, extend_start);
+    const CubicPoly& poly = this->get_poly(s, extend_start);
     if (poly.isnan())
         return default_val;
-    return poly.get(s);
+    return poly.evaluate(s);
 }
 
-double CubicSpline::get_grad(double s, double default_val, bool extend_start) const
+double CubicProfile::derivative(const double s, const double default_val, const bool extend_start) const
 {
-    const Poly3& poly = this->get_poly(s, extend_start);
+    const CubicPoly& poly = this->get_poly(s, extend_start);
     if (poly.isnan())
         return default_val;
-    return poly.get_grad(s);
+    return poly.derivative(s);
 }
 
-CubicSpline CubicSpline::negate() const
+CubicProfile CubicProfile::negate() const
 {
-    CubicSpline negated = *this;
-    for (auto& s0_poly : negated.s0_to_poly)
+    CubicProfile negated = *this;
+    for (auto& s0_poly : negated.segments)
         s0_poly.second.negate();
     return negated;
 }
 
-CubicSpline CubicSpline::add(const CubicSpline& other) const
+CubicProfile CubicProfile::add(const CubicProfile& other) const
 {
-    if (other.s0_to_poly.empty())
+    if (other.segments.empty())
         return *this;
-    if (this->s0_to_poly.empty())
+    if (this->segments.empty())
         return other;
 
-    std::set<double> s0_vals = get_map_keys(this->s0_to_poly);
-    std::set<double> other_s0s = get_map_keys(other.s0_to_poly);
+    std::set<double> s0_vals = get_map_keys(this->segments);
+    std::set<double> other_s0s = get_map_keys(other.segments);
     s0_vals.insert(other_s0s.begin(), other_s0s.end());
 
-    CubicSpline retval;
+    CubicProfile retval;
     for (const double& s0 : s0_vals)
     {
-        const Poly3& this_poly = this->get_poly(s0, false);
-        const Poly3& other_poly = other.get_poly(s0, false);
+        const CubicPoly& this_poly = this->get_poly(s0, false);
+        const CubicPoly& other_poly = other.get_poly(s0, false);
 
         if (this_poly.isnan() || other_poly.isnan()) // can't be both NAN
         {
-            retval.s0_to_poly[s0] = this_poly.isnan() ? other_poly : this_poly;
+            retval.segments[s0] = this_poly.isnan() ? other_poly : this_poly;
             continue;
         }
 
-        Poly3 res;
+        CubicPoly res;
         res.a = this_poly.a + other_poly.a;
         res.b = this_poly.b + other_poly.b;
         res.c = this_poly.c + other_poly.c;
         res.d = this_poly.d + other_poly.d;
-        retval.s0_to_poly[s0] = res;
+        retval.segments[s0] = res;
     }
     return retval;
 }
 
-Poly3 CubicSpline::get_poly(double s, bool extend_start) const
+CubicPoly CubicProfile::get_poly(const double s, const bool extend_start) const
 {
-    if (this->s0_to_poly.empty())
-        return Poly3(NAN, NAN, NAN, NAN, NAN);
+    if (this->segments.empty())
+        return CubicPoly(NAN, NAN, NAN, NAN, NAN);
 
-    if ((extend_start == false) && (s < this->s0_to_poly.begin()->first))
-        return Poly3(NAN, NAN, NAN, NAN, NAN);
+    if ((extend_start == false) && (s < this->segments.begin()->first))
+        return CubicPoly(NAN, NAN, NAN, NAN, NAN);
 
     // will return first poly if s < s_start and last poly for s > s_end
-    auto target_poly_iter = this->s0_to_poly.upper_bound(s);
-    if (target_poly_iter != this->s0_to_poly.begin())
+    auto target_poly_iter = this->segments.upper_bound(s);
+    if (target_poly_iter != this->segments.begin())
         target_poly_iter--;
     return target_poly_iter->second;
 }
 
-double CubicSpline::get_max(double s_start, double s_end) const
+double CubicProfile::max_value(const double s_start, const double s_end) const
 {
-    if ((s_start == s_end) || this->s0_to_poly.empty())
+    if ((s_start == s_end) || this->segments.empty())
         return 0;
 
-    auto s_end_poly_iter = this->s0_to_poly.lower_bound(s_end);
-    auto s_start_poly_iter = this->s0_to_poly.upper_bound(s_start);
-    if (s_start_poly_iter != this->s0_to_poly.begin())
+    auto s_end_poly_iter = this->segments.lower_bound(s_end);
+    auto s_start_poly_iter = this->segments.upper_bound(s_start);
+    if (s_start_poly_iter != this->segments.begin())
         s_start_poly_iter--;
 
     std::vector<double> max_poly_vals;
@@ -223,7 +213,7 @@ double CubicSpline::get_max(double s_start, double s_end) const
     {
         const double s_start_poly = std::max(s_poly_iter->first, s_start);
         const double s_end_poly = (std::next(s_poly_iter) == s_end_poly_iter) ? s_end : std::min(std::next(s_poly_iter)->first, s_end);
-        max_poly_vals.push_back(s_poly_iter->second.get_max(s_start_poly, s_end_poly));
+        max_poly_vals.push_back(s_poly_iter->second.max_value(s_start_poly, s_end_poly));
     }
 
     const auto   max_iter = std::max_element(max_poly_vals.begin(), max_poly_vals.end());
@@ -231,14 +221,14 @@ double CubicSpline::get_max(double s_start, double s_end) const
     return max_val;
 }
 
-std::set<double> CubicSpline::approximate_linear(double eps, double s_start, double s_end) const
+std::set<double> CubicProfile::approximate_linear(const double eps, const double s_start, const double s_end) const
 {
-    if ((s_start == s_end) || this->s0_to_poly.empty())
+    if ((s_start == s_end) || this->segments.empty())
         return {};
 
-    auto s_end_poly_iter = this->s0_to_poly.lower_bound(s_end);
-    auto s_start_poly_iter = this->s0_to_poly.upper_bound(s_start);
-    if (s_start_poly_iter != this->s0_to_poly.begin())
+    auto s_end_poly_iter = this->segments.lower_bound(s_end);
+    auto s_start_poly_iter = this->segments.upper_bound(s_start);
+    if (s_start_poly_iter != this->segments.begin())
         s_start_poly_iter--;
 
     std::set<double> s_vals;

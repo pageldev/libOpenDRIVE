@@ -15,13 +15,13 @@ std::vector<Lane> LaneSection::get_lanes() const
 
 int LaneSection::get_lane_id(const double s, const double t) const
 {
-    if (this->id_to_lane.at(0).outer_border.get(s) == t) // exactly on lane #0
+    if (this->id_to_lane.at(0).outer_border.evaluate(s) == t) // exactly on lane #0
         return 0;
 
     std::map<double /*t*/, int /*id*/> outer_border_to_lane_id;
     for (const auto& id_lane : id_to_lane)
     {
-        const double outer_brdr_t = id_lane.second.outer_border.get(s);
+        const double outer_brdr_t = id_lane.second.outer_border.evaluate(s);
         outer_border_to_lane_id.insert({outer_brdr_t, id_lane.first});
     }
 

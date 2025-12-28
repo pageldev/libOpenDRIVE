@@ -18,8 +18,8 @@ struct CubicBezier
     CubicBezier() = default;
     CubicBezier(std::array<Vec<T, Dim>, 4> control_points);
 
-    Vec<T, Dim>                get(const T t) const;
-    Vec<T, Dim>                get_grad(const T t) const;
+    Vec<T, Dim>                evaluate(const T t) const;
+    Vec<T, Dim>                derivative(const T t) const;
     T                          get_t(const T arclen) const;
     T                          get_length() const;
     std::array<Vec<T, Dim>, 4> get_subcurve(const T t_start, const T t_end) const;
@@ -89,8 +89,8 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
     T arclen(0);
     for (auto t_val_iter = std::next(t_vals.begin()); t_val_iter != t_vals.end(); t_val_iter++)
     {
-        const Vec<T, Dim> pt_prev = this->get(*std::prev(t_val_iter));
-        const Vec<T, Dim> pt = this->get(*t_val_iter);
+        const Vec<T, Dim> pt_prev = this->evaluate(*std::prev(t_val_iter));
+        const Vec<T, Dim> pt = this->evaluate(*t_val_iter);
         arclen += euclDistance(pt, pt_prev);
         this->arclen_t[arclen] = *t_val_iter;
     }
@@ -99,7 +99,7 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::get(const T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::evaluate(const T t) const
 {
     Vec<T, Dim> out_pt;
     for (std::size_t dim = 0; dim < Dim; dim++)
@@ -142,7 +142,7 @@ T CubicBezier<T, Dim>::get_length() const
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::get_grad(const T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::derivative(const T t) const
 {
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
 
@@ -156,7 +156,7 @@ Vec<T, Dim> CubicBezier<T, Dim>::get_grad(const T t) const
 template<typename T, std::size_t Dim>
 std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, const T t_end) const
 {
-    /* modified get(T t) allowing different t values for segments */
+    /* modified evaluate(T t) allowing different t values for segments */
     auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
     {
         Vec<T, Dim> out;

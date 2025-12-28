@@ -21,7 +21,7 @@ Vec2D Line::get_xy(double s) const
     return Vec2D{x, y};
 }
 
-Vec2D Line::get_grad([[maybe_unused]] double s) const
+Vec2D Line::derivative([[maybe_unused]] double s) const
 {
     return {{std::cos(hdg0), std::sin(hdg0)}};
 }

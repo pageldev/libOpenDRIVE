@@ -69,18 +69,18 @@ Vec3D RefLine::get_xyz(const double s) const
     if (geom)
         pt_xy = geom->get_xy(s);
 
-    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.get(s)};
+    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s)};
 }
 
-Vec3D RefLine::get_grad(const double s) const
+Vec3D RefLine::derivative(const double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
 
     Vec2D d_xy{0, 0};
     if (geom)
-        d_xy = geom->get_grad(s);
+        d_xy = geom->derivative(s);
 
-    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.get_grad(s)};
+    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s)};
 }
 
 double RefLine::match(const double x, const double y) const

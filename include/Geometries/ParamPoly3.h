@@ -29,7 +29,7 @@ struct ParamPoly3 : public RoadGeometry
     std::unique_ptr<RoadGeometry> clone() const override;
 
     Vec2D get_xy(double s) const override;
-    Vec2D get_grad(double s) const override;
+    Vec2D derivative(double s) const override;
 
     std::set<double> approximate_linear(double eps) const override;
 

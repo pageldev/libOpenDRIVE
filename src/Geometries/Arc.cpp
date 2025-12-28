@@ -23,7 +23,7 @@ Vec2D Arc::get_xy(double s) const
     return Vec2D{xs, ys};
 }
 
-Vec2D Arc::get_grad(double s) const
+Vec2D Arc::derivative(double s) const
 {
     const double dx = std::sin((M_PI / 2) - curvature * (s - s0) - hdg0);
     const double dy = std::cos((M_PI / 2) - curvature * (s - s0) - hdg0);
