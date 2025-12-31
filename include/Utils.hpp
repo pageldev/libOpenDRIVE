@@ -168,7 +168,7 @@ void rdp(const std::vector<Vec<T, Dim>>& points,
     if ((last_idx + 1 - start_idx) < 2)
         return;
 
-    /* find the point with the maximum distance from line BETWEEN start and end */
+    // find the point with the maximum distance from line BETWEEN start and end
     T           d_max(0);
     std::size_t d_max_idx = 0;
     for (std::size_t idx = start_idx + step; idx < last_idx; idx += step)

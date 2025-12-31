@@ -101,7 +101,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
     for (const pugi::xml_node junction_node : odr_node.children("junction"))
     {
-        /* make junction */
+        // make junction
         const std::string junction_id = junction_node.attribute("id").as_string("");
 
         Junction& junction =
@@ -159,7 +159,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
     odr::check(odr_node.child("road"), "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
-        /* make road */
+        // make road
         std::string road_id = road_node.attribute("id").as_string("");
         odr::check_and_repair(
             this->id_to_road.find(road_id) == this->id_to_road.end(),
@@ -183,7 +183,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         odr::check_and_repair(
             road.length >= 0, [&]() { road.length = 0; }, "Road #%s: length %f < 0, set length = 0", road_id.c_str(), road.length);
 
-        /* parse road links */
+        // parse road links
         for (const bool is_predecessor : {true, false})
         {
             const pugi::xml_node road_link_node =
@@ -219,7 +219,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
 
-        /* parse road neighbors */
+        // parse road neighbors
         for (const pugi::xml_node road_neighbor_node : road_node.child("link").children("neighbor"))
         {
             const std::string road_neighbor_id = road_neighbor_node.attribute("elementId").as_string("");
@@ -229,7 +229,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             road.neighbors.push_back(road_neighbor);
         }
 
-        /* parse road type and speed */
+        // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
         {
             double            s = road_type_node.attribute("s").as_double(0.0);
@@ -248,7 +248,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
 
-        /* make ref_line - parse road geometries */
+        // make ref_line - parse road geometries
         for (const pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
             double       s0 = geometry_hdr_node.attribute("s").as_double(0.0);
@@ -336,10 +336,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         if (with_lateral_profile)
             cubic_profile_fields.insert({".//lateralProfile//superelevation", road.superelevation});
 
-        /* parse elevation profiles, lane offsets, superelevation */
+        // parse elevation profiles, lane offsets, superelevation
         for (auto& [xpath_query_str, cubic_profile] : cubic_profile_fields)
         {
-            /* handle splines not starting at s=0, assume value 0 until start */
+            // handle splines not starting at s=0, assume value 0 until start
             cubic_profile.segments[0.0] = CubicPoly(0.0, 0.0, 0.0, 0.0);
 
             pugi::xpath_node_set nodes = road_node.select_nodes(xpath_query_str.c_str());
@@ -358,7 +358,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
 
-        /* parse crossfall - has extra attribute side */
+        // parse crossfall - has extra attribute side
         if (with_lateral_profile)
         {
             for (pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
@@ -387,14 +387,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 }
             }
 
-            /* check for lateralProfile shape - not implemented yet */
+            // check for lateralProfile shape - not implemented yet
             if (road_node.child("lateralProfile").child("shape"))
             {
                 log::error("Lateral Profile Shape not supported");
             }
         }
 
-        /* parse road lane sections and lanes */
+        // parse road lane sections and lanes
         for (const pugi::xml_node lanesection_node : road_node.child("lanes").children("laneSection"))
         {
             const double s0 = lanesection_node.attribute("s").as_double(0.0);
@@ -540,12 +540,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 }
             }
 
-            /* derive lane borders from lane widths */
+            // derive lane borders from lane widths
             const auto id_lane_iter0 = lanesection.id_to_lane.find(0);
             if (id_lane_iter0 == lanesection.id_to_lane.end())
                 throw std::runtime_error("lane section does not have lane #0");
 
-            /* iterate from id #1 towards +inf */
+            // iterate from id #1 towards +inf
             const auto id_lane_iter1 = std::next(id_lane_iter0);
             for (auto iter = id_lane_iter1; iter != lanesection.id_to_lane.end(); iter++)
             {
@@ -555,7 +555,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     iter->second.outer_border = std::prev(iter)->second.outer_border.add(iter->second.lane_width);
             }
 
-            /* iterate from id #-1 towards -inf */
+            // iterate from id #-1 towards -inf
             // "For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1) is always true"
             // The reverse iterator points to the element that is one before the element referred by the id_lane_iter0!
             const std::map<int, Lane>::reverse_iterator r_id_lane_iter1(id_lane_iter0);
@@ -575,7 +575,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
 
-        /* parse road objects */
+        // parse road objects
         if (with_road_objects)
         {
             const RoadObjectCorner::Type default_local_outline_type =
@@ -673,7 +673,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     road_object.repeats.push_back(road_object_repeat);
                 }
 
-                /* since v1.45 multiple <outline> are allowed and parent tag is <outlines>, not <object>; this supports v1.4 and v1.45+ */
+                // since v1.45 multiple <outline> are allowed and parent tag is <outlines>, not <object>; this supports v1.4 and v1.45+
                 const pugi::xml_node outlines_parent_node = object_node.child("outlines") ? object_node.child("outlines") : object_node;
                 for (const pugi::xml_node outline_node : outlines_parent_node.children("outline"))
                 {
@@ -715,7 +715,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 road_object.lane_validities = extract_lane_validity_records(object_node);
             }
         }
-        /* parse signals */
+        // parse signals
         if (with_road_signals)
         {
             for (const pugi::xml_node signal_node : road_node.child("signals").children("signal"))

@@ -27,7 +27,7 @@ struct CubicBezier
 
     static std::array<Vec<T, Dim>, 4> get_control_points(const std::array<Vec<T, Dim>, 4>& coefficients)
     {
-        /* a + b*x + c*x^2 +d*x^3 */
+        // a + b*x + c*x^2 +d*x^3
         const Vec<T, Dim>& a = coefficients[0];
         const Vec<T, Dim>& b = coefficients[1];
         const Vec<T, Dim>& c = coefficients[2];
@@ -156,7 +156,7 @@ Vec<T, Dim> CubicBezier<T, Dim>::derivative(const T t) const
 template<typename T, std::size_t Dim>
 std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, const T t_end) const
 {
-    /* modified evaluate(T t) allowing different t values for segments */
+    // modified evaluate(T t) allowing different t values for segments
     auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
     {
         Vec<T, Dim> out;
@@ -182,7 +182,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, co
 template<typename T, std::size_t Dim>
 std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
 {
-    /* approximate cubic bezier by splitting into quadratic ones */
+    // approximate cubic bezier by splitting into quadratic ones
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
     const T                    seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * norm(coefficients[3])), (1.0 / 3.0));
 
@@ -198,13 +198,13 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
     std::vector<T> t_vals{0};
     for (const std::array<T, 2>& seg_intrvl : seg_intervals)
     {
-        /* get sub-cubic bezier for interval */
+        // get sub-cubic bezier for interval
         const double& t0 = seg_intrvl.at(0);
         const double& t1 = seg_intrvl.at(1);
 
         const std::array<Vec<T, Dim>, 4> c_pts_sub = this->get_subcurve(t0, t1);
 
-        /* approximate sub-cubic bezier by two quadratic ones */
+        // approximate sub-cubic bezier by two quadratic ones
         Vec<T, Dim> pB_quad_0;
         for (std::size_t dim = 0; dim < Dim; dim++)
             pB_quad_0[dim] = (1.0 - 0.75) * c_pts_sub[0][dim] + 0.75 * c_pts_sub[1][dim];
@@ -215,7 +215,7 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
         for (std::size_t dim = 0; dim < Dim; dim++)
             pM_quad[dim] = (1.0 - 0.5) * pB_quad_0[dim] + 0.5 * pB_quad_1[dim];
 
-        /* linear approximate the two quadratic bezier */
+        // linear approximate the two quadratic bezier
         for (const double& p_sub : approximate_linear_quad_bezier<T, Dim>({c_pts_sub[0], pB_quad_0, pM_quad}, 0.5 * eps))
             t_vals.push_back(t0 + p_sub * (t1 - t0) * 0.5);
         t_vals.pop_back();
