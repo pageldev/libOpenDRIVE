@@ -31,6 +31,7 @@ struct CubicPoly
 struct CubicProfile
 {
     CubicProfile() = default;
+    virtual ~CubicProfile() = default;
 
     double evaluate(const double s, const double default_val = 0.0, const bool extend_start = true) const;
     double derivative(const double s, const double default_val = 0.0, const bool extend_start = true) const;

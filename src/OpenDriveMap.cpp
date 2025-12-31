@@ -379,11 +379,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     std::string side_str = side.as_string("");
                     std::transform(side_str.begin(), side_str.end(), side_str.begin(), [](unsigned char c) { return std::tolower(c); });
                     if (side_str == "left")
-                        road.crossfall.sides[s0] = Crossfall::Side::Left;
+                        road.crossfall.s_to_side[s0] = Crossfall::Side::Left;
                     else if (side_str == "right")
-                        road.crossfall.sides[s0] = Crossfall::Side::Right;
+                        road.crossfall.s_to_side[s0] = Crossfall::Side::Right;
                     else
-                        road.crossfall.sides[s0] = Crossfall::Side::Both;
+                        road.crossfall.s_to_side[s0] = Crossfall::Side::Both;
                 }
             }
 

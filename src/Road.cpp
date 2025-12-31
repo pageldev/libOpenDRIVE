@@ -21,27 +21,25 @@
 namespace odr
 {
 
-double Crossfall::get_crossfall(const double s, const bool on_left_side) const
+double Crossfall::get(const double s, const bool on_left_side) const
 {
-    if (this->segments.size() > 0)
-    {
-        auto target_poly_iter = this->segments.upper_bound(s);
-        if (target_poly_iter != this->segments.begin())
-            target_poly_iter--;
+    if (this->segments.empty())
+        return 0;
 
-        Side side = Side::Both; // applicable side of the road
-        if (this->sides.find(target_poly_iter->first) != this->sides.end())
-            side = this->sides.at(target_poly_iter->first);
+    auto target_poly_iter = this->segments.upper_bound(s);
+    if (target_poly_iter != this->segments.begin())
+        target_poly_iter--;
 
-        if (on_left_side && side == Side::Right)
-            return 0;
-        else if (!on_left_side && side == Side::Left)
-            return 0;
+    Side side = Side::Both; // applicable side of the road
+    if (this->s_to_side.find(target_poly_iter->first) != this->s_to_side.end())
+        side = this->s_to_side.at(target_poly_iter->first);
 
-        return target_poly_iter->second.evaluate(s);
-    }
+    if (on_left_side && side == Side::Right)
+        return 0;
+    else if (!on_left_side && side == Side::Left)
+        return 0;
 
-    return 0;
+    return target_poly_iter->second.evaluate(s);
 }
 
 RoadLink::RoadLink(std::string id, Type type, ContactPoint contact_point) : id(id), type(type), contact_point(contact_point) {}
@@ -177,13 +175,13 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 
     if (lane.level)
     {
-        const double h_inner_brdr = -std::tan(this->crossfall.get_crossfall(s, (lane.id > 0))) * std::abs(t_inner_brdr);
+        const double h_inner_brdr = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t_inner_brdr);
         const double superelev = this->superelevation.evaluate(s); // cancel out superelevation
         h_t = h_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
     }
     else
     {
-        h_t = -std::tan(this->crossfall.get_crossfall(s, (lane.id > 0))) * std::abs(t);
+        h_t = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t);
     }
 
     if (lane.s_to_height_offset.size() > 0)

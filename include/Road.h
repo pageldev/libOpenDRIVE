@@ -30,9 +30,9 @@ struct Crossfall : public CubicProfile
 
     Crossfall() = default;
 
-    double get_crossfall(const double s, const bool on_left_side) const;
+    double get(const double s, const bool on_left_side) const;
 
-    std::map<double, Side> sides;
+    std::map<double, Side> s_to_side;
 };
 
 struct RoadLink
