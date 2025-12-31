@@ -340,7 +340,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         for (auto& [xpath_query_str, cubic_profile] : cubic_profile_fields)
         {
             // handle splines not starting at s=0, assume value 0 until start
-            cubic_profile.segments[0.0] = CubicPoly(0.0, 0.0, 0.0, 0.0);
+            cubic_profile.segments.emplace(0.0, CubicPoly(0.0, 0.0, 0.0, 0.0));
 
             pugi::xpath_node_set nodes = road_node.select_nodes(xpath_query_str.c_str());
             for (pugi::xpath_node node : nodes)
@@ -354,7 +354,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 odr::check_and_repair(
                     s0 >= 0, [&]() { s0 = 0; }, "Road #%s: %s s %f < 0, set s=0", road_id.c_str(), xpath_query_str.c_str(), s0);
 
-                cubic_profile.segments[s0] = CubicPoly(a, b, c, d, s0);
+                cubic_profile.segments.emplace(s0, CubicPoly(a, b, c, d, s0));
             }
         }
 
@@ -372,8 +372,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 odr::check_and_repair(
                     s0 >= 0, [&]() { s0 = 0; }, "Road #%s: lateralProfile::crossfall::s %f < 0, set s=0", road_id.c_str(), s0);
 
-                CubicPoly crossfall_poly(a, b, c, d, s0);
-                road.crossfall.segments[s0] = crossfall_poly;
+                road.crossfall.segments.emplace(s0, CubicPoly(a, b, c, d, s0));
                 if (const pugi::xml_attribute side = crossfall_node.attribute("side"))
                 {
                     std::string side_str = side.as_string("");
@@ -447,7 +446,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                             road_id.c_str(),
                             s0);
 
-                    lane.lane_width.segments[s0 + s_offset] = width_poly;
+                    lane.lane_width.segments.emplace(s0 + s_offset, width_poly);
                 }
 
                 if (with_lane_height)
