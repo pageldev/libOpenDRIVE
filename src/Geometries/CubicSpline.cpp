@@ -59,20 +59,17 @@ std::set<double> CubicPoly::approximate_linear(const double eps, const double s_
     if (s_start == s_end)
         return {};
 
-    if (d == 0 && c == 0)
+    if (d == 0 && c == 0) // linear case: /
         return {s_start, s_end};
 
     std::vector<double> s_vals;
-    if (d == 0 && c != 0)
+    if (d == 0 && c != 0) // quadratic case: U
     {
-        double s = s_start;
-        while (s < s_end)
-        {
+        const double step = 2.0 * std::sqrt(std::abs(eps / c));
+        for (double s = s_start; s < s_end; s += step)
             s_vals.push_back(s);
-            s = (c != 0) ? s + std::sqrt(std::abs(eps / c)) : s + eps;
-        }
     }
-    else
+    else // cubic case
     {
         // transform to parametric form
         const double& s_0 = s_start;
