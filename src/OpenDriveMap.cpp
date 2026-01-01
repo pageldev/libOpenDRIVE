@@ -332,16 +332,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
         std::map<std::string /*x path query*/, CubicProfile&> cubic_profile_fields{
             {".//elevationProfile//elevation", road.ref_line.elevation_profile}, {".//lanes//laneOffset", road.lane_offset}};
-
         if (with_lateral_profile)
             cubic_profile_fields.insert({".//lateralProfile//superelevation", road.superelevation});
 
         // parse elevation profiles, lane offsets, superelevation
         for (auto& [xpath_query_str, cubic_profile] : cubic_profile_fields)
         {
-            // handle splines not starting at s=0, assume value 0 until start
-            cubic_profile.segments.emplace(0.0, CubicPoly(0.0, 0.0, 0.0, 0.0));
-
             pugi::xpath_node_set nodes = road_node.select_nodes(xpath_query_str.c_str());
             for (pugi::xpath_node node : nodes)
             {
@@ -544,7 +540,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             if (id_lane_iter0 == lanesection.id_to_lane.end())
                 throw std::runtime_error("lane section does not have lane #0");
 
-            // iterate from id #1 towards +inf
+            // iterate from lane #1 towards +inf
             const auto id_lane_iter1 = std::next(id_lane_iter0);
             for (auto iter = id_lane_iter1; iter != lanesection.id_to_lane.end(); iter++)
             {
@@ -554,7 +550,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     iter->second.outer_border = std::prev(iter)->second.outer_border.add(iter->second.lane_width);
             }
 
-            // iterate from id #-1 towards -inf
+            // iterate from lane #-1 towards -inf
             // "For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1) is always true"
             // The reverse iterator points to the element that is one before the element referred by the id_lane_iter0!
             const std::map<int, Lane>::reverse_iterator r_id_lane_iter1(id_lane_iter0);

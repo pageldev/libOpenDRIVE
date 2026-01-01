@@ -127,7 +127,7 @@ double Road::get_lanesection_length(const double lanesection_s0) const
 Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
 {
     const Vec3D  s_vec = this->ref_line.derivative(s);
-    const double theta = this->superelevation.evaluate(s);
+    const double theta = this->superelevation.evaluate(s, 0.0);
 
     const Vec3D e_s = normalize(s_vec);
     const Vec3D e_t = normalize(Vec3D{std::cos(theta) * -e_s[1] + std::sin(theta) * -e_s[2] * e_s[0],
@@ -170,13 +170,13 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.get_lane(s, t);
     const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
-    const double       t_inner_brdr = inner_neighbor_lane.outer_border.evaluate(s);
+    const double       t_inner_brdr = inner_neighbor_lane.outer_border.evaluate(s, 0.0);
     double             h_t = 0;
 
     if (lane.level)
     {
         const double h_inner_brdr = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t_inner_brdr);
-        const double superelev = this->superelevation.evaluate(s); // cancel out superelevation
+        const double superelev = this->superelevation.evaluate(s, 0.0); // cancel out superelevation
         h_t = h_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
     }
     else
@@ -192,7 +192,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
         if (s0_height_offs_iter != height_offs.begin())
             s0_height_offs_iter--;
 
-        const double t_outer_brdr = lane.outer_border.evaluate(s);
+        const double t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
         const double inner_height = s0_height_offs_iter->second.inner;
         const double outer_height = s0_height_offs_iter->second.outer;
         const double p_t = (t_outer_brdr != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr - t_inner_brdr) : 0.0;
@@ -261,9 +261,9 @@ Line3D Road::get_lane_border_line(const Lane& lane, const double s_start, const 
     Line3D border_line;
     for (const double& s : s_vals)
     {
-        double t = border.evaluate(s);
+        double t = border.evaluate(s, 0.0);
         if (!outer)
-            t = std::nextafter(t, lane.outer_border.evaluate(s)); // ensure t is not on lane boundary but within lane
+            t = std::nextafter(t, lane.outer_border.evaluate(s, 0.0)); // ensure t is not on lane boundary but within lane
         border_line.push_back(this->get_surface_pt(s, t));
     }
 
@@ -309,14 +309,14 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double s_start, const double 
     for (const double& s : s_vals)
     {
         Vec3D        vn_outer_brdr{0, 0, 0};
-        const double t_outer_brdr = lane.outer_border.evaluate(s);
+        const double t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
 
         Vec3D        vn_inner_brdr{0, 0, 0};
         const double t_inner_brdr =
-            std::nextafter(inner_neighbor_lane.outer_border.evaluate(s), t_outer_brdr); // ensure t is not on lane boundary but within lane
+            std::nextafter(inner_neighbor_lane.outer_border.evaluate(s, 0.0), t_outer_brdr); // ensure t is not on lane boundary but within lane
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
         out_mesh.normals.push_back(vn_inner_brdr);
         out_mesh.st_coordinates.push_back({s, t_inner_brdr});
@@ -356,7 +356,7 @@ Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const
     for (const double& s : s_vals)
     {
         Vec3D        vn_edge_a{0, 0, 0};
-        const double t_edge_a = lane.outer_border.evaluate(s) + roadmark.width * 0.5 + roadmark.t_offset;
+        const double t_edge_a = lane.outer_border.evaluate(s, 0.0) + roadmark.width * 0.5 + roadmark.t_offset;
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
         out_mesh.normals.push_back(vn_edge_a);
 

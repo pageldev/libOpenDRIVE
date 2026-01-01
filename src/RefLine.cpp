@@ -69,7 +69,7 @@ Vec3D RefLine::get_xyz(const double s) const
     if (geom)
         pt_xy = geom->get_xy(s);
 
-    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s)};
+    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s, 0.0)};
 }
 
 Vec3D RefLine::derivative(const double s) const
@@ -80,7 +80,7 @@ Vec3D RefLine::derivative(const double s) const
     if (geom)
         d_xy = geom->derivative(s);
 
-    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s)};
+    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s, 0.0)};
 }
 
 double RefLine::match(const double x, const double y) const

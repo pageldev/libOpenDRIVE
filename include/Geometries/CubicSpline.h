@@ -33,11 +33,11 @@ struct CubicProfile
     CubicProfile() = default;
     virtual ~CubicProfile() = default;
 
-    double evaluate(const double s, const double default_val = 0.0, const bool extend_start = true) const;
-    double derivative(const double s, const double default_val = 0.0, const bool extend_start = true) const;
+    double evaluate(const double s, const double default_val, const bool extend_start = false) const;
+    double derivative(const double s, const double default_val, const bool extend_start = false) const;
     double max_value(const double s_start, const double s_end) const;
 
-    CubicPoly get_poly(const double s, const bool extend_start = true) const;
+    CubicPoly get_poly(const double s, const bool extend_start = false) const;
 
     [[nodiscard]] CubicProfile negate() const;
     [[nodiscard]] CubicProfile add(const CubicProfile& other) const;
