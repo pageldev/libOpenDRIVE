@@ -126,18 +126,22 @@ double Road::get_lanesection_length(const double lanesection_s0) const
 
 Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
 {
-    const Vec3D  s_vec = this->ref_line.derivative(s);
-    const double theta = this->superelevation.evaluate(s, 0.0);
-
+    const Vec3D s_vec = this->ref_line.derivative(s);
     const Vec3D e_s = normalize(s_vec);
-    const Vec3D e_t = normalize(Vec3D{std::cos(theta) * -e_s[1] + std::sin(theta) * -e_s[2] * e_s[0],
-                                      std::cos(theta) * e_s[0] + std::sin(theta) * -e_s[2] * e_s[1],
-                                      std::sin(theta) * (e_s[0] * e_s[0] + e_s[1] * e_s[1])});
-    const Vec3D e_h = normalize(crossProduct(s_vec, e_t));
-    const Vec3D p0 = this->ref_line.get_xyz(s);
-    const Mat3D trans_mat{{{e_t[0], e_h[0], p0[0]}, {e_t[1], e_h[1], p0[1]}, {e_t[2], e_h[2], p0[2]}}};
 
-    const Vec3D xyz = MatVecMultiplication(trans_mat, Vec3D{t, h, 1});
+    const Vec3D e_t_base{-e_s[1], e_s[0], 0.0}; // flat in xy-plane and perpendicular to e_s
+    const Vec3D e_h_base = crossProduct(e_s, e_t_base);
+
+    // Rodrigues rotation of e_t_base around e_s by theta; simplified since dot(k,v)=0 and cross(k,v)=e_h_base
+    const double theta = this->superelevation.evaluate(s, 0.0);
+    const Vec3D  e_t = normalize(Vec3D{std::cos(theta) * e_t_base[0] + std::sin(theta) * e_h_base[0],
+                                      std::cos(theta) * e_t_base[1] + std::sin(theta) * e_h_base[1],
+                                      std::cos(theta) * e_t_base[2] + std::sin(theta) * e_h_base[2]});
+
+    const Vec3D e_h = normalize(crossProduct(e_s, e_t));
+    const Vec3D p0 = this->ref_line.get_xyz(s);
+
+    const Vec3D xyz{p0[0] + t * e_t[0] + h * e_h[0], p0[1] + t * e_t[1] + h * e_h[1], p0[2] + t * e_t[2] + h * e_h[2]};
 
     if (_e_s)
         *_e_s = e_s;
