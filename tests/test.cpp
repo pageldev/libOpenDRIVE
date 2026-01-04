@@ -26,6 +26,10 @@ TEST_CASE("Core types are movable", "[types]")
     STATIC_REQUIRE(std::is_move_assignable_v<odr::LaneSection>);
     STATIC_REQUIRE(std::is_move_constructible_v<odr::Lane>);
     STATIC_REQUIRE(std::is_move_assignable_v<odr::Lane>);
+    STATIC_REQUIRE(std::is_move_constructible_v<odr::Junction>);
+    STATIC_REQUIRE(std::is_move_assignable_v<odr::Junction>);
+    STATIC_REQUIRE(std::is_move_constructible_v<odr::JunctionConnection>);
+    STATIC_REQUIRE(std::is_move_assignable_v<odr::JunctionConnection>);
 }
 
 TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")

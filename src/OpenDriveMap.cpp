@@ -80,10 +80,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
-    if (const auto geoReference_node = odr_node.child("header").child("geoReference"))
+    if (const pugi::xml_node geoReference_node = odr_node.child("header").child("geoReference"))
         this->proj4 = geoReference_node.text().as_string("");
 
-    std::size_t cnt = 1;
+    std::size_t cnt_geoms = 1;
     if (center_map)
     {
         for (const pugi::xml_node road_node : odr_node.children("road"))
@@ -91,38 +91,46 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             for (const pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
             {
                 const double x0 = geometry_hdr_node.attribute("x").as_double(0.0);
-                this->x_offs = this->x_offs + ((x0 - this->x_offs) / cnt);
+                this->x_offs = this->x_offs + ((x0 - this->x_offs) / cnt_geoms);
                 const double y0 = geometry_hdr_node.attribute("y").as_double(0.0);
-                this->y_offs = this->y_offs + ((y0 - this->y_offs) / cnt);
-                cnt++;
+                this->y_offs = this->y_offs + ((y0 - this->y_offs) / cnt_geoms);
+                cnt_geoms++;
             }
         }
     }
 
     for (const pugi::xml_node junction_node : odr_node.children("junction"))
     {
-        // make junction
         const std::string junction_id = junction_node.attribute("id").as_string("");
+        if (this->id_to_junction.find(junction_id) != this->id_to_junction.end())
+        {
+            log::error("Junction #%s already exists, skipping...", junction_id.c_str());
+            continue;
+        }
 
         Junction& junction =
-            this->id_to_junction.insert({junction_id, Junction(junction_node.attribute("name").as_string(""), junction_id)}).first->second;
+            this->id_to_junction.emplace(junction_id, Junction(junction_node.attribute("name").as_string(""), junction_id)).first->second;
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
-            std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
-            odr::check_and_repair(
-                contact_point_str == "start" || contact_point_str == "end",
-                [&]() { contact_point_str = "start"; },
-                "Junction #%s: unknown connection::contactPoint '%s', set to 'start'",
-                junction_id.c_str(),
-                contact_point_str.c_str());
+            const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
+            if (!(contact_point_str == "start" || contact_point_str == "end"))
+            {
+                log::error("Junction #%s: discard unknown connection::contactPoint '%s'", junction_id.c_str(), contact_point_str.c_str());
+                continue;
+            }
             const JunctionConnection::ContactPoint junction_conn_contact_point =
                 (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
 
-            const std::string   junction_connection_id = connection_node.attribute("id").as_string("");
+            const std::string connection_id = connection_node.attribute("id").as_string("");
+            if (junction.id_to_connection.find(connection_id) != junction.id_to_connection.end())
+            {
+                log::error("Junction #%s: connection #%s already exists, skipping...", junction_id.c_str(), connection_id.c_str());
+                continue;
+            }
             JunctionConnection& junction_connection = junction.id_to_connection
-                                                          .insert({junction_connection_id,
-                                                                   JunctionConnection(junction_connection_id,
+                                                          .insert({connection_id,
+                                                                   JunctionConnection(connection_id,
                                                                                       connection_node.attribute("incomingRoad").as_string(""),
                                                                                       connection_node.attribute("connectingRoad").as_string(""),
                                                                                       junction_conn_contact_point)})
@@ -136,9 +144,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
 
         const std::size_t num_conns = junction.id_to_connection.size();
-        odr::check(num_conns > 0, "Junction #%s: 0 connections", junction_id.c_str());
-        if (num_conns < 1)
+        if (num_conns == 0)
+        {
+            log::warn("Junction #%s: 0 connections", junction_id.c_str());
             continue;
+        }
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
@@ -159,29 +169,25 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
     odr::check(odr_node.child("road"), "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
-        // make road
-        std::string road_id = road_node.attribute("id").as_string("");
-        odr::check_and_repair(
-            this->id_to_road.find(road_id) == this->id_to_road.end(),
-            [&]() { road_id = road_id + std::string("_dup"); },
-            "Road #%s already exists, adding _dup suffix to id",
-            road_id.c_str());
+        const std::string road_id = road_node.attribute("id").as_string("");
+        if (this->id_to_road.find(road_id) != this->id_to_road.end())
+        {
+            log::error("Road #%s already exists, skipping...", road_id.c_str());
+            continue;
+        }
+
+        const double length = road_node.attribute("length").as_double(NAN);
+        if (std::isnan(length) || length < 0)
+        {
+            log::error("Road #%s: length %f, skipping...", road_id.c_str(), length);
+            continue;
+        }
 
         std::string rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
         std::transform(rule_str.begin(), rule_str.end(), rule_str.begin(), [](unsigned char c) { return std::tolower(c); });
         const bool is_left_hand_traffic = (rule_str == "lht");
 
-        Road& road = this->id_to_road
-                         .insert({road_id,
-                                  Road(road_id,
-                                       road_node.attribute("length").as_double(0.0),
-                                       road_node.attribute("junction").as_string(""),
-                                       road_node.attribute("name").as_string(""),
-                                       is_left_hand_traffic)})
-                         .first->second;
-
-        odr::check_and_repair(
-            road.length >= 0, [&]() { road.length = 0; }, "Road #%s: length %f < 0, set length = 0", road_id.c_str(), road.length);
+        Road road(road_id, length, road_node.attribute("junction").as_string(""), road_node.attribute("name").as_string(""), is_left_hand_traffic);
 
         // parse road links
         for (const bool is_predecessor : {true, false})
@@ -193,28 +199,34 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 RoadLink& link = is_predecessor ? road.predecessor : road.successor;
                 link.id = road_link_node.attribute("elementId").as_string("");
 
-                std::string type_str = road_link_node.attribute("elementType").as_string("");
-                odr::check_and_repair(
-                    type_str == "road" || type_str == "junction",
-                    [&]() { type_str = "road"; },
-                    "Road #%s: unknown link::%s::elementType '%s', set to 'road'",
-                    road_id.c_str(),
-                    is_predecessor ? "predecessor" : "successor",
-                    type_str.c_str());
-                link.type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
+                const std::string type_str = road_link_node.attribute("elementType").as_string("");
+                if (!(type_str == "road" || type_str == "junction"))
+                {
+                    log::error("Road #%s: unknown link::%s::elementType '%s'",
+                               road_id.c_str(),
+                               is_predecessor ? "predecessor" : "successor",
+                               type_str.c_str());
+                }
+                else
+                {
+                    link.type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
+                }
 
                 if (link.type == RoadLink::Type::Road)
                 {
                     // junction connection has no contact point
-                    std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
-                    odr::check_and_repair(
-                        contact_point_str == "start" || contact_point_str == "end",
-                        [&]() { contact_point_str = "start"; },
-                        "Road #%s: unknown link::%s::contactPoint '%s', set to 'start'",
-                        road_id.c_str(),
-                        is_predecessor ? "predecessor" : "successor",
-                        contact_point_str.c_str());
-                    link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+                    const std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
+                    if (!(contact_point_str == "start" || contact_point_str == "end"))
+                    {
+                        log::error("Road #%s: unknown link::%s::contactPoint '%s'",
+                                   road_id.c_str(),
+                                   is_predecessor ? "predecessor" : "successor",
+                                   contact_point_str.c_str());
+                    }
+                    else
+                    {
+                        link.contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+                    }
                 }
             }
         }
@@ -232,11 +244,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
         {
-            double            s = road_type_node.attribute("s").as_double(0.0);
+            const double      s = road_type_node.attribute("s").as_double(NAN);
             const std::string type = road_type_node.attribute("type").as_string("");
 
-            odr::check_and_repair(
-                s >= 0, [&]() { s = 0; }, "Road #%s: type record '%s' s %f < 0, set s=0", road_id.c_str(), type.c_str(), s);
+            if (std::isnan(s) || s < 0)
+            {
+                log::warn("Road #%s: discard type record '%s' s %f < 0", road_id.c_str(), type.c_str(), s);
+                continue;
+            }
 
             road.s_to_type[s] = type;
             if (const pugi::xml_node node = road_type_node.child("speed"))
@@ -249,18 +264,36 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
 
         // make ref_line - parse road geometries
+        bool broken_geometry = false;
         for (const pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
         {
-            double       s0 = geometry_hdr_node.attribute("s").as_double(0.0);
-            const double x0 = geometry_hdr_node.attribute("x").as_double(0.0) - this->x_offs;
-            const double y0 = geometry_hdr_node.attribute("y").as_double(0.0) - this->y_offs;
-            const double hdg0 = geometry_hdr_node.attribute("hdg").as_double(0.0);
-            double       length = geometry_hdr_node.attribute("length").as_double(0.0);
+            const double s0 = geometry_hdr_node.attribute("s").as_double(NAN);
+            const double hdg0 = geometry_hdr_node.attribute("hdg").as_double(NAN);
+            const double length = geometry_hdr_node.attribute("length").as_double(NAN);
+            double       x0 = geometry_hdr_node.attribute("x").as_double(NAN);
+            double       y0 = geometry_hdr_node.attribute("y").as_double(NAN);
 
-            odr::check_and_repair(
-                s0 >= 0, [&]() { s0 = 0; }, "Road #%s: planView::geometry::s %f < 0, set s=0", road_id.c_str(), s0);
-            odr::check_and_repair(
-                length >= 0, [&]() { length = 0; }, "Road #%s: planView::geometry::length %f < 0, set length=0", road_id.c_str(), length);
+            if (std::isnan(x0) || std::isnan(y0) || std::isnan(hdg0))
+            {
+                log::error("Road #%s: broken planView::geometry x=%f, y=%f, hdg=%f", road_id.c_str(), x0, y0, hdg0);
+                broken_geometry = true;
+                break;
+            }
+            if (std::isnan(s0) || s0 < 0)
+            {
+                log::error("Road #%s: planView::geometry::s %f < 0", road_id.c_str(), s0);
+                broken_geometry = true;
+                break;
+            }
+            if (std::isnan(length) || length < 0)
+            {
+                log::error("Road #%s: planView::geometry::length %f < 0", road_id.c_str(), length);
+                broken_geometry = true;
+                break;
+            }
+
+            x0 -= this->x_offs;
+            y0 -= this->y_offs;
 
             const pugi::xml_node geometry_node = geometry_hdr_node.first_child();
             const std::string    geometry_type = geometry_node.name();
@@ -329,6 +362,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 continue;
             }
         }
+        if (broken_geometry)
+            continue; // don't add road
 
         std::map<std::string /*x path query*/, CubicProfile&> cubic_profile_fields{
             {".//elevationProfile//elevation", road.ref_line.elevation_profile}, {".//lanes//laneOffset", road.lane_offset}};
@@ -762,6 +797,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 road_signal.lane_validities = extract_lane_validity_records(signal_node);
             }
         }
+
+        this->id_to_road.emplace(road.id, std::move(road));
     }
 }
 
