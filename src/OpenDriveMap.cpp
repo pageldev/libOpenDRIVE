@@ -113,56 +113,71 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
+            const std::string conn_id = connection_node.attribute("id").as_string("");
+            if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
+            {
+                log::error("Junction #%s: discard already existing connection #%s", junction_id.c_str(), conn_id.c_str());
+                continue;
+            }
+
             const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
             if (!(contact_point_str == "start" || contact_point_str == "end"))
             {
-                log::error("Junction #%s: discard unknown connection::contactPoint '%s'", junction_id.c_str(), contact_point_str.c_str());
+                log::error("Junction #%s Connection #%s: discard due to unknown contactPoint '%s'",
+                           junction_id.c_str(),
+                           conn_id.c_str(),
+                           contact_point_str.c_str());
                 continue;
             }
-            const JunctionConnection::ContactPoint junction_conn_contact_point =
+            const JunctionConnection::ContactPoint contact_point =
                 (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
 
-            const std::string connection_id = connection_node.attribute("id").as_string("");
-            if (junction.id_to_connection.find(connection_id) != junction.id_to_connection.end())
-            {
-                log::error("Junction #%s: connection #%s already exists, skipping...", junction_id.c_str(), connection_id.c_str());
-                continue;
-            }
-            JunctionConnection& junction_connection = junction.id_to_connection
-                                                          .insert({connection_id,
-                                                                   JunctionConnection(connection_id,
-                                                                                      connection_node.attribute("incomingRoad").as_string(""),
-                                                                                      connection_node.attribute("connectingRoad").as_string(""),
-                                                                                      junction_conn_contact_point)})
-                                                          .first->second;
+            const std::string   road_incoming = connection_node.attribute("incomingRoad").as_string("");
+            const std::string   road_connecting = connection_node.attribute("connectingRoad").as_string("");
+            JunctionConnection& connection =
+                junction.id_to_connection.emplace(conn_id, JunctionConnection(conn_id, road_incoming, road_connecting, contact_point)).first->second;
 
             for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
             {
-                const JunctionLaneLink lane_link(lane_link_node.attribute("from").as_int(0), lane_link_node.attribute("to").as_int(0));
-                junction_connection.lane_links.insert(lane_link);
+                const int from_lane = lane_link_node.attribute("from").as_int(0);
+                const int to_lane = lane_link_node.attribute("to").as_int(0);
+                connection.lane_links.emplace(from_lane, to_lane);
             }
         }
 
         const std::size_t num_conns = junction.id_to_connection.size();
         if (num_conns == 0)
-        {
             log::warn("Junction #%s: 0 connections", junction_id.c_str());
-            continue;
-        }
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
-            const JunctionPriority junction_priority(priority_node.attribute("high").as_string(""), priority_node.attribute("low").as_string(""));
-            junction.priorities.insert(junction_priority);
+            const std::string prio_high = priority_node.attribute("high").as_string("");
+            const std::string prio_low = priority_node.attribute("low").as_string("");
+            if (prio_low.empty() || prio_high.empty())
+            {
+                log::warn(
+                    "Junction #%s: discard empty priority record high='%s', low='%s'", junction_id.c_str(), prio_high.c_str(), prio_low.c_str());
+                continue;
+            }
+            junction.priorities.emplace(prio_high, prio_low);
         }
 
         for (const pugi::xml_node controller_node : junction_node.children("controller"))
         {
-            const std::string junction_controller_id = controller_node.attribute("id").as_string("");
-            junction.id_to_controller.insert({junction_controller_id,
-                                              JunctionController(junction_controller_id,
-                                                                 controller_node.attribute("type").as_string(""),
-                                                                 controller_node.attribute("sequence").as_uint(0))});
+            const std::string controller_id = controller_node.attribute("id").as_string("");
+            if (junction.id_to_controller.find(controller_id) != junction.id_to_controller.end())
+            {
+                log::warn("Junction #%s: discard already existing controller #%s", junction_id.c_str(), controller_id.c_str());
+                continue;
+            }
+            const int64_t seq_id = controller_node.attribute("sequence").as_llong(-1); // type: uint32_t
+            if (seq_id < 0)
+            {
+                log::warn("Junction #%s Controller #%s: discard due to sequence %ld < 0", junction_id.c_str(), controller_id.c_str(), seq_id);
+                continue;
+            }
+            const std::string controller_type = controller_node.attribute("type").as_string("");
+            junction.id_to_controller.emplace(controller_id, JunctionController(controller_id, controller_type, seq_id));
         }
     }
 
