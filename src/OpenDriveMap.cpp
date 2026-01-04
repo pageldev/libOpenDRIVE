@@ -99,88 +99,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
     }
 
-    for (const pugi::xml_node junction_node : odr_node.children("junction"))
-    {
-        const std::string junction_id = junction_node.attribute("id").as_string("");
-        if (this->id_to_junction.find(junction_id) != this->id_to_junction.end())
-        {
-            log::error("Junction #%s already exists, skipping...", junction_id.c_str());
-            continue;
-        }
-
-        Junction& junction =
-            this->id_to_junction.emplace(junction_id, Junction(junction_node.attribute("name").as_string(""), junction_id)).first->second;
-
-        for (const pugi::xml_node connection_node : junction_node.children("connection"))
-        {
-            const std::string conn_id = connection_node.attribute("id").as_string("");
-            if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
-            {
-                log::error("Junction #%s: discard already existing connection #%s", junction_id.c_str(), conn_id.c_str());
-                continue;
-            }
-
-            const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
-            if (!(contact_point_str == "start" || contact_point_str == "end"))
-            {
-                log::error("Junction #%s Connection #%s: discard due to unknown contactPoint '%s'",
-                           junction_id.c_str(),
-                           conn_id.c_str(),
-                           contact_point_str.c_str());
-                continue;
-            }
-            const JunctionConnection::ContactPoint contact_point =
-                (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
-
-            const std::string   road_incoming = connection_node.attribute("incomingRoad").as_string("");
-            const std::string   road_connecting = connection_node.attribute("connectingRoad").as_string("");
-            JunctionConnection& connection =
-                junction.id_to_connection.emplace(conn_id, JunctionConnection(conn_id, road_incoming, road_connecting, contact_point)).first->second;
-
-            for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
-            {
-                const int from_lane = lane_link_node.attribute("from").as_int(0);
-                const int to_lane = lane_link_node.attribute("to").as_int(0);
-                connection.lane_links.emplace(from_lane, to_lane);
-            }
-        }
-
-        const std::size_t num_conns = junction.id_to_connection.size();
-        if (num_conns == 0)
-            log::warn("Junction #%s: 0 connections", junction_id.c_str());
-
-        for (const pugi::xml_node priority_node : junction_node.children("priority"))
-        {
-            const std::string prio_high = priority_node.attribute("high").as_string("");
-            const std::string prio_low = priority_node.attribute("low").as_string("");
-            if (prio_low.empty() || prio_high.empty())
-            {
-                log::warn(
-                    "Junction #%s: discard empty priority record high='%s', low='%s'", junction_id.c_str(), prio_high.c_str(), prio_low.c_str());
-                continue;
-            }
-            junction.priorities.emplace(prio_high, prio_low);
-        }
-
-        for (const pugi::xml_node controller_node : junction_node.children("controller"))
-        {
-            const std::string controller_id = controller_node.attribute("id").as_string("");
-            if (junction.id_to_controller.find(controller_id) != junction.id_to_controller.end())
-            {
-                log::warn("Junction #%s: discard already existing controller #%s", junction_id.c_str(), controller_id.c_str());
-                continue;
-            }
-            const int64_t seq_id = controller_node.attribute("sequence").as_llong(-1); // type: uint32_t
-            if (seq_id < 0)
-            {
-                log::warn("Junction #%s Controller #%s: discard due to sequence %ld < 0", junction_id.c_str(), controller_id.c_str(), seq_id);
-                continue;
-            }
-            const std::string controller_type = controller_node.attribute("type").as_string("");
-            junction.id_to_controller.emplace(controller_id, JunctionController(controller_id, controller_type, seq_id));
-        }
-    }
-
+    // Roads
     odr::check(odr_node.child("road"), "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
@@ -814,6 +733,97 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
 
         this->id_to_road.emplace(road.id, std::move(road));
+    }
+
+    // Junctions
+    for (const pugi::xml_node junction_node : odr_node.children("junction"))
+    {
+        const std::string id = junction_node.attribute("id").as_string("");
+        if (this->id_to_junction.find(id) != this->id_to_junction.end())
+        {
+            log::error("Junction #%s already exists, skipping...", id.c_str());
+            continue;
+        }
+
+        Junction& junction = this->id_to_junction.emplace(id, Junction(junction_node.attribute("name").as_string(""), id)).first->second;
+
+        for (const pugi::xml_node connection_node : junction_node.children("connection"))
+        {
+            const std::string conn_id = connection_node.attribute("id").as_string("");
+            if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
+            {
+                log::error("Junction #%s: discard already existing connection #%s", id.c_str(), conn_id.c_str());
+                continue;
+            }
+
+            const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
+            if (!(contact_point_str == "start" || contact_point_str == "end"))
+            {
+                log::error(
+                    "Junction #%s Connection #%s: discard due to unknown contactPoint '%s'", id.c_str(), conn_id.c_str(), contact_point_str.c_str());
+                continue;
+            }
+            const JunctionConnection::ContactPoint contact_point =
+                (contact_point_str == "start") ? JunctionConnection::ContactPoint::Start : JunctionConnection::ContactPoint::End;
+
+            const std::string road_in = connection_node.attribute("incomingRoad").as_string("");
+            const std::string road_conn = connection_node.attribute("connectingRoad").as_string("");
+            if (this->id_to_road.find(road_in) == this->id_to_road.end())
+            {
+                log::warn("Junction #%s Connection #%s: discard due to incomingRoad #%s not found", id.c_str(), conn_id.c_str(), road_in.c_str());
+                continue;
+            }
+            if (this->id_to_road.find(road_conn) == this->id_to_road.end())
+            {
+                log::warn(
+                    "Junction #%s Connection #%s: discard due to connectingRoad road #%s not found", id.c_str(), conn_id.c_str(), road_conn.c_str());
+                continue;
+            }
+
+            JunctionConnection& connection =
+                junction.id_to_connection.emplace(conn_id, JunctionConnection(conn_id, road_in, road_conn, contact_point)).first->second;
+
+            for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
+            {
+                const int from_lane = lane_link_node.attribute("from").as_int(0);
+                const int to_lane = lane_link_node.attribute("to").as_int(0);
+                connection.lane_links.emplace(from_lane, to_lane);
+            }
+        }
+
+        const std::size_t num_conns = junction.id_to_connection.size();
+        if (num_conns == 0)
+            log::warn("Junction #%s: 0 connections", id.c_str());
+
+        for (const pugi::xml_node priority_node : junction_node.children("priority"))
+        {
+            const std::string prio_high = priority_node.attribute("high").as_string("");
+            const std::string prio_low = priority_node.attribute("low").as_string("");
+            if (prio_low.empty() || prio_high.empty())
+            {
+                log::warn("Junction #%s: discard empty priority record high='%s', low='%s'", id.c_str(), prio_high.c_str(), prio_low.c_str());
+                continue;
+            }
+            junction.priorities.emplace(prio_high, prio_low);
+        }
+
+        for (const pugi::xml_node controller_node : junction_node.children("controller"))
+        {
+            const std::string controller_id = controller_node.attribute("id").as_string("");
+            if (junction.id_to_controller.find(controller_id) != junction.id_to_controller.end())
+            {
+                log::warn("Junction #%s: discard already existing controller #%s", id.c_str(), controller_id.c_str());
+                continue;
+            }
+            const int64_t seq_id = controller_node.attribute("sequence").as_llong(-1); // type: uint32_t
+            if (seq_id < 0)
+            {
+                log::warn("Junction #%s Controller #%s: discard due to sequence %ld < 0", id.c_str(), controller_id.c_str(), seq_id);
+                continue;
+            }
+            const std::string controller_type = controller_node.attribute("type").as_string("");
+            junction.id_to_controller.emplace(controller_id, JunctionController(controller_id, controller_type, seq_id));
+        }
     }
 }
 
