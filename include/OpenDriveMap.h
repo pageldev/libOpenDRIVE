@@ -36,10 +36,10 @@ public:
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;
 
-    std::string       proj4 = "";
-    double            x_offs = 0;
-    double            y_offs = 0;
-    const std::string xodr_file = "";
+    std::string proj4 = "";
+    double      x_offs = 0;
+    double      y_offs = 0;
+    std::string xodr_file = "";
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;

@@ -14,6 +14,9 @@ struct RefLine
 {
     RefLine(double length);
     RefLine(const RefLine& other);
+    RefLine(RefLine&& other) = default;
+
+    RefLine& operator=(RefLine&& other) = default;
 
     std::set<const RoadGeometry*> get_geometries() const;
     std::set<RoadGeometry*>       get_geometries();
