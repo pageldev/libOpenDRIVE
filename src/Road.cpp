@@ -167,55 +167,47 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesection_s0))
-    {
         throw std::runtime_error(strfmt("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
-    }
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.get_lane(s, t);
     const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
     const double       t_inner_brdr = inner_neighbor_lane.outer_border.evaluate(s, 0.0);
-    double             h_t = 0;
+    double             h = 0;
 
+    // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1 Lane Record:
+    // "keep lane on level, .i.e. do not apply superelevation or crossfall"
     if (lane.level)
     {
-        const double h_inner_brdr = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t_inner_brdr);
-        const double superelev = this->superelevation.evaluate(s, 0.0); // cancel out superelevation
-        h_t = h_inner_brdr + std::tan(superelev) * (t - t_inner_brdr);
+        // compensate crossfall and superelevation to level lane
+        const double alpha = this->crossfall.get(s, (lane.id > 0));
+        const double theta = this->superelevation.evaluate(s, 0.0);
+        h = -std::tan(alpha) * std::abs(t_inner_brdr) + std::tan(theta) * (t - t_inner_brdr);
     }
     else
     {
-        h_t = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t);
+        h = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t);
     }
 
-    if (lane.s_to_height_offset.size() > 0)
+    // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1.9 Lane Height Record:
+    // "The surface of a lane may be offset from the plane defined by the reference line and the corresponding elevation and crossfall entries"
+    if (!lane.s_to_height_offset.empty())
     {
-        const std::map<double, HeightOffset>& height_offs = lane.s_to_height_offset;
+        const std::map<double, HeightOffset>& heights = lane.s_to_height_offset;
 
-        auto s0_height_offs_iter = height_offs.upper_bound(s);
-        if (s0_height_offs_iter != height_offs.begin())
-            s0_height_offs_iter--;
-
-        const double t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
-        const double inner_height = s0_height_offs_iter->second.inner;
-        const double outer_height = s0_height_offs_iter->second.outer;
-        const double p_t = (t_outer_brdr != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr - t_inner_brdr) : 0.0;
-        h_t += p_t * (outer_height - inner_height) + inner_height;
-
-        if (std::next(s0_height_offs_iter) != height_offs.end())
+        const auto heights_iter = heights.upper_bound(s); // first element > s
+        if (heights_iter != heights.begin())              // s after first <height> record
         {
-            // if successive lane height entry available linearly interpolate
-            const double ds = std::next(s0_height_offs_iter)->first - s0_height_offs_iter->first;
-            const double d_lh_inner = std::next(s0_height_offs_iter)->second.inner - inner_height;
-            const double dh_inner = (d_lh_inner / ds) * (s - s0_height_offs_iter->first);
-            const double d_lh_outer = std::next(s0_height_offs_iter)->second.outer - outer_height;
-            const double dh_outer = (d_lh_outer / ds) * (s - s0_height_offs_iter->first);
-
-            h_t += p_t * (dh_outer - dh_inner) + dh_inner;
+            const HeightOffset& height_offset = std::prev(heights_iter)->second;
+            const double        h_inner = height_offset.inner;
+            const double        h_outer = height_offset.outer;
+            const double        t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
+            const double        t_norm = (t_outer_brdr != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr - t_inner_brdr) : 0.0; // [0,1]
+            h += t_norm * (h_outer - h_inner) + h_inner;
         }
     }
 
-    return this->get_xyz(s, t, h_t, nullptr, nullptr, vn);
+    return this->get_xyz(s, t, h, nullptr, nullptr, vn);
 }
 
 std::set<double>
