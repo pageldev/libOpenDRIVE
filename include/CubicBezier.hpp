@@ -1,10 +1,10 @@
 #pragma once
-#include "Fmt.hpp"
 #include "Math.hpp"
 #include "Utils.hpp"
 
 #include <array>
 #include <cmath>
+#include <fmt/format.h>
 #include <map>
 #include <set>
 #include <sstream>
@@ -113,7 +113,7 @@ T CubicBezier<T, Dim>::get_t(const T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
-        throw std::runtime_error(strfmt("arc length %.3f out of range; valid length: %.3f", arclen, this->valid_length));
+        throw std::runtime_error(fmt::format("arc length {:.3f} out of range; valid length: {:.3f}", arclen, this->valid_length));
     }
 
     const T arclen_adj = std::min<T>(arclen, this->valid_length);

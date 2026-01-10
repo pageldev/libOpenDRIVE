@@ -101,38 +101,40 @@ if(OPENDRIVE_BUILD_TESTS)
     catch_discover_tests(tests WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
 
-install(
-    TARGETS OpenDrive
-    EXPORT OpenDriveTargets
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    install(
+        TARGETS OpenDrive
+        EXPORT OpenDriveTargets
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(
-    EXPORT OpenDriveTargets
-    NAMESPACE OpenDrive::
-    FILE OpenDriveTargets.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
-)
+    install(
+        EXPORT OpenDriveTargets
+        NAMESPACE OpenDrive::
+        FILE OpenDriveTargets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+    )
 
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY ExactVersion
-)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY ExactVersion
+    )
 
-configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/OpenDriveConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
-)
+    configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/OpenDriveConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+    )
 
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
-)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
+    )
+endif()

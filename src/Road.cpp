@@ -1,5 +1,4 @@
 #include "Road.h"
-#include "Fmt.hpp"
 #include "Lane.h"
 #include "RefLine.h"
 #include "RoadMark.h"
@@ -13,6 +12,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <fmt/format.h>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
@@ -94,7 +94,7 @@ LaneSection Road::get_lanesection(const double s) const
 double Road::get_lanesection_end(const LaneSection& lanesection) const
 {
     if (lanesection.road_id != this->id)
-        log::error("LaneSection %f in Road #%s, not in Road #%s", lanesection.s0, lanesection.road_id.c_str(), this->id.c_str());
+        log::error("LaneSection {} in Road #{}, not in Road #{}", lanesection.s0, lanesection.road_id, this->id);
     return this->get_lanesection_end(lanesection.s0);
 }
 
@@ -156,18 +156,18 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
 Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 {
     odr::check_and_repair(
-        s >= 0, [&]() { s = 0; }, "Road #%s: get_surface_pt for s < 0 invalid (s=%f), getting for s=0", this->id.c_str(), s);
+        s >= 0, [&]() { s = 0; }, "Road #{}: get_surface_pt for s < 0 invalid (s={}), getting for s=0", this->id, s);
     odr::check_and_repair(
         s <= this->length,
         [&]() { s = this->length; },
-        "Road #%s: get_surface_pt for s > length invalid (s=%f, length=%f), getting for s=length",
-        this->id.c_str(),
+        "Road #{}: get_surface_pt for s > length invalid (s={}, length={}), getting for s=length",
+        this->id,
         s,
         this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesection_s0))
-        throw std::runtime_error(strfmt("cannot get road surface pt, no lane section for s %.3f, road length: %.3f", s, this->length));
+        throw std::runtime_error(fmt::format("cannot get road surface pt, no lane section for s {:.3f}, road length: {:.3f}", s, this->length));
 
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.get_lane(s, t);

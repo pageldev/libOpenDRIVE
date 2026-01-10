@@ -1,7 +1,7 @@
 #include "Lane.h"
-#include "Fmt.hpp"
 
 #include <algorithm>
+#include <fmt/format.h>
 #include <iterator>
 
 namespace odr
@@ -13,7 +13,7 @@ LaneKey::LaneKey(std::string road_id, double lanesection_s0, int lane_id) : road
 
 std::string LaneKey::to_string() const
 {
-    return strfmt("%s/%.17g/%d", this->road_id.c_str(), this->lanesection_s0, this->lane_id);
+    return fmt::format("{}/{:.17g}/{}", this->road_id, this->lanesection_s0, this->lane_id);
 }
 
 Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type) :

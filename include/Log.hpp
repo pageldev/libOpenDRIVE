@@ -1,8 +1,8 @@
 #pragma once
-#include "Fmt.hpp"
 
 #include <atomic>
 #include <cstdio>
+#include <fmt/format.h>
 #include <string>
 
 namespace odr
@@ -57,34 +57,34 @@ inline void set_level(Level lvl)
 }
 
 template<class... Args>
-void log(Level lvl, const char* fmt, Args&&... args)
+void log(Level lvl, fmt::format_string<Args...> fmt, Args&&... args)
 {
     if (lvl < g_log_level.load(std::memory_order_relaxed))
         return;
-    std::string s = strfmt(fmt, std::forward<Args>(args)...);
+    std::string s = fmt::format(fmt, std::forward<Args>(args)...);
     g_log_function.load(std::memory_order_relaxed)(lvl, s.c_str());
 }
 
 template<class... Args>
-void debug(const char* fmt, Args&&... args)
+void debug(fmt::format_string<Args...> fmt, Args&&... args)
 {
     log(Level::Debug, fmt, std::forward<Args>(args)...);
 }
 
 template<class... Args>
-void info(const char* fmt, Args&&... args)
+void info(fmt::format_string<Args...> fmt, Args&&... args)
 {
     log(Level::Info, fmt, std::forward<Args>(args)...);
 }
 
 template<class... Args>
-void warn(const char* fmt, Args&&... args)
+void warn(fmt::format_string<Args...> fmt, Args&&... args)
 {
     log(Level::Warn, fmt, std::forward<Args>(args)...);
 }
 
 template<class... Args>
-void error(const char* fmt, Args&&... args)
+void error(fmt::format_string<Args...> fmt, Args&&... args)
 {
     log(Level::Error, fmt, std::forward<Args>(args)...);
 }
