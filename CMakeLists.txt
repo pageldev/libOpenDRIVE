@@ -23,6 +23,20 @@ if(NOT TARGET pugixml::pugixml)
     endif()
 endif()
 
+find_package(fmt QUIET CONFIG)
+if(NOT TARGET fmt::fmt)
+    if(TARGET fmt)
+        add_library(fmt::fmt ALIAS fmt)
+    else()
+        FetchContent_Declare(
+            fmtlib
+            GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+            GIT_TAG 12.1.0
+        )
+        FetchContent_MakeAvailable(fmtlib)
+    endif()
+endif()
+
 set(SOURCES
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
@@ -60,6 +74,7 @@ else()
 endif()
 
 target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
+target_link_libraries(OpenDrive PRIVATE fmt::fmt)
 
 target_include_directories(
     OpenDrive PUBLIC
