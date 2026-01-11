@@ -78,14 +78,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         const std::string road_id = road_node.attribute("id").as_string("");
         if (this->id_to_road.find(road_id) != this->id_to_road.end())
         {
-            log::error("duplicate Road #{}", road_id);
+            log::error("{}: duplicate id {}", node_path(road_node), road_id);
             continue;
         }
 
         const double length = road_node.attribute("length").as_double(NAN);
         if (std::isnan(length) || length < 0)
         {
-            log::error("Road #{}: length {} < 0", road_id, length);
+            log::error("{}: length {} < 0", node_path(road_node), length);
             continue;
         }
 
@@ -108,7 +108,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const std::string type_str = road_link_node.attribute("elementType").as_string("");
                 if (!(type_str == "road" || type_str == "junction"))
                 {
-                    log::warn("Road #{}: unknown link::{}::elementType '{}'", road_id, is_predecessor ? "predecessor" : "successor", type_str);
+                    log::warn("{}: unknown elementType '{}'", node_path(road_link_node), type_str);
                 }
                 else
                 {
@@ -121,10 +121,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     const std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
                     if (!(contact_point_str == "start" || contact_point_str == "end"))
                     {
-                        log::warn("Road #{}: unknown link::{}::contactPoint '{}'",
-                                  road_id,
-                                  is_predecessor ? "predecessor" : "successor",
-                                  contact_point_str);
+                        log::warn("{}: unknown contactPoint '{}'", node_path(road_link_node), contact_point_str);
                     }
                     else
                     {
@@ -150,7 +147,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const std::string type = road_type_node.attribute("type").as_string("");
             if (std::isnan(s) || s < 0)
             {
-                log::warn("Road #{}: Type '{}' s {} < 0", road_id, type, s);
+                log::warn("{}: s < 0", node_path(road_type_node));
                 continue;
             }
             road.s_to_type[s] = type;
@@ -175,19 +172,19 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
             if (std::isnan(s0) || s0 < 0)
             {
-                log::error("Road #{}: planView::geometry, s {} < 0", road_id, s0);
+                log::error("{} s < 0", node_path(geometry_hdr_node));
                 invalid_geometry = true;
                 continue;
             }
             if (std::isnan(x0) || std::isnan(y0) || std::isnan(hdg0))
             {
-                log::error("Road #{}: invalid planView::geometry s={}, x={}, y={}, hdg={}", road_id, s0, x0, y0, hdg0);
+                log::error("{}: invalid values; x={}, y={}, hdg={}", node_path(geometry_hdr_node), x0, y0, hdg0);
                 invalid_geometry = true;
                 continue;
             }
             if (std::isnan(length) || length < 0)
             {
-                log::error("Road #{}: planView::geometry, length {} < 0", road_id, length);
+                log::error("{}: length {} < 0", node_path(geometry_hdr_node), length);
                 invalid_geometry = true;
                 continue;
             }
@@ -207,7 +204,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const double curv_end = geometry_node.attribute("curvEnd").as_double(NAN);
                 if (std::isnan(curv_start) || std::isnan(curv_end))
                 {
-                    log::error("Road #{}: invalid planView::geometry::spiral s={}, curvStart={}, curvEnd={}", road_id, s0, curv_start, curv_end);
+                    log::error("{}: invalid values; curvStart={}, curvEnd={}", node_path(geometry_node), curv_start, curv_end);
                     invalid_geometry = true;
                     continue;
                 }
@@ -239,7 +236,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const double curvature = geometry_node.attribute("curvature").as_double(NAN);
                 if (std::isnan(curvature))
                 {
-                    log::error("Road #{}: planView::geometry::arc invalid curvature, s={}", road_id, s0);
+                    log::error("{}: invalid curvature", node_path(geometry_node));
                     invalid_geometry = true;
                     continue;
                 }
@@ -258,9 +255,8 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 if (std::isnan(aU) || std::isnan(bU) || std::isnan(cU) || std::isnan(dU) || std::isnan(aV) || std::isnan(bV) || std::isnan(cV) ||
                     std::isnan(dV))
                 {
-                    log::error("Road #{}: invalid planView::geometry::paramPoly3 s={}, aU={}, bU={}, cU={}, dU={}, aV={}, bV={}, cV={}, dV={}",
-                               road_id,
-                               s0,
+                    log::error("{}: invalid values; aU={}, bU={}, cU={}, dU={}, aV={}, bV={}, cV={}, dV={}",
+                               node_path(geometry_node),
                                aU,
                                bU,
                                cU,
@@ -287,14 +283,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
             else
             {
-                log::error("Road #{}: unknown geometry '{}' at s={}", road_id, geometry_type, s0);
+                log::error("{}: unknown geometry", node_path(geometry_node));
                 invalid_geometry = true;
                 continue;
             }
         }
         if (invalid_geometry)
         {
-            log::error("Road #{}: invalid planView::geometry", road_id);
+            log::error("{}: invalid geometry", node_path(road_node));
             continue; // discard road
         }
 
@@ -307,24 +303,26 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         bool invalid_cubic = false;
         for (auto& [xpath_query_str, cubic_profile] : cubic_profile_fields)
         {
-            pugi::xpath_node_set nodes = road_node.select_nodes(xpath_query_str.c_str());
-            for (pugi::xpath_node node : nodes)
+            pugi::xpath_node_set xnodes = road_node.select_nodes(xpath_query_str.c_str());
+            for (pugi::xpath_node xnode : xnodes)
             {
-                const double s0 = node.node().attribute("s").as_double(NAN);
-                const double a = node.node().attribute("a").as_double(NAN);
-                const double b = node.node().attribute("b").as_double(NAN);
-                const double c = node.node().attribute("c").as_double(NAN);
-                const double d = node.node().attribute("d").as_double(NAN);
+                const pugi::xml_node node = xnode.node();
+
+                const double s0 = node.attribute("s").as_double(NAN);
+                const double a = node.attribute("a").as_double(NAN);
+                const double b = node.attribute("b").as_double(NAN);
+                const double c = node.attribute("c").as_double(NAN);
+                const double d = node.attribute("d").as_double(NAN);
 
                 if (std::isnan(s0) || s0 < 0)
                 {
-                    log::error("Road #{}: {}, s {} < 0", road_id, xpath_query_str, s0);
+                    log::error("{}: s < 0", node_path(node));
                     invalid_cubic = true;
                     continue;
                 }
                 if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                 {
-                    log::error("Road #{}: {}, s={} a={}, b={}, c={}, d={}", road_id, xpath_query_str, s0, a, b, c, d);
+                    log::error("{}: invalid values; a={}, b={}, c={}, d={}", node_path(node), a, b, c, d);
                     invalid_cubic = true;
                     continue;
                 }
@@ -334,7 +332,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
         if (invalid_cubic)
         {
-            log::error("Road #{}: has an invalid cubic profile (elevationProfile, laneOffset, superelevation)", road_id);
+            log::error("{}: has an invalid cubic profile", node_path(road_node));
             continue; // discard road
         }
 
@@ -351,12 +349,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 if (std::isnan(s0) || s0 < 0)
                 {
-                    log::warn("Road #{}: lateralProfile::crossfall, s {} < 0", road_id, s0);
+                    log::warn("{}: s < 0", node_path(crossfall_node));
                     continue;
                 }
                 if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                 {
-                    log::warn("Road #{}: lateralProfile::crossfall, s={}, a={}, b={}, c={}, d={}", road_id, s0, a, b, c, d);
+                    log::warn("{}: invalid values; a={}, b={}, c={}, d={}", node_path(crossfall_node), a, b, c, d);
                     continue;
                 }
 
@@ -377,7 +375,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             // check for lateralProfile shape - not implemented yet
             if (road_node.child("lateralProfile").child("shape"))
             {
-                log::warn("Road #{}: lateralProfile::shape not supported", road_id);
+                log::warn("{}: lateralProfile::shape not supported", node_path(road_node));
             }
         }
 
@@ -388,7 +386,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const double s0 = lanesection_node.attribute("s").as_double(NAN);
             if (std::isnan(s0) || s0 < 0)
             {
-                log::error("Road #{}: LaneSection s {} < 0", road_id, s0);
+                log::error("{}: s < 0", node_path(lanesection_node));
                 invalid_lanesection = true;
                 continue;
             }
@@ -423,14 +421,13 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                     if (std::isnan(s_offset) || s_offset < 0)
                     {
-                        log::error("Road #{} LaneSection {} Lane #{}: width::sOffset {} < 0", road_id, s0, lane_id, s_offset);
+                        log::error("{}: sOffset {} < 0", node_path(lane_width_node), s_offset);
                         invalid_lanesection = true;
                         continue;
                     }
                     if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                     {
-                        log::error(
-                            "Road #{} LaneSection {} Lane #{}: width s={}, a={}, b={}, c={}, d={}", road_id, s0, lane_id, s_offset, a, b, c, d);
+                        log::error("{}: invalid values; sOffset={}, a={}, b={}, c={}, d={}", node_path(lane_width_node), s_offset, a, b, c, d);
                         invalid_lanesection = true;
                         continue;
                     }
@@ -441,7 +438,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     // "The reference line itself is defined as lane zero and must not have a width entry (i.e. its width must always be 0.0)."
                     if (lane_id == 0 && !width_poly.is_zero())
                     {
-                        log::warn("Road #{} LaneSection {} Lane #0: width must be 0, setting to 0", road_id, s0);
+                        log::warn("{}: width must be 0 for lane #0, setting to 0", node_path(lane_width_node));
                         width_poly.set_zero();
                     }
 
@@ -458,18 +455,12 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                         if (std::isnan(s_offset) || s_offset < 0)
                         {
-                            log::warn("Road #{} LaneSection {} Lane #{}: Height sOffset {} < 0", road_id, s0, lane_id, s_offset);
+                            log::warn("{}: sOffset {} < 0", node_path(lane_height_node), s_offset);
                             continue;
                         }
                         if (std::isnan(inner) || std::isnan(outer))
                         {
-                            log::warn("Road #{} LaneSection {} Lane #{}: Height sOffset={}, inner={}, outer={}",
-                                      road_id,
-                                      s0,
-                                      lane_id,
-                                      s_offset,
-                                      inner,
-                                      outer);
+                            log::warn("{}: invalid values; sOffset={}, inner={}, outer={}", node_path(lane_height_node), s_offset, inner, outer);
                             continue;
                         }
 
@@ -482,7 +473,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     const double s_offset = roadmark_node.attribute("sOffset").as_double(NAN);
                     if (std::isnan(s_offset) || s_offset < 0)
                     {
-                        log::warn("Road #{} LaneSection {} Lane #{}: RoadMark sOffset {} < 0", road_id, s0, lane_id, s_offset);
+                        log::warn("{}: sOffset {} < 0", node_path(roadmark_node), s_offset);
                         continue;
                     }
 
@@ -514,19 +505,13 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                             const double roadmark_space = roadmarks_line_node.attribute("space").as_double(NAN);
 
                             bool values_ok = true;
-                            for (auto [val_name, val_ptr] : {std::pair{"s_offset", &roadmark_s_offset},
+                            for (auto [val_name, val_ptr] : {std::pair{"sOffset", &roadmark_s_offset},
                                                              std::pair{"length", &roadmark_length},
                                                              std::pair{"space", &roadmark_space}})
                             {
                                 if (std::isnan(*val_ptr) || (*val_ptr) < 0)
                                 {
-                                    log::warn("Road #{} LaneSection {} Lane #{} RoadMark {}: type::line {} {} < 0",
-                                              road_id,
-                                              s0,
-                                              lane_id,
-                                              roadmark_group_s0,
-                                              val_name,
-                                              *val_ptr);
+                                    log::warn("{}: {} {} < 0", node_path(roadmarks_line_node), val_name, *val_ptr);
                                     values_ok = false;
                                 }
                             }
@@ -536,8 +521,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                             const double roadmark_t_offset = roadmarks_line_node.attribute("tOffset").as_double(NAN);
                             if (std::isnan(roadmark_t_offset))
                             {
-                                log::warn(
-                                    "Road #{} LaneSection {} Lane #{} RoadMark {}: type::line tOffset NAN", road_id, s0, lane_id, roadmark_group_s0);
+                                log::warn("{}: tOffset NAN", node_path(roadmark_type_node));
                                 continue;
                             }
 
@@ -595,7 +579,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
         }
         if (invalid_lanesection)
         {
-            log::error("Road #{}: invalid LaneSection", road_id);
+            log::error("{}: invalid LaneSection", node_path(road_node));
             continue; // discard road
         }
 
@@ -610,7 +594,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const std::string object_id = object_node.attribute("id").as_string("");
                 if (road.id_to_object.find(object_id) != road.id_to_object.end())
                 {
-                    log::warn("Road #{}: duplicate Object #{}", road_id, object_id);
+                    log::warn("{}: duplicate Object #{}", node_path(object_node), object_id);
                     continue;
                 }
 
@@ -621,14 +605,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 if (std::isnan(s) || s < 0)
                 {
-                    log::warn("Road #{} Object {}: s {} < 0", road_id, object_id, s);
+                    log::warn("{}: s < 0", node_path(object_node));
                     continue;
                 }
                 // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1 Object Record:
                 // "radius of the object; alternative to width and length"
                 if ((std::isnan(radius) || radius < 0) && ((std::isnan(length) || length < 0) || (std::isnan(width) || width < 0)))
                 {
-                    log::warn("Road #{} Object #{}: invalid dimensions length={}, width={}, radius={}", road_id, object_id, length, width, radius);
+                    log::warn("{}: invalid dimensions length={}, width={}, radius={}", node_path(object_node), length, width, radius);
                     continue;
                 }
 
@@ -672,7 +656,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     {
                         if (std::isnan(*val_ptr) || (*val_ptr) < 0)
                         {
-                            log::warn("Road #{} Object #{}: Repeat {} {} < 0", road_id, object_id, val_name, *val_ptr);
+                            log::warn("{}: {} {} < 0", node_path(repeat_node), val_name, *val_ptr);
                             values_ok = false;
                         }
                     }
@@ -735,7 +719,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 {
                     if (!(validity_node.attribute("fromLane") && validity_node.attribute("toLane")))
                     {
-                        log::warn("Road #{} Object #{}: invalid Validity, 'fromLane' or 'toLane' missing", road_id, object_id);
+                        log::warn("{}: 'fromLane' or 'toLane' missing", node_path(validity_node));
                         continue;
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
@@ -752,14 +736,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const std::string signal_id = signal_node.attribute("id").as_string("");
                 if (road.id_to_signal.find(signal_id) != road.id_to_signal.end())
                 {
-                    log::warn("Road #{}: duplicate Signal #{}", road_id, signal_id);
+                    log::warn("{}: duplicate Signal #{}", node_path(signal_node), signal_id);
                     continue;
                 }
 
                 const double s = signal_node.attribute("s").as_double(NAN);
                 if (std::isnan(s) || s < 0)
                 {
-                    log::warn("Road #{} Signal #{}: s {} < 0", road_id, signal_id, s);
+                    log::warn("{}: s < 0", node_path(signal_node));
                     continue;
                 }
 
@@ -790,7 +774,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 {
                     if (!(validity_node.attribute("fromLane") && validity_node.attribute("toLane")))
                     {
-                        log::warn("Road #{} Signal #{}: invalid Validity, 'fromLane' or 'toLane' missing", road_id, signal_id);
+                        log::warn("{}: 'fromLane' or 'toLane' missing", node_path(validity_node));
                         continue;
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
@@ -820,14 +804,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const std::string conn_id = connection_node.attribute("id").as_string("");
             if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
             {
-                log::warn("Junction #{}: duplicate Connection #{}", id, conn_id);
+                log::warn("{}: duplicate Connection #{}", node_path(connection_node), conn_id);
                 continue;
             }
 
             const std::string contact_point_str = connection_node.attribute("contactPoint").as_string("");
             if (!(contact_point_str == "start" || contact_point_str == "end"))
             {
-                log::warn("Junction #{} Connection #{}: unknown ContactPoint '{}'", id, conn_id, contact_point_str);
+                log::warn("{}: unknown contactPoint '{}'", node_path(connection_node), contact_point_str);
                 continue;
             }
             const JunctionConnection::ContactPoint contact_point =
@@ -835,16 +819,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
             const std::string road_in = connection_node.attribute("incomingRoad").as_string("");
             const std::string road_conn = connection_node.attribute("connectingRoad").as_string("");
-            if (this->id_to_road.find(road_in) == this->id_to_road.end())
-            {
-                log::warn("Junction #{} Connection #{}: IncomingRoad #{} not found", id, conn_id, road_in);
-                continue;
-            }
-            if (this->id_to_road.find(road_conn) == this->id_to_road.end())
-            {
-                log::warn("Junction #{} Connection #{}: ConnectingRoad #{} not found", id, conn_id, road_conn);
-                continue;
-            }
 
             JunctionConnection& connection =
                 junction.id_to_connection.emplace(conn_id, JunctionConnection(conn_id, road_in, road_conn, contact_point)).first->second;
@@ -859,7 +833,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
         const std::size_t num_conns = junction.id_to_connection.size();
         if (num_conns == 0)
-            log::warn("Junction #{}: 0 connections", id);
+            log::warn("{}: 0 connections", node_path(junction_node));
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
@@ -867,7 +841,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const std::string prio_low = priority_node.attribute("low").as_string("");
             if (prio_low.empty() || prio_high.empty())
             {
-                log::warn("Junction #{}: empty Priority high='{}', low='{}'", id, prio_high, prio_low);
+                log::warn("{}: empty priority; high='{}', low='{}'", node_path(priority_node), prio_high, prio_low);
                 continue;
             }
             junction.priorities.emplace(prio_high, prio_low);
@@ -878,13 +852,13 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const std::string controller_id = controller_node.attribute("id").as_string("");
             if (junction.id_to_controller.find(controller_id) != junction.id_to_controller.end())
             {
-                log::warn("Junction #{}: duplicate Controller #{}", id, controller_id);
+                log::warn("{}: duplicate Controller #{}", node_path(controller_node), controller_id);
                 continue;
             }
             const int64_t seq_id = controller_node.attribute("sequence").as_llong(-1); // type: uint32_t
             if (seq_id < 0)
             {
-                log::warn("Junction #{} Controller #{}: Sequence {} < 0", id, controller_id, seq_id);
+                log::warn("{}: sequence {} < 0", node_path(controller_node), seq_id);
                 continue;
             }
             const std::string type = controller_node.attribute("type").as_string("");

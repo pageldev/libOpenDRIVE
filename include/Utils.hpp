@@ -2,12 +2,18 @@
 #include "Log.hpp"
 #include "Math.hpp"
 
+#include "fmt/core.h"
+#include "fmt/ranges.h"
+#include "pugixml.hpp"
+
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -312,14 +318,61 @@ bool check_class_members_equal(const T& obj_a, const T& obj_b, S field, Ss... fi
 inline int next_towards_zero(const int value)
 {
     if (value > 0)
-    {
         return value - 1;
-    }
     else if (value < 0)
-    {
         return value + 1;
-    }
     return 0;
+}
+
+// returns "xpath-ish" path string - might work as xpath
+inline std::string node_path(pugi::xml_node node)
+{
+    std::vector<std::string> parts;
+    while (node && node.type() == pugi::node_element)
+    {
+        std::string part = node.name();
+        if (const pugi::xml_attribute id_attr = node.attribute("id"))
+            part += "[@id='" + std::string(id_attr.value()) + "']";
+        else if (const pugi::xml_attribute s_attr = node.attribute("s"))
+            part += "[@s='" + std::string(s_attr.value()) + "']";
+        parts.push_back(part);
+        node = node.parent();
+    }
+    std::reverse(parts.begin(), parts.end());
+    return fmt::format("/{}", fmt::join(parts, "/"));
+}
+
+template<typename T>
+std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_name, const log::Level level = log::Level::Info)
+{
+    const auto attr = node.attribute(attr_name);
+    if (!attr)
+    {
+        log::log(level, "{}: missing attribute '{}'", node_path(node), attr_name);
+        return std::nullopt;
+    }
+
+    const char* value = attr.value();
+    if constexpr (std::is_same_v<T, std::string>)
+    {
+        return std::string(value);
+    }
+    else if constexpr (std::is_arithmetic_v<T>)
+    {
+        T           result{};
+        const char* end = value + std::strlen(value);
+        auto [ptr, ec] = std::from_chars(value, end, result);
+        if (ec != std::errc{} || ptr != end)
+        {
+            log::log(level, "{}/@{}: failed to parse '{}' as numeric", node_path(node), attr_name, value);
+            return std::nullopt;
+        }
+        return result;
+    }
+    else
+    {
+        static_assert(std::is_same_v<T, void>, "unsupported T");
+    }
 }
 
 } // namespace odr
