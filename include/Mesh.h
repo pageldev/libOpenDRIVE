@@ -11,6 +11,7 @@ namespace odr
 struct Mesh3D
 {
     Mesh3D() = default;
+    Mesh3D(std::vector<Vec3D> vertices, std::vector<uint32_t> indices, std::vector<Vec3D> normals, std::vector<Vec2D> st_coordinates) noexcept;
 
     void        add_mesh(const Mesh3D& other);
     std::string get_obj() const;

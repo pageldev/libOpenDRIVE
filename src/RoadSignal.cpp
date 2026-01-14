@@ -50,17 +50,16 @@ RoadSignal::RoadSignal(std::string road_id,
 
 Mesh3D RoadSignal::get_box(const double w, const double l, const double h)
 {
-    Mesh3D box_mesh;
-    box_mesh.vertices = {Vec3D{l / 2, w / 2, 0},
-                         Vec3D{-l / 2, w / 2, 0},
-                         Vec3D{-l / 2, -w / 2, 0},
-                         Vec3D{l / 2, -w / 2, 0},
-                         Vec3D{l / 2, w / 2, h},
-                         Vec3D{-l / 2, w / 2, h},
-                         Vec3D{-l / 2, -w / 2, h},
-                         Vec3D{l / 2, -w / 2, h}};
-    box_mesh.indices = {0, 3, 1, 3, 2, 1, 4, 5, 7, 7, 5, 6, 7, 6, 3, 3, 6, 2, 5, 4, 1, 1, 4, 0, 0, 4, 7, 7, 3, 0, 1, 6, 5, 1, 2, 6};
-
-    return box_mesh;
+    return Mesh3D({Vec3D{l / 2, w / 2, 0},
+                   Vec3D{-l / 2, w / 2, 0},
+                   Vec3D{-l / 2, -w / 2, 0},
+                   Vec3D{l / 2, -w / 2, 0},
+                   Vec3D{l / 2, w / 2, h},
+                   Vec3D{-l / 2, w / 2, h},
+                   Vec3D{-l / 2, -w / 2, h},
+                   Vec3D{l / 2, -w / 2, h}},
+                  {0, 3, 1, 3, 2, 1, 4, 5, 7, 7, 5, 6, 7, 6, 3, 3, 6, 2, 5, 4, 1, 1, 4, 0, 0, 4, 7, 7, 3, 0, 1, 6, 5, 1, 2, 6},
+                  {},
+                  {});
 }
 } // namespace odr
