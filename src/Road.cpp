@@ -381,7 +381,7 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     const double height = road_signal.height;
     const double width = road_signal.width;
     Mesh3D       road_signal_mesh;
-    road_signal_mesh = road_signal.get_box(width, 0.2, height);
+    road_signal_mesh = RoadSignal::get_box(width, 0.2, height);
     Vec3D       e_s, e_t, e_h;
     const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h);
     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
@@ -444,13 +444,9 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
 
                 Mesh3D single_road_obj_mesh;
                 if (road_object.radius > 0)
-                {
-                    single_road_obj_mesh = road_object.get_cylinder(eps, road_object.radius, height_s);
-                }
+                    single_road_obj_mesh = RoadObject::get_cylinder(eps, road_object.radius, height_s);
                 else if (w_s > 0 && road_object.length > 0)
-                {
-                    single_road_obj_mesh = road_object.get_box(w_s, road_object.length, height_s);
-                }
+                    single_road_obj_mesh = RoadObject::get_box(w_s, road_object.length, height_s);
 
                 Vec3D       e_s, e_t, e_h;
                 const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
