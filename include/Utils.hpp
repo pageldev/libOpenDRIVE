@@ -264,6 +264,9 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
 template<typename T>
 inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_vertices)
 {
+    if (num_vertices < 3)
+        return {};
+
     std::vector<T> out_indices;
     out_indices.reserve(num_vertices + 4);
 
