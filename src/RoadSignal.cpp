@@ -1,5 +1,6 @@
 #include "RoadSignal.h"
 #include "Math.hpp"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -7,48 +8,53 @@
 namespace odr
 {
 
-RoadSignal::RoadSignal(std::string road_id,
-                       std::string id,
-                       std::string name,
-                       double      s0,
-                       double      t0,
-                       bool        is_dynamic,
-                       double      zOffset,
-                       double      value,
-                       double      height,
-                       double      width,
-                       double      hOffset,
-                       double      pitch,
-                       double      roll,
-                       std::string orientation,
-                       std::string country,
-                       std::string type,
-                       std::string subtype,
-                       std::string unit,
-                       std::string text) :
-    road_id(road_id),
+RoadSignal::RoadSignal(std::string                id,
+                       std::string                road_id,
+                       double                     s0,
+                       double                     t0,
+                       double                     zOffset,
+                       bool                       is_dynamic,
+                       std::string                type,
+                       std::string                subtype,
+                       std::string                orientation,
+                       std::optional<double>      value,
+                       std::optional<double>      height,
+                       std::optional<double>      width,
+                       std::optional<double>      hOffset,
+                       std::optional<double>      pitch,
+                       std::optional<double>      roll,
+                       std::optional<std::string> name,
+                       std::optional<std::string> unit,
+                       std::optional<std::string> text,
+                       std::optional<std::string> country) :
     id(id),
-    name(name),
+    road_id(road_id),
     s0(s0),
     t0(t0),
-    is_dynamic(is_dynamic),
     zOffset(zOffset),
+    is_dynamic(is_dynamic),
+    type(type),
+    subtype(subtype),
+    orientation(orientation),
     value(value),
     height(height),
     width(width),
     hOffset(hOffset),
     pitch(pitch),
     roll(roll),
-    orientation(orientation),
-    country(country),
-    type(type),
-    subtype(subtype),
+    name(name),
     unit(unit),
-    text(text)
+    text(text),
+    country(country)
 {
+    require_or_throw(s0 >= 0, "s {} < 0", s0);
+    require_or_throw(!std::isnan(t0), "t is NaN");
+    require_or_throw(!std::isnan(zOffset), "zOffset is NaN");
+    require_or_throw(!height || *height >= 0, "height < 0");
+    require_or_throw(!width || *width >= 0, "width < 0");
 }
 
-Mesh3D RoadSignal::get_box(const double w, const double l, const double h)
+Mesh3D RoadSignal::get_box(double w, double l, double h)
 {
     return Mesh3D({Vec3D{l / 2, w / 2, 0},
                    Vec3D{-l / 2, w / 2, 0},

@@ -2,6 +2,7 @@
 #include "Lane.h"
 #include "RefLine.h"
 #include "RoadMark.h"
+#include "RoadSignal.h"
 #include "Utils.hpp"
 
 #include "earcut.hpp"
@@ -374,14 +375,15 @@ Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const
 
 Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
 {
-    const Mat3D  rot_mat = EulerAnglesToMatrix<double>(road_signal.roll, road_signal.pitch, road_signal.hOffset);
+    const Mat3D  rot_mat = EulerAnglesToMatrix<double>(road_signal.roll.value_or(0), road_signal.pitch.value_or(0), road_signal.hOffset.value_or(0));
     const double s = road_signal.s0;
     const double t = road_signal.t0;
     const double z = road_signal.zOffset;
-    const double height = road_signal.height;
-    const double width = road_signal.width;
-    Mesh3D       road_signal_mesh;
-    road_signal_mesh = RoadSignal::get_box(width, 0.2, height);
+    const double height = road_signal.height.value_or(RoadSignal::DefaultHeight);
+    const double width = road_signal.width.value_or(RoadSignal::DefaultWidth);
+
+    Mesh3D road_signal_mesh = RoadSignal::get_box(width, RoadSignal::Thickness, height);
+
     Vec3D       e_s, e_t, e_h;
     const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h);
     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
@@ -390,9 +392,9 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
         pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
         pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
         pt_uvz = add(pt_uvz, p0);
-
         road_signal_mesh.st_coordinates.push_back({s, t});
     }
+
     return road_signal_mesh;
 }
 

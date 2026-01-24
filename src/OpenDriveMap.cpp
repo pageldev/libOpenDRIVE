@@ -725,35 +725,34 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     continue;
                 }
 
-                const double s = signal_node.attribute("s").as_double(NAN);
-                if (std::isnan(s) || s < 0)
+                std::optional<RoadSignal> road_signal;
+                try
                 {
-                    log::warn("{}: s < 0", node_path(signal_node));
+                    road_signal.emplace(signal_id,
+                                        road_id,
+                                        signal_node.attribute("s").as_double(NAN),
+                                        signal_node.attribute("t").as_double(NAN),
+                                        signal_node.attribute("zOffset").as_double(NAN),
+                                        signal_node.attribute("dynamic").as_bool(),
+                                        signal_node.attribute("type").as_string("none"),
+                                        signal_node.attribute("subtype").as_string("none"),
+                                        signal_node.attribute("orientation").as_string("none"),
+                                        try_get_attribute<double>(signal_node, "value"),
+                                        try_get_attribute<double>(signal_node, "height"),
+                                        try_get_attribute<double>(signal_node, "width"),
+                                        try_get_attribute<double>(signal_node, "hOffset"),
+                                        try_get_attribute<double>(signal_node, "pitch"),
+                                        try_get_attribute<double>(signal_node, "roll"),
+                                        try_get_attribute<std::string>(signal_node, "name"),
+                                        try_get_attribute<std::string>(signal_node, "unit"),
+                                        try_get_attribute<std::string>(signal_node, "text"),
+                                        try_get_attribute<std::string>(signal_node, "country"));
+                }
+                catch (const std::exception& ex)
+                {
+                    log::warn("{}: {}", node_path(signal_node), ex.what());
                     continue;
                 }
-
-                RoadSignal& road_signal = road.id_to_signal
-                                              .emplace(signal_id,
-                                                       RoadSignal(road_id,
-                                                                  signal_id,
-                                                                  signal_node.attribute("name").as_string(""),
-                                                                  s,
-                                                                  signal_node.attribute("t").as_double(0),
-                                                                  signal_node.attribute("dynamic").as_bool(),
-                                                                  signal_node.attribute("zOffset").as_double(0),
-                                                                  signal_node.attribute("value").as_double(0),
-                                                                  signal_node.attribute("height").as_double(NAN), // optional
-                                                                  signal_node.attribute("width").as_double(NAN),  // optional
-                                                                  signal_node.attribute("hOffset").as_double(0),
-                                                                  signal_node.attribute("pitch").as_double(0),
-                                                                  signal_node.attribute("roll").as_double(0),
-                                                                  signal_node.attribute("orientation").as_string("none"),
-                                                                  signal_node.attribute("country").as_string(""),
-                                                                  signal_node.attribute("type").as_string("none"),
-                                                                  signal_node.attribute("subtype").as_string("none"),
-                                                                  signal_node.attribute("unit").as_string(""),
-                                                                  signal_node.attribute("text").as_string("none")))
-                                              .first->second;
 
                 for (const pugi::xml_node validity_node : signal_node.children("validity"))
                 {
@@ -764,8 +763,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
                     const int to_lane = validity_node.attribute("toLane").as_int(INT_MAX);
-                    road_signal.lane_validities.emplace_back(from_lane, to_lane);
+                    road_signal->lane_validities.emplace_back(from_lane, to_lane);
                 }
+
+                road.id_to_signal.emplace(signal_id, std::move(*road_signal));
             }
         }
 
