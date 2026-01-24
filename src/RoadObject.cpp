@@ -1,4 +1,7 @@
 #include "RoadObject.h"
+#include "Utils.hpp"
+
+#include "fmt/format.h"
 
 #include <algorithm>
 #include <array>
@@ -9,62 +12,79 @@
 namespace odr
 {
 
-RoadObjectRepeat::RoadObjectRepeat(double s0,
-                                   double length,
-                                   double distance,
-                                   double t_start,
-                                   double t_end,
-                                   double width_start,
-                                   double width_end,
-                                   double height_start,
-                                   double height_end,
-                                   double z_offset_start,
-                                   double z_offset_end) :
+RoadObjectRepeat::RoadObjectRepeat(double                s0,
+                                   double                length,
+                                   double                distance,
+                                   double                t_start,
+                                   double                t_end,
+                                   double                height_start,
+                                   double                height_end,
+                                   double                z_offset_start,
+                                   double                z_offset_end,
+                                   std::optional<double> width_start,
+                                   std::optional<double> width_end) :
     s0(s0),
     length(length),
     distance(distance),
     t_start(t_start),
     t_end(t_end),
-    width_start(width_start),
-    width_end(width_end),
     height_start(height_start),
     height_end(height_end),
     z_offset_start(z_offset_start),
-    z_offset_end(z_offset_end)
+    z_offset_end(z_offset_end),
+    width_start(width_start),
+    width_end(width_end)
 {
+    require_or_throw(s0 >= 0, "s {} < 0", s0);
+    require_or_throw(length >= 0, "length {} < 0", length);
+    require_or_throw(distance >= 0, "distance {} < 0", distance);
+    require_or_throw(!std::isnan(t_start), "tStart is NaN");
+    require_or_throw(!std::isnan(t_end), "tEnd is NaN");
+    require_or_throw(height_start >= 0, "heightStart {} < 0", height_start);
+    require_or_throw(height_end >= 0, "heightEnd {} < 0", height_end);
+    require_or_throw(!std::isnan(z_offset_start), "zOffsetStart is NaN");
+    require_or_throw(!std::isnan(z_offset_end), "zOffsetEnd is NaN");
+    require_or_throw(!width_start || *width_start >= 0, "widthStart < 0");
+    require_or_throw(!width_end || *width_end >= 0, "widthEnd < 0");
 }
 
-RoadObjectCorner::RoadObjectCorner(int id, Vec3D pt, double height, Type type) : id(id), pt(pt), height(height), type(type) {}
+RoadObjectCorner::RoadObjectCorner(Vec3D pt, double height, Type type, std::optional<int> id) : pt(pt), height(height), type(type), id(id)
+{
+    require_or_throw(std::none_of(pt.begin(), pt.end(), [](double v) { return std::isnan(v); }), "pt [{}] has NaN values", fmt::join(pt, ", "));
+    require_or_throw(height >= 0, "height {} < 0", height);
+    if (type == Type::Road)
+        require_or_throw(pt[0] >= 0, "s {} < 0", pt[0]);
+}
 
-RoadObjectOutline::RoadObjectOutline(int id, std::string fill_type, std::string lane_type, bool outer, bool closed) :
+RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
+                                     std::optional<std::string> fill_type,
+                                     std::optional<std::string> lane_type,
+                                     std::optional<bool>        outer,
+                                     std::optional<bool>        closed) :
     id(id), fill_type(fill_type), lane_type(lane_type), outer(outer), closed(closed)
 {
 }
 
-RoadObject::RoadObject(std::string road_id,
-                       std::string id,
-                       double      s0,
-                       double      t0,
-                       double      z0,
-                       double      length,
-                       double      valid_length,
-                       double      width,
-                       double      radius,
-                       double      height,
-                       double      hdg,
-                       double      pitch,
-                       double      roll,
-                       std::string type,
-                       std::string name,
-                       std::string orientation,
-                       std::string subtype,
-                       bool        is_dynamic) :
+RoadObject::RoadObject(std::string                road_id,
+                       std::string                id,
+                       double                     s0,
+                       double                     t0,
+                       double                     z0,
+                       std::optional<double>      length,
+                       std::optional<double>      valid_length,
+                       std::optional<double>      width,
+                       std::optional<double>      radius,
+                       std::optional<double>      height,
+                       std::optional<double>      hdg,
+                       std::optional<double>      pitch,
+                       std::optional<double>      roll,
+                       std::optional<std::string> type,
+                       std::optional<std::string> name,
+                       std::optional<std::string> orientation,
+                       std::optional<std::string> subtype,
+                       std::optional<bool>        is_dynamic) :
     road_id(road_id),
     id(id),
-    type(type),
-    name(name),
-    orientation(orientation),
-    subtype(subtype),
     s0(s0),
     t0(t0),
     z0(z0),
@@ -76,11 +96,26 @@ RoadObject::RoadObject(std::string road_id,
     hdg(hdg),
     pitch(pitch),
     roll(roll),
+    type(type),
+    name(name),
+    orientation(orientation),
+    subtype(subtype),
     is_dynamic(is_dynamic)
 {
+    require_or_throw(s0 >= 0, "s {} < 0", s0);
+    require_or_throw(!std::isnan(t0), "t is NaN");
+    require_or_throw(!std::isnan(z0), "z is NaN");
+    require_or_throw(!length || *length > 0, "length <= 0");
+    require_or_throw(!valid_length || *valid_length >= 0, "validLength < 0");
+    require_or_throw(!width || !std::isnan(*width), "width is NaN");
+    require_or_throw(!radius || *radius > 0, "radius <= 0");
+    require_or_throw(!height || *height >= 0, "height < 0");
+    require_or_throw(!hdg || !std::isnan(*hdg), "hdg is NaN");
+    require_or_throw(!pitch || !std::isnan(*pitch), "pitch is NaN");
+    require_or_throw(!roll || !std::isnan(*roll), "roll is NaN");
 }
 
-Mesh3D RoadObject::get_cylinder(const double eps, const double radius, const double height)
+Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 {
     Mesh3D cylinder_mesh;
     cylinder_mesh.vertices.push_back({0, 0, 0});
@@ -115,7 +150,7 @@ Mesh3D RoadObject::get_cylinder(const double eps, const double radius, const dou
     return cylinder_mesh;
 }
 
-Mesh3D RoadObject::get_box(const double w, const double l, const double h)
+Mesh3D RoadObject::get_box(double w, double l, double h)
 {
     return Mesh3D({Vec3D{l / 2, w / 2, 0},
                    Vec3D{-l / 2, w / 2, 0},

@@ -23,6 +23,7 @@
 #include <climits>
 #include <cmath>
 #include <cstddef>
+#include <exception>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -589,7 +590,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             const RoadObjectCorner::Type default_local_outline_type =
                 abs_z_for_for_local_road_obj_outline ? RoadObjectCorner::Type::Local_AbsZ : RoadObjectCorner::Type::Local_RelZ;
 
-            for (pugi::xml_node object_node : road_node.child("objects").children("object"))
+            for (const pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
                 const std::string object_id = object_node.attribute("id").as_string("");
                 if (road.id_to_object.find(object_id) != road.id_to_object.end())
@@ -598,121 +599,103 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     continue;
                 }
 
-                const double s = object_node.attribute("s").as_double(NAN);
-                const double length = object_node.attribute("length").as_double(NAN);
-                const double width = object_node.attribute("width").as_double(NAN);
-                const double radius = object_node.attribute("radius").as_double(NAN);
-
-                if (std::isnan(s) || s < 0)
+                std::optional<RoadObject> road_object;
+                try
                 {
-                    log::warn("{}: s < 0", node_path(object_node));
+                    road_object.emplace(road_id,
+                                        object_id,
+                                        object_node.attribute("s").as_double(NAN),
+                                        object_node.attribute("t").as_double(NAN),
+                                        object_node.attribute("zOffset").as_double(NAN),
+                                        try_get_attribute<double>(object_node, "length"),
+                                        try_get_attribute<double>(object_node, "validLength"),
+                                        try_get_attribute<double>(object_node, "width"),
+                                        try_get_attribute<double>(object_node, "radius"),
+                                        try_get_attribute<double>(object_node, "height"),
+                                        try_get_attribute<double>(object_node, "hdg"),
+                                        try_get_attribute<double>(object_node, "pitch"),
+                                        try_get_attribute<double>(object_node, "roll"),
+                                        try_get_attribute<std::string>(object_node, "type"),
+                                        try_get_attribute<std::string>(object_node, "name"),
+                                        try_get_attribute<std::string>(object_node, "orientation"),
+                                        try_get_attribute<std::string>(object_node, "subtype"),
+                                        try_get_attribute<bool>(object_node, "dynamic"));
+                }
+                catch (const std::exception& ex)
+                {
+                    log::warn("{}: {}", node_path(object_node), ex.what());
                     continue;
                 }
-                // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1 Object Record:
-                // "radius of the object; alternative to width and length"
-                if ((std::isnan(radius) || radius < 0) && ((std::isnan(length) || length < 0) || (std::isnan(width) || width < 0)))
+
+                for (const pugi::xml_node repeat_node : object_node.children("repeat"))
                 {
-                    log::warn("{}: invalid dimensions length={}, width={}, radius={}", node_path(object_node), length, width, radius);
-                    continue;
-                }
-
-                const bool  is_dynamic_object = std::string(object_node.attribute("dynamic").as_string("no")) == "yes" ? true : false;
-                RoadObject& road_object = road.id_to_object
-                                              .emplace(object_id,
-                                                       RoadObject(road_id,
-                                                                  object_id,
-                                                                  s,
-                                                                  object_node.attribute("t").as_double(0),
-                                                                  object_node.attribute("zOffset").as_double(0),
-                                                                  length,
-                                                                  object_node.attribute("validLength").as_double(NAN), // optional
-                                                                  width,
-                                                                  radius,
-                                                                  object_node.attribute("height").as_double(0),
-                                                                  object_node.attribute("hdg").as_double(0),
-                                                                  object_node.attribute("pitch").as_double(0),
-                                                                  object_node.attribute("roll").as_double(0),
-                                                                  object_node.attribute("type").as_string(""),
-                                                                  object_node.attribute("name").as_string(""),
-                                                                  object_node.attribute("orientation").as_string(""),
-                                                                  object_node.attribute("subtype").as_string(""),
-                                                                  is_dynamic_object))
-                                              .first->second;
-
-                for (pugi::xml_node repeat_node : object_node.children("repeat"))
-                {
-                    const double s0 = repeat_node.attribute("s").as_double(NAN);
-                    const double width_start = repeat_node.attribute("widthStart").as_double(NAN);
-                    const double width_end = repeat_node.attribute("widthEnd").as_double(NAN);
-                    const double length = repeat_node.attribute("length").as_double(NAN);
-                    const double distance = repeat_node.attribute("distance").as_double(NAN);
-
-                    bool values_ok = true;
-                    for (auto [val_name, val_ptr] : {std::pair{"s", &s0},
-                                                     std::pair{"widthStart", &width_start},
-                                                     std::pair{"widthEnd", &width_end},
-                                                     std::pair{"length", &length},
-                                                     std::pair{"distance", &distance}})
+                    try
                     {
-                        if (std::isnan(*val_ptr) || (*val_ptr) < 0)
-                        {
-                            log::warn("{}: {} {} < 0", node_path(repeat_node), val_name, *val_ptr);
-                            values_ok = false;
-                        }
+                        road_object->repeats.emplace_back(repeat_node.attribute("s").as_double(NAN),
+                                                          repeat_node.attribute("length").as_double(NAN),
+                                                          repeat_node.attribute("distance").as_double(NAN),
+                                                          repeat_node.attribute("tStart").as_double(NAN),
+                                                          repeat_node.attribute("tEnd").as_double(NAN),
+                                                          repeat_node.attribute("heightStart").as_double(NAN),
+                                                          repeat_node.attribute("heightEnd").as_double(NAN),
+                                                          repeat_node.attribute("zOffsetStart").as_double(NAN),
+                                                          repeat_node.attribute("zOffsetEnd").as_double(NAN),
+                                                          try_get_attribute<double>(repeat_node, "widthStart"),
+                                                          try_get_attribute<double>(repeat_node, "widthEnd"));
                     }
-                    if (!values_ok)
-                        continue;
-
-                    road_object.repeats.emplace_back(s0,
-                                                     length,
-                                                     distance,
-                                                     repeat_node.attribute("tStart").as_double(NAN),
-                                                     repeat_node.attribute("tEnd").as_double(NAN),
-                                                     width_start,
-                                                     width_end,
-                                                     repeat_node.attribute("heightStart").as_double(NAN),
-                                                     repeat_node.attribute("heightEnd").as_double(NAN),
-                                                     repeat_node.attribute("zOffsetStart").as_double(NAN),
-                                                     repeat_node.attribute("zOffsetEnd").as_double(NAN));
+                    catch (const std::exception& ex)
+                    {
+                        log::warn("{}: {}", node_path(repeat_node), ex.what());
+                    }
                 }
 
                 // since v1.45 multiple <outline> are allowed and parent tag is <outlines>, not <object>; this supports v1.4 and v1.45+
                 const pugi::xml_node outlines_parent_node = object_node.child("outlines") ? object_node.child("outlines") : object_node;
                 for (const pugi::xml_node outline_node : outlines_parent_node.children("outline"))
                 {
-                    RoadObjectOutline road_object_outline(outline_node.attribute("id").as_int(-1),
-                                                          outline_node.attribute("fillType").as_string(""),
-                                                          outline_node.attribute("laneType").as_string(""),
-                                                          outline_node.attribute("outer").as_bool(true),
-                                                          outline_node.attribute("closed").as_bool(true));
+                    RoadObjectOutline road_object_outline(try_get_attribute<int>(outline_node, "id"),
+                                                          try_get_attribute<std::string>(outline_node, "fillType"),
+                                                          try_get_attribute<std::string>(outline_node, "laneType"),
+                                                          try_get_attribute<bool>(outline_node, "outer"),
+                                                          try_get_attribute<bool>(outline_node, "closed"));
 
                     for (const pugi::xml_node corner_local_node : outline_node.children("cornerLocal"))
                     {
-                        const Vec3D pt_local{corner_local_node.attribute("u").as_double(0),
-                                             corner_local_node.attribute("v").as_double(0),
-                                             corner_local_node.attribute("z").as_double(0)};
-
-                        RoadObjectCorner road_object_corner_local(corner_local_node.attribute("id").as_int(-1),
-                                                                  pt_local,
-                                                                  corner_local_node.attribute("height").as_double(0),
-                                                                  default_local_outline_type);
-                        road_object_outline.outline.push_back(road_object_corner_local);
+                        const Vec3D pt_local{corner_local_node.attribute("u").as_double(NAN),
+                                             corner_local_node.attribute("v").as_double(NAN),
+                                             corner_local_node.attribute("z").as_double(NAN)};
+                        try
+                        {
+                            road_object_outline.outline.emplace_back(pt_local,
+                                                                     corner_local_node.attribute("height").as_double(NAN),
+                                                                     default_local_outline_type,
+                                                                     try_get_attribute<int>(corner_local_node, "id"));
+                        }
+                        catch (const std::exception& ex)
+                        {
+                            log::warn("{}: {}", node_path(corner_local_node), ex.what());
+                        }
                     }
 
                     for (const pugi::xml_node corner_road_node : outline_node.children("cornerRoad"))
                     {
-                        const Vec3D pt_road{corner_road_node.attribute("s").as_double(0),
-                                            corner_road_node.attribute("t").as_double(0),
-                                            corner_road_node.attribute("dz").as_double(0)};
-
-                        RoadObjectCorner road_object_corner_road(corner_road_node.attribute("id").as_int(-1),
-                                                                 pt_road,
-                                                                 corner_road_node.attribute("height").as_double(0),
-                                                                 RoadObjectCorner::Type::Road);
-                        road_object_outline.outline.push_back(road_object_corner_road);
+                        const Vec3D pt_road{corner_road_node.attribute("s").as_double(NAN),
+                                            corner_road_node.attribute("t").as_double(NAN),
+                                            corner_road_node.attribute("dz").as_double(NAN)};
+                        try
+                        {
+                            road_object_outline.outline.emplace_back(pt_road,
+                                                                     corner_road_node.attribute("height").as_double(NAN),
+                                                                     RoadObjectCorner::Type::Road,
+                                                                     try_get_attribute<int>(corner_road_node, "id"));
+                        }
+                        catch (const std::exception& ex)
+                        {
+                            log::warn("{}: {}", node_path(corner_road_node), ex.what());
+                        }
                     }
 
-                    road_object.outlines.push_back(road_object_outline);
+                    road_object->outlines.push_back(std::move(road_object_outline));
                 }
 
                 for (const pugi::xml_node validity_node : object_node.children("validity"))
@@ -724,8 +707,10 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
                     const int to_lane = validity_node.attribute("toLane").as_int(INT_MAX);
-                    road_object.lane_validities.emplace_back(from_lane, to_lane);
+                    road_object->lane_validities.emplace_back(from_lane, to_lane);
                 }
+
+                road.id_to_object.emplace(object_id, std::move(*road_object));
             }
         }
         // parse signals

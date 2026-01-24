@@ -2,6 +2,7 @@
 #include "LaneSection.h"
 #include "OpenDriveMap.h"
 #include "Road.h"
+#include "RoadObject.h"
 #include <catch2/catch_test_macros.hpp>
 
 #include <type_traits>
@@ -16,12 +17,18 @@ struct OpenDriveFixture
     odr::OpenDriveMap odr_map;
 };
 
-TEST_CASE("Core types are movable", "[types]")
+TEST_CASE("odr types are movable", "[types]")
 {
     STATIC_REQUIRE(std::is_move_constructible_v<odr::OpenDriveMap>);
     STATIC_REQUIRE(std::is_move_assignable_v<odr::OpenDriveMap>);
     STATIC_REQUIRE(std::is_move_constructible_v<odr::Road>);
     STATIC_REQUIRE(std::is_move_assignable_v<odr::Road>);
+    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObject>);
+    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObject>);
+    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObjectRepeat>);
+    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObjectRepeat>);
+    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObjectOutline>);
+    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObjectOutline>);
     STATIC_REQUIRE(std::is_move_constructible_v<odr::LaneSection>);
     STATIC_REQUIRE(std::is_move_assignable_v<odr::LaneSection>);
     STATIC_REQUIRE(std::is_move_constructible_v<odr::Lane>);

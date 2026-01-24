@@ -396,57 +396,56 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     return road_signal_mesh;
 }
 
-Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double eps) const
+Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, const double eps) const
 {
-    std::vector<RoadObjectRepeat> repeats_copy = road_object.repeats; // make copy to keep method const
-    if (repeats_copy.empty() && road_object.outlines.empty())         // handle single object as 1 object repeat
+    std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
+    if (repeats_copy.empty() && road_obj.outlines.empty())         // handle single road object as one object repeat
     {
-        RoadObjectRepeat rp(NAN, 0, 1, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN);
+        RoadObjectRepeat rp(road_obj.s0,
+                            0,
+                            1,
+                            road_obj.t0,
+                            road_obj.t0,
+                            road_obj.height.value_or(0),
+                            road_obj.height.value_or(0),
+                            road_obj.z0,
+                            road_obj.z0,
+                            road_obj.width,
+                            road_obj.width);
         repeats_copy.push_back(rp);
     }
 
-    const Mat3D rot_mat = EulerAnglesToMatrix<double>(road_object.roll, road_object.pitch, road_object.hdg);
-
-    // helper functions - object repeat's attributes override object's attributes
-    auto get_t_s = [&](const RoadObjectRepeat& r, const double& p) -> double
-    { return (std::isnan(r.t_start) || std::isnan(r.t_end)) ? road_object.t0 : r.t_start + p * (r.t_end - r.t_start); };
-
-    auto get_z_s = [&](const RoadObjectRepeat& r, const double& p) -> double
-    {
-        return (std::isnan(r.z_offset_start) || std::isnan(r.z_offset_end)) ? road_object.z0
-                                                                            : r.z_offset_start + p * (r.z_offset_end - r.z_offset_start);
-    };
-
-    auto get_height_s = [&](const RoadObjectRepeat& r, const double& p) -> double
-    { return (std::isnan(r.height_start) || std::isnan(r.height_end)) ? road_object.height : r.height_start + p * (r.height_end - r.height_start); };
-
-    auto get_width_s = [&](const RoadObjectRepeat& r, const double& p) -> double
-    { return (std::isnan(r.width_start) || std::isnan(r.width_end)) ? road_object.width : r.width_start + p * (r.width_end - r.width_start); };
+    const Mat3D rot_mat = EulerAnglesToMatrix<double>(road_obj.roll.value_or(0), road_obj.pitch.value_or(0), road_obj.hdg.value_or(0));
 
     Mesh3D road_obj_mesh;
 
     // outline objects are not repeated, repeats only apply to the generic road object (box or cylinder)
     // note: if road object has an outline object AND repeat this will create generic objects at repeat AND the outline object (non-repeated)
-    for (const RoadObjectRepeat& repeat : repeats_copy)
+    for (const RoadObjectRepeat& r : repeats_copy)
     {
-        const double s_start = std::isnan(repeat.s0) ? road_object.s0 : repeat.s0;
-        const double s_end = std::min(s_start + repeat.length, this->length);
+        const double s_start = r.s0;
+        const double s_end = std::min(s_start + r.length, this->length);
 
-        if (repeat.distance != 0)
+        // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1.1 Object Repeat Record:
+        // "distance between two instances of the object;
+        // If this value is zero, then the object is considered to be a continuous feature like a guard rail, a wall etc."
+        if (r.distance != 0)
         {
-            for (double s = s_start; s <= s_end; s += repeat.distance)
+            for (double s = s_start; s <= s_end; s += r.distance)
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
-                const double t_s = get_t_s(repeat, p);
-                const double z_s = get_z_s(repeat, p);
-                const double height_s = get_height_s(repeat, p);
-                const double w_s = get_width_s(repeat, p);
+                const double t_s = r.t_start + p * (r.t_end - r.t_start);
+                const double h_s = r.height_start + p * (r.height_end - r.height_start);
+                const double z_s = r.z_offset_start + p * (r.z_offset_end - r.z_offset_start);
+                const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
 
                 Mesh3D single_road_obj_mesh;
-                if (road_object.radius > 0)
-                    single_road_obj_mesh = RoadObject::get_cylinder(eps, road_object.radius, height_s);
-                else if (w_s > 0 && road_object.length > 0)
-                    single_road_obj_mesh = RoadObject::get_box(w_s, road_object.length, height_s);
+                if (road_obj.radius)
+                    single_road_obj_mesh = RoadObject::get_cylinder(eps, road_obj.radius.value(), h_s);
+                else if (road_obj.length && w_s > 0)
+                    single_road_obj_mesh = RoadObject::get_box(w_s, road_obj.length.value(), h_s);
+                else
+                    single_road_obj_mesh = RoadObject::get_box(0.1, 0.1, 0.1); // fallback object
 
                 Vec3D       e_s, e_t, e_h;
                 const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
@@ -456,7 +455,6 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
                     pt_uvz = MatVecMultiplication(rot_mat, pt_uvz);
                     pt_uvz = MatVecMultiplication(base_mat, pt_uvz);
                     pt_uvz = add(pt_uvz, p0);
-
                     single_road_obj_mesh.st_coordinates.push_back({s, t_s});
                 }
 
@@ -471,15 +469,15 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
             for (const double& s : this->ref_line.approximate_linear(eps, s_start, s_end))
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
-                const double t_s = get_t_s(repeat, p);
-                const double z_s = get_z_s(repeat, p);
-                const double height_s = get_height_s(repeat, p);
-                const double w_s = get_width_s(repeat, p);
+                const double t_s = r.t_start + p * (r.t_end - r.t_start);
+                const double h_s = r.height_start + p * (r.height_end - r.height_start);
+                const double z_s = r.z_offset_start + p * (r.z_offset_end - r.z_offset_start);
+                const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
 
                 continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s));
                 continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_s));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_s + height_s));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s + height_s));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_s + h_s));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s + h_s));
 
                 const std::array<Vec2D, 4> s_t_coords = {{{s, t_s - 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s - 0.5 * w_s}}};
                 continuous_road_obj_mesh.st_coordinates.insert(continuous_road_obj_mesh.st_coordinates.end(), s_t_coords.begin(), s_t_coords.end());
@@ -508,14 +506,14 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
         }
     }
 
-    for (const RoadObjectOutline& road_object_outline : road_object.outlines)
+    for (const RoadObjectOutline& road_object_outline : road_obj.outlines)
     {
         // can't add point object
         if (road_object_outline.outline.size() < 2)
             continue;
 
         Vec3D       e_s, e_t, e_h;
-        const Vec3D p0 = this->get_xyz(road_object.s0, road_object.t0, road_object.z0, &e_s, &e_t, &e_h);
+        const Vec3D p0 = this->get_xyz(road_obj.s0, road_obj.t0, road_obj.z0, &e_s, &e_t, &e_h);
 
         const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
 
@@ -543,7 +541,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
                 }
 
                 outline_road_obj_mesh.vertices.push_back(pt_top);
-                outline_road_obj_mesh.st_coordinates.push_back({road_object.s0, road_object.t0});
+                outline_road_obj_mesh.st_coordinates.push_back({road_obj.s0, road_obj.t0});
             }
         }
 
@@ -564,7 +562,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_object, const double ep
             }
 
             outline_road_obj_mesh.vertices.push_back(pt_base);
-            outline_road_obj_mesh.st_coordinates.push_back({road_object.s0, road_object.t0});
+            outline_road_obj_mesh.st_coordinates.push_back({road_obj.s0, road_obj.t0});
         }
 
         // run 2D triangulation on top vertices

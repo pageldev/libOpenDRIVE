@@ -24,20 +24,27 @@ namespace odr
 {
 
 template<class... Args>
-inline void check(const bool ok, fmt::format_string<Args...> fmt, Args&&... args)
+inline void check(bool ok, fmt::format_string<Args...> fmt, Args&&... args)
 {
     if (!ok)
         log::warn(fmt, std::forward<Args>(args)...);
 }
 
 template<class Repair, class... Args>
-inline void check_and_repair(const bool ok, Repair&& repair, fmt::format_string<Args...> fmt, Args&&... args)
+inline void check_and_repair(bool ok, Repair&& repair, fmt::format_string<Args...> fmt, Args&&... args)
 {
     if (!ok)
     {
         log::warn(fmt, std::forward<Args>(args)...);
         std::forward<Repair>(repair)();
     }
+}
+
+template<class... Args>
+inline void require_or_throw(bool ok, fmt::format_string<Args...> fmt, Args&&... args)
+{
+    if (!ok)
+        throw std::runtime_error(fmt::format(fmt, std::forward<Args>(args)...));
 }
 
 template<class C, class T, T C::*member>
@@ -318,7 +325,7 @@ bool check_class_members_equal(const T& obj_a, const T& obj_b, S field, Ss... fi
     return check_class_members_equal(obj_a, obj_b, fields...);
 };
 
-inline int next_towards_zero(const int value)
+inline int next_towards_zero(int value)
 {
     if (value > 0)
         return value - 1;
@@ -345,13 +352,19 @@ inline std::string node_path(pugi::xml_node node)
     return fmt::format("/{}", fmt::join(parts, "/"));
 }
 
+inline bool parse_bool(std::string_view s)
+{
+    return s == "1" || s == "true" || s == "yes";
+}
+
 template<typename T>
-std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_name, const log::Level level = log::Level::Info)
+std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
 {
     const auto attr = node.attribute(attr_name);
     if (!attr)
     {
-        log::log(level, "{}: missing attribute '{}'", node_path(node), attr_name);
+        if (log_lvl)
+            log::log(*log_lvl, "{}: missing attribute '{}'", node_path(node), attr_name);
         return std::nullopt;
     }
 
@@ -360,6 +373,10 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
     {
         return std::string(value);
     }
+    else if constexpr (std::is_same_v<T, bool>)
+    {
+        return parse_bool(value);
+    }
     else if constexpr (std::is_arithmetic_v<T>)
     {
         T           result{};
@@ -367,7 +384,8 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
         auto [ptr, ec] = std::from_chars(value, end, result);
         if (ec != std::errc{} || ptr != end)
         {
-            log::log(level, "{}/@{}: failed to parse '{}' as numeric", node_path(node), attr_name, value);
+            if (log_lvl)
+                log::log(*log_lvl, "{}/@{}: failed to parse '{}' as numeric", node_path(node), attr_name, value);
             return std::nullopt;
         }
         return result;
