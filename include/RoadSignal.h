@@ -20,16 +20,16 @@ struct RoadSignal
                std::string                type,
                std::string                subtype,
                std::string                orientation,
-               std::optional<double>      value,
-               std::optional<double>      height,
-               std::optional<double>      width,
-               std::optional<double>      hOffset,
-               std::optional<double>      pitch,
-               std::optional<double>      roll,
-               std::optional<std::string> name,
-               std::optional<std::string> unit,
-               std::optional<std::string> text,
-               std::optional<std::string> country);
+               std::optional<double>      value = std::nullopt,
+               std::optional<double>      height = std::nullopt,
+               std::optional<double>      width = std::nullopt,
+               std::optional<double>      hOffset = std::nullopt,
+               std::optional<double>      pitch = std::nullopt,
+               std::optional<double>      roll = std::nullopt,
+               std::optional<std::string> name = std::nullopt,
+               std::optional<std::string> unit = std::nullopt,
+               std::optional<std::string> text = std::nullopt,
+               std::optional<std::string> country = std::nullopt);
 
     static constexpr double Thickness = 0.2;
     static constexpr double DefaultWidth = 0.6;
