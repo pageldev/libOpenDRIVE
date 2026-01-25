@@ -471,17 +471,17 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 for (const pugi::xml_node roadmark_node : lane_node.children("roadMark"))
                 {
-                    std::optional<RoadMarkGroup> roadmark_group;
+                    std::optional<RoadMark> roadmark;
                     try
                     {
-                        roadmark_group.emplace(roadmark_node.attribute("sOffset").as_double(NAN),
-                                               roadmark_node.attribute("type").as_string(""),
-                                               roadmark_node.attribute("color").as_string(""),
-                                               try_get_attribute<double>(roadmark_node, "width"),
-                                               try_get_attribute<double>(roadmark_node, "height"),
-                                               try_get_attribute<std::string>(roadmark_node, "weight"),
-                                               try_get_attribute<std::string>(roadmark_node, "material"),
-                                               try_get_attribute<std::string>(roadmark_node, "laneChange"));
+                        roadmark.emplace(roadmark_node.attribute("sOffset").as_double(NAN),
+                                         roadmark_node.attribute("type").as_string(""),
+                                         roadmark_node.attribute("color").as_string(""),
+                                         try_get_attribute<double>(roadmark_node, "width"),
+                                         try_get_attribute<double>(roadmark_node, "height"),
+                                         try_get_attribute<std::string>(roadmark_node, "weight"),
+                                         try_get_attribute<std::string>(roadmark_node, "material"),
+                                         try_get_attribute<std::string>(roadmark_node, "laneChange"));
                     }
                     catch (const std::exception& ex)
                     {
@@ -525,11 +525,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                                 roadmark_type->lines.emplace_back(std::move(*roadmark_line));
                             }
-                            roadmark_group->type_elem = roadmark_type;
+                            roadmark->type_elem = roadmark_type;
                         }
                     }
 
-                    lane.s_to_roadmark_group.emplace(s0 + roadmark_group->s_offset, std::move(*roadmark_group));
+                    lane.s_to_roadmark.emplace(s0 + roadmark->s_offset, std::move(*roadmark));
                 }
             }
 

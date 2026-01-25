@@ -41,16 +41,16 @@ struct RoadMarkType
     std::vector<RoadMarkLine> lines;
 };
 
-struct RoadMarkGroup
+struct RoadMark
 {
-    RoadMarkGroup(double                     s_offset,
-                  std::string                type,
-                  std::string                color,
-                  std::optional<double>      width = std::nullopt,
-                  std::optional<double>      height = std::nullopt,
-                  std::optional<std::string> weight = std::nullopt,
-                  std::optional<std::string> material = std::nullopt,
-                  std::optional<std::string> lane_change = std::nullopt);
+    RoadMark(double                     s_offset,
+             std::string                type,
+             std::string                color,
+             std::optional<double>      width = std::nullopt,
+             std::optional<double>      height = std::nullopt,
+             std::optional<std::string> weight = std::nullopt,
+             std::optional<std::string> material = std::nullopt,
+             std::optional<std::string> lane_change = std::nullopt);
 
     static constexpr double StandardWidth = 0.12;
     static constexpr double BoldWidth = 0.25;

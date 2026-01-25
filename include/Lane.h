@@ -65,8 +65,8 @@ struct Lane
     CubicProfile lane_width;
     CubicProfile outer_border;
 
-    std::map<double, HeightOffset>  s_to_height_offset;
-    std::map<double, RoadMarkGroup> s_to_roadmark_group;
+    std::map<double, HeightOffset> s_to_height_offset;
+    std::map<double, RoadMark>     s_to_roadmark;
 };
 
 } // namespace odr

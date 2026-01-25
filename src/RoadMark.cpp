@@ -24,14 +24,14 @@ RoadMarkType::RoadMarkType(std::string name, std::optional<double> width) : name
     require_or_throw(!width || *width > 0, "width <= 0");
 }
 
-RoadMarkGroup::RoadMarkGroup(double                     s_offset,
-                             std::string                type,
-                             std::string                color,
-                             std::optional<double>      width,
-                             std::optional<double>      height,
-                             std::optional<std::string> weight,
-                             std::optional<std::string> material,
-                             std::optional<std::string> lane_change) :
+RoadMark::RoadMark(double                     s_offset,
+                   std::string                type,
+                   std::string                color,
+                   std::optional<double>      width,
+                   std::optional<double>      height,
+                   std::optional<std::string> weight,
+                   std::optional<std::string> material,
+                   std::optional<std::string> lane_change) :
     s_offset(s_offset), type(type), color(color), width(width), height(height), weight(weight), material(material), lane_change(lane_change)
 {
     require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);

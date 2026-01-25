@@ -25,55 +25,53 @@ Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::
 
 std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
 {
-    if ((s_start == s_end) || this->s_to_roadmark_group.empty())
+    if ((s_start == s_end) || this->s_to_roadmark.empty())
         return {};
 
     // OpenDRIVE Format Specification, Rev. 1.8.1, 11.8 Road markings:
     // "The <roadMark> elements of a lane shall remain valid until another <roadMark> element starts or the lane section ends."
-    auto rm_iter_start = this->s_to_roadmark_group.upper_bound(s_start); // first element > s
-    if (rm_iter_start != this->s_to_roadmark_group.begin())
+    auto rm_iter_start = this->s_to_roadmark.upper_bound(s_start); // first element > s
+    if (rm_iter_start != this->s_to_roadmark.begin())
         rm_iter_start--;
-    auto rm_iter_end = this->s_to_roadmark_group.lower_bound(s_end); // first element >= s
+    auto rm_iter_end = this->s_to_roadmark.lower_bound(s_end); // first element >= s
 
     std::vector<SingleRoadMark> roadmarks;
-    for (auto rm_group_iter = rm_iter_start; rm_group_iter != rm_iter_end; rm_group_iter++)
+    for (auto rm_iter = rm_iter_start; rm_iter != rm_iter_end; rm_iter++)
     {
-        const double         roadmark_group_s0 = rm_group_iter->first;
-        const RoadMarkGroup& roadmark_group = rm_group_iter->second;
+        const double    roadmark_s0 = rm_iter->first;
+        const RoadMark& roadmark = rm_iter->second;
 
-        const double s_start_roadmark_group = std::max(roadmark_group_s0, s_start);
-        const double s_end_roadmark_group = (std::next(rm_group_iter) == rm_iter_end) ? s_end : std::min(std::next(rm_group_iter)->first, s_end);
+        double width = RoadMark::StandardWidth;
+        if (roadmark.width)
+            width = roadmark.width.value();
+        else if (roadmark.weight.value_or("standard") == "bold")
+            width = RoadMark::BoldWidth;
 
-        double width = RoadMarkGroup::StandardWidth;
-        if (roadmark_group.width)
-            width = roadmark_group.width.value();
-        else if (roadmark_group.weight.value_or("standard") == "bold")
-            width = RoadMarkGroup::BoldWidth;
+        const double s_end_roadmark = (std::next(rm_iter) == rm_iter_end) ? s_end : std::min(std::next(rm_iter)->first, s_end);
 
-        if (roadmark_group.type_elem)
+        if (roadmark.type_elem)
         {
-            for (const RoadMarkLine& roadmark_line : roadmark_group.type_elem->lines)
+            for (const RoadMarkLine& rm_line : roadmark.type_elem->lines)
             {
-                if (roadmark_line.length < 1e-9)
+                if (rm_line.length < 1e-9)
                     continue;
 
-                width = roadmark_line.width.value_or(width);
-                const double space = roadmark_line.space.value_or(0);
+                width = rm_line.width.value_or(width);
+                const double space = rm_line.space.value_or(0);
 
-                const double s0_roadmarks_line = roadmark_group_s0 + roadmark_line.sOffset;
-                for (double s_start_single_roadmark = s0_roadmarks_line; s_start_single_roadmark < s_end_roadmark_group;
-                     s_start_single_roadmark += (roadmark_line.length + space))
+                const double s0_roadmarks_line = roadmark_s0 + rm_line.sOffset;
+                for (double s_single_rm = s0_roadmarks_line; s_single_rm < s_end_roadmark; s_single_rm += (rm_line.length + space))
                 {
-                    const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmark_line.length);
-                    roadmarks.emplace_back(s_start_single_roadmark, s_end_single_roadmark, roadmark_line.tOffset, width, roadmark_group.type);
-                    if (space < 1e-9) // treat roadmark <line> with space = 0 as single roadmark
+                    const double s_end_single_rm = std::min(s_end, s_single_rm + rm_line.length);
+                    roadmarks.emplace_back(s_single_rm, s_end_single_rm, rm_line.tOffset, width, roadmark.type);
+                    if (space < 1e-9) // treat roadMark::type::line with space = 0 as single roadmark
                         break;
                 }
             }
         }
         else
         {
-            roadmarks.emplace_back(s_start_roadmark_group, s_end_roadmark_group, 0, width, roadmark_group.type);
+            roadmarks.emplace_back(std::max(roadmark_s0, s_start), s_end_roadmark, 0, width, roadmark.type);
         }
     }
 
