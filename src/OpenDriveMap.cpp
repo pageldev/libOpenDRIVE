@@ -403,8 +403,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 Lane& lane =
                     lanesection.id_to_lane
-                        .emplace(lane_id,
-                                 Lane(road_id, s0, lane_id, lane_node.attribute("level").as_bool(false), lane_node.attribute("type").as_string("")))
+                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("level").as_bool(false), lane_node.attribute("type").as_string("")))
                         .first->second;
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
@@ -924,50 +923,46 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
     RoadObjectsMesh& road_objects_mesh = out_mesh.road_objects_mesh;
     RoadSignalsMesh& road_signals_mesh = out_mesh.road_signals_mesh;
 
-    for (const auto& id_road : this->id_to_road)
+    for (const auto& [road_id, road] : this->id_to_road)
     {
-        const Road& road = id_road.second;
-        lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road.id;
-        roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road.id;
-        road_objects_mesh.road_start_indices[road_objects_mesh.vertices.size()] = road.id;
+        lanes_mesh.road_start_indices[lanes_mesh.vertices.size()] = road_id;
+        roadmarks_mesh.road_start_indices[roadmarks_mesh.vertices.size()] = road_id;
+        road_objects_mesh.road_start_indices[road_objects_mesh.vertices.size()] = road_id;
 
-        for (const auto& s_lanesec : road.s_to_lanesection)
+        for (const auto& [lanesec_s0, lanesec] : road.s_to_lanesection)
         {
-            const LaneSection& lanesec = s_lanesec.second;
-            lanes_mesh.lanesec_start_indices[lanes_mesh.vertices.size()] = lanesec.s0;
-            roadmarks_mesh.lanesec_start_indices[roadmarks_mesh.vertices.size()] = lanesec.s0;
-            for (const auto& id_lane : lanesec.id_to_lane)
+            lanes_mesh.lanesec_start_indices[lanes_mesh.vertices.size()] = lanesec_s0;
+            roadmarks_mesh.lanesec_start_indices[roadmarks_mesh.vertices.size()] = lanesec_s0;
+            for (const auto& [lane_id, lane] : lanesec.id_to_lane)
             {
-                const Lane&       lane = id_lane.second;
+                const LaneKey     lane_key(road_id, lanesec_s0, lane_id);
                 const std::size_t lanes_idx_offset = lanes_mesh.vertices.size();
-                lanes_mesh.lane_start_indices[lanes_idx_offset] = lane.id;
-                lanes_mesh.add_mesh(road.get_lane_mesh(lane, eps));
+                lanes_mesh.lane_start_indices[lanes_idx_offset] = lane_id;
+                lanes_mesh.add_mesh(road.get_lane_mesh(lane_key, eps));
 
                 std::size_t roadmarks_idx_offset = roadmarks_mesh.vertices.size();
-                roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane.id;
+                roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane_id;
                 const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s0, road.get_lanesection_end(lanesec));
                 for (const SingleRoadMark& roadmark : roadmarks)
                 {
                     roadmarks_idx_offset = roadmarks_mesh.vertices.size();
                     roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
-                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane, roadmark, eps));
+                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane_key, roadmark, eps));
                 }
             }
         }
 
-        for (const auto& id_road_object : road.id_to_object)
+        for (const auto& [road_object_id, road_object] : road.id_to_object)
         {
-            const RoadObject& road_object = id_road_object.second;
             const std::size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
-            road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object.id;
+            road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object_id;
             road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps));
         }
 
-        for (const auto& id_signal : road.id_to_signal)
+        for (const auto& [road_signal_id, road_signal] : road.id_to_signal)
         {
-            const RoadSignal& road_signal = id_signal.second;
             const std::size_t signals_idx_offset = road_signals_mesh.vertices.size();
-            road_signals_mesh.road_signal_start_indices[signals_idx_offset] = road_signal.id;
+            road_signals_mesh.road_signal_start_indices[signals_idx_offset] = road_signal_id;
             road_signals_mesh.add_mesh(road.get_road_signal_mesh(road_signal));
         }
     }

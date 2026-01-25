@@ -1,5 +1,6 @@
 #pragma once
 #include "Geometries/CubicSpline.h"
+#include "Lane.h"
 #include "LaneSection.h"
 #include "Math.hpp"
 #include "Mesh.h"
@@ -97,20 +98,18 @@ public:
     Vec3D get_xyz(const double s, const double t, const double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr) const;
     Vec3D get_surface_pt(double s, const double t, Vec3D* vn = nullptr) const;
 
-    Line3D get_lane_border_line(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer = true) const;
-    Line3D get_lane_border_line(const Lane& lane, const double eps, const bool outer = true) const;
+    Line3D get_lane_border_line(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
+    Line3D get_lane_border_line(const LaneKey& lane_key, double eps, bool outer = true) const;
 
-    Mesh3D get_lane_mesh(
-        const Lane& lane, const double s_start, const double s_end, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
-    Mesh3D get_lane_mesh(const Lane& lane, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    Mesh3D get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    Mesh3D get_lane_mesh(const LaneKey& lane_key, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
 
-    Mesh3D get_roadmark_mesh(const Lane& lane, const SingleRoadMark& roadmark, const double eps) const;
+    Mesh3D get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& roadmark, double eps) const;
     Mesh3D get_road_signal_mesh(const RoadSignal& road_signal) const;
-    Mesh3D get_road_object_mesh(const RoadObject& road_object, const double eps) const;
+    Mesh3D get_road_object_mesh(const RoadObject& road_object, double eps) const;
 
-    std::set<double>
-    approximate_lane_border_linear(const Lane& lane, const double s_start, const double s_end, const double eps, const bool outer = true) const;
-    std::set<double> approximate_lane_border_linear(const Lane& lane, const double eps, const bool outer = true) const;
+    std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
+    std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double eps, bool outer = true) const;
 
     double      length = 0;
     std::string id = "";

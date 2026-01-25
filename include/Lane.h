@@ -50,11 +50,10 @@ inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
 
 struct Lane
 {
-    Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
+    Lane(int id, bool level, std::string type);
 
     std::vector<SingleRoadMark> get_roadmarks(const double s_start, const double s_end) const;
 
-    LaneKey     key;
     int         id;
     bool        level = false;
     std::string type = "";
