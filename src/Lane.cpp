@@ -1,6 +1,7 @@
 #include "Lane.h"
 #include "Log.hpp"
 #include "RoadMark.h"
+#include "Utils.hpp"
 
 #include <algorithm>
 #include <fmt/format.h>
@@ -53,7 +54,7 @@ std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const doub
         {
             for (const RoadMarkLine& rm_line : roadmark.type_elem->lines)
             {
-                if (rm_line.length < 1e-9)
+                if (is_zero(rm_line.length))
                     continue;
 
                 width = rm_line.width.value_or(width);
@@ -64,7 +65,7 @@ std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const doub
                 {
                     const double s_end_single_rm = std::min(s_end, s_single_rm + rm_line.length);
                     roadmarks.emplace_back(s_single_rm, s_end_single_rm, rm_line.tOffset, width, roadmark.type);
-                    if (space < 1e-9) // treat roadMark::type::line with space = 0 as single roadmark
+                    if (is_zero(space)) // treat roadMark::type::line with space = 0 as single roadmark
                         break;
                 }
             }

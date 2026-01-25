@@ -348,7 +348,7 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double eps, std::vector<uint3
 
 Mesh3D Road::get_roadmark_mesh(const Lane& lane, const SingleRoadMark& roadmark, const double eps) const
 {
-    if (roadmark.width < 1e-9)
+    if (is_zero(roadmark.width))
         return Mesh3D{};
 
     const std::set<double> s_vals = this->approximate_lane_border_linear(lane, roadmark.s0, roadmark.s1, eps, true);
@@ -435,7 +435,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, const double eps) 
         // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1.1 Object Repeat Record:
         // "distance between two instances of the object;
         // If this value is zero, then the object is considered to be a continuous feature like a guard rail, a wall etc."
-        if (r.distance != 0)
+        if (!is_zero(r.distance))
         {
             for (double s = s_start; s <= s_end; s += r.distance)
             {
@@ -527,7 +527,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, const double eps) 
 
         // add top outline first - ensure the top vertices are at the front
         const bool is_flat_object = std::all_of(
-            road_object_outline.outline.begin(), road_object_outline.outline.end(), [](const RoadObjectCorner& c) { return c.height == 0; });
+            road_object_outline.outline.begin(), road_object_outline.outline.end(), [](const RoadObjectCorner& c) { return is_zero(c.height); });
         if (!is_flat_object)
         {
             for (const RoadObjectCorner& corner : road_object_outline.outline)

@@ -396,4 +396,9 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
     }
 }
 
+inline bool is_zero(double x)
+{
+    return std::abs(x) < 1e-9;
+}
+
 } // namespace odr
