@@ -1,4 +1,6 @@
 #include "Lane.h"
+#include "Log.hpp"
+#include "RoadMark.h"
 
 #include <algorithm>
 #include <fmt/format.h>
@@ -21,77 +23,57 @@ Lane::Lane(std::string road_id, double lanesection_s0, int id, bool level, std::
 {
 }
 
-std::vector<RoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
+std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
 {
-    if ((s_start == s_end) || this->roadmark_groups.empty())
+    if ((s_start == s_end) || this->s_to_roadmark_group.empty())
         return {};
 
-    auto s_start_rm_iter =
-        std::upper_bound(this->roadmark_groups.begin(),
-                         this->roadmark_groups.end(),
-                         s_start,
-                         [](const double& s, const RoadMarkGroup& rmg) -> bool { return s < (rmg.lanesection_s0 + rmg.s_offset); });
-    if (s_start_rm_iter != this->roadmark_groups.begin())
-        s_start_rm_iter--;
+    // OpenDRIVE Format Specification, Rev. 1.8.1, 11.8 Road markings:
+    // "The <roadMark> elements of a lane shall remain valid until another <roadMark> element starts or the lane section ends."
+    auto rm_iter_start = this->s_to_roadmark_group.upper_bound(s_start); // first element > s
+    if (rm_iter_start != this->s_to_roadmark_group.begin())
+        rm_iter_start--;
+    auto rm_iter_end = this->s_to_roadmark_group.lower_bound(s_end); // first element >= s
 
-    auto s_end_rm_iter = std::lower_bound(this->roadmark_groups.begin(),
-                                          this->roadmark_groups.end(),
-                                          s_end,
-                                          [](const RoadMarkGroup& rmg, const double& s) -> bool { return (rmg.lanesection_s0 + rmg.s_offset) < s; });
-
-    std::vector<RoadMark> roadmarks;
-    for (auto rm_group_iter = s_start_rm_iter; rm_group_iter != s_end_rm_iter; rm_group_iter++)
+    std::vector<SingleRoadMark> roadmarks;
+    for (auto rm_group_iter = rm_iter_start; rm_group_iter != rm_iter_end; rm_group_iter++)
     {
-        const RoadMarkGroup& roadmark_group = *rm_group_iter;
+        const double         roadmark_group_s0 = rm_group_iter->first;
+        const RoadMarkGroup& roadmark_group = rm_group_iter->second;
 
-        const double roadmark_group_s0 = roadmark_group.lanesection_s0 + roadmark_group.s_offset;
         const double s_start_roadmark_group = std::max(roadmark_group_s0, s_start);
-        const double s_end_roadmark_group = (std::next(rm_group_iter) == s_end_rm_iter)
-                                                ? s_end
-                                                : std::min(std::next(rm_group_iter)->lanesection_s0 + std::next(rm_group_iter)->s_offset, s_end);
+        const double s_end_roadmark_group = (std::next(rm_group_iter) == rm_iter_end) ? s_end : std::min(std::next(rm_group_iter)->first, s_end);
 
-        double width = roadmark_group.weight == "bold" ? ROADMARK_WEIGHT_BOLD_WIDTH : ROADMARK_WEIGHT_STANDARD_WIDTH;
-        if (roadmark_group.roadmark_lines.empty())
+        double width = RoadMarkGroup::StandardWidth;
+        if (roadmark_group.width)
+            width = roadmark_group.width.value();
+        else if (roadmark_group.weight.value_or("standard") == "bold")
+            width = RoadMarkGroup::BoldWidth;
+
+        if (roadmark_group.type_elem)
         {
-            if (roadmark_group.width > 0)
-                width = roadmark_group.width;
+            for (const RoadMarkLine& roadmark_line : roadmark_group.type_elem->lines)
+            {
+                if (roadmark_line.length < 1e-9)
+                    continue;
 
-            roadmarks.push_back(RoadMark(this->key.road_id,
-                                         this->key.lanesection_s0,
-                                         this->id,
-                                         roadmark_group_s0,
-                                         s_start_roadmark_group,
-                                         s_end_roadmark_group,
-                                         0,
-                                         width,
-                                         roadmark_group.type));
+                width = roadmark_line.width.value_or(width);
+                const double space = roadmark_line.space.value_or(0);
+
+                const double s0_roadmarks_line = roadmark_group_s0 + roadmark_line.sOffset;
+                for (double s_start_single_roadmark = s0_roadmarks_line; s_start_single_roadmark < s_end_roadmark_group;
+                     s_start_single_roadmark += (roadmark_line.length + space))
+                {
+                    const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmark_line.length);
+                    roadmarks.emplace_back(s_start_single_roadmark, s_end_single_roadmark, roadmark_line.tOffset, width, roadmark_group.type);
+                    if (space < 1e-9) // treat roadmark <line> with space = 0 as single roadmark
+                        break;
+                }
+            }
         }
         else
         {
-            for (const RoadMarksLine& roadmarks_line : roadmark_group.roadmark_lines)
-            {
-                if (roadmarks_line.width > 0)
-                    width = roadmarks_line.width;
-
-                if ((roadmarks_line.length + roadmarks_line.space) == 0)
-                    continue;
-
-                const double s0_roadmarks_line = roadmarks_line.group_s0 + roadmarks_line.s_offset;
-                for (double s_start_single_roadmark = s0_roadmarks_line; s_start_single_roadmark < s_end_roadmark_group;
-                     s_start_single_roadmark += (roadmarks_line.length + roadmarks_line.space))
-                {
-                    const double s_end_single_roadmark = std::min(s_end, s_start_single_roadmark + roadmarks_line.length);
-                    roadmarks.push_back(RoadMark(this->key.road_id,
-                                                 this->key.lanesection_s0,
-                                                 this->id,
-                                                 roadmarks_line.group_s0,
-                                                 s_start_single_roadmark,
-                                                 s_end_single_roadmark,
-                                                 roadmarks_line.t_offset,
-                                                 width,
-                                                 roadmark_group.type + roadmarks_line.name));
-                }
-            }
+            roadmarks.emplace_back(s_start_roadmark_group, s_end_roadmark_group, 0, width, roadmark_group.type);
         }
     }
 

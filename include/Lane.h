@@ -52,7 +52,7 @@ struct Lane
 {
     Lane(std::string road_id, double lanesection_s0, int id, bool level, std::string type);
 
-    std::vector<RoadMark> get_roadmarks(const double s_start, const double s_end) const;
+    std::vector<SingleRoadMark> get_roadmarks(const double s_start, const double s_end) const;
 
     LaneKey     key;
     int         id;
@@ -65,8 +65,8 @@ struct Lane
     CubicProfile lane_width;
     CubicProfile outer_border;
 
-    std::map<double, HeightOffset> s_to_height_offset;
-    std::set<RoadMarkGroup>        roadmark_groups;
+    std::map<double, HeightOffset>  s_to_height_offset;
+    std::map<double, RoadMarkGroup> s_to_roadmark_group;
 };
 
 } // namespace odr

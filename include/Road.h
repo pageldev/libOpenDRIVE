@@ -4,6 +4,7 @@
 #include "Math.hpp"
 #include "Mesh.h"
 #include "RefLine.h"
+#include "RoadMark.h"
 #include "RoadObject.h"
 #include "RoadSignal.h"
 
@@ -103,7 +104,7 @@ public:
         const Lane& lane, const double s_start, const double s_end, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
     Mesh3D get_lane_mesh(const Lane& lane, const double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
 
-    Mesh3D get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const double eps) const;
+    Mesh3D get_roadmark_mesh(const Lane& lane, const SingleRoadMark& roadmark, const double eps) const;
     Mesh3D get_road_signal_mesh(const RoadSignal& road_signal) const;
     Mesh3D get_road_object_mesh(const RoadObject& road_object, const double eps) const;
 

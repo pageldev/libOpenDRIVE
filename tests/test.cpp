@@ -2,6 +2,7 @@
 #include "LaneSection.h"
 #include "OpenDriveMap.h"
 #include "Road.h"
+#include "RoadMark.h"
 #include "RoadObject.h"
 #include <catch2/catch_test_macros.hpp>
 
@@ -60,7 +61,7 @@ TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
             REQUIRE(s_end > s_start);
             for (const odr::Lane& lane : ls.get_lanes())
             {
-                std::vector<odr::RoadMark> roadmarks = lane.get_roadmarks(s_start, s_end);
+                std::vector<odr::SingleRoadMark> roadmarks = lane.get_roadmarks(s_start, s_end);
                 (void)roadmarks; // silence unused var if not checked
             }
         }

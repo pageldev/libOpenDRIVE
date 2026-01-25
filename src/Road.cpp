@@ -1,5 +1,6 @@
 #include "Road.h"
 #include "Lane.h"
+#include "Mesh.h"
 #include "RefLine.h"
 #include "RoadMark.h"
 #include "RoadSignal.h"
@@ -345,15 +346,18 @@ Mesh3D Road::get_lane_mesh(const Lane& lane, const double eps, std::vector<uint3
     return this->get_lane_mesh(lane, lane.key.lanesection_s0, s_end, eps, outline_indices);
 }
 
-Mesh3D Road::get_roadmark_mesh(const Lane& lane, const RoadMark& roadmark, const double eps) const
+Mesh3D Road::get_roadmark_mesh(const Lane& lane, const SingleRoadMark& roadmark, const double eps) const
 {
-    const std::set<double> s_vals = this->approximate_lane_border_linear(lane, roadmark.s_start, roadmark.s_end, eps, true);
+    if (roadmark.width < 1e-9)
+        return Mesh3D{};
+
+    const std::set<double> s_vals = this->approximate_lane_border_linear(lane, roadmark.s0, roadmark.s1, eps, true);
 
     Mesh3D out_mesh;
     for (const double& s : s_vals)
     {
         Vec3D        vn_edge_a{0, 0, 0};
-        const double t_edge_a = lane.outer_border.evaluate(s, 0.0) + roadmark.width * 0.5 + roadmark.t_offset;
+        const double t_edge_a = lane.outer_border.evaluate(s, 0.0) + roadmark.width * 0.5 + roadmark.t;
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
         out_mesh.normals.push_back(vn_edge_a);
 

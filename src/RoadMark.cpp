@@ -1,75 +1,46 @@
 #include "RoadMark.h"
+#include "Utils.hpp"
 
 namespace odr
 {
-RoadMarksLine::RoadMarksLine(std::string road_id,
-                             double      lanesection_s0,
-                             int         lane_id,
-                             double      group_s0,
-                             double      width,
-                             double      length,
-                             double      space,
-                             double      t_offset,
-                             double      s_offset,
-                             std::string name,
-                             std::string rule) :
-    road_id(road_id),
-    lanesection_s0(lanesection_s0),
-    lane_id(lane_id),
-    group_s0(group_s0),
-    width(width),
-    length(length),
-    space(space),
-    t_offset(t_offset),
-    s_offset(s_offset),
-    name(name),
-    rule(rule)
+
+RoadMarkLine::RoadMarkLine(double                     sOffset,
+                           double                     tOffset,
+                           double                     length,
+                           std::optional<double>      width,
+                           std::optional<double>      space,
+                           std::optional<std::string> color,
+                           std::optional<std::string> rule) :
+    sOffset(sOffset), tOffset(tOffset), length(length), width(width), space(space), color(color), rule(rule)
 {
+    require_or_throw(sOffset >= 0, "sOffset {} < 0", sOffset);
+    require_or_throw(length >= 0, "length {} < 0", length);
+    require_or_throw(!width || *width > 0, "width <= 0");
+    require_or_throw(!space || *space >= 0, "space < 0");
 }
 
-RoadMarkGroup::RoadMarkGroup(std::string road_id,
-                             double      lanesection_s0,
-                             int         lane_id,
-                             double      width,
-                             double      height,
-                             double      s_offset,
-                             std::string type,
-                             std::string weight,
-                             std::string color,
-                             std::string material,
-                             std::string lane_change) :
-    road_id(road_id),
-    lanesection_s0(lanesection_s0),
-    lane_id(lane_id),
-    width(width),
-    height(height),
-    s_offset(s_offset),
-    type(type),
-    weight(weight),
-    color(color),
-    material(material),
-    lane_change(lane_change)
+RoadMarkType::RoadMarkType(std::string name, std::optional<double> width) : name(name), width(width)
 {
+    require_or_throw(!width || *width > 0, "width <= 0");
 }
 
-RoadMark::RoadMark(std::string road_id,
-                   double      lanesection_s0,
-                   int         lane_id,
-                   double      group_s0,
-                   double      s_start,
-                   double      s_end,
-                   double      t_offset,
-                   double      width,
-                   std::string type) :
-    road_id(road_id),
-    lanesection_s0(lanesection_s0),
-    lane_id(lane_id),
-    group_s0(group_s0),
-    s_start(s_start),
-    s_end(s_end),
-    t_offset(t_offset),
-    width(width),
-    type(type)
+RoadMarkGroup::RoadMarkGroup(double                     s_offset,
+                             std::string                type,
+                             std::string                color,
+                             std::optional<double>      width,
+                             std::optional<double>      height,
+                             std::optional<std::string> weight,
+                             std::optional<std::string> material,
+                             std::optional<std::string> lane_change) :
+    s_offset(s_offset), type(type), color(color), width(width), height(height), weight(weight), material(material), lane_change(lane_change)
+{
+    require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
+    require_or_throw(!width || *width >= 0, "width < 0");
+    require_or_throw(!height || *height > 0, "height <= 0");
+}
+
+SingleRoadMark::SingleRoadMark(double s0, double s1, double t, double width, std::string type) noexcept :
+    s0(s0), s1(s1), t(t), width(width), type(type)
 {
 }
 

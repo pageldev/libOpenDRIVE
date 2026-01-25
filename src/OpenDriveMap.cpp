@@ -471,76 +471,65 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 for (const pugi::xml_node roadmark_node : lane_node.children("roadMark"))
                 {
-                    const double s_offset = roadmark_node.attribute("sOffset").as_double(NAN);
-                    if (std::isnan(s_offset) || s_offset < 0)
+                    std::optional<RoadMarkGroup> roadmark_group;
+                    try
                     {
-                        log::warn("{}: sOffset {} < 0", node_path(roadmark_node), s_offset);
+                        roadmark_group.emplace(roadmark_node.attribute("sOffset").as_double(NAN),
+                                               roadmark_node.attribute("type").as_string(""),
+                                               roadmark_node.attribute("color").as_string(""),
+                                               try_get_attribute<double>(roadmark_node, "width"),
+                                               try_get_attribute<double>(roadmark_node, "height"),
+                                               try_get_attribute<std::string>(roadmark_node, "weight"),
+                                               try_get_attribute<std::string>(roadmark_node, "material"),
+                                               try_get_attribute<std::string>(roadmark_node, "laneChange"));
+                    }
+                    catch (const std::exception& ex)
+                    {
+                        log::warn("{}: {}", node_path(roadmark_node), ex.what());
                         continue;
                     }
 
-                    RoadMarkGroup roadmark_group(road_id,
-                                                 s0,
-                                                 lane_id,
-                                                 roadmark_node.attribute("width").as_double(-1), // optional
-                                                 roadmark_node.attribute("height").as_double(0),
-                                                 s_offset,
-                                                 roadmark_node.attribute("type").as_string("none"),
-                                                 roadmark_node.attribute("weight").as_string("standard"),
-                                                 roadmark_node.attribute("color").as_string("standard"),
-                                                 roadmark_node.attribute("material").as_string("standard"),
-                                                 roadmark_node.attribute("laneChange").as_string("both"));
-                    const double  roadmark_group_s0 = s0 + roadmark_group.s_offset;
-
                     if (const pugi::xml_node roadmark_type_node = roadmark_node.child("type"))
                     {
-                        const std::string name = roadmark_type_node.attribute("name").as_string("");
-                        const double      line_width_1 = roadmark_type_node.attribute("width").as_double(-1);
-
-                        for (const pugi::xml_node roadmarks_line_node : roadmark_type_node.children("line"))
+                        std::optional<RoadMarkType> roadmark_type;
+                        try
                         {
-                            const double line_width_0 = roadmarks_line_node.attribute("width").as_double(NAN);
-                            const double roadmark_width = std::isnan(line_width_0) ? line_width_1 : line_width_0;
+                            roadmark_type.emplace(roadmark_type_node.attribute("name").as_string(""),
+                                                  try_get_attribute<double>(roadmark_type_node, "width"));
+                        }
+                        catch (const std::exception& ex)
+                        {
+                            log::warn("{}: {}", node_path(roadmark_type_node), ex.what());
+                        }
 
-                            const double roadmark_s_offset = roadmarks_line_node.attribute("sOffset").as_double(NAN);
-                            const double roadmark_length = roadmarks_line_node.attribute("length").as_double(NAN);
-                            const double roadmark_space = roadmarks_line_node.attribute("space").as_double(NAN);
-
-                            bool values_ok = true;
-                            for (auto [val_name, val_ptr] : {std::pair{"sOffset", &roadmark_s_offset},
-                                                             std::pair{"length", &roadmark_length},
-                                                             std::pair{"space", &roadmark_space}})
+                        if (roadmark_type)
+                        {
+                            for (const pugi::xml_node roadmarks_line_node : roadmark_type_node.children("line"))
                             {
-                                if (std::isnan(*val_ptr) || (*val_ptr) < 0)
+                                std::optional<RoadMarkLine> roadmark_line;
+                                try
                                 {
-                                    log::warn("{}: {} {} < 0", node_path(roadmarks_line_node), val_name, *val_ptr);
-                                    values_ok = false;
+                                    roadmark_line.emplace(roadmarks_line_node.attribute("sOffset").as_double(NAN),
+                                                          roadmarks_line_node.attribute("tOffset").as_double(NAN),
+                                                          roadmarks_line_node.attribute("length").as_double(NAN),
+                                                          try_get_attribute<double>(roadmarks_line_node, "width"),
+                                                          try_get_attribute<double>(roadmarks_line_node, "space"),
+                                                          try_get_attribute<std::string>(roadmarks_line_node, "color"),
+                                                          try_get_attribute<std::string>(roadmarks_line_node, "rule"));
                                 }
-                            }
-                            if (!values_ok)
-                                continue;
+                                catch (const std::exception& ex)
+                                {
+                                    log::warn("{}: {}", node_path(roadmarks_line_node), ex.what());
+                                    continue;
+                                }
 
-                            const double roadmark_t_offset = roadmarks_line_node.attribute("tOffset").as_double(NAN);
-                            if (std::isnan(roadmark_t_offset))
-                            {
-                                log::warn("{}: tOffset NAN", node_path(roadmark_type_node));
-                                continue;
+                                roadmark_type->lines.emplace_back(std::move(*roadmark_line));
                             }
-
-                            roadmark_group.roadmark_lines.emplace(road_id,
-                                                                  s0,
-                                                                  lane_id,
-                                                                  roadmark_group_s0,
-                                                                  roadmark_width,
-                                                                  roadmark_length,
-                                                                  roadmark_space,
-                                                                  roadmark_t_offset,
-                                                                  roadmark_s_offset,
-                                                                  name,
-                                                                  roadmarks_line_node.attribute("rule").as_string("none"));
+                            roadmark_group->type_elem = roadmark_type;
                         }
                     }
 
-                    lane.roadmark_groups.emplace(std::move(roadmark_group));
+                    lane.s_to_roadmark_group.emplace(s0 + roadmark_group->s_offset, std::move(*roadmark_group));
                 }
             }
 
@@ -959,8 +948,8 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
 
                 std::size_t roadmarks_idx_offset = roadmarks_mesh.vertices.size();
                 roadmarks_mesh.lane_start_indices[roadmarks_idx_offset] = lane.id;
-                const std::vector<RoadMark> roadmarks = lane.get_roadmarks(lanesec.s0, road.get_lanesection_end(lanesec));
-                for (const RoadMark& roadmark : roadmarks)
+                const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s0, road.get_lanesection_end(lanesec));
+                for (const SingleRoadMark& roadmark : roadmarks)
                 {
                     roadmarks_idx_offset = roadmarks_mesh.vertices.size();
                     roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
