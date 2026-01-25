@@ -1,5 +1,6 @@
 #pragma once
 #include "Junction.h"
+#include "Lane.h"
 #include "Road.h"
 #include "RoadNetworkMesh.h"
 #include "RoutingGraph.h"
@@ -7,6 +8,7 @@
 #include "pugixml.hpp"
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -30,8 +32,7 @@ public:
     Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
-    const LaneSection* get_adjacent_lanesection(const std::string& road_id, const double& lanesection_s0, const bool predecessor) const;
-    const Lane*        get_adjacent_lane(const Lane& lane, const bool predecessor) const;
+    std::optional<LaneKey> get_adjacent_lane(const LaneKey& lane, int adjacent_lane_id, bool predecessor) const;
 
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;
