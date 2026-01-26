@@ -19,7 +19,7 @@ std::string LaneKey::to_string() const
     return fmt::format("{}/{:.17g}/{}", this->road_id, this->lanesection_s0, this->lane_id);
 }
 
-Lane::Lane(int id, bool level, std::string type) : id(id), level(level), type(type) {}
+Lane::Lane(int id, std::string type, bool level) : id(id), type(type), level(level) {}
 
 std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
 {

@@ -403,7 +403,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 Lane& lane =
                     lanesection.id_to_lane
-                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("level").as_bool(false), lane_node.attribute("type").as_string("")))
+                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("type").as_string(""), lane_node.attribute("level").as_bool(false)))
                         .first->second;
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
