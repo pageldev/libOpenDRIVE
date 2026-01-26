@@ -6,7 +6,10 @@
 
 namespace odr
 {
-LaneSection::LaneSection(std::string road_id, double s0) : road_id(road_id), s0(s0) {}
+LaneSection::LaneSection(double s0) : s0(s0)
+{
+    require_or_throw(s0 >= 0, "s {} < 0", s0);
+}
 
 std::vector<Lane> LaneSection::get_lanes() const
 {

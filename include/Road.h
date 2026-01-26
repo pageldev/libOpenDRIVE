@@ -10,6 +10,7 @@
 #include "RoadSignal.h"
 
 #include <map>
+#include <optional>
 #include <set>
 #include <stdint.h>
 #include <string>
@@ -81,7 +82,7 @@ struct SpeedRecord
 class Road
 {
 public:
-    Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic = false);
+    Road(std::string id, double length, std::string junction, bool left_hand_traffic = false, std::optional<std::string> name = std::nullopt);
 
     std::vector<LaneSection> get_lanesections() const;
     std::vector<RoadObject>  get_road_objects() const;
@@ -111,11 +112,12 @@ public:
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double eps, bool outer = true) const;
 
-    double      length = 0;
-    std::string id = "";
-    std::string junction = "";
-    std::string name = "";
-    bool        left_hand_traffic = false;
+    std::string id;
+    double      length;
+    std::string junction;
+    bool        left_hand_traffic;
+
+    std::optional<std::string> name;
 
     RoadLink                  predecessor;
     RoadLink                  successor;

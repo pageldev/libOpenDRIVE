@@ -64,9 +64,10 @@ std::vector<RoadSignal> Road::get_road_signals() const
     return get_map_values(this->id_to_signal);
 }
 
-Road::Road(std::string id, double length, std::string junction, std::string name, bool left_hand_traffic) :
-    length(length), id(id), junction(junction), name(name), left_hand_traffic(left_hand_traffic), ref_line(length)
+Road::Road(std::string id, double length, std::string junction, bool left_hand_traffic, std::optional<std::string> name) :
+    id(id), length(length), junction(junction), left_hand_traffic(left_hand_traffic), name(name), ref_line(length)
 {
+    require_or_throw(length > 0, "length {} <= 0", length);
 }
 
 double Road::get_lanesection_s0(const double s) const
@@ -95,8 +96,6 @@ LaneSection Road::get_lanesection(const double s) const
 
 double Road::get_lanesection_end(const LaneSection& lanesection) const
 {
-    if (lanesection.road_id != this->id)
-        log::error("LaneSection {} in Road #{}, not in Road #{}", lanesection.s0, lanesection.road_id, this->id);
     return this->get_lanesection_end(lanesection.s0);
 }
 
