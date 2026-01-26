@@ -28,6 +28,9 @@ if(NOT TARGET fmt::fmt)
     if(TARGET fmt)
         add_library(fmt::fmt ALIAS fmt)
     else()
+        if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+            set(FMT_INSTALL ON CACHE BOOL "" FORCE)
+        endif()
         FetchContent_Declare(
             fmtlib
             GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -74,7 +77,7 @@ else()
 endif()
 
 target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
-target_link_libraries(OpenDrive PRIVATE fmt::fmt)
+target_link_libraries(OpenDrive PUBLIC fmt::fmt)
 
 target_include_directories(
     OpenDrive PUBLIC
