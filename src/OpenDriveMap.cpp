@@ -573,9 +573,9 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             // OpenDRIVE Format Specification, Rev. 1.4, 3.3.2 Lane Offset:
             // "... lane 0 may be offset using a cubic polynom"
             for (auto& id_lane : lanesection->id_to_lane)
-            {
                 id_lane.second.outer_border = id_lane.second.outer_border.add(road->lane_offset);
-            }
+
+            road->s_to_lanesection.emplace(lanesection->s0, std::move(*lanesection));
         }
         if (invalid_lanesection)
         {
