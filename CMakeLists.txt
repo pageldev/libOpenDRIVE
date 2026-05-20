@@ -7,6 +7,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(OPENDRIVE_BUILD_TESTS "Build OpenDrive tests" OFF)
+option(OPENDRIVE_BUILD_WASM "Build Emscripten WASM bindings" OFF)
 
 find_package(pugixml QUIET CONFIG)
 if(NOT TARGET pugixml::pugixml)
@@ -121,3 +122,27 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/OpenDriveConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OpenDrive
 )
+
+# ─── Emscripten WASM bindings ─────────────────────────────────────────────────
+if(OPENDRIVE_BUILD_WASM OR EMSCRIPTEN)
+    add_executable(libOpenDRIVE ${SOURCES} src/Embind.cpp)
+    set_target_properties(libOpenDRIVE PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        SUFFIX ".js"
+    )
+    target_include_directories(libOpenDRIVE PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_link_libraries(libOpenDRIVE PRIVATE pugixml::pugixml)
+    target_link_options(libOpenDRIVE PRIVATE
+        --bind
+        -sENVIRONMENT=web,worker
+        -sMODULARIZE=1
+        -sEXPORT_ES6=1
+        -sALLOW_MEMORY_GROWTH=1
+        -sFILESYSTEM=1
+        -sWASM=1
+        -O2
+    )
+endif()
