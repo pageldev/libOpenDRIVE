@@ -45,3 +45,24 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: install
         run: cmake --install build --config Release
+  build-wasm:
+    name: emscripten-wasm
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash -e -o pipefail {0}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: setup emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.61
+      - name: configure
+        run: emcmake cmake -S . -B build-wasm -DOPENDRIVE_BUILD_WASM=ON -G Ninja
+      - name: build
+        run: cmake --build build-wasm
+      - name: verify artifacts
+        run: |
+          test -f build-wasm/libOpenDRIVE.js
+          test -f build-wasm/libOpenDRIVE.wasm
