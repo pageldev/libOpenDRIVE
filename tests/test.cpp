@@ -67,3 +67,77 @@ TEST_CASE_METHOD(OpenDriveFixture, "Routing check", "[xodr]")
         REQUIRE(path == expected_path);
     }
 }
+
+TEST_CASE_METHOD(OpenDriveFixture, "RoadNetworkMesh generation", "[mesh]")
+{
+    const odr::RoadNetworkMesh mesh = odr_map.get_road_network_mesh(0.1);
+
+    SECTION("lanes mesh has vertices")
+    {
+        REQUIRE(!mesh.lanes_mesh.vertices.empty());
+        REQUIRE(!mesh.lanes_mesh.indices.empty());
+    }
+
+    SECTION("lane_start_indices are valid")
+    {
+        for (const auto& [idx, lane_id] : mesh.lanes_mesh.lane_start_indices)
+        {
+            REQUIRE(idx < mesh.lanes_mesh.vertices.size());
+        }
+    }
+
+    SECTION("road_start_indices are valid")
+    {
+        for (const auto& [idx, road_id] : mesh.lanes_mesh.road_start_indices)
+        {
+            REQUIRE(idx < mesh.lanes_mesh.vertices.size());
+            REQUIRE(odr_map.id_to_road.count(road_id) > 0);
+        }
+    }
+
+    SECTION("lane type lookup works for all mesh chunks")
+    {
+        for (const auto& [vert_idx, lane_id] : mesh.lanes_mesh.lane_start_indices)
+        {
+            const std::string road_id = mesh.lanes_mesh.get_road_id(vert_idx);
+            const double      s0 = mesh.lanes_mesh.get_lanesec_s0(vert_idx);
+
+            auto road_it = odr_map.id_to_road.find(road_id);
+            REQUIRE(road_it != odr_map.id_to_road.end());
+
+            const auto& lanesecs = road_it->second.s_to_lanesection;
+            auto        ls_it = lanesecs.lower_bound(s0 - 1e-6);
+            REQUIRE(ls_it != lanesecs.end());
+
+            auto lane_it = ls_it->second.id_to_lane.find(lane_id);
+            REQUIRE(lane_it != ls_it->second.id_to_lane.end());
+            REQUIRE(!lane_it->second.type.empty());
+        }
+    }
+
+    SECTION("junction road identification")
+    {
+        std::vector<std::string> junction_roads;
+        for (const auto& [id, road] : odr_map.id_to_road)
+        {
+            if (!road.junction.empty() && road.junction != "-1")
+            {
+                junction_roads.push_back(id);
+            }
+        }
+        // test.xodr has junctions (known from routing test)
+        REQUIRE(!junction_roads.empty());
+    }
+
+    SECTION("lane outline indices are valid line pairs")
+    {
+        auto outline = mesh.lanes_mesh.get_lane_outline_indices();
+        // outline indices must be even count (LINE_LIST = pairs)
+        REQUIRE(outline.size() % 2 == 0);
+        REQUIRE(!outline.empty());
+        for (std::size_t i = 0; i < outline.size(); ++i)
+        {
+            REQUIRE(outline[i] < mesh.lanes_mesh.vertices.size());
+        }
+    }
+}
