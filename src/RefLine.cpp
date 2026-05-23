@@ -6,6 +6,7 @@
 #include <cmath>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -85,12 +86,43 @@ Vec3D RefLine::derivative(const double s) const
 
 double RefLine::match(const double x, const double y) const
 {
+    if (this->length <= 0.0)
+        return 0.0;
+
     std::function<double(double)> f_dist = [&](const double s)
     {
         const Vec3D pt = this->get_xyz(s);
         return euclDistance(Vec2D{pt[0], pt[1]}, {x, y});
     };
-    return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
+
+    // Coarse search to find the global minimum region.
+    const double step = 2.0;
+    double       min_s = 0.0;
+    double       min_dist = std::numeric_limits<double>::max();
+
+    for (double s = 0.0; s <= this->length; s += step)
+    {
+        const double dist = f_dist(s);
+        if (dist < min_dist)
+        {
+            min_dist = dist;
+            min_s = s;
+        }
+    }
+
+    // Explicitly check the end point of the reference line.
+    const double dist_end = f_dist(this->length);
+    if (dist_end < min_dist)
+    {
+        min_dist = dist_end;
+        min_s = this->length;
+    }
+
+    // Fine local search within a small window around min_s (which is guaranteed to be unimodal).
+    const double search_start = std::max(0.0, min_s - step);
+    const double search_end = std::min(this->length, min_s + step);
+
+    return golden_section_search<double>(f_dist, search_start, search_end, 1e-2);
 }
 
 Line3D RefLine::get_line(const double s_start, const double s_end, const double eps) const

@@ -77,7 +77,7 @@ if(OPENDRIVE_BUILD_TESTS)
     FetchContent_MakeAvailable(Catch2)
     include(Catch)
 
-    add_executable(tests tests/test.cpp)
+    add_executable(tests tests/test.cpp tests/RefLineTest.cpp)
     set_target_properties(tests PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
