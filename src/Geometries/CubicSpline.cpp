@@ -72,10 +72,10 @@ std::set<double> CubicPoly::approximate_linear(const double eps, const double s_
     else // cubic case
     {
         // transform to parametric form
-        const double& s_0 = s_start;
-        const double& s_1 = s_end;
-        const double  d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3 * d * s_0 * s_1 * s_1 + 3 * d * s_0 * s_0 * s_1;
-        const double  c_p =
+        const double s_0 = s_start;
+        const double s_1 = s_end;
+        const double d_p = -d * s_0 * s_0 * s_0 + d * s_1 * s_1 * s_1 - 3 * d * s_0 * s_1 * s_1 + 3 * d * s_0 * s_0 * s_1;
+        const double c_p =
             3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_1 * s_1 - 6 * d * s_0 * s_0 * s_1 + c * s_0 * s_0 + c * s_1 * s_1 - 2 * c * s_0 * s_1;
         const double b_p = -3 * d * s_0 * s_0 * s_0 + 3 * d * s_0 * s_0 * s_1 - 2 * c * s_0 * s_0 + 2 * c * s_0 * s_1 - b * s_0 + b * s_1;
         const double a_p = d * s_0 * s_0 * s_0 + c * s_0 * s_0 + b * s_0 + a;
@@ -84,7 +84,7 @@ std::set<double> CubicPoly::approximate_linear(const double eps, const double s_
         const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);
 
         s_vals.push_back(s_start);
-        for (const double& p : p_vals)
+        for (const double p : p_vals)
             s_vals.push_back(p * (s_end - s_start) + s_start);
     }
 
@@ -159,7 +159,7 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
     s0_vals.insert(other_s0s.begin(), other_s0s.end());
 
     CubicProfile retval;
-    for (const double& s0 : s0_vals)
+    for (const double s0 : s0_vals)
     {
         const CubicPoly& this_poly = this->get_poly(s0, false);
         const CubicPoly& other_poly = other.get_poly(s0, false);

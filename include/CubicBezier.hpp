@@ -199,8 +199,8 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
     for (const std::array<T, 2>& seg_intrvl : seg_intervals)
     {
         // get sub-cubic bezier for interval
-        const double& t0 = seg_intrvl.at(0);
-        const double& t1 = seg_intrvl.at(1);
+        const double t0 = seg_intrvl.at(0);
+        const double t1 = seg_intrvl.at(1);
 
         const std::array<Vec<T, Dim>, 4> c_pts_sub = this->get_subcurve(t0, t1);
 
@@ -216,10 +216,10 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
             pM_quad[dim] = (1.0 - 0.5) * pB_quad_0[dim] + 0.5 * pB_quad_1[dim];
 
         // linear approximate the two quadratic bezier
-        for (const double& p_sub : approximate_linear_quad_bezier<T, Dim>({c_pts_sub[0], pB_quad_0, pM_quad}, 0.5 * eps))
+        for (const double p_sub : approximate_linear_quad_bezier<T, Dim>({c_pts_sub[0], pB_quad_0, pM_quad}, 0.5 * eps))
             t_vals.push_back(t0 + p_sub * (t1 - t0) * 0.5);
         t_vals.pop_back();
-        for (const double& p_sub : approximate_linear_quad_bezier<T, Dim>({pM_quad, pB_quad_1, c_pts_sub[3]}, 0.5 * eps))
+        for (const double p_sub : approximate_linear_quad_bezier<T, Dim>({pM_quad, pB_quad_1, c_pts_sub[3]}, 0.5 * eps))
             t_vals.push_back(t0 + (t1 - t0) * 0.5 + p_sub * (t1 - t0) * 0.5);
         t_vals.pop_back();
     }

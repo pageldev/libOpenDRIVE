@@ -130,7 +130,7 @@ Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
         angles.push_back(alpha);
     angles.push_back(2 * M_PI);
 
-    for (const double& alpha : angles)
+    for (const double alpha : angles)
     {
         const Vec3D circle_pt_bottom = {radius * std::cos(alpha), radius * std::sin(alpha), 0};
         const Vec3D circle_pt_top = {radius * std::cos(alpha), radius * std::sin(alpha), height};

@@ -249,7 +249,7 @@ Line3D Road::get_lane_border_line(const LaneKey& lane_key, double s_start, doubl
     const CubicProfile border = outer ? lane.outer_border : lanesection.id_to_lane.at(next_towards_zero(lane.id)).outer_border;
 
     Line3D border_line;
-    for (const double& s : s_vals)
+    for (const double s : s_vals)
     {
         double t = border.evaluate(s, 0.0);
         if (!outer)
@@ -298,7 +298,7 @@ Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end
     }
 
     Mesh3D out_mesh;
-    for (const double& s : s_vals)
+    for (const double s : s_vals)
     {
         Vec3D        vn_outer_brdr{0, 0, 0};
         const double t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
@@ -349,7 +349,7 @@ Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& ro
     const std::set<double> s_vals = this->approximate_lane_border_linear(lane_key, roadmark.s0, roadmark.s1, eps, true);
 
     Mesh3D out_mesh;
-    for (const double& s : s_vals)
+    for (const double s : s_vals)
     {
         Vec3D        vn_edge_a{0, 0, 0};
         const double t_edge_a = lane.outer_border.evaluate(s, 0.0) + roadmark.width * 0.5 + roadmark.t;
@@ -467,7 +467,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
             Mesh3D continuous_road_obj_mesh;
 
             const std::array<size_t, 24> idx_patch_template = {1, 5, 4, 1, 4, 0, 2, 7, 6, 2, 3, 7, 1, 6, 5, 1, 2, 6, 0, 4, 7, 0, 7, 3};
-            for (const double& s : this->ref_line.approximate_linear(eps, s_start, s_end))
+            for (const double s : this->ref_line.approximate_linear(eps, s_start, s_end))
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s = r.t_start + p * (r.t_end - r.t_start);

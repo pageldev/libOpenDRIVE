@@ -76,7 +76,7 @@ std::set<double> ParamPoly3::approximate_linear(double eps) const
     std::set<double> p_vals = this->cubic_bezier.approximate_linear(eps);
 
     std::set<double> s_vals;
-    for (const double& p : p_vals)
+    for (const double p : p_vals)
         s_vals.insert(p * length + s0);
 
     return s_vals;

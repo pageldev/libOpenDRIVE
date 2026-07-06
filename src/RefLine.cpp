@@ -98,7 +98,7 @@ Line3D RefLine::get_line(const double s_start, const double s_end, const double 
     std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end);
 
     Line3D out_line;
-    for (const double& s : s_vals)
+    for (const double s : s_vals)
         out_line.push_back(this->get_xyz(s));
     return out_line;
 }
@@ -119,7 +119,7 @@ std::set<double> RefLine::approximate_linear(const double eps, const double s_st
         const std::set<double> s_vals_geom = s0_geom_iter->second->approximate_linear(eps);
         if (s_vals_geom.size() < 2)
             throw std::runtime_error("expected at least two sample points");
-        for (const double& s : s_vals_geom)
+        for (const double s : s_vals_geom)
         {
             if (s > s_start && s < s_end)
                 s_vals.push_back(s);
@@ -129,7 +129,7 @@ std::set<double> RefLine::approximate_linear(const double eps, const double s_st
     }
 
     std::set<double> s_vals_elevation = this->elevation_profile.approximate_linear(eps, s_start, s_end);
-    for (const double& s : s_vals_elevation)
+    for (const double s : s_vals_elevation)
     {
         if (s > s_start && s < s_end)
             s_vals.push_back(s);
