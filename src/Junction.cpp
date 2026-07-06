@@ -1,4 +1,5 @@
 #include "Junction.h"
+#include "Utils.hpp"
 
 namespace odr
 {
@@ -12,7 +13,11 @@ JunctionConnection::JunctionConnection(std::string id, std::string incoming_road
 
 JunctionPriority::JunctionPriority(std::string high, std::string low) : high(high), low(low) {}
 
-JunctionController::JunctionController(std::string id, std::string type, std::uint32_t sequence) : id(id), type(type), sequence(sequence) {}
+JunctionController::JunctionController(std::string id, std::optional<std::string> type, std::optional<int64_t> sequence) :
+    id(id), type(type), sequence(sequence)
+{
+    require_or_throw(!sequence || *sequence >= 0, "sequence < 0");
+}
 
 Junction::Junction(std::string name, std::string id) : name(name), id(id) {}
 

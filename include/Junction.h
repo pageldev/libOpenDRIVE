@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -39,7 +40,7 @@ struct JunctionConnection
 {
     enum class ContactPoint
     {
-        None,
+        None, // needed for init
         Start,
         End
     };
@@ -81,11 +82,12 @@ namespace odr
 
 struct JunctionController
 {
-    JunctionController(std::string id, std::string type, std::uint32_t sequence);
+    JunctionController(std::string id, std::optional<std::string> type = std::nullopt, std::optional<int64_t> sequence = std::nullopt);
 
-    std::string   id = "";
-    std::string   type = "";
-    std::uint32_t sequence = 0;
+    std::string id = "";
+
+    std::optional<std::string> type;
+    std::optional<uint32_t>    sequence;
 };
 
 class Junction

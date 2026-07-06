@@ -840,14 +840,20 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 log::warn("{}: duplicate Controller #{}", node_path(controller_node), controller_id);
                 continue;
             }
-            const int64_t seq_id = controller_node.attribute("sequence").as_llong(-1); // type: uint32_t
-            if (seq_id < 0)
+
+            std::optional<JunctionController> junction_controller;
+            try
             {
-                log::warn("{}: sequence {} < 0", node_path(controller_node), seq_id);
+                junction_controller.emplace(
+                    controller_id, try_get_attribute<std::string>(controller_node, "type"), try_get_attribute<int64_t>(controller_node, "sequence"));
+            }
+            catch (const std::exception& ex)
+            {
+                log::warn("{}: {}", node_path(controller_node), ex.what());
                 continue;
             }
-            const std::string type = controller_node.attribute("type").as_string("");
-            junction.id_to_controller.emplace(controller_id, JunctionController(controller_id, type, seq_id));
+
+            junction.id_to_controller.emplace(controller_id, std::move(*junction_controller));
         }
     }
 }
