@@ -414,7 +414,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 Lane& lane =
                     lanesection->id_to_lane
-                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("type").as_string(""), lane_node.attribute("level").as_bool(false)))
+                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("type").as_string(""), try_get_attribute<bool>(lane_node, "level")))
                         .first->second;
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
@@ -460,22 +460,22 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 {
                     for (const pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
-                        const double s_offset = lane_height_node.attribute("sOffset").as_double(NAN);
-                        const double inner = lane_height_node.attribute("inner").as_double(NAN);
-                        const double outer = lane_height_node.attribute("outer").as_double(NAN);
+                        const std::optional<double> s_offset = try_get_attribute<double>(lane_height_node, "sOffset");
+                        const std::optional<double> inner = try_get_attribute<double>(lane_height_node, "inner");
+                        const std::optional<double> outer = try_get_attribute<double>(lane_height_node, "outer");
 
-                        if (std::isnan(s_offset) || s_offset < 0)
+                        if (!s_offset || !inner || !outer)
                         {
-                            log::warn("{}: sOffset {} < 0", node_path(lane_height_node), s_offset);
+                            log::warn("{}: invalid height", node_path(lane_height_node));
                             continue;
                         }
-                        if (std::isnan(inner) || std::isnan(outer))
+                        if (*s_offset < 0)
                         {
-                            log::warn("{}: invalid values; sOffset={}, inner={}, outer={}", node_path(lane_height_node), s_offset, inner, outer);
+                            log::warn("{}: sOffset {} < 0", node_path(lane_height_node), *s_offset);
                             continue;
                         }
 
-                        lane.s_to_height_offset.emplace(lanesection->s0 + s_offset, HeightOffset(inner, outer));
+                        lane.s_to_height_offset.emplace(lanesection->s0 + *s_offset, HeightOffset(*inner, *outer));
                     }
                 }
 
@@ -699,14 +699,15 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
                 for (const pugi::xml_node validity_node : object_node.children("validity"))
                 {
-                    if (!(validity_node.attribute("fromLane") && validity_node.attribute("toLane")))
+                    const std::optional<int> from_lane = try_get_attribute<int>(validity_node, "fromLane");
+                    const std::optional<int> to_lane = try_get_attribute<int>(validity_node, "toLane");
+
+                    if (!from_lane || !to_lane)
                     {
-                        log::warn("{}: 'fromLane' or 'toLane' missing", node_path(validity_node));
+                        log::warn("{}: invalid validity", node_path(validity_node));
                         continue;
                     }
-                    const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
-                    const int to_lane = validity_node.attribute("toLane").as_int(INT_MAX);
-                    road_object->lane_validities.emplace_back(from_lane, to_lane);
+                    road_object->lane_validities.emplace_back(*from_lane, *to_lane);
                 }
 
                 road->id_to_object.emplace(object_id, std::move(*road_object));
@@ -814,7 +815,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 const std::optional<int> to_lane = try_get_attribute<int>(lane_link_node, "to");
                 if (!from_lane || !to_lane)
                 {
-                    log::warn("{}: invalid lane link node", node_path(lane_link_node));
+                    log::warn("{}: invalid lane link", node_path(lane_link_node));
                     continue;
                 }
                 connection.lane_links.emplace(*from_lane, *to_lane);
@@ -827,14 +828,15 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
-            const std::string prio_high = priority_node.attribute("high").as_string("");
-            const std::string prio_low = priority_node.attribute("low").as_string("");
-            if (prio_low.empty() || prio_high.empty())
+            const std::optional<std::string> prio_high = try_get_attribute<std::string>(priority_node, "high");
+            const std::optional<std::string> prio_low = try_get_attribute<std::string>(priority_node, "low");
+
+            if (!prio_low || !prio_high)
             {
-                log::warn("{}: empty priority; high='{}', low='{}'", node_path(priority_node), prio_high, prio_low);
+                log::warn("{}: invalid priority", node_path(priority_node));
                 continue;
             }
-            junction.priorities.emplace(prio_high, prio_low);
+            junction.priorities.emplace(*prio_high, *prio_low);
         }
 
         for (const pugi::xml_node controller_node : junction_node.children("controller"))

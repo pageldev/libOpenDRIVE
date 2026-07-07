@@ -19,8 +19,8 @@ struct HeightOffset
 {
     HeightOffset(double inner, double outer);
 
-    double inner = 0;
-    double outer = 0;
+    double inner;
+    double outer;
 };
 
 struct LaneKey
@@ -50,16 +50,16 @@ inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
 
 struct Lane
 {
-    Lane(int id, std::string type, bool level = false);
+    Lane(int id, std::string type, std::optional<bool> level = std::nullopt);
 
     std::vector<SingleRoadMark> get_roadmarks(const double s_start, const double s_end) const;
 
     int         id;
     std::string type;
-    bool        level;
 
-    std::optional<int> predecessor;
-    std::optional<int> successor;
+    std::optional<bool> level;
+    std::optional<int>  predecessor;
+    std::optional<int>  successor;
 
     CubicProfile lane_width;
     CubicProfile outer_border;

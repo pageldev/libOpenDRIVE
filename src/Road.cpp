@@ -178,7 +178,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
 
     // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1 Lane Record:
     // "keep lane on level, .i.e. do not apply superelevation or crossfall"
-    if (lane.level)
+    if (lane.level.value_or(false))
     {
         // compensate crossfall and superelevation to level lane
         const double alpha = this->crossfall.get(s, (lane.id > 0));
