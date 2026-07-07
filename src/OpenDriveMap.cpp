@@ -127,15 +127,6 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             }
         }
 
-        // parse road neighbors
-        for (const pugi::xml_node road_neighbor_node : road_node.child("link").children("neighbor"))
-        {
-            const std::string road_neighbor_id = road_neighbor_node.attribute("elementId").as_string("");
-            const std::string road_neighbor_side = road_neighbor_node.attribute("side").as_string("");
-            const std::string road_neighbor_direction = road_neighbor_node.attribute("direction").as_string("");
-            road->neighbors.emplace_back(road_neighbor_id, road_neighbor_side, road_neighbor_direction);
-        }
-
         // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
         {

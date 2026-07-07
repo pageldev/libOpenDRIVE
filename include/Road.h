@@ -119,9 +119,8 @@ public:
 
     std::optional<std::string> name;
 
-    std::optional<RoadLink>   predecessor;
-    std::optional<RoadLink>   successor;
-    std::vector<RoadNeighbor> neighbors;
+    std::optional<RoadLink> predecessor;
+    std::optional<RoadLink> successor;
 
     CubicProfile lane_offset;
     CubicProfile superelevation;
