@@ -32,7 +32,7 @@ public:
     Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
-    std::optional<LaneKey> get_adjacent_lane(const LaneKey& lane, int adjacent_lane_id, bool predecessor) const;
+    std::optional<LaneKey> get_next_lane(const LaneKey& lane, int adjacent_lane_id, bool predecessor) const;
 
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;

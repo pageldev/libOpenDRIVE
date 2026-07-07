@@ -54,12 +54,12 @@ struct RoadLink
         Junction
     };
 
-    RoadLink() = default;
-    RoadLink(std::string id, Type type, ContactPoint contact_point);
+    RoadLink(std::string id, std::string type_str, std::string contact_point_str);
 
-    std::string  id = "";
-    Type         type = Type::None;
-    ContactPoint contact_point = ContactPoint::None;
+    std::string id = "";
+    Type        type = Type::None;
+
+    std::optional<ContactPoint> contact_point;
 };
 
 struct RoadNeighbor
@@ -119,8 +119,8 @@ public:
 
     std::optional<std::string> name;
 
-    RoadLink                  predecessor;
-    RoadLink                  successor;
+    std::optional<RoadLink>   predecessor;
+    std::optional<RoadLink>   successor;
     std::vector<RoadNeighbor> neighbors;
 
     CubicProfile lane_offset;

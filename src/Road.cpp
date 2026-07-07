@@ -44,7 +44,16 @@ double Crossfall::get(const double s, const bool on_left_side) const
     return target_poly_iter->second.evaluate(s);
 }
 
-RoadLink::RoadLink(std::string id, Type type, ContactPoint contact_point) : id(id), type(type), contact_point(contact_point) {}
+RoadLink::RoadLink(std::string id, std::string type_str, std::string contact_point_str) : id(id)
+{
+    require_or_throw(type_str == "road" || type_str == "junction", "unknown elementType '{}'", type_str);
+    this->type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
+    if (this->type == RoadLink::Type::Road) // junction connection has no contact point
+    {
+        require_or_throw(contact_point_str == "start" || contact_point_str == "end", "unknown contactPoint '{}'", contact_point_str);
+        this->contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+    }
+}
 
 RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string direction) : id(id), side(side), direction(direction) {}
 
