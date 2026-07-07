@@ -15,8 +15,8 @@ struct JunctionLaneLink
 {
     JunctionLaneLink(int from, int to);
 
-    int from = 0;
-    int to = 0;
+    int from;
+    int to;
 };
 
 } // namespace odr
@@ -93,10 +93,11 @@ struct JunctionController
 class Junction
 {
 public:
-    Junction(std::string name, std::string id);
+    Junction(std::string id, std::optional<std::string> name = std::nullopt);
 
-    std::string name = "";
     std::string id = "";
+
+    std::optional<std::string> name;
 
     std::map<std::string, JunctionConnection> id_to_connection;
     std::map<std::string, JunctionController> id_to_controller;

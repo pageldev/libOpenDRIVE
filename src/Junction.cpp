@@ -1,5 +1,6 @@
 #include "Junction.h"
 #include "Utils.hpp"
+#include <string>
 
 namespace odr
 {
@@ -19,6 +20,6 @@ JunctionController::JunctionController(std::string id, std::optional<std::string
     require_or_throw(!sequence || *sequence >= 0, "sequence < 0");
 }
 
-Junction::Junction(std::string name, std::string id) : name(name), id(id) {}
+Junction::Junction(std::string id, std::optional<std::string> name) : id(id), name(name) {}
 
 } // namespace odr

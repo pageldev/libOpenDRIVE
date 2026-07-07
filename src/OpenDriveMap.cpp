@@ -782,7 +782,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             continue;
         }
 
-        Junction& junction = this->id_to_junction.emplace(id, Junction(junction_node.attribute("name").as_string(""), id)).first->second;
+        Junction& junction = this->id_to_junction.emplace(id, Junction(id, try_get_attribute<std::string>(junction_node, "name"))).first->second;
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
@@ -810,9 +810,14 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
 
             for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
             {
-                const int from_lane = lane_link_node.attribute("from").as_int(0);
-                const int to_lane = lane_link_node.attribute("to").as_int(0);
-                connection.lane_links.emplace(from_lane, to_lane);
+                const std::optional<int> from_lane = try_get_attribute<int>(lane_link_node, "from");
+                const std::optional<int> to_lane = try_get_attribute<int>(lane_link_node, "to");
+                if (!from_lane || !to_lane)
+                {
+                    log::warn("{}: invalid lane link node", node_path(lane_link_node));
+                    continue;
+                }
+                connection.lane_links.emplace(*from_lane, *to_lane);
             }
         }
 
@@ -1049,9 +1054,6 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
 
             for (const JunctionLaneLink& lane_link : conn.lane_links)
             {
-                if (lane_link.from == 0 || lane_link.to == 0)
-                    continue;
-
                 auto from_lane_iter = incoming_lanesec.id_to_lane.find(lane_link.from);
                 auto to_lane_iter = connecting_lanesec.id_to_lane.find(lane_link.to);
 
