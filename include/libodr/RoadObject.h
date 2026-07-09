@@ -75,6 +75,13 @@ struct RoadObjectOutline
 
 struct RoadObject
 {
+    enum class Orientation
+    {
+        None,
+        Positive,
+        Negative
+    };
+
     RoadObject(std::string                road_id,
                std::string                id,
                double                     s0,
@@ -90,8 +97,8 @@ struct RoadObject
                std::optional<double>      roll = std::nullopt,
                std::optional<std::string> type = std::nullopt,
                std::optional<std::string> name = std::nullopt,
-               std::optional<std::string> orientation = std::nullopt,
                std::optional<std::string> subtype = std::nullopt,
+               std::optional<Orientation> orientation = std::nullopt,
                std::optional<bool>        is_dynamic = std::nullopt);
 
     static Mesh3D get_cylinder(double eps, double radius, double height);
@@ -115,8 +122,9 @@ struct RoadObject
 
     std::optional<std::string> type;
     std::optional<std::string> name;
-    std::optional<std::string> orientation;
     std::optional<std::string> subtype;
+
+    std::optional<Orientation> orientation;
 
     std::optional<bool> is_dynamic;
 

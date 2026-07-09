@@ -4,6 +4,7 @@
 
 #include "fmt/core.h"
 #include "fmt/ranges.h"
+#include "libodr/RoadObject.h"
 #include "magic_enum/magic_enum.hpp"
 #include "pugixml.hpp"
 
@@ -405,6 +406,26 @@ std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name, 
         return std::nullopt;
     return magic_enum::enum_cast<T>(*enum_str, magic_enum::case_insensitive);
 }
+
+inline std::optional<RoadObject::Orientation>
+try_get_orientation(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
+{
+    std::optional<std::string> orient_str = try_get_attribute<std::string>(node, attr_name, log_lvl);
+    if (!orient_str)
+        return std::nullopt;
+
+    if (orient_str == "+")
+        return RoadObject::Orientation::Positive;
+    if (orient_str == "-")
+        return RoadObject::Orientation::Negative;
+    if (orient_str == "none")
+        return RoadObject::Orientation::None;
+
+    if (log_lvl)
+        log::log(*log_lvl, "{}/@{}: invalid orientation '{}'", node_path(node), attr_name, *orient_str);
+
+    return std::nullopt;
+};
 
 inline bool is_zero(double x)
 {

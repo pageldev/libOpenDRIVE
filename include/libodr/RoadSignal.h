@@ -1,6 +1,7 @@
 #pragma once
 #include "libodr/LaneValidityRecord.h"
 #include "libodr/Mesh.h"
+#include "libodr/RoadObject.h"
 
 #include <optional>
 #include <string>
@@ -19,7 +20,7 @@ struct RoadSignal
                bool                       is_dynamic,
                std::string                type,
                std::string                subtype,
-               std::string                orientation,
+               RoadObject::Orientation    orientation,
                std::optional<double>      value = std::nullopt,
                std::optional<double>      height = std::nullopt,
                std::optional<double>      width = std::nullopt,
@@ -47,7 +48,8 @@ struct RoadSignal
 
     std::string type;
     std::string subtype;
-    std::string orientation;
+
+    RoadObject::Orientation orientation;
 
     std::optional<double> value;
     std::optional<double> height;

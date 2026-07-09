@@ -80,8 +80,8 @@ RoadObject::RoadObject(std::string                road_id,
                        std::optional<double>      roll,
                        std::optional<std::string> type,
                        std::optional<std::string> name,
-                       std::optional<std::string> orientation,
                        std::optional<std::string> subtype,
+                       std::optional<Orientation> orientation,
                        std::optional<bool>        is_dynamic) :
     road_id(road_id),
     id(id),
@@ -98,8 +98,8 @@ RoadObject::RoadObject(std::string                road_id,
     roll(roll),
     type(type),
     name(name),
-    orientation(orientation),
     subtype(subtype),
+    orientation(orientation),
     is_dynamic(is_dynamic)
 {
     require_or_throw(s0 >= 0, "s {} < 0", s0);

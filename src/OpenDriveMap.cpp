@@ -613,8 +613,8 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                         try_get_attribute<double>(object_node, "roll"),
                                         try_get_attribute<std::string>(object_node, "type"),
                                         try_get_attribute<std::string>(object_node, "name"),
-                                        try_get_attribute<std::string>(object_node, "orientation"),
                                         try_get_attribute<std::string>(object_node, "subtype"),
+                                        try_get_orientation(object_node, "orientation"),
                                         try_get_attribute<bool>(object_node, "dynamic"));
                 }
                 catch (const std::exception& ex)
@@ -733,7 +733,7 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                         signal_node.attribute("dynamic").as_bool(),
                                         signal_node.attribute("type").as_string("none"),
                                         signal_node.attribute("subtype").as_string("none"),
-                                        signal_node.attribute("orientation").as_string("none"),
+                                        try_get_orientation(signal_node, "orientation").value_or(RoadObject::Orientation::None),
                                         try_get_attribute<double>(signal_node, "value"),
                                         try_get_attribute<double>(signal_node, "height"),
                                         try_get_attribute<double>(signal_node, "width"),

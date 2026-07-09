@@ -1,5 +1,6 @@
 #include "libodr/RoadSignal.h"
 #include "libodr/Math.hpp"
+#include "libodr/RoadObject.h"
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
@@ -16,7 +17,7 @@ RoadSignal::RoadSignal(std::string                id,
                        bool                       is_dynamic,
                        std::string                type,
                        std::string                subtype,
-                       std::string                orientation,
+                       RoadObject::Orientation    orientation,
                        std::optional<double>      value,
                        std::optional<double>      height,
                        std::optional<double>      width,
