@@ -15,6 +15,35 @@
 namespace odr
 {
 
+struct OpenDriveMapHeader
+{
+    OpenDriveMapHeader(std::optional<int>         rev_major = std::nullopt,
+                       std::optional<int>         rev_minor = std::nullopt,
+                       std::optional<double>      north = std::nullopt,
+                       std::optional<double>      east = std::nullopt,
+                       std::optional<double>      south = std::nullopt,
+                       std::optional<double>      west = std::nullopt,
+                       std::optional<std::string> date = std::nullopt,
+                       std::optional<std::string> name = std::nullopt,
+                       std::optional<std::string> vendor = std::nullopt,
+                       std::optional<std::string> version = std::nullopt,
+                       std::optional<std::string> proj = std::nullopt);
+
+    std::optional<int> rev_major;
+    std::optional<int> rev_minor;
+
+    std::optional<double> north;
+    std::optional<double> east;
+    std::optional<double> south;
+    std::optional<double> west;
+
+    std::optional<std::string> date;
+    std::optional<std::string> name;
+    std::optional<std::string> vendor;
+    std::optional<std::string> version;
+    std::optional<std::string> proj;
+};
+
 class OpenDriveMap
 {
 public:
@@ -35,9 +64,10 @@ public:
     RoadNetworkMesh get_road_network_mesh(const double eps) const;
     RoutingGraph    get_routing_graph() const;
 
-    std::string proj4 = "";
-    double      x_offs = 0;
-    double      y_offs = 0;
+    OpenDriveMapHeader header;
+
+    double x_offs = 0;
+    double y_offs = 0;
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;

@@ -37,6 +37,31 @@
 namespace odr
 {
 
+OpenDriveMapHeader::OpenDriveMapHeader(std::optional<int>         rev_major,
+                                       std::optional<int>         rev_minor,
+                                       std::optional<double>      north,
+                                       std::optional<double>      east,
+                                       std::optional<double>      south,
+                                       std::optional<double>      west,
+                                       std::optional<std::string> date,
+                                       std::optional<std::string> name,
+                                       std::optional<std::string> vendor,
+                                       std::optional<std::string> version,
+                                       std::optional<std::string> proj) :
+    rev_major(rev_major),
+    rev_minor(rev_minor),
+    north(north),
+    east(east),
+    south(south),
+    west(west),
+    date(date),
+    name(name),
+    vendor(vendor),
+    version(version),
+    proj(proj)
+{
+}
+
 OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                            const bool                center_map,
                            const bool                with_road_objects,
@@ -48,8 +73,20 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
 {
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
-    if (const pugi::xml_node geoReference_node = odr_node.child("header").child("geoReference"))
-        this->proj4 = geoReference_node.text().as_string("");
+    const pugi::xml_node header_node = odr_node.child("header");
+    const pugi::xml_node georef_node = header_node.child("geoReference");
+
+    this->header = OpenDriveMapHeader(try_get_attribute<int>(header_node, "revMajor"),
+                                      try_get_attribute<int>(header_node, "revMinor"),
+                                      try_get_attribute<double>(header_node, "north"),
+                                      try_get_attribute<double>(header_node, "east"),
+                                      try_get_attribute<double>(header_node, "south"),
+                                      try_get_attribute<double>(header_node, "west"),
+                                      try_get_attribute<std::string>(header_node, "date"),
+                                      try_get_attribute<std::string>(header_node, "name"),
+                                      try_get_attribute<std::string>(header_node, "vendor"),
+                                      try_get_attribute<std::string>(header_node, "version"),
+                                      georef_node ? std::optional<std::string>(georef_node.text().as_string("")) : std::nullopt);
 
     std::size_t cnt_geoms = 1;
     if (center_map)
