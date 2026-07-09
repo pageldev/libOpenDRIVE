@@ -17,7 +17,7 @@ JunctionPriority::JunctionPriority(std::string high, std::string low) : high(hig
 JunctionController::JunctionController(std::string id, std::optional<std::string> type, std::optional<int64_t> sequence) :
     id(id), type(type), sequence(sequence)
 {
-    require_or_throw(!sequence || *sequence >= 0, "sequence < 0");
+    require_or_throw(!sequence || sequence >= 0, "sequence < 0");
 }
 
 Junction::Junction(std::string id, std::optional<std::string> name) : id(id), name(name) {}

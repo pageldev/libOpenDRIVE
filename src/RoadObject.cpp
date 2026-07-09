@@ -44,8 +44,8 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     require_or_throw(height_end >= 0, "heightEnd {} < 0", height_end);
     require_or_throw(!std::isnan(z_offset_start), "zOffsetStart is NaN");
     require_or_throw(!std::isnan(z_offset_end), "zOffsetEnd is NaN");
-    require_or_throw(!width_start || *width_start >= 0, "widthStart < 0");
-    require_or_throw(!width_end || *width_end >= 0, "widthEnd < 0");
+    require_or_throw(!width_start || width_start >= 0, "widthStart < 0");
+    require_or_throw(!width_end || width_end >= 0, "widthEnd < 0");
 }
 
 RoadObjectCorner::RoadObjectCorner(Vec3D pt, double height, Type type, std::optional<int> id) : pt(pt), height(height), type(type), id(id)
@@ -105,11 +105,11 @@ RoadObject::RoadObject(std::string                road_id,
     require_or_throw(s0 >= 0, "s {} < 0", s0);
     require_or_throw(!std::isnan(t0), "t is NaN");
     require_or_throw(!std::isnan(z0), "z is NaN");
-    require_or_throw(!length || *length > 0, "length <= 0");
-    require_or_throw(!valid_length || *valid_length >= 0, "validLength < 0");
+    require_or_throw(!length || length > 0, "length <= 0");
+    require_or_throw(!valid_length || valid_length >= 0, "validLength < 0");
     require_or_throw(!width || !std::isnan(*width), "width is NaN");
-    require_or_throw(!radius || *radius > 0, "radius <= 0");
-    require_or_throw(!height || *height >= 0, "height < 0");
+    require_or_throw(!radius || radius > 0, "radius <= 0");
+    require_or_throw(!height || height >= 0, "height < 0");
     require_or_throw(!hdg || !std::isnan(*hdg), "hdg is NaN");
     require_or_throw(!pitch || !std::isnan(*pitch), "pitch is NaN");
     require_or_throw(!roll || !std::isnan(*roll), "roll is NaN");

@@ -15,8 +15,8 @@ RoadMarkLine::RoadMarkLine(double                     sOffset,
 {
     require_or_throw(sOffset >= 0, "sOffset {} < 0", sOffset);
     require_or_throw(length >= 0, "length {} < 0", length);
-    require_or_throw(!width || *width > 0, "width <= 0");
-    require_or_throw(!space || *space >= 0, "space < 0");
+    require_or_throw(!width || width > 0, "width <= 0");
+    require_or_throw(!space || space >= 0, "space < 0");
 }
 
 RoadMarkType::RoadMarkType(std::string name, std::optional<double> width) : name(name), width(width)
@@ -35,8 +35,8 @@ RoadMark::RoadMark(double                     s_offset,
     s_offset(s_offset), type(type), color(color), width(width), height(height), weight(weight), material(material), lane_change(lane_change)
 {
     require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
-    require_or_throw(!width || *width >= 0, "width < 0");
-    require_or_throw(!height || *height > 0, "height <= 0");
+    require_or_throw(!width || width >= 0, "width < 0");
+    require_or_throw(!height || height > 0, "height <= 0");
 }
 
 SingleRoadMark::SingleRoadMark(double s0, double s1, double t, double width, std::string type) noexcept :
