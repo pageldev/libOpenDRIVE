@@ -18,14 +18,14 @@ namespace odr
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(const std::string& xodr_file,
-                 const bool         center_map = false,
-                 const bool         with_road_objects = true,
-                 const bool         with_lateral_profile = true,
-                 const bool         with_lane_height = true,
-                 const bool         abs_z_for_for_local_road_obj_outline = false,
-                 const bool         fix_spiral_edge_cases = true,
-                 const bool         with_road_signals = true);
+    OpenDriveMap(const pugi::xml_document& xml_doc,
+                 const bool                center_map = false,
+                 const bool                with_road_objects = true,
+                 const bool                with_lateral_profile = true,
+                 const bool                with_lane_height = true,
+                 const bool                abs_z_for_for_local_road_obj_outline = false,
+                 const bool                fix_spiral_edge_cases = true,
+                 const bool                with_road_signals = true);
 
     Road                  get_road(const std::string& id) const;
     std::vector<Road>     get_roads() const;
@@ -38,7 +38,6 @@ public:
     std::string proj4 = "";
     double      x_offs = 0;
     double      y_offs = 0;
-    std::string xodr_file = "";
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;

@@ -37,21 +37,15 @@
 namespace odr
 {
 
-OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
-                           const bool         center_map,
-                           const bool         with_road_objects,
-                           const bool         with_lateral_profile,
-                           const bool         with_lane_height,
-                           const bool         abs_z_for_for_local_road_obj_outline,
-                           const bool         fix_spiral_edge_cases,
-                           const bool         with_road_signals) :
-    xodr_file(xodr_file)
+OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
+                           const bool                center_map,
+                           const bool                with_road_objects,
+                           const bool                with_lateral_profile,
+                           const bool                with_lane_height,
+                           const bool                abs_z_for_for_local_road_obj_outline,
+                           const bool                fix_spiral_edge_cases,
+                           const bool                with_road_signals)
 {
-    pugi::xml_document           xml_doc;
-    const pugi::xml_parse_result xml_parse_result = xml_doc.load_file(xodr_file.c_str());
-    if (!xml_parse_result)
-        log::error("Error parsing xml: {}", xml_parse_result.description());
-
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
     if (const pugi::xml_node geoReference_node = odr_node.child("header").child("geoReference"))

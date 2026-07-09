@@ -10,12 +10,17 @@
 
 struct OpenDriveFixture
 {
-    OpenDriveFixture() : odr_map("test.xodr")
+    OpenDriveFixture()
     {
-        REQUIRE(!odr_map.get_roads().empty());
+        pugi::xml_parse_result result = this->xml_doc.load_file("test.xodr");
+        REQUIRE(result);
+
+        this->odr_map = std::make_unique<odr::OpenDriveMap>(xml_doc);
+        REQUIRE(!(this->odr_map->get_roads().empty()));
     }
 
-    odr::OpenDriveMap odr_map;
+    pugi::xml_document                 xml_doc;
+    std::unique_ptr<odr::OpenDriveMap> odr_map;
 };
 
 TEST_CASE("odr types are movable", "[types]")
@@ -43,12 +48,12 @@ TEST_CASE("odr types are movable", "[types]")
 TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
 {
     // basic routing test
-    auto graph = odr_map.get_routing_graph();
+    auto graph = odr_map->get_routing_graph();
     auto path = graph.shortest_path(odr::LaneKey("43", 0.0, 1), odr::LaneKey("41", 0.0, 1));
     REQUIRE(path.size() == 15);
 
     // road sanity
-    for (const odr::Road& road : odr_map.get_roads())
+    for (const odr::Road& road : odr_map->get_roads())
     {
         INFO("road: " << road.id << ", length: " << road.length);
         REQUIRE(road.length >= 0.0);
@@ -89,7 +94,7 @@ TEST_CASE_METHOD(OpenDriveFixture, "Routing check", "[xodr]")
          {"64", 0, -4},
          {"65", 0, -4}}};
 
-    const odr::RoutingGraph graph = odr_map.get_routing_graph();
+    const odr::RoutingGraph graph = odr_map->get_routing_graph();
     for (const odr::RoutingPath& expected_path : expected_paths)
     {
         const odr::RoutingPath path = graph.shortest_path(expected_path.front(), expected_path.back());
