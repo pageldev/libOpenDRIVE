@@ -1,6 +1,6 @@
 #pragma once
-#include "Log.hpp"
-#include "Math.hpp"
+#include "libodr/Log.hpp"
+#include "libodr/Math.hpp"
 
 #include "fmt/core.h"
 #include "fmt/ranges.h"

@@ -1,9 +1,9 @@
 #pragma once
-#include "Junction.h"
-#include "Lane.h"
-#include "Road.h"
-#include "RoadNetworkMesh.h"
-#include "RoutingGraph.h"
+#include "libodr/Junction.h"
+#include "libodr/Lane.h"
+#include "libodr/Road.h"
+#include "libodr/RoadNetworkMesh.h"
+#include "libodr/RoutingGraph.h"
 
 #include "pugixml.hpp"
 

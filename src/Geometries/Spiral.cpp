@@ -1,7 +1,7 @@
-#include "Geometries/Spiral.h"
-#include "Geometries/RoadGeometry.h"
-#include "Geometries/Spiral/odrSpiral.h"
-#include "Math.hpp"
+#include "libodr/Geometries/Spiral.h"
+#include "libodr/Geometries/RoadGeometry.h"
+#include "libodr/Geometries/Spiral/odrSpiral.h"
+#include "libodr/Math.hpp"
 
 #include <cmath>
 

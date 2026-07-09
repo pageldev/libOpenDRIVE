@@ -1,7 +1,7 @@
-#include "Geometries/CubicSpline.h"
-#include "CubicBezier.hpp"
-#include "Math.hpp"
-#include "Utils.hpp"
+#include "libodr/Geometries/CubicSpline.h"
+#include "libodr/CubicBezier.hpp"
+#include "libodr/Math.hpp"
+#include "libodr/Utils.hpp"
 
 #include <algorithm>
 #include <array>

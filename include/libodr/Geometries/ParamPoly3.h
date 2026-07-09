@@ -1,7 +1,7 @@
 #pragma once
-#include "CubicBezier.hpp"
-#include "Math.hpp"
 #include "RoadGeometry.h"
+#include "libodr/CubicBezier.hpp"
+#include "libodr/Math.hpp"
 
 #include <memory>
 #include <set>

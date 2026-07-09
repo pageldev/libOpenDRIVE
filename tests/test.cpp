@@ -1,9 +1,9 @@
-#include "Lane.h"
-#include "LaneSection.h"
-#include "OpenDriveMap.h"
-#include "Road.h"
-#include "RoadMark.h"
-#include "RoadObject.h"
+#include "libodr/Lane.h"
+#include "libodr/LaneSection.h"
+#include "libodr/OpenDriveMap.h"
+#include "libodr/Road.h"
+#include "libodr/RoadMark.h"
+#include "libodr/RoadObject.h"
 #include <catch2/catch_test_macros.hpp>
 
 #include <type_traits>

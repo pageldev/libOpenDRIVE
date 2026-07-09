@@ -1,7 +1,7 @@
 #pragma once
-#include "Geometries/CubicSpline.h"
-#include "Geometries/RoadGeometry.h"
-#include "Math.hpp"
+#include "libodr/Geometries/CubicSpline.h"
+#include "libodr/Geometries/RoadGeometry.h"
+#include "libodr/Math.hpp"
 
 #include <map>
 #include <memory>
