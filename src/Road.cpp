@@ -17,6 +17,7 @@
 #include <fmt/format.h>
 #include <iterator>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -44,15 +45,10 @@ double Crossfall::get(const double s, const bool on_left_side) const
     return target_poly_iter->second.evaluate(s);
 }
 
-RoadLink::RoadLink(std::string id, std::string type_str, std::string contact_point_str) : id(id)
+RoadLink::RoadLink(std::string id, Type type, std::optional<ContactPoint> contact_point) : id(id), type(type), contact_point(contact_point)
 {
-    require_or_throw(type_str == "road" || type_str == "junction", "unknown elementType '{}'", type_str);
-    this->type = (type_str == "road") ? RoadLink::Type::Road : RoadLink::Type::Junction;
-    if (this->type == RoadLink::Type::Road) // junction connection has no contact point
-    {
-        require_or_throw(contact_point_str == "start" || contact_point_str == "end", "unknown contactPoint '{}'", contact_point_str);
-        this->contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
-    }
+    if (type == Type::Road)
+        require_or_throw(contact_point.has_value(), "a road link of type 'road' requires a contact point");
 }
 
 RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string direction) : id(id), side(side), direction(direction) {}
@@ -73,8 +69,8 @@ std::vector<RoadSignal> Road::get_road_signals() const
     return get_map_values(this->id_to_signal);
 }
 
-Road::Road(std::string id, double length, std::string junction, bool left_hand_traffic, std::optional<std::string> name) :
-    id(id), length(length), junction(junction), left_hand_traffic(left_hand_traffic), name(name), ref_line(length)
+Road::Road(std::string id, double length, std::string junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
+    id(id), length(length), junction(junction), traffic_rule(traffic_rule), name(name), ref_line(length)
 {
     require_or_throw(length > 0, "length {} <= 0", length);
 }

@@ -42,7 +42,6 @@ struct RoadLink
 {
     enum class ContactPoint
     {
-        None,
         Start,
         End
     };
@@ -54,9 +53,9 @@ struct RoadLink
         Junction
     };
 
-    RoadLink(std::string id, std::string type_str, std::string contact_point_str);
+    RoadLink(std::string id, Type type, std::optional<ContactPoint> contact_point);
 
-    std::string id = "";
+    std::string id;
     Type        type = Type::None;
 
     std::optional<ContactPoint> contact_point;
@@ -82,7 +81,17 @@ struct SpeedRecord
 class Road
 {
 public:
-    Road(std::string id, double length, std::string junction, bool left_hand_traffic = false, std::optional<std::string> name = std::nullopt);
+    enum class TrafficRule
+    {
+        LHT,
+        RHT
+    };
+
+    Road(std::string                id,
+         double                     length,
+         std::string                junction,
+         std::optional<TrafficRule> traffic_rule = std::nullopt,
+         std::optional<std::string> name = std::nullopt);
 
     std::vector<LaneSection> get_lanesections() const;
     std::vector<RoadObject>  get_road_objects() const;
@@ -115,8 +124,8 @@ public:
     std::string id;
     double      length;
     std::string junction;
-    bool        left_hand_traffic;
 
+    std::optional<TrafficRule> traffic_rule;
     std::optional<std::string> name;
 
     std::optional<RoadLink> predecessor;

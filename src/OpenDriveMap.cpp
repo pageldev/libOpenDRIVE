@@ -84,8 +84,11 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             continue;
         }
 
-        std::string rule_str = std::string(road_node.attribute("rule").as_string("RHT"));
+        std::string rule_str = std::string(road_node.attribute("rule").as_string(""));
         std::transform(rule_str.begin(), rule_str.end(), rule_str.begin(), [](unsigned char c) { return std::tolower(c); });
+        std::optional<Road::TrafficRule> traffic_rule = std::nullopt;
+        if (rule_str == "lht" || rule_str == "rht")
+            traffic_rule = rule_str == "lht" ? Road::TrafficRule::LHT : Road::TrafficRule::RHT;
 
         std::optional<Road> road;
         try
@@ -93,7 +96,7 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
             road.emplace(road_id,
                          road_node.attribute("length").as_double(NAN),
                          road_node.attribute("junction").as_string(""),
-                         rule_str == "lht",
+                         traffic_rule,
                          try_get_attribute<std::string>(road_node, "name"));
         }
         catch (const std::exception& ex)
@@ -112,9 +115,19 @@ OpenDriveMap::OpenDriveMap(const std::string& xodr_file,
                 std::optional<RoadLink> link;
                 try
                 {
-                    link.emplace(road_link_node.attribute("elementId").as_string(""),
-                                 road_link_node.attribute("elementType").as_string(""),
-                                 road_link_node.attribute("contactPoint").as_string(""));
+                    const std::string type_str = road_link_node.attribute("elementType").as_string("");
+                    require_or_throw(type_str == "road" || type_str == "junction", "unknown elementType '{}'", type_str);
+                    RoadLink::Type type = type_str == "road" ? RoadLink::Type::Road : RoadLink::Type::Junction;
+
+                    std::optional<RoadLink::ContactPoint> contact_point = std::nullopt;
+                    if (type == RoadLink::Type::Road) // junction connection has no contact point
+                    {
+                        const std::string contact_point_str = road_link_node.attribute("contactPoint").as_string("");
+                        require_or_throw(contact_point_str == "start" || contact_point_str == "end", "unknown contactPoint '{}'", contact_point_str);
+                        contact_point = (contact_point_str == "start") ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+                    }
+
+                    link.emplace(road_link_node.attribute("elementId").as_string(""), type, contact_point);
                 }
                 catch (const std::exception& ex)
                 {
