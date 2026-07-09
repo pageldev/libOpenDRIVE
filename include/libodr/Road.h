@@ -60,15 +60,6 @@ struct RoadLink
     std::optional<ContactPoint> contact_point;
 };
 
-struct RoadNeighbor
-{
-    RoadNeighbor(std::string id, std::string side, std::string direction);
-
-    std::string id = "";
-    std::string side = "";
-    std::string direction = "";
-};
-
 struct SpeedRecord
 {
     SpeedRecord(std::string max, std::string unit);

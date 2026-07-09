@@ -31,7 +31,8 @@ struct RefLine
     double           match(const double x, const double y) const;
     std::set<double> approximate_linear(const double eps, const double s_start, const double s_end) const;
 
-    double       length = 0;
+    double length;
+
     CubicProfile elevation_profile;
 
     std::map<double, std::unique_ptr<RoadGeometry>> s0_to_geometry;

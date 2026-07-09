@@ -51,8 +51,6 @@ RoadLink::RoadLink(std::string id, Type type, std::optional<ContactPoint> contac
         require_or_throw(contact_point.has_value(), "a road link of type 'road' requires a contact point");
 }
 
-RoadNeighbor::RoadNeighbor(std::string id, std::string side, std::string direction) : id(id), side(side), direction(direction) {}
-
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
 
 std::vector<LaneSection> Road::get_lanesections() const

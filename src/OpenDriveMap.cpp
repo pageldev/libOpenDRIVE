@@ -131,24 +131,24 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
         }
 
         // parse road links
+        const pugi::xml_node link_node = road_node.child("link");
         for (const bool is_predecessor : {true, false})
         {
-            const pugi::xml_node road_link_node =
-                is_predecessor ? road_node.child("link").child("predecessor") : road_node.child("link").child("successor");
-            if (road_link_node)
+            const pugi::xml_node next_link_node = is_predecessor ? link_node.child("predecessor") : link_node.child("successor");
+            if (next_link_node)
             {
                 std::optional<RoadLink> link;
                 try
                 {
-                    const std::optional<RoadLink::Type> type = try_get_enum<RoadLink::Type>(road_link_node, "elementType");
+                    const std::optional<RoadLink::Type> type = try_get_enum<RoadLink::Type>(next_link_node, "elementType");
                     require_or_throw(type.has_value(), "no valid elementType");
-                    link.emplace(road_link_node.attribute("elementId").as_string(""),
+                    link.emplace(next_link_node.attribute("elementId").as_string(""),
                                  *type,
-                                 try_get_enum<RoadLink::ContactPoint>(road_link_node, "contactPoint"));
+                                 try_get_enum<RoadLink::ContactPoint>(next_link_node, "contactPoint"));
                 }
                 catch (const std::exception& ex)
                 {
-                    log::warn("{}: {}", node_path(road_link_node), ex.what());
+                    log::warn("{}: {}", node_path(next_link_node), ex.what());
                     continue;
                 }
 
@@ -156,6 +156,8 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                 road_link = link;
             }
         }
+        if (link_node.child("neighbor"))
+            log::warn("{}: <neighbor> not supported", node_path(link_node));
 
         // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
@@ -349,9 +351,10 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
         }
 
         // parse crossfall - has extra attribute side
+        const pugi::xml_node lateral_profile_node = road_node.child("lateralProfile");
         if (with_lateral_profile)
         {
-            for (const pugi::xml_node crossfall_node : road_node.child("lateralProfile").children("crossfall"))
+            for (const pugi::xml_node crossfall_node : lateral_profile_node.children("crossfall"))
             {
                 const double s0 = crossfall_node.attribute("s").as_double(NAN);
                 const double a = crossfall_node.attribute("a").as_double(NAN);
@@ -375,11 +378,8 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                 road->crossfall.s_to_side[s0] = side.value_or(Crossfall::Side::Both); // default to 'both'
             }
 
-            // check for lateralProfile shape - not implemented yet
-            if (road_node.child("lateralProfile").child("shape"))
-            {
-                log::warn("{}: lateralProfile::shape not supported", node_path(road_node));
-            }
+            if (lateral_profile_node.child("shape"))
+                log::warn("{}: <shape> not supported", node_path(lateral_profile_node));
         }
 
         // parse road lane sections and lanes
