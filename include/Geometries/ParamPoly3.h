@@ -11,6 +11,12 @@ namespace odr
 
 struct ParamPoly3 : public RoadGeometry
 {
+    enum class PRange
+    {
+        Normalized,
+        ArcLength
+    };
+
     ParamPoly3(double s0,
                double x0,
                double y0,
@@ -24,7 +30,7 @@ struct ParamPoly3 : public RoadGeometry
                double bV,
                double cV,
                double dV,
-               bool   pRange_normalized = true);
+               PRange p_range = PRange::Normalized);
 
     std::unique_ptr<RoadGeometry> clone() const override;
 
@@ -34,7 +40,7 @@ struct ParamPoly3 : public RoadGeometry
     std::set<double> approximate_linear(double eps) const override;
 
     double        aU = 0, bU = 0, cU = 0, dU = 0, aV = 0, bV = 0, cV = 0, dV = 0;
-    bool          pRange_normalized = true;
+    PRange        p_range = PRange::Normalized;
     CubicBezier2D cubic_bezier;
 };
 

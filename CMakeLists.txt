@@ -40,6 +40,23 @@ if(NOT TARGET fmt::fmt)
     endif()
 endif()
 
+find_package(magic_enum QUIET CONFIG)
+if(NOT TARGET magic_enum::magic_enum)
+    if(TARGET magic_enum)
+        add_library(magic_enum::magic_enum ALIAS magic_enum)
+    else()
+        if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+            set(MAGIC_ENUM_OPT_INSTALL ON CACHE BOOL "" FORCE)
+        endif()
+        FetchContent_Declare(
+            magic_enum
+            GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+            GIT_TAG v0.9.8
+        )
+        FetchContent_MakeAvailable(magic_enum)
+    endif()
+endif()
+
 set(SOURCES
     src/Geometries/Arc.cpp
     src/Geometries/CubicSpline.cpp
@@ -78,6 +95,7 @@ endif()
 
 target_link_libraries(OpenDrive PUBLIC pugixml::pugixml)
 target_link_libraries(OpenDrive PUBLIC fmt::fmt)
+target_link_libraries(OpenDrive PUBLIC magic_enum::magic_enum)
 
 target_include_directories(
     OpenDrive PUBLIC

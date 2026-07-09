@@ -4,6 +4,7 @@
 
 #include "fmt/core.h"
 #include "fmt/ranges.h"
+#include "magic_enum/magic_enum.hpp"
 #include "pugixml.hpp"
 
 #include <algorithm>
@@ -394,6 +395,15 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
     {
         static_assert(std::is_same_v<T, void>, "unsupported T");
     }
+}
+
+template<typename T>
+std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
+{
+    std::optional<std::string> enum_str = try_get_attribute<std::string>(node, attr_name, log_lvl);
+    if (!enum_str)
+        return std::nullopt;
+    return magic_enum::enum_cast<T>(*enum_str, magic_enum::case_insensitive);
 }
 
 inline bool is_zero(double x)

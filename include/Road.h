@@ -22,7 +22,7 @@ namespace odr
 struct Lane;
 struct RoadMark;
 
-struct Crossfall : public CubicProfile
+struct Crossfall : public CubicProfile // extends cubic with 'side' attribute
 {
     enum class Side
     {
@@ -40,23 +40,22 @@ struct Crossfall : public CubicProfile
 
 struct RoadLink
 {
+    enum class Type
+    {
+        Road,
+        Junction
+    };
+
     enum class ContactPoint
     {
         Start,
         End
     };
 
-    enum class Type
-    {
-        None,
-        Road,
-        Junction
-    };
-
     RoadLink(std::string id, Type type, std::optional<ContactPoint> contact_point);
 
     std::string id;
-    Type        type = Type::None;
+    Type        type;
 
     std::optional<ContactPoint> contact_point;
 };

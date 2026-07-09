@@ -40,7 +40,7 @@ struct JunctionConnection
 {
     enum class ContactPoint
     {
-        None, // needed for init
+        None, // for init
         Start,
         End
     };
