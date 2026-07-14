@@ -598,8 +598,7 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                 std::optional<RoadObject> road_object;
                 try
                 {
-                    road_object.emplace(road_id,
-                                        object_id,
+                    road_object.emplace(object_id,
                                         object_node.attribute("s").as_double(NAN),
                                         object_node.attribute("t").as_double(NAN),
                                         object_node.attribute("zOffset").as_double(NAN),

@@ -65,8 +65,7 @@ RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
 {
 }
 
-RoadObject::RoadObject(std::string                road_id,
-                       std::string                id,
+RoadObject::RoadObject(std::string                id,
                        double                     s0,
                        double                     t0,
                        double                     z0,
@@ -83,7 +82,7 @@ RoadObject::RoadObject(std::string                road_id,
                        std::optional<std::string> subtype,
                        std::optional<Orientation> orientation,
                        std::optional<bool>        is_dynamic) :
-    road_id(road_id),
+
     id(id),
     s0(s0),
     t0(t0),

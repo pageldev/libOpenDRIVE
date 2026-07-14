@@ -82,8 +82,7 @@ struct RoadObject
         Negative
     };
 
-    RoadObject(std::string                road_id,
-               std::string                id,
+    RoadObject(std::string                id,
                double                     s0,
                double                     t0,
                double                     z0,
@@ -104,7 +103,6 @@ struct RoadObject
     static Mesh3D get_cylinder(double eps, double radius, double height);
     static Mesh3D get_box(double width, double length, double height);
 
-    std::string road_id;
     std::string id;
 
     double s0;
