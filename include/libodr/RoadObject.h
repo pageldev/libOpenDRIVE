@@ -25,7 +25,7 @@ struct RoadObjectRepeat
                      std::optional<double> width_end = std::nullopt);
 
     double s0;
-    double length;
+    double length; // length of repeat area, not object
     double distance;
     double t_start;
     double t_end;

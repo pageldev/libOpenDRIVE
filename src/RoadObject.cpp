@@ -40,8 +40,8 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     require_or_throw(distance >= 0, "distance {} < 0", distance);
     require_or_throw(!std::isnan(t_start), "tStart is NaN");
     require_or_throw(!std::isnan(t_end), "tEnd is NaN");
-    require_or_throw(height_start >= 0, "heightStart {} < 0", height_start);
-    require_or_throw(height_end >= 0, "heightEnd {} < 0", height_end);
+    require_or_throw(!std::isnan(height_start), "heightStart is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
+    require_or_throw(!std::isnan(height_end), "heightEnd is NaN");
     require_or_throw(!width_start || width_start >= 0, "widthStart < 0");
     require_or_throw(!width_end || width_end >= 0, "widthEnd < 0");
 }
@@ -106,7 +106,7 @@ RoadObject::RoadObject(std::string                id,
     require_or_throw(!valid_length || valid_length >= 0, "validLength < 0");
     require_or_throw(!width || !std::isnan(*width), "width is NaN");
     require_or_throw(!radius || radius > 0, "radius <= 0");
-    require_or_throw(!height || height >= 0, "height < 0");
+    require_or_throw(!height || !std::isnan(*height), "height is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
     require_or_throw(!hdg || !std::isnan(*hdg), "hdg is NaN");
     require_or_throw(!pitch || !std::isnan(*pitch), "pitch is NaN");
     require_or_throw(!roll || !std::isnan(*roll), "roll is NaN");
@@ -114,9 +114,11 @@ RoadObject::RoadObject(std::string                id,
 
 Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 {
-    Mesh3D cylinder_mesh;
-    cylinder_mesh.vertices.push_back({0, 0, 0});
-    cylinder_mesh.vertices.push_back({0, 0, height});
+    Mesh3D       cylinder_mesh;
+    const double z_bottom = std::min(0.0, height);
+    const double z_top = std::max(0.0, height);
+    cylinder_mesh.vertices.push_back({0, 0, z_bottom});
+    cylinder_mesh.vertices.push_back({0, 0, z_top});
 
     const double eps_adj = 0.5 * eps; // reduce eps a bit, cylinders more subsceptible to low resolution
     const double eps_angle =
@@ -129,8 +131,8 @@ Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 
     for (const double alpha : angles)
     {
-        const Vec3D circle_pt_bottom = {radius * std::cos(alpha), radius * std::sin(alpha), 0};
-        const Vec3D circle_pt_top = {radius * std::cos(alpha), radius * std::sin(alpha), height};
+        const Vec3D circle_pt_bottom = {radius * std::cos(alpha), radius * std::sin(alpha), z_bottom};
+        const Vec3D circle_pt_top = {radius * std::cos(alpha), radius * std::sin(alpha), z_top};
         cylinder_mesh.vertices.push_back(circle_pt_bottom);
         cylinder_mesh.vertices.push_back(circle_pt_top);
 
@@ -149,14 +151,16 @@ Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 
 Mesh3D RoadObject::get_box(double w, double l, double h)
 {
-    return Mesh3D({Vec3D{l / 2, w / 2, 0},
-                   Vec3D{-l / 2, w / 2, 0},
-                   Vec3D{-l / 2, -w / 2, 0},
-                   Vec3D{l / 2, -w / 2, 0},
-                   Vec3D{l / 2, w / 2, h},
-                   Vec3D{-l / 2, w / 2, h},
-                   Vec3D{-l / 2, -w / 2, h},
-                   Vec3D{l / 2, -w / 2, h}},
+    const double z_bottom = std::min(0.0, h);
+    const double z_top = std::max(0.0, h);
+    return Mesh3D({Vec3D{l / 2, w / 2, z_bottom},
+                   Vec3D{-l / 2, w / 2, z_bottom},
+                   Vec3D{-l / 2, -w / 2, z_bottom},
+                   Vec3D{l / 2, -w / 2, z_bottom},
+                   Vec3D{l / 2, w / 2, z_top},
+                   Vec3D{-l / 2, w / 2, z_top},
+                   Vec3D{-l / 2, -w / 2, z_top},
+                   Vec3D{l / 2, -w / 2, z_top}},
                   {0, 3, 1, 3, 2, 1, 4, 5, 7, 7, 5, 6, 7, 6, 3, 3, 6, 2, 5, 4, 1, 1, 4, 0, 0, 4, 7, 7, 3, 0, 1, 6, 5, 1, 2, 6},
                   {},
                   {});

@@ -447,12 +447,12 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
 
                 Mesh3D single_road_obj_mesh;
-                if (road_obj.radius)
-                    single_road_obj_mesh = RoadObject::get_cylinder(eps, road_obj.radius.value(), h_s);
-                else if (road_obj.length && w_s > 0)
-                    single_road_obj_mesh = RoadObject::get_box(w_s, road_obj.length.value(), h_s);
-                else
-                    single_road_obj_mesh = RoadObject::get_box(0.1, 0.1, 0.1); // fallback object
+                if (road_obj.radius) // cylinder
+                    single_road_obj_mesh = RoadObject::get_cylinder(eps, *(road_obj.radius), h_s);
+                else if (road_obj.length && w_s > 0) // box
+                    single_road_obj_mesh = RoadObject::get_box(w_s, *(road_obj.length), h_s);
+                else // fallback to box
+                    single_road_obj_mesh = RoadObject::get_box(0.1, 0.1, 0.1);
 
                 Vec3D       e_s, e_t, e_h;
                 const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
@@ -481,11 +481,13 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double z_s =
                     r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
+                const double z_bottom = z_s + std::min(0.0, h_s);
+                const double z_top = z_s + std::max(0.0, h_s);
 
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_s));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_s + h_s));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s + h_s));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_bottom));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_bottom));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_top));
+                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_top));
 
                 const std::array<Vec2D, 4> s_t_coords = {{{s, t_s - 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s - 0.5 * w_s}}};
                 continuous_road_obj_mesh.st_coordinates.insert(continuous_road_obj_mesh.st_coordinates.end(), s_t_coords.begin(), s_t_coords.end());
