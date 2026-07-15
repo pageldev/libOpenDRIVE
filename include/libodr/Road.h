@@ -106,7 +106,7 @@ public:
 
     Mesh3D get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& roadmark, double eps) const;
     Mesh3D get_road_signal_mesh(const RoadSignal& road_signal) const;
-    Mesh3D get_road_object_mesh(const RoadObject& road_object, double eps) const;
+    Mesh3D get_road_object_mesh(const RoadObject& road_object, double eps, double default_h = 0, double default_z = 0) const;
 
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double eps, bool outer = true) const;

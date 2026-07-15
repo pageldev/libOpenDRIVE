@@ -19,8 +19,8 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
                                    double                t_end,
                                    double                height_start,
                                    double                height_end,
-                                   double                z_offset_start,
-                                   double                z_offset_end,
+                                   std::optional<double> z_offset_start,
+                                   std::optional<double> z_offset_end,
                                    std::optional<double> width_start,
                                    std::optional<double> width_end) :
     s0(s0),
@@ -42,8 +42,6 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     require_or_throw(!std::isnan(t_end), "tEnd is NaN");
     require_or_throw(height_start >= 0, "heightStart {} < 0", height_start);
     require_or_throw(height_end >= 0, "heightEnd {} < 0", height_end);
-    require_or_throw(!std::isnan(z_offset_start), "zOffsetStart is NaN");
-    require_or_throw(!std::isnan(z_offset_end), "zOffsetEnd is NaN");
     require_or_throw(!width_start || width_start >= 0, "widthStart < 0");
     require_or_throw(!width_end || width_end >= 0, "widthEnd < 0");
 }
@@ -66,9 +64,9 @@ RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
 }
 
 RoadObject::RoadObject(std::string                id,
-                       double                     s0,
-                       double                     t0,
-                       double                     z0,
+                       std::optional<double>      s0,
+                       std::optional<double>      t0,
+                       std::optional<double>      z0,
                        std::optional<double>      length,
                        std::optional<double>      valid_length,
                        std::optional<double>      width,
@@ -101,9 +99,9 @@ RoadObject::RoadObject(std::string                id,
     orientation(orientation),
     is_dynamic(is_dynamic)
 {
-    require_or_throw(s0 >= 0, "s {} < 0", s0);
-    require_or_throw(!std::isnan(t0), "t is NaN");
-    require_or_throw(!std::isnan(z0), "z is NaN");
+    require_or_throw(!s0 || s0 >= 0, "s < 0");
+    require_or_throw(!t0 || !std::isnan(*t0), "t is NaN");
+    require_or_throw(!z0 || !std::isnan(*z0), "z is NaN");
     require_or_throw(!length || length > 0, "length <= 0");
     require_or_throw(!valid_length || valid_length >= 0, "validLength < 0");
     require_or_throw(!width || !std::isnan(*width), "width is NaN");

@@ -54,7 +54,8 @@ public:
                  const bool                with_lane_height = true,
                  const bool                abs_z_for_for_local_road_obj_outline = false,
                  const bool                fix_spiral_edge_cases = true,
-                 const bool                with_road_signals = true);
+                 const bool                with_road_signals = true,
+                 const bool                treat_value_zero_as_missing = true);
 
     Road                  get_road(const std::string& id) const;
     std::vector<Road>     get_roads() const;

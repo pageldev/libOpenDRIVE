@@ -360,7 +360,10 @@ inline bool parse_bool(std::string_view s)
 }
 
 template<typename T>
-std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
+std::optional<T> try_get_attribute(const pugi::xml_node&     node,
+                                   const char*               attr_name,
+                                   bool                      treat_value_zero_as_missing = false,
+                                   std::optional<log::Level> log_lvl = std::nullopt)
 {
     const auto attr = node.attribute(attr_name);
     if (!attr)
@@ -390,6 +393,8 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
                 log::log(*log_lvl, "{}/@{}: failed to parse '{}' as numeric", node_path(node), attr_name, value);
             return std::nullopt;
         }
+        if (treat_value_zero_as_missing && result == T{})
+            return std::nullopt;
         return result;
     }
     else
@@ -401,7 +406,7 @@ std::optional<T> try_get_attribute(const pugi::xml_node node, const char* attr_n
 template<typename T>
 std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
 {
-    std::optional<std::string> enum_str = try_get_attribute<std::string>(node, attr_name, log_lvl);
+    std::optional<std::string> enum_str = try_get_attribute<std::string>(node, attr_name, false, log_lvl);
     if (!enum_str)
         return std::nullopt;
     return magic_enum::enum_cast<T>(*enum_str, magic_enum::case_insensitive);
@@ -410,7 +415,7 @@ std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name, 
 inline std::optional<RoadObject::Orientation>
 try_get_orientation(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
 {
-    std::optional<std::string> orient_str = try_get_attribute<std::string>(node, attr_name, log_lvl);
+    std::optional<std::string> orient_str = try_get_attribute<std::string>(node, attr_name, false, log_lvl);
     if (!orient_str)
         return std::nullopt;
 

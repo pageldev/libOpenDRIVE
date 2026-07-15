@@ -400,20 +400,22 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     return road_signal_mesh;
 }
 
-Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
+Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double default_h, double default_z) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_obj.outlines.empty())         // handle single road object as one object repeat
     {
-        RoadObjectRepeat rp(road_obj.s0,
+        require_or_throw(road_obj.s0.has_value(), "missing s-coordinate on Road Object without Repeat");
+        require_or_throw(road_obj.t0.has_value(), "missing t-coordinate on Road Object without Repeat");
+        RoadObjectRepeat rp(*(road_obj.s0),
                             0,
                             1,
-                            road_obj.t0,
-                            road_obj.t0,
-                            road_obj.height.value_or(0),
-                            road_obj.height.value_or(0),
-                            road_obj.z0,
-                            road_obj.z0,
+                            *(road_obj.t0),
+                            *(road_obj.t0),
+                            road_obj.height.value_or(default_h),
+                            road_obj.height.value_or(default_h),
+                            road_obj.z0.value_or(default_z),
+                            road_obj.z0.value_or(default_z),
                             road_obj.width,
                             road_obj.width);
         repeats_copy.push_back(rp);
@@ -433,14 +435,15 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
         // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1.1 Object Repeat Record:
         // "distance between two instances of the object;
         // If this value is zero, then the object is considered to be a continuous feature like a guard rail, a wall etc."
-        if (!is_zero(r.distance))
+        if (!is_zero(r.distance)) // non-continuous object
         {
             for (double s = s_start; s <= s_end; s += r.distance)
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s = r.t_start + p * (r.t_end - r.t_start);
                 const double h_s = r.height_start + p * (r.height_end - r.height_start);
-                const double z_s = r.z_offset_start + p * (r.z_offset_end - r.z_offset_start);
+                const double z_s =
+                    r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
 
                 Mesh3D single_road_obj_mesh;
@@ -465,7 +468,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
                 road_obj_mesh.add_mesh(single_road_obj_mesh);
             }
         }
-        else
+        else // continuous object
         {
             Mesh3D continuous_road_obj_mesh;
 
@@ -475,7 +478,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s = r.t_start + p * (r.t_end - r.t_start);
                 const double h_s = r.height_start + p * (r.height_end - r.height_start);
-                const double z_s = r.z_offset_start + p * (r.z_offset_end - r.z_offset_start);
+                const double z_s =
+                    r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
 
                 continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_s));
@@ -516,8 +520,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
         if (road_object_outline.outline.size() < 2)
             continue;
 
-        Vec3D       e_s, e_t, e_h;
-        const Vec3D p0 = this->get_xyz(road_obj.s0, road_obj.t0, road_obj.z0, &e_s, &e_t, &e_h);
+        Vec3D e_s, e_t, e_h;
 
         const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
 
@@ -526,47 +529,34 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps) const
         // add top outline first - ensure the top vertices are at the front
         const bool is_flat_object = std::all_of(
             road_object_outline.outline.begin(), road_object_outline.outline.end(), [](const RoadObjectCorner& c) { return is_zero(c.height); });
-        if (!is_flat_object)
+        for (const bool is_top : {true, false})
         {
+            if (is_flat_object)
+                continue;
             for (const RoadObjectCorner& corner : road_object_outline.outline)
             {
-                Vec3D pt_top;
+                Vec3D pt_obj;
                 if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
-                    pt_top = {corner.pt[0], corner.pt[1], corner.pt[2]};
+                    require_or_throw(road_obj.s0.has_value(), "s-coordinate required for Object Outline of type CornerLocal");
+                    require_or_throw(road_obj.t0.has_value(), "t-coordinate required for Object Outline of type CornerLocal");
+                    const Vec3D p0 = this->get_xyz(*(road_obj.s0), *(road_obj.t0), road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h);
+                    pt_obj = {corner.pt[0], corner.pt[1], corner.pt[2]};
                     if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
-                        pt_top[2] -= p0[2]; // make road relative
-                    pt_top = add(pt_top, Vec3D{0, 0, corner.height});
-                    pt_top = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_top)), p0);
+                        pt_obj[2] -= p0[2]; // make road relative
+                    if (is_top)
+                        pt_obj = add(pt_obj, Vec3D{0, 0, corner.height});
+                    pt_obj = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_obj)), p0);
                 }
                 else
                 {
-                    pt_top = this->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2] + corner.height);
+                    const double h_obj = is_top ? corner.height : 0;
+                    pt_obj = this->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2] + h_obj);
                 }
 
-                outline_road_obj_mesh.vertices.push_back(pt_top);
-                outline_road_obj_mesh.st_coordinates.push_back({road_obj.s0, road_obj.t0});
+                outline_road_obj_mesh.vertices.push_back(pt_obj);
+                outline_road_obj_mesh.st_coordinates.push_back({*(road_obj.s0), *(road_obj.t0)}); // shouldn't get here if invalid s/t
             }
-        }
-
-        // add bottom outline
-        for (const RoadObjectCorner& corner : road_object_outline.outline)
-        {
-            Vec3D pt_base;
-            if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
-            {
-                pt_base = {corner.pt[0], corner.pt[1], corner.pt[2]};
-                if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
-                    pt_base[2] -= p0[2]; // make road relative
-                pt_base = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_base)), p0);
-            }
-            else
-            {
-                pt_base = this->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2]);
-            }
-
-            outline_road_obj_mesh.vertices.push_back(pt_base);
-            outline_road_obj_mesh.st_coordinates.push_back({road_obj.s0, road_obj.t0});
         }
 
         // run 2D triangulation on top vertices

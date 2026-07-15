@@ -19,8 +19,8 @@ struct RoadObjectRepeat
                      double                t_end,
                      double                height_start,
                      double                height_end,
-                     double                z_offset_start,
-                     double                z_offset_end,
+                     std::optional<double> z_offset_start = std::nullopt,
+                     std::optional<double> z_offset_end = std::nullopt,
                      std::optional<double> width_start = std::nullopt,
                      std::optional<double> width_end = std::nullopt);
 
@@ -31,9 +31,9 @@ struct RoadObjectRepeat
     double t_end;
     double height_start;
     double height_end;
-    double z_offset_start;
-    double z_offset_end;
 
+    std::optional<double> z_offset_start; // required but often treated as optional
+    std::optional<double> z_offset_end;   // ""
     std::optional<double> width_start;
     std::optional<double> width_end;
 };
@@ -83,9 +83,9 @@ struct RoadObject
     };
 
     RoadObject(std::string                id,
-               double                     s0,
-               double                     t0,
-               double                     z0,
+               std::optional<double>      s0 = std::nullopt,
+               std::optional<double>      t0 = std::nullopt,
+               std::optional<double>      z0 = std::nullopt,
                std::optional<double>      length = std::nullopt,
                std::optional<double>      valid_length = std::nullopt,
                std::optional<double>      width = std::nullopt,
@@ -105,12 +105,13 @@ struct RoadObject
 
     std::string id;
 
-    double s0;
-    double t0;
-    double z0;
+    // can be superseded by Object Repeat Record (Rev. 1.4, 5.3.8.1.1)
+    std::optional<double> s0;
+    std::optional<double> t0;
+    std::optional<double> z0;
 
-    std::optional<double> length;
-    std::optional<double> valid_length;
+    std::optional<double> length;       // physical length vs.
+    std::optional<double> valid_length; // validity range, has no influence on shape
     std::optional<double> width;
     std::optional<double> radius;
     std::optional<double> height;

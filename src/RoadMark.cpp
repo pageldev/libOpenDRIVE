@@ -21,7 +21,7 @@ RoadMarkLine::RoadMarkLine(double                     sOffset,
 
 RoadMarkType::RoadMarkType(std::string name, std::optional<double> width) : name(name), width(width)
 {
-    require_or_throw(!width || *width > 0, "width <= 0");
+    require_or_throw(!width || width > 0, "width <= 0");
 }
 
 RoadMark::RoadMark(double                     s_offset,

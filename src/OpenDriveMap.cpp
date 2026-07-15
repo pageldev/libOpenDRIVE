@@ -69,7 +69,8 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                            const bool                with_lane_height,
                            const bool                abs_z_for_for_local_road_obj_outline,
                            const bool                fix_spiral_edge_cases,
-                           const bool                with_road_signals)
+                           const bool                with_road_signals,
+                           const bool                treat_value_zero_as_missing)
 {
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
@@ -485,7 +486,7 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                          roadmark_node.attribute("type").as_string(""),
                                          roadmark_node.attribute("color").as_string(""),
                                          try_get_attribute<double>(roadmark_node, "width"),
-                                         try_get_attribute<double>(roadmark_node, "height"),
+                                         try_get_attribute<double>(roadmark_node, "height", treat_value_zero_as_missing),
                                          try_get_attribute<std::string>(roadmark_node, "weight"),
                                          try_get_attribute<std::string>(roadmark_node, "material"),
                                          try_get_attribute<std::string>(roadmark_node, "laneChange"));
@@ -502,7 +503,7 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                         try
                         {
                             roadmark_type.emplace(roadmark_type_node.attribute("name").as_string(""),
-                                                  try_get_attribute<double>(roadmark_type_node, "width"));
+                                                  try_get_attribute<double>(roadmark_type_node, "width", treat_value_zero_as_missing));
                         }
                         catch (const std::exception& ex)
                         {
@@ -519,7 +520,7 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                     roadmark_line.emplace(roadmarks_line_node.attribute("sOffset").as_double(NAN),
                                                           roadmarks_line_node.attribute("tOffset").as_double(NAN),
                                                           roadmarks_line_node.attribute("length").as_double(NAN),
-                                                          try_get_attribute<double>(roadmarks_line_node, "width"),
+                                                          try_get_attribute<double>(roadmarks_line_node, "width", treat_value_zero_as_missing),
                                                           try_get_attribute<double>(roadmarks_line_node, "space"),
                                                           try_get_attribute<std::string>(roadmarks_line_node, "color"),
                                                           try_get_attribute<std::string>(roadmarks_line_node, "rule"));
@@ -599,13 +600,13 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                 try
                 {
                     road_object.emplace(object_id,
-                                        object_node.attribute("s").as_double(NAN),
-                                        object_node.attribute("t").as_double(NAN),
-                                        object_node.attribute("zOffset").as_double(NAN),
-                                        try_get_attribute<double>(object_node, "length"),
+                                        try_get_attribute<double>(object_node, "s"),
+                                        try_get_attribute<double>(object_node, "t"),
+                                        try_get_attribute<double>(object_node, "zOffset"),
+                                        try_get_attribute<double>(object_node, "length", treat_value_zero_as_missing),
                                         try_get_attribute<double>(object_node, "validLength"),
                                         try_get_attribute<double>(object_node, "width"),
-                                        try_get_attribute<double>(object_node, "radius"),
+                                        try_get_attribute<double>(object_node, "radius", treat_value_zero_as_missing),
                                         try_get_attribute<double>(object_node, "height"),
                                         try_get_attribute<double>(object_node, "hdg"),
                                         try_get_attribute<double>(object_node, "pitch"),
@@ -633,8 +634,8 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                                           repeat_node.attribute("tEnd").as_double(NAN),
                                                           repeat_node.attribute("heightStart").as_double(NAN),
                                                           repeat_node.attribute("heightEnd").as_double(NAN),
-                                                          repeat_node.attribute("zOffsetStart").as_double(NAN),
-                                                          repeat_node.attribute("zOffsetEnd").as_double(NAN),
+                                                          try_get_attribute<double>(repeat_node, "zOffsetStart"),
+                                                          try_get_attribute<double>(repeat_node, "zOffsetEnd"),
                                                           try_get_attribute<double>(repeat_node, "widthStart"),
                                                           try_get_attribute<double>(repeat_node, "widthEnd"));
                     }

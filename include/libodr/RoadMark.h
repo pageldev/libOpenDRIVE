@@ -36,7 +36,7 @@ struct RoadMarkType
     RoadMarkType(std::string name, std::optional<double> width = std::nullopt);
 
     std::string           name;
-    std::optional<double> width; // common that xodrs don't set this
+    std::optional<double> width; // can be superseded by RoadMarkLine width (Rev. 1.4, 5.3.7.2.1.1.4.1.1)
 
     std::vector<RoadMarkLine> lines;
 };
