@@ -15,10 +15,10 @@ namespace odr
 RoadObjectRepeat::RoadObjectRepeat(double                s0,
                                    double                length,
                                    double                distance,
-                                   double                t_start,
-                                   double                t_end,
-                                   double                height_start,
-                                   double                height_end,
+                                   std::optional<double> t_start,
+                                   std::optional<double> t_end,
+                                   std::optional<double> height_start,
+                                   std::optional<double> height_end,
                                    std::optional<double> z_offset_start,
                                    std::optional<double> z_offset_end,
                                    std::optional<double> width_start,
@@ -38,10 +38,10 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     require_or_throw(s0 >= 0, "s {} < 0", s0);
     require_or_throw(length >= 0, "length {} < 0", length);
     require_or_throw(distance >= 0, "distance {} < 0", distance);
-    require_or_throw(!std::isnan(t_start), "tStart is NaN");
-    require_or_throw(!std::isnan(t_end), "tEnd is NaN");
-    require_or_throw(!std::isnan(height_start), "heightStart is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
-    require_or_throw(!std::isnan(height_end), "heightEnd is NaN");
+    require_or_throw(!t_start || !std::isnan(*t_start), "tStart is NaN");
+    require_or_throw(!t_end || !std::isnan(*t_end), "tEnd is NaN");
+    require_or_throw(!height_start || !std::isnan(*height_start), "heightStart is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
+    require_or_throw(!height_end || !std::isnan(*height_end), "heightEnd is NaN");
     require_or_throw(!width_start || width_start >= 0, "widthStart < 0");
     require_or_throw(!width_end || width_end >= 0, "widthEnd < 0");
 }

@@ -1,5 +1,6 @@
 #include "libodr/Road.h"
 #include "libodr/Lane.h"
+#include "libodr/Log.hpp"
 #include "libodr/Mesh.h"
 #include "libodr/RefLine.h"
 #include "libodr/RoadMark.h"
@@ -429,8 +430,15 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
     // note: if road object has an outline object AND repeat this will create generic objects at repeat AND the outline object (non-repeated)
     for (const RoadObjectRepeat& r : repeats_copy)
     {
+        const bool has_t_range = r.t_start.has_value() && r.t_end.has_value();
+        require_or_throw(has_t_range || road_obj.t0.has_value(), "missing t-coordinate on Road Object Repeat");
+
         const double s_start = r.s0;
         const double s_end = std::min(s_start + r.length, this->length);
+        const double t_start = has_t_range ? *r.t_start : *(road_obj.t0);
+        const double t_end = has_t_range ? *r.t_end : *(road_obj.t0);
+        const double height_start = r.height_start.value_or(road_obj.height.value_or(default_h));
+        const double height_end = r.height_end.value_or(road_obj.height.value_or(default_h));
 
         // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1.1 Object Repeat Record:
         // "distance between two instances of the object;
@@ -440,8 +448,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
             for (double s = s_start; s <= s_end; s += r.distance)
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
-                const double t_s = r.t_start + p * (r.t_end - r.t_start);
-                const double h_s = r.height_start + p * (r.height_end - r.height_start);
+                const double t_s = t_start + p * (t_end - t_start);
+                const double h_s = height_start + p * (height_end - height_start);
                 const double z_s =
                     r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
@@ -476,8 +484,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
             for (const double s : this->ref_line.approximate_linear(eps, s_start, s_end))
             {
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
-                const double t_s = r.t_start + p * (r.t_end - r.t_start);
-                const double h_s = r.height_start + p * (r.height_end - r.height_start);
+                const double t_s = t_start + p * (t_end - t_start);
+                const double h_s = height_start + p * (height_end - height_start);
                 const double z_s =
                     r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
                 const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;

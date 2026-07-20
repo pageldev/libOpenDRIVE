@@ -15,10 +15,10 @@ struct RoadObjectRepeat
     RoadObjectRepeat(double                s0,
                      double                length,
                      double                distance,
-                     double                t_start,
-                     double                t_end,
-                     double                height_start,
-                     double                height_end,
+                     std::optional<double> t_start = std::nullopt,
+                     std::optional<double> t_end = std::nullopt,
+                     std::optional<double> height_start = std::nullopt,
+                     std::optional<double> height_end = std::nullopt,
                      std::optional<double> z_offset_start = std::nullopt,
                      std::optional<double> z_offset_end = std::nullopt,
                      std::optional<double> width_start = std::nullopt,
@@ -27,13 +27,15 @@ struct RoadObjectRepeat
     double s0;
     double length; // length of repeat area, not object
     double distance;
-    double t_start;
-    double t_end;
-    double height_start;
-    double height_end;
 
-    std::optional<double> z_offset_start; // required but often treated as optional
-    std::optional<double> z_offset_end;   // ""
+    // required but often treated as optional
+    std::optional<double> t_start;
+    std::optional<double> t_end;
+    std::optional<double> height_start;
+    std::optional<double> height_end;
+    std::optional<double> z_offset_start;
+    std::optional<double> z_offset_end;
+
     std::optional<double> width_start;
     std::optional<double> width_end;
 };
