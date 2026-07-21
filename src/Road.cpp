@@ -458,9 +458,12 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 if (road_obj.radius) // cylinder
                     single_road_obj_mesh = RoadObject::get_cylinder(eps, *(road_obj.radius), h_s);
                 else if (road_obj.length && w_s > 0) // box
-                    single_road_obj_mesh = RoadObject::get_box(w_s, *(road_obj.length), h_s);
-                else // fallback to box
-                    single_road_obj_mesh = RoadObject::get_box(0.1, 0.1, 0.1);
+                    single_road_obj_mesh = RoadObject::get_cube(w_s, *(road_obj.length), h_s);
+                else // fallback to cube
+                {
+                    log::warn("Road[@id={}]: no geometry for Object[@id={}]; no radius or length/width, using default-cube", this->id, road_obj.id);
+                    single_road_obj_mesh = RoadObject::get_cube(0.1, 0.1, 0.1);
+                }
 
                 Vec3D       e_s, e_t, e_h;
                 const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);

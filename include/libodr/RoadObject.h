@@ -103,7 +103,7 @@ struct RoadObject
                std::optional<bool>        is_dynamic = std::nullopt);
 
     static Mesh3D get_cylinder(double eps, double radius, double height);
-    static Mesh3D get_box(double width, double length, double height);
+    static Mesh3D get_cube(double width, double length, double height);
 
     std::string id;
 

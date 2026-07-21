@@ -149,7 +149,7 @@ Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
     return cylinder_mesh;
 }
 
-Mesh3D RoadObject::get_box(double w, double l, double h)
+Mesh3D RoadObject::get_cube(double w, double l, double h)
 {
     const double z_bottom = std::min(0.0, h);
     const double z_top = std::max(0.0, h);
