@@ -84,7 +84,7 @@ struct RoadObject
         Negative
     };
 
-    RoadObject(std::string                id,
+    RoadObject(const std::string&         id,
                std::optional<double>      s0 = std::nullopt,
                std::optional<double>      t0 = std::nullopt,
                std::optional<double>      z0 = std::nullopt,

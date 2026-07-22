@@ -52,7 +52,7 @@ struct RoadLink
         End
     };
 
-    RoadLink(std::string id, const std::string& type_str, std::optional<ContactPoint> contact_point);
+    RoadLink(const std::string& id, const std::string& type_str, std::optional<ContactPoint> contact_point);
 
     std::string id;
     Type        type;
@@ -62,7 +62,7 @@ struct RoadLink
 
 struct SpeedRecord
 {
-    SpeedRecord(std::string max, std::string unit);
+    SpeedRecord(const std::string& max, const std::string& unit);
 
     std::string max = "";
     std::string unit = "";
@@ -77,9 +77,9 @@ public:
         RHT
     };
 
-    Road(std::string                id,
+    Road(const std::string&         id,
          double                     length,
-         std::string                junction,
+         const std::string&         junction,
          std::optional<TrafficRule> traffic_rule = std::nullopt,
          std::optional<std::string> name = std::nullopt);
 

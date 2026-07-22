@@ -45,7 +45,10 @@ struct JunctionConnection
         End
     };
 
-    JunctionConnection(std::string id, std::string incoming_road, std::string connecting_road, std::string contact_point_str);
+    JunctionConnection(const std::string& id,
+                       const std::string& incoming_road,
+                       const std::string& connecting_road,
+                       const std::string& contact_point_str);
 
     std::string  id;
     std::string  incoming_road;
@@ -57,7 +60,7 @@ struct JunctionConnection
 
 struct JunctionPriority
 {
-    JunctionPriority(std::string high, std::string low);
+    JunctionPriority(const std::string& high, const std::string& low);
 
     std::string high;
     std::string low;
@@ -82,7 +85,7 @@ namespace odr
 
 struct JunctionController
 {
-    JunctionController(std::string id, std::optional<std::string> type = std::nullopt, std::optional<int64_t> sequence = std::nullopt);
+    JunctionController(const std::string& id, std::optional<std::string> type = std::nullopt, std::optional<int64_t> sequence = std::nullopt);
 
     std::string id;
 
@@ -93,7 +96,7 @@ struct JunctionController
 class Junction
 {
 public:
-    Junction(std::string id, std::optional<std::string> name = std::nullopt);
+    Junction(const std::string& id, std::optional<std::string> name = std::nullopt);
 
     std::string id;
 

@@ -33,7 +33,7 @@ struct RoadMarkLine
 
 struct RoadMarkType
 {
-    RoadMarkType(std::string name, std::optional<double> width = std::nullopt);
+    RoadMarkType(const std::string& name, std::optional<double> width = std::nullopt);
 
     std::string           name;
     std::optional<double> width; // can be superseded by RoadMarkLine width (Rev. 1.4, 5.3.7.2.1.1.4.1.1)
@@ -44,8 +44,8 @@ struct RoadMarkType
 struct RoadMark
 {
     RoadMark(double                     s_offset,
-             std::string                type,
-             std::string                color,
+             const std::string&         type,
+             const std::string&         color,
              std::optional<double>      width = std::nullopt,
              std::optional<double>      height = std::nullopt,
              std::optional<std::string> weight = std::nullopt,
@@ -75,7 +75,7 @@ struct RoadMark
 
 struct SingleRoadMark
 {
-    SingleRoadMark(double s0, double s1, double t, double width, std::string type) noexcept;
+    SingleRoadMark(double s0, double s1, double t, double width, const std::string& type) noexcept;
 
     double s0;
     double s1;

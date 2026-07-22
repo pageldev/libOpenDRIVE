@@ -47,7 +47,8 @@ double Crossfall::get(const double s, const bool on_left_side) const
     return target_poly_iter->second.evaluate(s);
 }
 
-RoadLink::RoadLink(std::string id, const std::string& type_str, std::optional<ContactPoint> contact_point) : id(id), contact_point(contact_point)
+RoadLink::RoadLink(const std::string& id, const std::string& type_str, std::optional<ContactPoint> contact_point) :
+    id(id), contact_point(contact_point)
 {
     std::optional<Type> type = magic_enum::enum_cast<Type>(type_str, magic_enum::case_insensitive);
     require_or_throw(type.has_value(), "invalid road link type '{}'", type_str);
@@ -56,7 +57,7 @@ RoadLink::RoadLink(std::string id, const std::string& type_str, std::optional<Co
     this->type = *type;
 }
 
-SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}
+SpeedRecord::SpeedRecord(const std::string& max, const std::string& unit) : max(max), unit(unit) {}
 
 std::vector<LaneSection> Road::get_lanesections() const
 {
@@ -72,7 +73,8 @@ std::vector<RoadSignal> Road::get_road_signals() const
     return get_map_values(this->id_to_signal);
 }
 
-Road::Road(std::string id, double length, std::string junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
+Road::Road(
+    const std::string& id, double length, const std::string& junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
     id(id), length(length), junction(junction), traffic_rule(traffic_rule), name(name), ref_line(length)
 {
     require_or_throw(length > 0, "length {} <= 0", length);

@@ -12,14 +12,14 @@ namespace odr
 
 struct RoadSignal
 {
-    RoadSignal(std::string                id,
-               std::string                road_id,
+    RoadSignal(const std::string&         id,
+               const std::string&         road_id,
                double                     s0,
                double                     t0,
                double                     zOffset,
                bool                       is_dynamic,
-               std::string                type,
-               std::string                subtype,
+               const std::string&         type,
+               const std::string&         subtype,
                RoadObject::Orientation    orientation,
                std::optional<double>      value = std::nullopt,
                std::optional<double>      height = std::nullopt,

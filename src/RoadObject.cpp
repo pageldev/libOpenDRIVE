@@ -63,7 +63,7 @@ RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
 {
 }
 
-RoadObject::RoadObject(std::string                id,
+RoadObject::RoadObject(const std::string&         id,
                        std::optional<double>      s0,
                        std::optional<double>      t0,
                        std::optional<double>      z0,

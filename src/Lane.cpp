@@ -17,7 +17,9 @@ HeightOffset::HeightOffset(double s_offset, double inner, double outer) : s_offs
     require_or_throw(!std::isnan(outer), "outer is NaN");
 }
 
-LaneKey::LaneKey(std::string road_id, double lanesection_s0, int lane_id) : road_id(road_id), lanesection_s0(lanesection_s0), lane_id(lane_id) {}
+LaneKey::LaneKey(const std::string& road_id, double lanesection_s0, int lane_id) : road_id(road_id), lanesection_s0(lanesection_s0), lane_id(lane_id)
+{
+}
 
 std::string LaneKey::to_string() const
 {
