@@ -17,8 +17,9 @@ namespace odr
 
 struct HeightOffset
 {
-    HeightOffset(double inner, double outer);
+    HeightOffset(double s_offset, double inner, double outer);
 
+    double s_offset;
     double inner;
     double outer;
 };

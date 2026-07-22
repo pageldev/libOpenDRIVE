@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <iterator>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -18,6 +19,12 @@ namespace odr
 
 CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin)
 {
+    require_or_throw(!std::isnan(a), "a is NaN");
+    require_or_throw(!std::isnan(b), "b is NaN");
+    require_or_throw(!std::isnan(c), "c is NaN");
+    require_or_throw(!std::isnan(d), "d is NaN");
+    require_or_throw(!std::isnan(s_origin), "s_origin is NaN");
+
     // ds = s - s0 => resolve to polynomial form
     // make CubicPolys work on absolute s position => makes CubicProfile::add work
     this->a = a - b * s_origin + c * s_origin * s_origin - d * s_origin * s_origin * s_origin;
@@ -118,25 +125,20 @@ void CubicPoly::set_zero()
     d = 0;
 }
 
-bool CubicPoly::isnan() const
-{
-    return (std::isnan(this->a) || std::isnan(this->b) || std::isnan(this->c) || std::isnan(this->d));
-}
-
 double CubicProfile::evaluate(const double s, const double default_val, const bool extend_start) const
 {
-    const CubicPoly& poly = this->get_poly(s, extend_start);
-    if (poly.isnan())
+    const std::optional<CubicPoly>& poly = this->get_poly(s, extend_start);
+    if (!poly)
         return default_val;
-    return poly.evaluate(s);
+    return poly->evaluate(s);
 }
 
 double CubicProfile::derivative(const double s, const double default_val, const bool extend_start) const
 {
-    const CubicPoly& poly = this->get_poly(s, extend_start);
-    if (poly.isnan())
+    const std::optional<CubicPoly>& poly = this->get_poly(s, extend_start);
+    if (!poly)
         return default_val;
-    return poly.derivative(s);
+    return poly->derivative(s);
 }
 
 CubicProfile CubicProfile::negate() const
@@ -161,32 +163,32 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
     CubicProfile retval;
     for (const double s0 : s0_vals)
     {
-        const CubicPoly& this_poly = this->get_poly(s0, false);
-        const CubicPoly& other_poly = other.get_poly(s0, false);
+        const std::optional<CubicPoly>& this_poly = this->get_poly(s0, false);
+        const std::optional<CubicPoly>& other_poly = other.get_poly(s0, false);
 
-        if (this_poly.isnan() || other_poly.isnan()) // can't be both NAN
+        if (!this_poly || !other_poly) // can't be both invalid
         {
-            retval.segments[s0] = this_poly.isnan() ? other_poly : this_poly;
+            retval.segments[s0] = this_poly.has_value() ? *this_poly : *other_poly;
             continue;
         }
 
         CubicPoly res;
-        res.a = this_poly.a + other_poly.a;
-        res.b = this_poly.b + other_poly.b;
-        res.c = this_poly.c + other_poly.c;
-        res.d = this_poly.d + other_poly.d;
+        res.a = this_poly->a + other_poly->a;
+        res.b = this_poly->b + other_poly->b;
+        res.c = this_poly->c + other_poly->c;
+        res.d = this_poly->d + other_poly->d;
         retval.segments[s0] = res;
     }
     return retval;
 }
 
-CubicPoly CubicProfile::get_poly(const double s, const bool extend_start) const
+std::optional<CubicPoly> CubicProfile::get_poly(const double s, const bool extend_start) const
 {
     if (this->segments.empty())
-        return CubicPoly(NAN, NAN, NAN, NAN, NAN);
+        return std::nullopt;
 
     if ((extend_start == false) && (s < this->segments.begin()->first))
-        return CubicPoly(NAN, NAN, NAN, NAN, NAN);
+        return std::nullopt;
 
     // will return first poly if s < s_start and last poly for s > s_end
     auto target_poly_iter = this->segments.upper_bound(s);

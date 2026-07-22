@@ -159,7 +159,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         {
             const double      s = road_type_node.attribute("s").as_double(NAN);
             const std::string type = road_type_node.attribute("type").as_string("");
-            if (std::isnan(s) || s < 0)
+            if (s < 0)
             {
                 add_parse_error(result, road_type_node, "s < 0");
                 continue;
@@ -226,22 +226,25 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
                 else if (geometry_type == "paramPoly3")
                 {
-                    const double aU = geometry_node.attribute("aU").as_double(NAN);
-                    const double bU = geometry_node.attribute("bU").as_double(NAN);
-                    const double cU = geometry_node.attribute("cU").as_double(NAN);
-                    const double dU = geometry_node.attribute("dU").as_double(NAN);
-                    const double aV = geometry_node.attribute("aV").as_double(NAN);
-                    const double bV = geometry_node.attribute("bV").as_double(NAN);
-                    const double cV = geometry_node.attribute("cV").as_double(NAN);
-                    const double dV = geometry_node.attribute("dV").as_double(NAN);
-
                     const std::optional<ParamPoly3::PRange> p_range_geom = try_get_enum<ParamPoly3::PRange>(geometry_node, "pRange");
                     const std::optional<ParamPoly3::PRange> p_range_hdr = try_get_enum<ParamPoly3::PRange>(geometry_hdr_node, "pRange");
 
                     // pRange from <paramPoly3> takes precedence over <geometry, default to 'normalized'
                     const ParamPoly3::PRange p_range = p_range_geom ? *p_range_geom : p_range_hdr.value_or(ParamPoly3::PRange::Normalized);
-                    road->ref_line.s0_to_geometry[s0] =
-                        std::make_unique<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, p_range);
+                    road->ref_line.s0_to_geometry[s0] = std::make_unique<ParamPoly3>(s0,
+                                                                                     x0,
+                                                                                     y0,
+                                                                                     hdg0,
+                                                                                     length,
+                                                                                     geometry_node.attribute("aU").as_double(NAN),
+                                                                                     geometry_node.attribute("bU").as_double(NAN),
+                                                                                     geometry_node.attribute("cU").as_double(NAN),
+                                                                                     geometry_node.attribute("dU").as_double(NAN),
+                                                                                     geometry_node.attribute("aV").as_double(NAN),
+                                                                                     geometry_node.attribute("bV").as_double(NAN),
+                                                                                     geometry_node.attribute("cV").as_double(NAN),
+                                                                                     geometry_node.attribute("dV").as_double(NAN),
+                                                                                     p_range);
                 }
                 else
                 {
@@ -276,27 +279,26 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             for (pugi::xpath_node xnode : xnodes)
             {
                 const pugi::xml_node node = xnode.node();
+                const double         s0 = node.attribute("s").as_double(NAN);
 
-                const double s0 = node.attribute("s").as_double(NAN);
-                const double a = node.attribute("a").as_double(NAN);
-                const double b = node.attribute("b").as_double(NAN);
-                const double c = node.attribute("c").as_double(NAN);
-                const double d = node.attribute("d").as_double(NAN);
-
-                if (std::isnan(s0) || s0 < 0)
+                std::optional<CubicPoly> cubic_poly;
+                try
                 {
-                    add_parse_error(result, node, "s < 0");
+                    require_or_throw(s0 >= 0, "s {} < 0", s0);
+                    cubic_poly.emplace(node.attribute("a").as_double(NAN),
+                                       node.attribute("b").as_double(NAN),
+                                       node.attribute("c").as_double(NAN),
+                                       node.attribute("d").as_double(NAN),
+                                       s0);
+                }
+                catch (const std::exception& ex)
+                {
+                    add_parse_error(result, node, "{}", ex.what());
                     invalid_cubic = true;
                     continue;
                 }
-                if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
-                {
-                    add_parse_error(result, node, "invalid values; a={}, b={}, c={}, d={}", a, b, c, d);
-                    invalid_cubic = true;
-                    continue;
-                }
 
-                cubic_profile.segments.emplace(s0, CubicPoly(a, b, c, d, s0));
+                cubic_profile.segments.emplace(s0, *cubic_poly);
             }
         }
         if (invalid_cubic)
@@ -312,23 +314,24 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             for (const pugi::xml_node crossfall_node : lateral_profile_node.children("crossfall"))
             {
                 const double s0 = crossfall_node.attribute("s").as_double(NAN);
-                const double a = crossfall_node.attribute("a").as_double(NAN);
-                const double b = crossfall_node.attribute("b").as_double(NAN);
-                const double c = crossfall_node.attribute("c").as_double(NAN);
-                const double d = crossfall_node.attribute("d").as_double(NAN);
 
-                if (std::isnan(s0) || s0 < 0)
+                std::optional<CubicPoly> crossfall_poly;
+                try
                 {
-                    add_parse_error(result, crossfall_node, "s < 0");
+                    require_or_throw(s0 >= 0, "s {} < 0", s0);
+                    crossfall_poly.emplace(crossfall_node.attribute("a").as_double(NAN),
+                                           crossfall_node.attribute("b").as_double(NAN),
+                                           crossfall_node.attribute("c").as_double(NAN),
+                                           crossfall_node.attribute("d").as_double(NAN),
+                                           s0);
+                }
+                catch (const std::exception& ex)
+                {
+                    add_parse_error(result, crossfall_node, "{}", ex.what());
                     continue;
                 }
-                if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
-                {
-                    add_parse_error(result, crossfall_node, "invalid values; a={}, b={}, c={}, d={}", a, b, c, d);
-                    continue;
-                }
 
-                road->crossfall.segments.emplace(s0, CubicPoly(a, b, c, d, s0));
+                road->crossfall.segments.emplace(s0, *crossfall_poly);
                 const std::optional<Crossfall::Side> side = try_get_enum<Crossfall::Side>(crossfall_node, "side");
                 road->crossfall.s_to_side[s0] = side.value_or(Crossfall::Side::Both); // default to 'both'
             }
@@ -385,57 +388,56 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 for (const pugi::xml_node lane_width_node : lane_node.children("width"))
                 {
                     const double s_offset = lane_width_node.attribute("sOffset").as_double(NAN);
-                    const double a = lane_width_node.attribute("a").as_double(NAN);
-                    const double b = lane_width_node.attribute("b").as_double(NAN);
-                    const double c = lane_width_node.attribute("c").as_double(NAN);
-                    const double d = lane_width_node.attribute("d").as_double(NAN);
 
-                    if (std::isnan(s_offset) || s_offset < 0)
+                    std::optional<CubicPoly> width_poly;
+                    try
                     {
-                        add_parse_error(result, lane_width_node, "sOffset {} < 0", s_offset);
+                        require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
+                        width_poly.emplace(lane_width_node.attribute("a").as_double(NAN),
+                                           lane_width_node.attribute("b").as_double(NAN),
+                                           lane_width_node.attribute("c").as_double(NAN),
+                                           lane_width_node.attribute("d").as_double(NAN),
+                                           lanesection->s0 + s_offset);
+                    }
+                    catch (const std::exception& ex)
+                    {
+                        add_parse_error(result, lane_width_node, "{}", ex.what());
                         invalid_lanesection = true;
                         continue;
                     }
-                    if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
-                    {
-                        add_parse_error(result, lane_width_node, "invalid values; sOffset={}, a={}, b={}, c={}, d={}", s_offset, a, b, c, d);
-                        invalid_lanesection = true;
-                        continue;
-                    }
-
-                    CubicPoly width_poly(a, b, c, d, lanesection->s0 + s_offset);
 
                     // OpenDRIVE Format Specification, Rev. 1.4, 3.3.1 General:
                     // "The reference line itself is defined as lane zero and must not have a width entry (i.e. its width must always be 0.0)."
-                    if (lane_id == 0 && !width_poly.is_zero())
+                    if (lane_id == 0 && !width_poly->is_zero())
                     {
                         add_parse_error(result, lane_width_node, "width must be 0 for lane #0, setting to 0");
-                        width_poly.set_zero();
+                        width_poly->set_zero();
                     }
 
-                    lane.lane_width.segments.emplace(lanesection->s0 + s_offset, width_poly);
+                    lane.lane_width.segments.emplace(lanesection->s0 + s_offset, *width_poly);
                 }
 
                 if (with_lane_height)
                 {
                     for (const pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
-                        const std::optional<double> s_offset = try_get_attribute<double>(lane_height_node, "sOffset");
-                        const std::optional<double> inner = try_get_attribute<double>(lane_height_node, "inner");
-                        const std::optional<double> outer = try_get_attribute<double>(lane_height_node, "outer");
+                        const double s_offset = lane_height_node.attribute("sOffset").as_double(NAN);
 
-                        if (!s_offset || !inner || !outer)
+                        std::optional<HeightOffset> height_offset;
+                        try
                         {
-                            add_parse_error(result, lane_height_node, "invalid height");
+                            require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
+                            height_offset.emplace(
+                                s_offset, lane_height_node.attribute("inner").as_double(NAN), lane_height_node.attribute("outer").as_double(NAN)
+
+                            );
+                        }
+                        catch (const std::exception& ex)
+                        {
+                            add_parse_error(result, lane_height_node, "{}", ex.what());
                             continue;
                         }
-                        if (*s_offset < 0)
-                        {
-                            add_parse_error(result, lane_height_node, "sOffset {} < 0", *s_offset);
-                            continue;
-                        }
-
-                        lane.s_to_height_offset.emplace(lanesection->s0 + *s_offset, HeightOffset(*inner, *outer));
+                        lane.s_to_height_offset.emplace(lanesection->s0 + s_offset, *height_offset);
                     }
                 }
 
