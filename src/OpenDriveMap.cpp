@@ -132,10 +132,8 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 std::optional<RoadLink> link;
                 try
                 {
-                    const std::optional<RoadLink::Type> type = try_get_enum<RoadLink::Type>(next_link_node, "elementType");
-                    require_or_throw(type.has_value(), "no valid elementType");
                     link.emplace(next_link_node.attribute("elementId").as_string(""),
-                                 *type,
+                                 next_link_node.attribute("elementType").as_string(""),
                                  try_get_enum<RoadLink::ContactPoint>(next_link_node, "contactPoint"));
                 }
                 catch (const std::exception& ex)

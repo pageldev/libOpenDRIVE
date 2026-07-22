@@ -8,6 +8,7 @@
 #include "libodr/Utils.hpp"
 
 #include "libodr/earcut.hpp"
+#include "magic_enum/magic_enum.hpp"
 #include "pugixml.hpp"
 
 #include <algorithm>
@@ -46,10 +47,13 @@ double Crossfall::get(const double s, const bool on_left_side) const
     return target_poly_iter->second.evaluate(s);
 }
 
-RoadLink::RoadLink(std::string id, Type type, std::optional<ContactPoint> contact_point) : id(id), type(type), contact_point(contact_point)
+RoadLink::RoadLink(std::string id, const std::string& type_str, std::optional<ContactPoint> contact_point) : id(id), contact_point(contact_point)
 {
-    if (type == Type::Road)
+    std::optional<Type> type = magic_enum::enum_cast<RoadLink::Type>(type_str, magic_enum::case_insensitive);
+    require_or_throw(type.has_value(), "invalid road link type '{}'", type_str);
+    if (*type == Type::Road)
         require_or_throw(contact_point.has_value(), "a road link of type 'road' requires a contact point");
+    this->type = *type;
 }
 
 SpeedRecord::SpeedRecord(std::string max, std::string unit) : max(max), unit(unit) {}

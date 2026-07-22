@@ -52,7 +52,7 @@ struct RoadLink
         End
     };
 
-    RoadLink(std::string id, Type type, std::optional<ContactPoint> contact_point);
+    RoadLink(std::string id, const std::string& type_str, std::optional<ContactPoint> contact_point);
 
     std::string id;
     Type        type;
