@@ -1,5 +1,6 @@
 #include "libodr/Geometries/Arc.h"
 #include "libodr/Geometries/RoadGeometry.h"
+#include "libodr/Utils.hpp"
 
 #include <cmath>
 
@@ -7,6 +8,7 @@ namespace odr
 {
 Arc::Arc(double s0, double x0, double y0, double hdg0, double length, double curvature) : RoadGeometry(s0, x0, y0, hdg0, length), curvature(curvature)
 {
+    require_or_throw(!std::isnan(curvature), "curvature is NaN");
 }
 
 std::unique_ptr<RoadGeometry> Arc::clone() const

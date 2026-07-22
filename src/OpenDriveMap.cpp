@@ -179,113 +179,75 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             double       x0 = geometry_hdr_node.attribute("x").as_double(NAN);
             double       y0 = geometry_hdr_node.attribute("y").as_double(NAN);
 
-            if (std::isnan(s0) || s0 < 0)
-            {
-                add_parse_error(result, geometry_hdr_node, "s < 0");
-                invalid_geometry = true;
-                continue;
-            }
-            if (std::isnan(x0) || std::isnan(y0) || std::isnan(hdg0))
-            {
-                add_parse_error(result, geometry_hdr_node, "invalid values; x={}, y={}, hdg={}", x0, y0, hdg0);
-                invalid_geometry = true;
-                continue;
-            }
-            if (std::isnan(length) || length < 0)
-            {
-                add_parse_error(result, geometry_hdr_node, "length {} < 0", length);
-                invalid_geometry = true;
-                continue;
-            }
-
             const pugi::xml_node geometry_node = geometry_hdr_node.first_child();
             const std::string    geometry_type = geometry_node.name();
-            if (geometry_type == "line")
+            try
             {
-                road->ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
-            }
-            else if (geometry_type == "spiral")
-            {
-                const double curv_start = geometry_node.attribute("curvStart").as_double(NAN);
-                const double curv_end = geometry_node.attribute("curvEnd").as_double(NAN);
-                if (std::isnan(curv_start) || std::isnan(curv_end))
+                if (geometry_type == "line")
                 {
-                    add_parse_error(result, geometry_node, "invalid values; curvStart={}, curvEnd={}", curv_start, curv_end);
-                    invalid_geometry = true;
-                    continue;
+                    road->ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
                 }
-                if (!fix_spiral_edge_cases)
+                else if (geometry_type == "spiral")
                 {
-                    road->ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
-                }
-                else
-                {
-                    if (std::abs(curv_start) < 1e-6 && std::abs(curv_end) < 1e-6)
+                    const double curv_start = geometry_node.attribute("curvStart").as_double(NAN);
+                    const double curv_end = geometry_node.attribute("curvEnd").as_double(NAN);
+                    if (!fix_spiral_edge_cases)
                     {
-                        // In effect a line
-                        road->ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
-                    }
-                    else if (std::abs(curv_end - curv_start) < 1e-6)
-                    {
-                        // In effect an arc
-                        road->ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                        road->ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
                     }
                     else
                     {
-                        // True spiral
-                        road->ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                        if (std::abs(curv_start) < 1e-6 && std::abs(curv_end) < 1e-6)
+                        {
+                            // In effect a line
+                            road->ref_line.s0_to_geometry[s0] = std::make_unique<Line>(s0, x0, y0, hdg0, length);
+                        }
+                        else if (std::abs(curv_end - curv_start) < 1e-6)
+                        {
+                            // In effect an arc
+                            road->ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curv_start);
+                        }
+                        else
+                        {
+                            // True spiral
+                            road->ref_line.s0_to_geometry[s0] = std::make_unique<Spiral>(s0, x0, y0, hdg0, length, curv_start, curv_end);
+                        }
                     }
                 }
-            }
-            else if (geometry_type == "arc")
-            {
-                const double curvature = geometry_node.attribute("curvature").as_double(NAN);
-                if (std::isnan(curvature))
+                else if (geometry_type == "arc")
                 {
-                    add_parse_error(result, geometry_node, "invalid curvature");
+                    const double curvature = geometry_node.attribute("curvature").as_double(NAN);
+                    road->ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curvature);
+                }
+                else if (geometry_type == "paramPoly3")
+                {
+                    const double aU = geometry_node.attribute("aU").as_double(NAN);
+                    const double bU = geometry_node.attribute("bU").as_double(NAN);
+                    const double cU = geometry_node.attribute("cU").as_double(NAN);
+                    const double dU = geometry_node.attribute("dU").as_double(NAN);
+                    const double aV = geometry_node.attribute("aV").as_double(NAN);
+                    const double bV = geometry_node.attribute("bV").as_double(NAN);
+                    const double cV = geometry_node.attribute("cV").as_double(NAN);
+                    const double dV = geometry_node.attribute("dV").as_double(NAN);
+
+                    const std::optional<ParamPoly3::PRange> p_range_geom = try_get_enum<ParamPoly3::PRange>(geometry_node, "pRange");
+                    const std::optional<ParamPoly3::PRange> p_range_hdr = try_get_enum<ParamPoly3::PRange>(geometry_hdr_node, "pRange");
+
+                    // pRange from <paramPoly3> takes precedence over <geometry, default to 'normalized'
+                    const ParamPoly3::PRange p_range = p_range_geom ? *p_range_geom : p_range_hdr.value_or(ParamPoly3::PRange::Normalized);
+                    road->ref_line.s0_to_geometry[s0] =
+                        std::make_unique<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, p_range);
+                }
+                else
+                {
+                    add_parse_error(result, geometry_node, "unknown geometry");
                     invalid_geometry = true;
                     continue;
                 }
-                road->ref_line.s0_to_geometry[s0] = std::make_unique<Arc>(s0, x0, y0, hdg0, length, curvature);
             }
-            else if (geometry_type == "paramPoly3")
+            catch (const std::exception& ex)
             {
-                const double aU = geometry_node.attribute("aU").as_double(NAN);
-                const double bU = geometry_node.attribute("bU").as_double(NAN);
-                const double cU = geometry_node.attribute("cU").as_double(NAN);
-                const double dU = geometry_node.attribute("dU").as_double(NAN);
-                const double aV = geometry_node.attribute("aV").as_double(NAN);
-                const double bV = geometry_node.attribute("bV").as_double(NAN);
-                const double cV = geometry_node.attribute("cV").as_double(NAN);
-                const double dV = geometry_node.attribute("dV").as_double(NAN);
-                if (std::isnan(aU) || std::isnan(bU) || std::isnan(cU) || std::isnan(dU) || std::isnan(aV) || std::isnan(bV) || std::isnan(cV) ||
-                    std::isnan(dV))
-                {
-                    add_parse_error(result,
-                                    geometry_node,
-                                    "invalid values; aU={}, bU={}, cU={}, dU={}, aV={}, bV={}, cV={}, dV={}",
-                                    aU,
-                                    bU,
-                                    cU,
-                                    dU,
-                                    aV,
-                                    bV,
-                                    cV,
-                                    dV);
-                    invalid_geometry = true;
-                    continue;
-                }
-
-                const std::optional<ParamPoly3::PRange> p_range_geom = try_get_enum<ParamPoly3::PRange>(geometry_node, "pRange");
-                const std::optional<ParamPoly3::PRange> p_range_hdr = try_get_enum<ParamPoly3::PRange>(geometry_hdr_node, "pRange");
-
-                // pRange from <paramPoly3> takes precedence over <geometry, default to 'normalized'
-                const ParamPoly3::PRange p_range = p_range_geom ? *p_range_geom : p_range_hdr.value_or(ParamPoly3::PRange::Normalized);
-                road->ref_line.s0_to_geometry[s0] = std::make_unique<ParamPoly3>(s0, x0, y0, hdg0, length, aU, bU, cU, dU, aV, bV, cV, dV, p_range);
-            }
-            else
-            {
-                add_parse_error(result, geometry_node, "unknown geometry");
+                add_parse_error(result, geometry_hdr_node, "{}", ex.what());
                 invalid_geometry = true;
                 continue;
             }
