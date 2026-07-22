@@ -117,7 +117,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         {
             road.emplace(*road_id,
                          road_node.attribute("length").as_double(NAN),
-                         road_node.attribute("junction").as_string(""),
+                         road_node.attribute("junction").as_string("-1"), // -1 for none
                          try_get_enum<Road::TrafficRule>(road_node, "rule"),
                          try_get_attribute<std::string>(road_node, "name"));
         }
@@ -373,7 +373,8 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                 Lane& lane =
                     lanesection->id_to_lane
-                        .emplace(*lane_id, Lane(*lane_id, lane_node.attribute("type").as_string(""), try_get_attribute<bool>(lane_node, "level")))
+                        .emplace(*lane_id,
+                                 Lane(*lane_id, try_get_attribute<std::string>(lane_node, "type"), try_get_attribute<bool>(lane_node, "level")))
                         .first->second;
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
@@ -777,19 +778,13 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 continue;
             }
 
-            const std::optional<JunctionConnection::ContactPoint> contact_point =
-                try_get_enum<JunctionConnection::ContactPoint>(connection_node, "contactPoint");
-            if (!contact_point)
-            {
-                add_parse_error(result, connection_node, "no valid contactPoint");
-                continue;
-            }
-
-            const std::string road_in = connection_node.attribute("incomingRoad").as_string("");
-            const std::string road_conn = connection_node.attribute("connectingRoad").as_string("");
-
-            JunctionConnection& connection =
-                junction.id_to_connection.emplace(*conn_id, JunctionConnection(*conn_id, road_in, road_conn, *contact_point)).first->second;
+            JunctionConnection& connection = junction.id_to_connection
+                                                 .emplace(*conn_id,
+                                                          JunctionConnection(*conn_id,
+                                                                             connection_node.attribute("incomingRoad").as_string(""),
+                                                                             connection_node.attribute("connectingRoad").as_string(""),
+                                                                             connection_node.attribute("contactPoint").as_string("")))
+                                                 .first->second;
 
             for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
             {

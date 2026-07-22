@@ -7,9 +7,12 @@ namespace odr
 
 JunctionLaneLink::JunctionLaneLink(int from, int to) : from(from), to(to) {}
 
-JunctionConnection::JunctionConnection(std::string id, std::string incoming_road, std::string connecting_road, ContactPoint contact_point) :
-    id(id), incoming_road(incoming_road), connecting_road(connecting_road), contact_point(contact_point)
+JunctionConnection::JunctionConnection(std::string id, std::string incoming_road, std::string connecting_road, std::string contact_point_str) :
+    id(id), incoming_road(incoming_road), connecting_road(connecting_road)
 {
+    std::optional<ContactPoint> contact_point = magic_enum::enum_cast<ContactPoint>(contact_point_str, magic_enum::case_insensitive);
+    require_or_throw(contact_point.has_value(), "invalid junction connection contact type '{}'", contact_point_str);
+    this->contact_point = *contact_point;
 }
 
 JunctionPriority::JunctionPriority(std::string high, std::string low) : high(high), low(low) {}
