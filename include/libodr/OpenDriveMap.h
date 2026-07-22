@@ -44,19 +44,30 @@ struct OpenDriveMapHeader
     std::optional<std::string> proj;
 };
 
+struct XodrParseError
+{
+    pugi::xml_node node;
+    std::string    description;
+};
+
+struct XodrParseResult
+{
+    std::vector<XodrParseError> errors;
+};
+
 class OpenDriveMap
 {
 public:
     OpenDriveMap() = default;
 
-    void load(const pugi::xml_document& xml_doc,
-              const bool                with_road_objects = true,
-              const bool                with_lateral_profile = true,
-              const bool                with_lane_height = true,
-              const bool                abs_z_for_for_local_road_obj_outline = false,
-              const bool                fix_spiral_edge_cases = true,
-              const bool                with_road_signals = true,
-              const bool                treat_value_zero_as_missing = true);
+    XodrParseResult load(const pugi::xml_document& xml_doc,
+                         const bool                with_road_objects = true,
+                         const bool                with_lateral_profile = true,
+                         const bool                with_lane_height = true,
+                         const bool                abs_z_for_for_local_road_obj_outline = false,
+                         const bool                fix_spiral_edge_cases = true,
+                         const bool                with_road_signals = true,
+                         const bool                treat_value_zero_as_missing = true);
 
     void reset();
 

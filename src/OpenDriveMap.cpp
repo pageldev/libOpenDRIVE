@@ -37,6 +37,12 @@
 namespace odr
 {
 
+template<class... Args>
+void add_parse_error(XodrParseResult& result, pugi::xml_node node, fmt::format_string<Args...> format, Args&&... args)
+{
+    result.errors.push_back({node, fmt::format(format, std::forward<Args>(args)...)});
+}
+
 OpenDriveMapHeader::OpenDriveMapHeader(std::optional<int>         rev_major,
                                        std::optional<int>         rev_minor,
                                        std::optional<double>      north,
@@ -62,15 +68,16 @@ OpenDriveMapHeader::OpenDriveMapHeader(std::optional<int>         rev_major,
 {
 }
 
-void OpenDriveMap::load(const pugi::xml_document& xml_doc,
-                        const bool                with_road_objects,
-                        const bool                with_lateral_profile,
-                        const bool                with_lane_height,
-                        const bool                abs_z_for_for_local_road_obj_outline,
-                        const bool                fix_spiral_edge_cases,
-                        const bool                with_road_signals,
-                        const bool                treat_value_zero_as_missing)
+XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
+                                   const bool                with_road_objects,
+                                   const bool                with_lateral_profile,
+                                   const bool                with_lane_height,
+                                   const bool                abs_z_for_for_local_road_obj_outline,
+                                   const bool                fix_spiral_edge_cases,
+                                   const bool                with_road_signals,
+                                   const bool                treat_value_zero_as_missing)
 {
+    XodrParseResult      result;
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
     const pugi::xml_node header_node = odr_node.child("header");
@@ -89,13 +96,14 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                       georef_node ? std::optional<std::string>(georef_node.text().as_string("")) : std::nullopt);
 
     // Roads
-    odr::check(odr_node.child("road"), "No roads found");
+    if (!odr_node.child("road"))
+        add_parse_error(result, odr_node, "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
         const std::string road_id = road_node.attribute("id").as_string("");
         if (this->id_to_road.find(road_id) != this->id_to_road.end())
         {
-            log::error("{}: duplicate id {}", node_path(road_node), road_id);
+            add_parse_error(result, road_node, "duplicate id {}", road_id);
             continue;
         }
 
@@ -110,7 +118,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
         catch (const std::exception& ex)
         {
-            log::warn("{}: {}", node_path(road_node), ex.what());
+            add_parse_error(result, road_node, "{}", ex.what());
             continue;
         }
 
@@ -132,7 +140,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
                 catch (const std::exception& ex)
                 {
-                    log::warn("{}: {}", node_path(next_link_node), ex.what());
+                    add_parse_error(result, next_link_node, "{}", ex.what());
                     continue;
                 }
 
@@ -140,8 +148,8 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 road_link = link;
             }
         }
-        if (link_node.child("neighbor"))
-            log::warn("{}: <neighbor> not supported", node_path(link_node));
+        if (const pugi::xml_node neighbor_node = link_node.child("neighbor"))
+            add_parse_error(result, neighbor_node, "<neighbor> not supported");
 
         // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
@@ -150,7 +158,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::string type = road_type_node.attribute("type").as_string("");
             if (std::isnan(s) || s < 0)
             {
-                log::warn("{}: s < 0", node_path(road_type_node));
+                add_parse_error(result, road_type_node, "s < 0");
                 continue;
             }
             road->s_to_type[s] = type;
@@ -175,19 +183,19 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             if (std::isnan(s0) || s0 < 0)
             {
-                log::error("{} s < 0", node_path(geometry_hdr_node));
+                add_parse_error(result, geometry_hdr_node, "s < 0");
                 invalid_geometry = true;
                 continue;
             }
             if (std::isnan(x0) || std::isnan(y0) || std::isnan(hdg0))
             {
-                log::error("{}: invalid values; x={}, y={}, hdg={}", node_path(geometry_hdr_node), x0, y0, hdg0);
+                add_parse_error(result, geometry_hdr_node, "invalid values; x={}, y={}, hdg={}", x0, y0, hdg0);
                 invalid_geometry = true;
                 continue;
             }
             if (std::isnan(length) || length < 0)
             {
-                log::error("{}: length {} < 0", node_path(geometry_hdr_node), length);
+                add_parse_error(result, geometry_hdr_node, "length {} < 0", length);
                 invalid_geometry = true;
                 continue;
             }
@@ -204,7 +212,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const double curv_end = geometry_node.attribute("curvEnd").as_double(NAN);
                 if (std::isnan(curv_start) || std::isnan(curv_end))
                 {
-                    log::error("{}: invalid values; curvStart={}, curvEnd={}", node_path(geometry_node), curv_start, curv_end);
+                    add_parse_error(result, geometry_node, "invalid values; curvStart={}, curvEnd={}", curv_start, curv_end);
                     invalid_geometry = true;
                     continue;
                 }
@@ -236,7 +244,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const double curvature = geometry_node.attribute("curvature").as_double(NAN);
                 if (std::isnan(curvature))
                 {
-                    log::error("{}: invalid curvature", node_path(geometry_node));
+                    add_parse_error(result, geometry_node, "invalid curvature");
                     invalid_geometry = true;
                     continue;
                 }
@@ -255,16 +263,17 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 if (std::isnan(aU) || std::isnan(bU) || std::isnan(cU) || std::isnan(dU) || std::isnan(aV) || std::isnan(bV) || std::isnan(cV) ||
                     std::isnan(dV))
                 {
-                    log::error("{}: invalid values; aU={}, bU={}, cU={}, dU={}, aV={}, bV={}, cV={}, dV={}",
-                               node_path(geometry_node),
-                               aU,
-                               bU,
-                               cU,
-                               dU,
-                               aV,
-                               bV,
-                               cV,
-                               dV);
+                    add_parse_error(result,
+                                    geometry_node,
+                                    "invalid values; aU={}, bU={}, cU={}, dU={}, aV={}, bV={}, cV={}, dV={}",
+                                    aU,
+                                    bU,
+                                    cU,
+                                    dU,
+                                    aV,
+                                    bV,
+                                    cV,
+                                    dV);
                     invalid_geometry = true;
                     continue;
                 }
@@ -278,14 +287,14 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             }
             else
             {
-                log::error("{}: unknown geometry", node_path(geometry_node));
+                add_parse_error(result, geometry_node, "unknown geometry");
                 invalid_geometry = true;
                 continue;
             }
         }
         if (invalid_geometry)
         {
-            log::error("{}: invalid geometry", node_path(road_node));
+            add_parse_error(result, road_node, "invalid geometry");
             continue; // discard road
         }
 
@@ -311,13 +320,13 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                 if (std::isnan(s0) || s0 < 0)
                 {
-                    log::error("{}: s < 0", node_path(node));
+                    add_parse_error(result, node, "s < 0");
                     invalid_cubic = true;
                     continue;
                 }
                 if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                 {
-                    log::error("{}: invalid values; a={}, b={}, c={}, d={}", node_path(node), a, b, c, d);
+                    add_parse_error(result, node, "invalid values; a={}, b={}, c={}, d={}", a, b, c, d);
                     invalid_cubic = true;
                     continue;
                 }
@@ -327,7 +336,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
         if (invalid_cubic)
         {
-            log::error("{}: has an invalid cubic profile", node_path(road_node));
+            add_parse_error(result, road_node, "has an invalid cubic profile");
             continue; // discard road
         }
 
@@ -345,12 +354,12 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                 if (std::isnan(s0) || s0 < 0)
                 {
-                    log::warn("{}: s < 0", node_path(crossfall_node));
+                    add_parse_error(result, crossfall_node, "s < 0");
                     continue;
                 }
                 if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                 {
-                    log::warn("{}: invalid values; a={}, b={}, c={}, d={}", node_path(crossfall_node), a, b, c, d);
+                    add_parse_error(result, crossfall_node, "invalid values; a={}, b={}, c={}, d={}", a, b, c, d);
                     continue;
                 }
 
@@ -359,8 +368,8 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 road->crossfall.s_to_side[s0] = side.value_or(Crossfall::Side::Both); // default to 'both'
             }
 
-            if (lateral_profile_node.child("shape"))
-                log::warn("{}: <shape> not supported", node_path(lateral_profile_node));
+            if (const pugi::xml_node shape_node = lateral_profile_node.child("shape"))
+                add_parse_error(result, shape_node, "<shape> not supported");
         }
 
         // parse road lane sections and lanes
@@ -374,7 +383,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             }
             catch (const std::exception& ex)
             {
-                log::warn("{}: {}", node_path(lanesection_node), ex.what());
+                add_parse_error(result, lanesection_node, "{}", ex.what());
                 invalid_lanesection = true;
                 continue;
             }
@@ -384,11 +393,8 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const pugi::xml_node lane_node = lane_xpath_node.node();
                 const int            lane_id = lane_node.attribute("id").as_int(0);
 
-                odr::check(!lane_node.child("border"),
-                           "Road #{} LaneSection {} Lane #{}: border definitions not supported",
-                           road_id,
-                           lanesection->s0,
-                           lane_id);
+                if (const pugi::xml_node border_node = lane_node.child("border"))
+                    add_parse_error(result, border_node, "border definitions not supported");
 
                 Lane& lane =
                     lanesection->id_to_lane
@@ -410,13 +416,13 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                     if (std::isnan(s_offset) || s_offset < 0)
                     {
-                        log::error("{}: sOffset {} < 0", node_path(lane_width_node), s_offset);
+                        add_parse_error(result, lane_width_node, "sOffset {} < 0", s_offset);
                         invalid_lanesection = true;
                         continue;
                     }
                     if (std::isnan(a) || std::isnan(b) || std::isnan(c) || std::isnan(d))
                     {
-                        log::error("{}: invalid values; sOffset={}, a={}, b={}, c={}, d={}", node_path(lane_width_node), s_offset, a, b, c, d);
+                        add_parse_error(result, lane_width_node, "invalid values; sOffset={}, a={}, b={}, c={}, d={}", s_offset, a, b, c, d);
                         invalid_lanesection = true;
                         continue;
                     }
@@ -427,7 +433,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     // "The reference line itself is defined as lane zero and must not have a width entry (i.e. its width must always be 0.0)."
                     if (lane_id == 0 && !width_poly.is_zero())
                     {
-                        log::warn("{}: width must be 0 for lane #0, setting to 0", node_path(lane_width_node));
+                        add_parse_error(result, lane_width_node, "width must be 0 for lane #0, setting to 0");
                         width_poly.set_zero();
                     }
 
@@ -444,12 +450,12 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                         if (!s_offset || !inner || !outer)
                         {
-                            log::warn("{}: invalid height", node_path(lane_height_node));
+                            add_parse_error(result, lane_height_node, "invalid height");
                             continue;
                         }
                         if (*s_offset < 0)
                         {
-                            log::warn("{}: sOffset {} < 0", node_path(lane_height_node), *s_offset);
+                            add_parse_error(result, lane_height_node, "sOffset {} < 0", *s_offset);
                             continue;
                         }
 
@@ -473,7 +479,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     }
                     catch (const std::exception& ex)
                     {
-                        log::warn("{}: {}", node_path(roadmark_node), ex.what());
+                        add_parse_error(result, roadmark_node, "{}", ex.what());
                         continue;
                     }
 
@@ -487,7 +493,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         }
                         catch (const std::exception& ex)
                         {
-                            log::warn("{}: {}", node_path(roadmark_type_node), ex.what());
+                            add_parse_error(result, roadmark_type_node, "{}", ex.what());
                         }
 
                         if (roadmark_type)
@@ -507,7 +513,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                 }
                                 catch (const std::exception& ex)
                                 {
-                                    log::warn("{}: {}", node_path(roadmarks_line_node), ex.what());
+                                    add_parse_error(result, roadmarks_line_node, "{}", ex.what());
                                     continue;
                                 }
 
@@ -525,7 +531,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const auto id_lane_iter0 = lanesection->id_to_lane.find(0);
             if (id_lane_iter0 == lanesection->id_to_lane.end())
             {
-                log::warn("{}: lane section does not have lane #0", node_path(lanesection_node));
+                add_parse_error(result, lanesection_node, "lane section does not have lane #0");
                 invalid_lanesection = true;
                 continue;
             }
@@ -561,7 +567,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
         if (invalid_lanesection)
         {
-            log::error("{}: invalid LaneSection", node_path(road_node));
+            add_parse_error(result, road_node, "invalid LaneSection");
             continue; // discard road
         }
 
@@ -576,7 +582,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::string object_id = object_node.attribute("id").as_string("");
                 if (road->id_to_object.find(object_id) != road->id_to_object.end())
                 {
-                    log::warn("{}: duplicate Object #{}", node_path(object_node), object_id);
+                    add_parse_error(result, object_node, "duplicate Object #{}", object_id);
                     continue;
                 }
 
@@ -603,7 +609,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
                 catch (const std::exception& ex)
                 {
-                    log::warn("{}: {}", node_path(object_node), ex.what());
+                    add_parse_error(result, object_node, "{}", ex.what());
                     continue;
                 }
 
@@ -625,7 +631,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     }
                     catch (const std::exception& ex)
                     {
-                        log::warn("{}: {}", node_path(repeat_node), ex.what());
+                        add_parse_error(result, repeat_node, "{}", ex.what());
                     }
                 }
 
@@ -653,7 +659,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         }
                         catch (const std::exception& ex)
                         {
-                            log::warn("{}: {}", node_path(corner_local_node), ex.what());
+                            add_parse_error(result, corner_local_node, "{}", ex.what());
                         }
                     }
 
@@ -671,7 +677,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         }
                         catch (const std::exception& ex)
                         {
-                            log::warn("{}: {}", node_path(corner_road_node), ex.what());
+                            add_parse_error(result, corner_road_node, "{}", ex.what());
                         }
                     }
 
@@ -685,7 +691,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                     if (!from_lane || !to_lane)
                     {
-                        log::warn("{}: invalid validity", node_path(validity_node));
+                        add_parse_error(result, validity_node, "invalid validity");
                         continue;
                     }
                     road_object->lane_validities.emplace_back(*from_lane, *to_lane);
@@ -702,7 +708,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::string signal_id = signal_node.attribute("id").as_string("");
                 if (road->id_to_signal.find(signal_id) != road->id_to_signal.end())
                 {
-                    log::warn("{}: duplicate Signal #{}", node_path(signal_node), signal_id);
+                    add_parse_error(result, signal_node, "duplicate Signal #{}", signal_id);
                     continue;
                 }
 
@@ -731,7 +737,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
                 catch (const std::exception& ex)
                 {
-                    log::warn("{}: {}", node_path(signal_node), ex.what());
+                    add_parse_error(result, signal_node, "{}", ex.what());
                     continue;
                 }
 
@@ -739,7 +745,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 {
                     if (!(validity_node.attribute("fromLane") && validity_node.attribute("toLane")))
                     {
-                        log::warn("{}: 'fromLane' or 'toLane' missing", node_path(validity_node));
+                        add_parse_error(result, validity_node, "'fromLane' or 'toLane' missing");
                         continue;
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
@@ -760,7 +766,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
         const std::string id = junction_node.attribute("id").as_string("");
         if (this->id_to_junction.find(id) != this->id_to_junction.end())
         {
-            log::error("duplicate Junction #{}", id);
+            add_parse_error(result, junction_node, "duplicate Junction #{}", id);
             continue;
         }
 
@@ -771,7 +777,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::string conn_id = connection_node.attribute("id").as_string("");
             if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
             {
-                log::warn("{}: duplicate Connection #{}", node_path(connection_node), conn_id);
+                add_parse_error(result, connection_node, "duplicate Connection #{}", conn_id);
                 continue;
             }
 
@@ -779,7 +785,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 try_get_enum<JunctionConnection::ContactPoint>(connection_node, "contactPoint");
             if (!contact_point)
             {
-                log::warn("{}: no valid contactPoint", node_path(connection_node));
+                add_parse_error(result, connection_node, "no valid contactPoint");
                 continue;
             }
 
@@ -795,7 +801,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::optional<int> to_lane = try_get_attribute<int>(lane_link_node, "to");
                 if (!from_lane || !to_lane)
                 {
-                    log::warn("{}: invalid lane link", node_path(lane_link_node));
+                    add_parse_error(result, lane_link_node, "invalid lane link");
                     continue;
                 }
                 connection.lane_links.emplace(*from_lane, *to_lane);
@@ -804,7 +810,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
         const std::size_t num_conns = junction.id_to_connection.size();
         if (num_conns == 0)
-            log::warn("{}: 0 connections", node_path(junction_node));
+            add_parse_error(result, junction_node, "0 connections");
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
@@ -813,7 +819,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             if (!prio_low || !prio_high)
             {
-                log::warn("{}: invalid priority", node_path(priority_node));
+                add_parse_error(result, priority_node, "invalid priority");
                 continue;
             }
             junction.priorities.emplace(*prio_high, *prio_low);
@@ -824,7 +830,7 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::string controller_id = controller_node.attribute("id").as_string("");
             if (junction.id_to_controller.find(controller_id) != junction.id_to_controller.end())
             {
-                log::warn("{}: duplicate Controller #{}", node_path(controller_node), controller_id);
+                add_parse_error(result, controller_node, "duplicate Controller #{}", controller_id);
                 continue;
             }
 
@@ -836,13 +842,15 @@ void OpenDriveMap::load(const pugi::xml_document& xml_doc,
             }
             catch (const std::exception& ex)
             {
-                log::warn("{}: {}", node_path(controller_node), ex.what());
+                add_parse_error(result, controller_node, "{}", ex.what());
                 continue;
             }
 
             junction.id_to_controller.emplace(controller_id, std::move(*junction_controller));
         }
     }
+
+    return result;
 }
 
 void OpenDriveMap::reset()
