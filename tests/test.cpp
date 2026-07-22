@@ -15,7 +15,8 @@ struct OpenDriveFixture
         pugi::xml_parse_result result = this->xml_doc.load_file("test.xodr");
         REQUIRE(result);
 
-        this->odr_map = std::make_unique<odr::OpenDriveMap>(xml_doc);
+        this->odr_map = std::make_unique<odr::OpenDriveMap>();
+        this->odr_map->load(xml_doc);
         REQUIRE(!(this->odr_map->get_roads().empty()));
     }
 

@@ -47,15 +47,18 @@ struct OpenDriveMapHeader
 class OpenDriveMap
 {
 public:
-    OpenDriveMap(const pugi::xml_document& xml_doc,
-                 const bool                center_map = false,
-                 const bool                with_road_objects = true,
-                 const bool                with_lateral_profile = true,
-                 const bool                with_lane_height = true,
-                 const bool                abs_z_for_for_local_road_obj_outline = false,
-                 const bool                fix_spiral_edge_cases = true,
-                 const bool                with_road_signals = true,
-                 const bool                treat_value_zero_as_missing = true);
+    OpenDriveMap() = default;
+
+    void load(const pugi::xml_document& xml_doc,
+              const bool                with_road_objects = true,
+              const bool                with_lateral_profile = true,
+              const bool                with_lane_height = true,
+              const bool                abs_z_for_for_local_road_obj_outline = false,
+              const bool                fix_spiral_edge_cases = true,
+              const bool                with_road_signals = true,
+              const bool                treat_value_zero_as_missing = true);
+
+    void reset();
 
     Road                  get_road(const std::string& id) const;
     std::vector<Road>     get_roads() const;
@@ -66,9 +69,6 @@ public:
     RoutingGraph    get_routing_graph() const;
 
     OpenDriveMapHeader header;
-
-    double x_offs = 0;
-    double y_offs = 0;
 
     std::map<std::string, Road>     id_to_road;
     std::map<std::string, Junction> id_to_junction;

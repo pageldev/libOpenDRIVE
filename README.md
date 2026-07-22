@@ -12,7 +12,10 @@ Here's an example of how code using libOpenDRIVE looks. For a more complete exam
 
 ```c++
 // load map
-odr::OpenDriveMap odr_map("tests/test.xodr");
+pugi::xml_document xml_doc;
+xml_doc.load_file("tests/test.xodr");
+odr::OpenDriveMap odr_map;
+odr_map.load(xml_doc);
 
 // iterate roads
 for (odr::Road road : odr_map.get_roads())

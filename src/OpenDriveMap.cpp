@@ -62,15 +62,14 @@ OpenDriveMapHeader::OpenDriveMapHeader(std::optional<int>         rev_major,
 {
 }
 
-OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
-                           const bool                center_map,
-                           const bool                with_road_objects,
-                           const bool                with_lateral_profile,
-                           const bool                with_lane_height,
-                           const bool                abs_z_for_for_local_road_obj_outline,
-                           const bool                fix_spiral_edge_cases,
-                           const bool                with_road_signals,
-                           const bool                treat_value_zero_as_missing)
+void OpenDriveMap::load(const pugi::xml_document& xml_doc,
+                        const bool                with_road_objects,
+                        const bool                with_lateral_profile,
+                        const bool                with_lane_height,
+                        const bool                abs_z_for_for_local_road_obj_outline,
+                        const bool                fix_spiral_edge_cases,
+                        const bool                with_road_signals,
+                        const bool                treat_value_zero_as_missing)
 {
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
 
@@ -88,22 +87,6 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                                       try_get_attribute<std::string>(header_node, "vendor"),
                                       try_get_attribute<std::string>(header_node, "version"),
                                       georef_node ? std::optional<std::string>(georef_node.text().as_string("")) : std::nullopt);
-
-    std::size_t cnt_geoms = 1;
-    if (center_map)
-    {
-        for (const pugi::xml_node road_node : odr_node.children("road"))
-        {
-            for (const pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
-            {
-                const double x0 = geometry_hdr_node.attribute("x").as_double(0.0);
-                this->x_offs = this->x_offs + ((x0 - this->x_offs) / cnt_geoms);
-                const double y0 = geometry_hdr_node.attribute("y").as_double(0.0);
-                this->y_offs = this->y_offs + ((y0 - this->y_offs) / cnt_geoms);
-                cnt_geoms++;
-            }
-        }
-    }
 
     // Roads
     odr::check(odr_node.child("road"), "No roads found");
@@ -208,9 +191,6 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
                 invalid_geometry = true;
                 continue;
             }
-
-            x0 -= this->x_offs;
-            y0 -= this->y_offs;
 
             const pugi::xml_node geometry_node = geometry_hdr_node.first_child();
             const std::string    geometry_type = geometry_node.name();
@@ -863,6 +843,11 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
             junction.id_to_controller.emplace(controller_id, std::move(*junction_controller));
         }
     }
+}
+
+void OpenDriveMap::reset()
+{
+    *this = OpenDriveMap{};
 }
 
 Road OpenDriveMap::get_road(const std::string& id) const
