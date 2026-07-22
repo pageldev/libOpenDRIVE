@@ -544,7 +544,11 @@ OpenDriveMap::OpenDriveMap(const pugi::xml_document& xml_doc,
             // derive lane borders from lane widths
             const auto id_lane_iter0 = lanesection->id_to_lane.find(0);
             if (id_lane_iter0 == lanesection->id_to_lane.end())
-                throw std::runtime_error("lane section does not have lane #0");
+            {
+                log::warn("{}: lane section does not have lane #0", node_path(lanesection_node));
+                invalid_lanesection = true;
+                continue;
+            }
 
             // iterate from lane #1 towards +inf
             const auto id_lane_iter1 = std::next(id_lane_iter0);
