@@ -100,17 +100,22 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         add_parse_error(result, odr_node, "No roads found");
     for (const pugi::xml_node road_node : odr_node.children("road"))
     {
-        const std::string road_id = road_node.attribute("id").as_string("");
-        if (this->id_to_road.find(road_id) != this->id_to_road.end())
+        const std::optional<std::string> road_id = try_get_attribute<std::string>(road_node, "id");
+        if (!road_id)
         {
-            add_parse_error(result, road_node, "duplicate id {}", road_id);
+            add_parse_error(result, road_node, "Road has no id");
+            continue;
+        }
+        if (this->id_to_road.find(*road_id) != this->id_to_road.end())
+        {
+            add_parse_error(result, road_node, "duplicate Road #{}", *road_id);
             continue;
         }
 
         std::optional<Road> road;
         try
         {
-            road.emplace(road_id,
+            road.emplace(*road_id,
                          road_node.attribute("length").as_double(NAN),
                          road_node.attribute("junction").as_string(""),
                          try_get_enum<Road::TrafficRule>(road_node, "rule"),
@@ -350,15 +355,25 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             for (const pugi::xpath_node lane_xpath_node : lanesection_node.select_nodes(".//lane"))
             {
-                const pugi::xml_node lane_node = lane_xpath_node.node();
-                const int            lane_id = lane_node.attribute("id").as_int(0);
+                const pugi::xml_node     lane_node = lane_xpath_node.node();
+                const std::optional<int> lane_id = try_get_attribute<int>(lane_node, "id");
+                if (!lane_id)
+                {
+                    add_parse_error(result, lane_node, "Lane has no id");
+                    continue;
+                }
+                if (lanesection->id_to_lane.find(*lane_id) != lanesection->id_to_lane.end())
+                {
+                    add_parse_error(result, lane_node, "duplicate Lane #{}", *lane_id);
+                    continue;
+                }
 
                 if (const pugi::xml_node border_node = lane_node.child("border"))
                     add_parse_error(result, border_node, "border definitions not supported");
 
                 Lane& lane =
                     lanesection->id_to_lane
-                        .emplace(lane_id, Lane(lane_id, lane_node.attribute("type").as_string(""), try_get_attribute<bool>(lane_node, "level")))
+                        .emplace(*lane_id, Lane(*lane_id, lane_node.attribute("type").as_string(""), try_get_attribute<bool>(lane_node, "level")))
                         .first->second;
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
@@ -539,17 +554,22 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             for (const pugi::xml_node object_node : road_node.child("objects").children("object"))
             {
-                const std::string object_id = object_node.attribute("id").as_string("");
-                if (road->id_to_object.find(object_id) != road->id_to_object.end())
+                const std::optional<std::string> object_id = try_get_attribute<std::string>(object_node, "id");
+                if (!object_id)
                 {
-                    add_parse_error(result, object_node, "duplicate Object #{}", object_id);
+                    add_parse_error(result, object_node, "Object has no id");
+                    continue;
+                }
+                if (road->id_to_object.find(*object_id) != road->id_to_object.end())
+                {
+                    add_parse_error(result, object_node, "duplicate Object #{}", *object_id);
                     continue;
                 }
 
                 std::optional<RoadObject> road_object;
                 try
                 {
-                    road_object.emplace(object_id,
+                    road_object.emplace(*object_id,
                                         try_get_attribute<double>(object_node, "s"),
                                         try_get_attribute<double>(object_node, "t"),
                                         try_get_attribute<double>(object_node, "zOffset"),
@@ -657,7 +677,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     road_object->lane_validities.emplace_back(*from_lane, *to_lane);
                 }
 
-                road->id_to_object.emplace(object_id, std::move(*road_object));
+                road->id_to_object.emplace(*object_id, std::move(*road_object));
             }
         }
         // parse signals
@@ -665,18 +685,23 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         {
             for (const pugi::xml_node signal_node : road_node.child("signals").children("signal"))
             {
-                const std::string signal_id = signal_node.attribute("id").as_string("");
-                if (road->id_to_signal.find(signal_id) != road->id_to_signal.end())
+                const std::optional<std::string> signal_id = try_get_attribute<std::string>(signal_node, "id");
+                if (!signal_id)
                 {
-                    add_parse_error(result, signal_node, "duplicate Signal #{}", signal_id);
+                    add_parse_error(result, signal_node, "Signal has no id");
+                    continue;
+                }
+                if (road->id_to_signal.find(*signal_id) != road->id_to_signal.end())
+                {
+                    add_parse_error(result, signal_node, "duplicate Signal #{}", *signal_id);
                     continue;
                 }
 
                 std::optional<RoadSignal> road_signal;
                 try
                 {
-                    road_signal.emplace(signal_id,
-                                        road_id,
+                    road_signal.emplace(*signal_id,
+                                        *road_id,
                                         signal_node.attribute("s").as_double(NAN),
                                         signal_node.attribute("t").as_double(NAN),
                                         signal_node.attribute("zOffset").as_double(NAN),
@@ -713,7 +738,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     road_signal->lane_validities.emplace_back(from_lane, to_lane);
                 }
 
-                road->id_to_signal.emplace(signal_id, std::move(*road_signal));
+                road->id_to_signal.emplace(*signal_id, std::move(*road_signal));
             }
         }
 
@@ -723,21 +748,32 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
     // Junctions
     for (const pugi::xml_node junction_node : odr_node.children("junction"))
     {
-        const std::string id = junction_node.attribute("id").as_string("");
-        if (this->id_to_junction.find(id) != this->id_to_junction.end())
+        const std::optional<std::string> junction_id = try_get_attribute<std::string>(junction_node, "id");
+        if (!junction_id)
         {
-            add_parse_error(result, junction_node, "duplicate Junction #{}", id);
+            add_parse_error(result, junction_node, "Junction has no id");
+            continue;
+        }
+        if (this->id_to_junction.find(*junction_id) != this->id_to_junction.end())
+        {
+            add_parse_error(result, junction_node, "duplicate Junction #{}", *junction_id);
             continue;
         }
 
-        Junction& junction = this->id_to_junction.emplace(id, Junction(id, try_get_attribute<std::string>(junction_node, "name"))).first->second;
+        Junction& junction =
+            this->id_to_junction.emplace(*junction_id, Junction(*junction_id, try_get_attribute<std::string>(junction_node, "name"))).first->second;
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
-            const std::string conn_id = connection_node.attribute("id").as_string("");
-            if (junction.id_to_connection.find(conn_id) != junction.id_to_connection.end())
+            const std::optional<std::string> conn_id = try_get_attribute<std::string>(connection_node, "id");
+            if (!conn_id)
             {
-                add_parse_error(result, connection_node, "duplicate Connection #{}", conn_id);
+                add_parse_error(result, junction_node, "Connection has no id");
+                continue;
+            }
+            if (junction.id_to_connection.find(*conn_id) != junction.id_to_connection.end())
+            {
+                add_parse_error(result, connection_node, "duplicate Connection #{}", *conn_id);
                 continue;
             }
 
@@ -753,7 +789,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::string road_conn = connection_node.attribute("connectingRoad").as_string("");
 
             JunctionConnection& connection =
-                junction.id_to_connection.emplace(conn_id, JunctionConnection(conn_id, road_in, road_conn, *contact_point)).first->second;
+                junction.id_to_connection.emplace(*conn_id, JunctionConnection(*conn_id, road_in, road_conn, *contact_point)).first->second;
 
             for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
             {

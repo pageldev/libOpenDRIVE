@@ -1,5 +1,6 @@
 #include "libodr/RoadMark.h"
 #include "libodr/Utils.hpp"
+#include <cmath>
 
 namespace odr
 {
@@ -14,6 +15,7 @@ RoadMarkLine::RoadMarkLine(double                     sOffset,
     sOffset(sOffset), tOffset(tOffset), length(length), width(width), space(space), color(color), rule(rule)
 {
     require_or_throw(sOffset >= 0, "sOffset {} < 0", sOffset);
+    require_or_throw(!std::isnan(tOffset), "bV is NaN");
     require_or_throw(length >= 0, "length {} < 0", length);
     require_or_throw(!width || width > 0, "width <= 0");
     require_or_throw(!space || space >= 0, "space < 0");
