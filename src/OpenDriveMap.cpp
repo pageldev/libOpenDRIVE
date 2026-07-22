@@ -421,14 +421,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 {
                     for (const pugi::xml_node lane_height_node : lane_node.children("height"))
                     {
-                        const double s_offset = lane_height_node.attribute("sOffset").as_double(NAN);
-
                         std::optional<HeightOffset> height_offset;
                         try
                         {
-                            require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
-                            height_offset.emplace(
-                                s_offset, lane_height_node.attribute("inner").as_double(NAN), lane_height_node.attribute("outer").as_double(NAN)
+                            height_offset.emplace(lane_height_node.attribute("sOffset").as_double(NAN),
+                                                  lane_height_node.attribute("inner").as_double(NAN),
+                                                  lane_height_node.attribute("outer").as_double(NAN)
 
                             );
                         }
@@ -437,7 +435,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                             add_parse_error(result, lane_height_node, "{}", ex.what());
                             continue;
                         }
-                        lane.s_to_height_offset.emplace(lanesection->s0 + s_offset, *height_offset);
+                        lane.s_to_height_offset.emplace(lanesection->s0 + height_offset->s_offset, *height_offset);
                     }
                 }
 
