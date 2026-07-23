@@ -81,16 +81,15 @@ Road::Road(
 
 double Road::get_lanesection_s0(const double s) const
 {
-    if (this->s_to_lanesection.empty())
-        return NAN;
+    require_or_throw(!(this->s_to_lanesection.empty()), "no lanesections");
 
     auto s_lanesec_iter = this->s_to_lanesection.upper_bound(s);
     if (s_lanesec_iter != this->s_to_lanesection.begin())
         s_lanesec_iter--;
     const LaneSection& lanesec = s_lanesec_iter->second;
 
-    if (s < lanesec.s0 || s > this->get_lanesection_end(lanesec))
-        return NAN;
+    const double lanesec_s_end = this->get_lanesection_end(lanesec);
+    require_or_throw(s >= lanesec.s0 && s <= this->get_lanesection_end(lanesec), "s {} outside of lanesection []", s, lanesec.s0, lanesec_s_end);
 
     return lanesec.s0;
 }
@@ -98,8 +97,6 @@ double Road::get_lanesection_s0(const double s) const
 LaneSection Road::get_lanesection(const double s) const
 {
     const double lanesec_s0 = this->get_lanesection_s0(s);
-    if (std::isnan(lanesec_s0))
-        throw std::runtime_error("no valid lanesection");
     return this->s_to_lanesection.at(lanesec_s0);
 }
 
@@ -168,10 +165,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
     require_or_throw(clamp_s_to_road_bounds || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
     s = std::min(std::max(s, 0.0), this->length);
 
-    const double lanesection_s0 = this->get_lanesection_s0(s);
-    if (std::isnan(lanesection_s0))
-        throw std::runtime_error(fmt::format("cannot get road surface pt, no lane section for s {:.3f}, road length: {:.3f}", s, this->length));
-
+    const double       lanesection_s0 = this->get_lanesection_s0(s);
     const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
     const Lane&        lane = lanesection.get_lane(s, t);
     const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
