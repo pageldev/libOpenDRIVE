@@ -329,6 +329,8 @@ inline std::string node_path(pugi::xml_node node)
             part += "[@id='" + std::string(id_attr.value()) + "']";
         else if (const pugi::xml_attribute s_attr = node.attribute("s"))
             part += "[@s='" + std::string(s_attr.value()) + "']";
+        else if (const pugi::xml_attribute s_attr = node.attribute("sOffset"))
+            part += "[@sOffset='" + std::string(s_attr.value()) + "']";
         parts.push_back(part);
         node = node.parent();
     }

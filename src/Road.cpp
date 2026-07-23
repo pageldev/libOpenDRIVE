@@ -560,6 +560,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 continue;
             for (const RoadObjectCorner& corner : road_object_outline.outline)
             {
+                const double h_obj = is_top ? std::max(0.0, corner.height) : std::min(0.0, corner.height);
+
                 Vec3D pt_obj;
                 if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
@@ -569,13 +571,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                     pt_obj = {corner.pt[0], corner.pt[1], corner.pt[2]};
                     if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
                         pt_obj[2] -= p0[2]; // make road relative
-                    if (is_top)
-                        pt_obj = add(pt_obj, Vec3D{0, 0, corner.height});
+                    pt_obj = add(pt_obj, Vec3D{0, 0, h_obj});
                     pt_obj = add(MatVecMultiplication(base_mat, MatVecMultiplication(rot_mat, pt_obj)), p0);
                 }
                 else
                 {
-                    const double h_obj = is_top ? corner.height : 0;
                     pt_obj = this->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2] + h_obj);
                 }
 

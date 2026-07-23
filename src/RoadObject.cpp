@@ -49,7 +49,7 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
 RoadObjectCorner::RoadObjectCorner(Vec3D pt, double height, Type type, std::optional<int> id) : pt(pt), height(height), type(type), id(id)
 {
     require_or_throw(std::none_of(pt.begin(), pt.end(), [](double v) { return std::isnan(v); }), "pt [{}] has NaN values", fmt::join(pt, ", "));
-    require_or_throw(height >= 0, "height {} < 0", height);
+    require_or_throw(!std::isnan(height), "height is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
     if (type == Type::Road)
         require_or_throw(pt[0] >= 0, "s {} < 0", pt[0]);
 }

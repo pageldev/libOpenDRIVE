@@ -695,7 +695,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                         *road_id,
                                         signal_node.attribute("s").as_double(NAN),
                                         signal_node.attribute("t").as_double(NAN),
-                                        signal_node.attribute("zOffset").as_double(NAN),
+                                        signal_node.attribute("zOffset").as_double(0.0), // default to 0, often treated as optional
                                         signal_node.attribute("dynamic").as_bool(),
                                         signal_node.attribute("type").as_string("none"),
                                         signal_node.attribute("subtype").as_string("none"),
