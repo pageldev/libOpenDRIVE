@@ -125,17 +125,17 @@ void CubicPoly::set_zero()
     d = 0;
 }
 
-double CubicProfile::evaluate(const double s, const double default_val, const bool extend_start) const
+double CubicProfile::evaluate(const double s, const double default_val) const
 {
-    const std::optional<CubicPoly>& poly = this->get_poly(s, extend_start);
+    const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
         return default_val;
     return poly->evaluate(s);
 }
 
-double CubicProfile::derivative(const double s, const double default_val, const bool extend_start) const
+double CubicProfile::derivative(const double s, const double default_val) const
 {
-    const std::optional<CubicPoly>& poly = this->get_poly(s, extend_start);
+    const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
         return default_val;
     return poly->derivative(s);
@@ -163,8 +163,8 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
     CubicProfile retval;
     for (const double s0 : s0_vals)
     {
-        const std::optional<CubicPoly>& this_poly = this->get_poly(s0, false);
-        const std::optional<CubicPoly>& other_poly = other.get_poly(s0, false);
+        const std::optional<CubicPoly>& this_poly = this->get_poly(s0);
+        const std::optional<CubicPoly>& other_poly = other.get_poly(s0);
 
         if (!this_poly || !other_poly) // can't be both invalid
         {
@@ -182,15 +182,15 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
     return retval;
 }
 
-std::optional<CubicPoly> CubicProfile::get_poly(const double s, const bool extend_start) const
+std::optional<CubicPoly> CubicProfile::get_poly(const double s) const
 {
     if (this->segments.empty())
         return std::nullopt;
 
-    if ((extend_start == false) && (s < this->segments.begin()->first))
+    if (s < this->segments.begin()->first)
         return std::nullopt;
 
-    // will return first poly if s < s_start and last poly for s > s_end
+    // will return last poly for s > s_end
     auto target_poly_iter = this->segments.upper_bound(s);
     if (target_poly_iter != this->segments.begin())
         target_poly_iter--;

@@ -18,13 +18,14 @@ std::vector<Lane> LaneSection::get_lanes() const
 
 int LaneSection::get_lane_id(const double s, const double t) const
 {
-    if (this->id_to_lane.at(0).outer_border.evaluate(s, NAN, true) == t) // exactly on lane #0
+    // default to 0 so lane #0 is at t=0 if no lane offset is defined
+    if (this->id_to_lane.at(0).outer_border.evaluate(s, 0.0) == t) // exactly on lane #0
         return 0;
 
     std::map<double /*t*/, int /*id*/> outer_border_to_lane_id;
     for (const auto& [id, lane] : this->id_to_lane)
     {
-        const double outer_brdr_t = lane.outer_border.evaluate(s, 0.0, true);
+        const double outer_brdr_t = lane.outer_border.evaluate(s, 0.0);
         outer_border_to_lane_id.insert({outer_brdr_t, id});
     }
 
