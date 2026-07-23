@@ -1,5 +1,4 @@
 #pragma once
-#include "libodr/Log.hpp"
 #include "libodr/Math.hpp"
 
 #include "fmt/core.h"
@@ -24,23 +23,6 @@
 
 namespace odr
 {
-
-template<class... Args>
-inline void check(bool ok, fmt::format_string<Args...> fmt, Args&&... args)
-{
-    if (!ok)
-        log::warn(fmt, std::forward<Args>(args)...);
-}
-
-template<class Repair, class... Args>
-inline void check_and_repair(bool ok, Repair&& repair, fmt::format_string<Args...> fmt, Args&&... args)
-{
-    if (!ok)
-    {
-        log::warn(fmt, std::forward<Args>(args)...);
-        std::forward<Repair>(repair)();
-    }
-}
 
 template<class... Args>
 inline void require_or_throw(bool ok, fmt::format_string<Args...> fmt, Args&&... args)
@@ -360,18 +342,11 @@ inline bool parse_bool(std::string_view s)
 }
 
 template<typename T>
-std::optional<T> try_get_attribute(const pugi::xml_node&     node,
-                                   const char*               attr_name,
-                                   bool                      treat_value_zero_as_missing = false,
-                                   std::optional<log::Level> log_lvl = std::nullopt)
+std::optional<T> try_get_attribute(const pugi::xml_node& node, const char* attr_name, bool treat_value_zero_as_missing = false)
 {
     const auto attr = node.attribute(attr_name);
     if (!attr)
-    {
-        if (log_lvl)
-            log::log(*log_lvl, "{}: missing attribute '{}'", node_path(node), attr_name);
         return std::nullopt;
-    }
 
     const char* value = attr.value();
     if constexpr (std::is_same_v<T, std::string>)
@@ -388,11 +363,8 @@ std::optional<T> try_get_attribute(const pugi::xml_node&     node,
         const char* end = value + std::strlen(value);
         auto [ptr, ec] = std::from_chars(value, end, result);
         if (ec != std::errc{} || ptr != end)
-        {
-            if (log_lvl)
-                log::log(*log_lvl, "{}/@{}: failed to parse '{}' as numeric", node_path(node), attr_name, value);
             return std::nullopt;
-        }
+
         if (treat_value_zero_as_missing && result == T{})
             return std::nullopt;
         return result;
@@ -404,18 +376,17 @@ std::optional<T> try_get_attribute(const pugi::xml_node&     node,
 }
 
 template<typename T>
-std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
+std::optional<T> try_get_enum(const pugi::xml_node node, const char* attr_name)
 {
-    std::optional<std::string> enum_str = try_get_attribute<std::string>(node, attr_name, false, log_lvl);
+    std::optional<std::string> enum_str = try_get_attribute<std::string>(node, attr_name, false);
     if (!enum_str)
         return std::nullopt;
     return magic_enum::enum_cast<T>(*enum_str, magic_enum::case_insensitive);
 }
 
-inline std::optional<RoadObject::Orientation>
-try_get_orientation(const pugi::xml_node node, const char* attr_name, std::optional<log::Level> log_lvl = std::nullopt)
+inline std::optional<RoadObject::Orientation> try_get_orientation(const pugi::xml_node node, const char* attr_name)
 {
-    std::optional<std::string> orient_str = try_get_attribute<std::string>(node, attr_name, false, log_lvl);
+    std::optional<std::string> orient_str = try_get_attribute<std::string>(node, attr_name, false);
     if (!orient_str)
         return std::nullopt;
 
@@ -425,9 +396,6 @@ try_get_orientation(const pugi::xml_node node, const char* attr_name, std::optio
         return RoadObject::Orientation::Negative;
     if (orient_str == "none")
         return RoadObject::Orientation::None;
-
-    if (log_lvl)
-        log::log(*log_lvl, "{}/@{}: invalid orientation '{}'", node_path(node), attr_name, *orient_str);
 
     return std::nullopt;
 };

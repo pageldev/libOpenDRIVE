@@ -10,7 +10,6 @@
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
 #include "libodr/LaneValidityRecord.h"
-#include "libodr/Log.hpp"
 #include "libodr/Math.hpp"
 #include "libodr/RefLine.h"
 #include "libodr/Road.h"
@@ -914,7 +913,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
     return out_mesh;
 }
 
-RoutingGraph OpenDriveMap::get_routing_graph() const
+RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* errors) const
 {
     RoutingGraph routing_graph;
 
@@ -1017,13 +1016,15 @@ RoutingGraph OpenDriveMap::get_routing_graph() const
             auto road_in_iter = id_to_road.find(conn.incoming_road);
             if (road_in_iter == id_to_road.end())
             {
-                log::warn("{}: incoming road[@id={}] not found", _loc_str, conn.incoming_road);
+                if (errors)
+                    errors->push_back(fmt::format("{}: incoming road[@id={}] not found", _loc_str, conn.incoming_road));
                 continue;
             }
             auto road_conn_iter = id_to_road.find(conn.connecting_road);
             if (road_conn_iter == id_to_road.end())
             {
-                log::warn("{}: connecting road[@id={}] not found", _loc_str, conn.connecting_road);
+                if (errors)
+                    errors->push_back(fmt::format("{}: connecting road[@id={}] not found", _loc_str, conn.connecting_road));
                 continue;
             }
 

@@ -1,6 +1,5 @@
 #include "libodr/Road.h"
 #include "libodr/Lane.h"
-#include "libodr/Log.hpp"
 #include "libodr/Mesh.h"
 #include "libodr/RefLine.h"
 #include "libodr/RoadMark.h"
@@ -164,17 +163,10 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn) const
+Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_road_bounds) const
 {
-    odr::check_and_repair(
-        s >= 0, [&]() { s = 0; }, "Road #{}: get_surface_pt for s < 0 invalid (s={}), getting for s=0", this->id, s);
-    odr::check_and_repair(
-        s <= this->length,
-        [&]() { s = this->length; },
-        "Road #{}: get_surface_pt for s > length invalid (s={}, length={}), getting for s=length",
-        this->id,
-        s,
-        this->length);
+    require_or_throw(clamp_s_to_road_bounds || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
+    s = std::min(std::max(s, 0.0), this->length);
 
     const double lanesection_s0 = this->get_lanesection_s0(s);
     if (std::isnan(lanesection_s0))
@@ -407,7 +399,7 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     return road_signal_mesh;
 }
 
-Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double default_h, double default_z) const
+Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double default_h, double default_z, std::vector<std::string>* errors) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_obj.outlines.empty())         // handle single road object as one object repeat
@@ -467,7 +459,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                     single_road_obj_mesh = RoadObject::get_cube(w_s, *(road_obj.length), h_s);
                 else // fallback to cube
                 {
-                    log::warn("Road[@id={}]: no geometry for Object[@id={}]; no radius or length/width, using default-cube", this->id, road_obj.id);
+                    if (errors)
+                    {
+                        errors->push_back(fmt::format(
+                            "Road[@id={}]: no geometry for Object[@id={}]; no radius or length/width, using default-cube", this->id, road_obj.id));
+                    }
                     single_road_obj_mesh = RoadObject::get_cube(0.1, 0.1, 0.1);
                 }
 
