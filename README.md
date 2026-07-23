@@ -11,11 +11,15 @@ It's small and can be easily integrated in other projects. A core function is th
 Here's an example of how code using libOpenDRIVE looks. For a more complete example refer to [tests/test.cpp](tests/test.cpp).
 
 ```c++
-// load map
+// load xml document
 pugi::xml_document xml_doc;
 xml_doc.load_file("tests/test.xodr");
+
+// load map
 odr::OpenDriveMap odr_map;
-odr_map.load(xml_doc);
+odr::XodrParseResult result = odr_map.load(xml_doc);
+for (const odr::XodrParseError& error : result.errors)
+    std::cerr << error.node.path() << ": " << error.description << std::endl;
 
 // iterate roads
 for (odr::Road road : odr_map.get_roads())
@@ -26,7 +30,8 @@ odr::Road odr_road = odr_map.get_road("17");
 odr::Vec3D pt_xyz = odr_road.get_xyz(2.1 /*s*/, 1.0 /*t*/, 0.0 /*h*/);
 
 // access road network attributes
-std::string lane_type = odr_road.get_lanesection(0.0).get_lane(-1).type;
+int lane_id = odr_road.get_lanesection(0.0).get_lane(-1).id;
+std::optional<std::string> lane_type = odr_road.get_lanesection(0.0).get_lane(-1).type;
 
 // use routing graph
 odr::RoutingGraph routing_graph = odr_map.get_routing_graph();
