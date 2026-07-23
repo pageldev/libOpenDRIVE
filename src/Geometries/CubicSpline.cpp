@@ -125,19 +125,19 @@ void CubicPoly::set_zero()
     d = 0;
 }
 
-double CubicProfile::evaluate(const double s, const double default_val) const
+std::optional<double> CubicProfile::evaluate(const double s) const
 {
     const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
-        return default_val;
+        return std::nullopt;
     return poly->evaluate(s);
 }
 
-double CubicProfile::derivative(const double s, const double default_val) const
+std::optional<double> CubicProfile::derivative(const double s) const
 {
     const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
-        return default_val;
+        return std::nullopt;
     return poly->derivative(s);
 }
 

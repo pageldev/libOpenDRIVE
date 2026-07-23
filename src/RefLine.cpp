@@ -42,7 +42,7 @@ std::optional<double> RefLine::get_geometry_s0(const double s) const
 {
     if (this->s0_to_geometry.empty())
         return std::nullopt;
-    auto target_geom_iter = this->s0_to_geometry.upper_bound(s);
+    auto target_geom_iter = this->s0_to_geometry.upper_bound(s); // first element > s
     if (target_geom_iter != s0_to_geometry.begin())
         target_geom_iter--;
     return target_geom_iter->first;
@@ -65,23 +65,17 @@ RoadGeometry* RefLine::get_geometry(const double s)
 Vec3D RefLine::get_xyz(const double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
-
-    Vec2D pt_xy{0, 0};
-    if (geom)
-        pt_xy = geom->get_xy(s);
-
-    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s, 0.0)};
+    require_or_throw(geom != nullptr, "reference line has no geometry at s {}", s);
+    const Vec2D pt_xy = geom->get_xy(s);
+    return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s).value_or(0.0)};
 }
 
 Vec3D RefLine::derivative(const double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
-
-    Vec2D d_xy{0, 0};
-    if (geom)
-        d_xy = geom->derivative(s);
-
-    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s, 0.0)};
+    require_or_throw(geom != nullptr, "reference line has no geometry at s {}", s);
+    const Vec2D d_xy = geom->derivative(s);
+    return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s).value_or(0.0)};
 }
 
 double RefLine::match(const double x, const double y) const

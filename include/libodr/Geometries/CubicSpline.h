@@ -33,8 +33,9 @@ struct CubicProfile
     CubicProfile() = default;
     virtual ~CubicProfile() = default;
 
-    double evaluate(const double s, const double default_val) const;
-    double derivative(const double s, const double default_val) const;
+    std::optional<double> evaluate(const double s) const;
+    std::optional<double> derivative(const double s) const;
+
     double max_value(const double s_start, const double s_end) const;
 
     std::optional<CubicPoly> get_poly(const double s) const;

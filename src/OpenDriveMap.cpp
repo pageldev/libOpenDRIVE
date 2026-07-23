@@ -168,8 +168,9 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
 
         // make ref_line - parse road geometries
-        bool invalid_geometry = false;
-        for (const pugi::xml_node geometry_hdr_node : road_node.child("planView").children("geometry"))
+        bool                 invalid_geometry = false;
+        const pugi::xml_node plan_view_node = road_node.child("planView");
+        for (const pugi::xml_node geometry_hdr_node : plan_view_node.children("geometry"))
         {
             const double s0 = geometry_hdr_node.attribute("s").as_double(NAN);
             const double hdg0 = geometry_hdr_node.attribute("hdg").as_double(NAN);
@@ -252,6 +253,11 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 invalid_geometry = true;
                 continue;
             }
+        }
+        if (road->ref_line.s0_to_geometry.empty())
+        {
+            result.errors.push_back({plan_view_node ? plan_view_node : road_node, "no geometries"});
+            invalid_geometry = true;
         }
         if (invalid_geometry)
             continue; // discard road

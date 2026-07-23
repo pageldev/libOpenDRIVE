@@ -140,7 +140,7 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
     const Vec3D e_h_base = crossProduct(e_s, e_t_base);
 
     // Rodrigues rotation of e_t_base around e_s by theta; simplified since dot(k,v)=0 and cross(k,v)=e_h_base
-    const double theta = this->superelevation.evaluate(s, 0.0);
+    const double theta = this->superelevation.evaluate(s).value_or(0.0);
     const Vec3D  e_t = normalize(Vec3D{std::cos(theta) * e_t_base[0] + std::sin(theta) * e_h_base[0],
                                       std::cos(theta) * e_t_base[1] + std::sin(theta) * e_h_base[1],
                                       std::cos(theta) * e_t_base[2] + std::sin(theta) * e_h_base[2]});
@@ -165,12 +165,14 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
     require_or_throw(clamp_s_to_road_bounds || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
     s = std::min(std::max(s, 0.0), this->length);
 
-    const double       lanesection_s0 = this->get_lanesection_s0(s);
-    const LaneSection& lanesection = this->s_to_lanesection.at(lanesection_s0);
-    const Lane&        lane = lanesection.get_lane(s, t);
-    const Lane&        inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
-    const double       t_inner_brdr = inner_neighbor_lane.outer_border.evaluate(s, 0.0);
-    double             h = 0;
+    const double                lanesection_s0 = this->get_lanesection_s0(s);
+    const LaneSection&          lanesection = this->s_to_lanesection.at(lanesection_s0);
+    const Lane&                 lane = lanesection.get_lane(s, t);
+    const Lane&                 inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
+    const std::optional<double> t_inner_brdr_opt = inner_neighbor_lane.outer_border.evaluate(s);
+    require_or_throw(t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s);
+    const double t_inner_brdr = t_inner_brdr_opt.value_or(0.0);
+    double       h = 0;
 
     // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1 Lane Record:
     // "keep lane on level, .i.e. do not apply superelevation or crossfall"
@@ -178,7 +180,7 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
     {
         // compensate crossfall and superelevation to level lane
         const double alpha = this->crossfall.get(s, (lane.id > 0));
-        const double theta = this->superelevation.evaluate(s, 0.0);
+        const double theta = this->superelevation.evaluate(s).value_or(0.0);
         h = -std::tan(alpha) * std::abs(t_inner_brdr) + std::tan(theta) * (t - t_inner_brdr);
     }
     else
@@ -195,11 +197,13 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
         const auto heights_iter = heights.upper_bound(s); // first element > s
         if (heights_iter != heights.begin())              // s after first <height> record
         {
-            const HeightOffset& height_offset = std::prev(heights_iter)->second;
-            const double        h_inner = height_offset.inner;
-            const double        h_outer = height_offset.outer;
-            const double        t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
-            const double        t_norm = (t_outer_brdr != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr - t_inner_brdr) : 0.0; // [0,1]
+            const HeightOffset&         height_offset = std::prev(heights_iter)->second;
+            const double                h_inner = height_offset.inner;
+            const double                h_outer = height_offset.outer;
+            const std::optional<double> t_outer_brdr = lane.outer_border.evaluate(s);
+            require_or_throw(t_outer_brdr.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
+            const double t_outer_brdr_value = t_outer_brdr.value_or(0.0);
+            const double t_norm = (t_outer_brdr_value != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr_value - t_inner_brdr) : 0.0; // [0,1]
             h += t_norm * (h_outer - h_inner) + h_inner;
         }
     }
@@ -242,14 +246,20 @@ Line3D Road::get_lane_border_line(const LaneKey& lane_key, double s_start, doubl
 
     std::set<double> s_vals = this->approximate_lane_border_linear(lane_key, s_start, s_end, eps, outer);
 
-    const CubicProfile border = outer ? lane.outer_border : lanesection.id_to_lane.at(next_towards_zero(lane.id)).outer_border;
+    const Lane& border_lane = outer ? lane : lanesection.id_to_lane.at(next_towards_zero(lane.id));
 
     Line3D border_line;
     for (const double s : s_vals)
     {
-        double t = border.evaluate(s, 0.0);
+        const std::optional<double> t_opt = border_lane.outer_border.evaluate(s);
+        require_or_throw(t_opt.has_value() || border_lane.id == 0, "lane {} has no outer border at s {}", border_lane.id, s);
+        double t = t_opt.value_or(0.0);
         if (!outer)
-            t = std::nextafter(t, lane.outer_border.evaluate(s, 0.0)); // ensure t is not on lane boundary but within lane
+        {
+            const std::optional<double> lane_outer_border = lane.outer_border.evaluate(s);
+            require_or_throw(lane_outer_border.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
+            t = std::nextafter(t, lane_outer_border.value_or(0.0)); // ensure t is not on lane boundary but within lane
+        }
         border_line.push_back(this->get_surface_pt(s, t));
     }
 
@@ -296,15 +306,19 @@ Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end
     Mesh3D out_mesh;
     for (const double s : s_vals)
     {
-        Vec3D        vn_outer_brdr{0, 0, 0};
-        const double t_outer_brdr = lane.outer_border.evaluate(s, 0.0);
+        Vec3D                       vn_outer_brdr{0, 0, 0};
+        const std::optional<double> t_outer_brdr_opt = lane.outer_border.evaluate(s);
+        require_or_throw(t_outer_brdr_opt.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
+        const double t_outer_brdr = t_outer_brdr_opt.value_or(0.0);
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
 
-        Vec3D        vn_inner_brdr{0, 0, 0};
-        const double t_inner_brdr =
-            std::nextafter(inner_neighbor_lane.outer_border.evaluate(s, 0.0), t_outer_brdr); // ensure t is not on lane boundary but within lane
+        Vec3D                       vn_inner_brdr{0, 0, 0};
+        const std::optional<double> t_inner_brdr_opt = inner_neighbor_lane.outer_border.evaluate(s);
+        require_or_throw(
+            t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s);
+        const double t_inner_brdr = std::nextafter(t_inner_brdr_opt.value_or(0.0), t_outer_brdr); // ensure t is not on lane boundary but within lane
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
         out_mesh.normals.push_back(vn_inner_brdr);
         out_mesh.st_coordinates.push_back({s, t_inner_brdr});
@@ -347,8 +361,10 @@ Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& ro
     Mesh3D out_mesh;
     for (const double s : s_vals)
     {
-        Vec3D        vn_edge_a{0, 0, 0};
-        const double t_edge_a = lane.outer_border.evaluate(s, 0.0) + roadmark.width * 0.5 + roadmark.t;
+        Vec3D                       vn_edge_a{0, 0, 0};
+        const std::optional<double> lane_outer_border = lane.outer_border.evaluate(s);
+        require_or_throw(lane_outer_border.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
+        const double t_edge_a = lane_outer_border.value_or(0.0) + roadmark.width * 0.5 + roadmark.t;
         out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
         out_mesh.normals.push_back(vn_edge_a);
 
