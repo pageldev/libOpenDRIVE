@@ -16,7 +16,8 @@ struct OpenDriveFixture
         REQUIRE(result);
 
         this->odr_map = std::make_unique<odr::OpenDriveMap>();
-        this->odr_map->load(xml_doc);
+        const odr::XodrParseResult parse_result = this->odr_map->load(xml_doc);
+        REQUIRE(parse_result.errors.empty());
         REQUIRE(!(this->odr_map->get_roads().empty()));
     }
 
