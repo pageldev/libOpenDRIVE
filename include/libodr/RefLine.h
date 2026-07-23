@@ -21,9 +21,9 @@ struct RefLine
     std::set<const RoadGeometry*> get_geometries() const;
     std::set<RoadGeometry*>       get_geometries();
 
-    double              get_geometry_s0(const double s) const;
-    const RoadGeometry* get_geometry(const double s) const;
-    RoadGeometry*       get_geometry(const double s);
+    std::optional<double> get_geometry_s0(const double s) const;
+    const RoadGeometry*   get_geometry(const double s) const;
+    RoadGeometry*         get_geometry(const double s);
 
     Vec3D            get_xyz(const double s) const;
     Vec3D            derivative(const double s) const;

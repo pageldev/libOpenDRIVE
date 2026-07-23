@@ -6,6 +6,7 @@
 #include <cmath>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -37,10 +38,10 @@ std::set<RoadGeometry*> RefLine::get_geometries()
     return geometries;
 }
 
-double RefLine::get_geometry_s0(const double s) const
+std::optional<double> RefLine::get_geometry_s0(const double s) const
 {
     if (this->s0_to_geometry.empty())
-        return NAN;
+        return std::nullopt;
     auto target_geom_iter = this->s0_to_geometry.upper_bound(s);
     if (target_geom_iter != s0_to_geometry.begin())
         target_geom_iter--;
@@ -49,10 +50,10 @@ double RefLine::get_geometry_s0(const double s) const
 
 const RoadGeometry* RefLine::get_geometry(const double s) const
 {
-    const double geom_s0 = this->get_geometry_s0(s);
-    if (std::isnan(geom_s0))
+    const std::optional<double> geom_s0 = this->get_geometry_s0(s);
+    if (!geom_s0)
         return nullptr;
-    return this->s0_to_geometry.at(geom_s0).get();
+    return this->s0_to_geometry.at(*geom_s0).get();
 }
 
 RoadGeometry* RefLine::get_geometry(const double s)
