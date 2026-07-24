@@ -496,6 +496,13 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
             }
 
+            if (const std::optional<int> missing_lane_id = find_first_gap_in_keys(lanesection->id_to_lane))
+            {
+                result.errors.push_back({lanesection_node, fmt::format("missing lane #{}", *missing_lane_id)});
+                invalid_lanesection = true;
+                continue;
+            }
+
             // derive lane borders from lane widths
             const auto id_lane_iter0 = lanesection->id_to_lane.find(0);
             if (id_lane_iter0 == lanesection->id_to_lane.end())

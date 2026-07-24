@@ -407,4 +407,13 @@ inline bool is_zero(double x)
     return std::abs(x) < 1e-9;
 }
 
+template<typename T>
+std::optional<int> find_first_gap_in_keys(const std::map<int, T>& map)
+{
+    const auto it = std::adjacent_find(map.begin(), map.end(), [](const auto& a, const auto& b) { return b.first != a.first + 1; });
+    if (it == map.end())
+        return std::nullopt;
+    return it->first + 1;
+}
+
 } // namespace odr
