@@ -447,6 +447,10 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
         const double t_end = has_t_range ? *r.t_end : *(road_obj.t0);
         const double height_start = r.height_start.value_or(road_obj.height.value_or(default_h));
         const double height_end = r.height_end.value_or(road_obj.height.value_or(default_h));
+        const double z_offset_start = r.z_offset_start.value_or(road_obj.z0.value_or(default_z));
+        const double z_offset_end = r.z_offset_end.value_or(road_obj.z0.value_or(default_z));
+        const double width_start = r.width_start.value_or(road_obj.width.value_or(0));
+        const double width_end = r.width_end.value_or(road_obj.width.value_or(0));
 
         // OpenDRIVE Format Specification, Rev. 1.4, 5.3.8.1.1 Object Repeat Record:
         // "distance between two instances of the object;
@@ -458,9 +462,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s = t_start + p * (t_end - t_start);
                 const double h_s = height_start + p * (height_end - height_start);
-                const double z_s =
-                    r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
-                const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
+                const double z_s = z_offset_start + p * (z_offset_end - z_offset_start);
+                const double w_s = width_start + p * (width_end - width_start);
 
                 Mesh3D single_road_obj_mesh;
                 if (road_obj.radius) // cylinder
@@ -470,10 +473,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 else // fallback to cube
                 {
                     if (errors)
-                    {
-                        errors->push_back(fmt::format(
-                            "Road[@id={}]: no geometry for Object[@id={}]; no radius or length/width, using default-cube", this->id, road_obj.id));
-                    }
+                        errors->push_back("no radius or length/width, using default-cube");
                     single_road_obj_mesh = RoadObject::get_cube(0.1, 0.1, 0.1);
                 }
 
@@ -501,9 +501,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double p = (s_end == s_start) ? 1.0 : (s - s_start) / (s_end - s_start);
                 const double t_s = t_start + p * (t_end - t_start);
                 const double h_s = height_start + p * (height_end - height_start);
-                const double z_s =
-                    r.z_offset_start.value_or(default_z) + p * (r.z_offset_end.value_or(default_z) - r.z_offset_start.value_or(default_z));
-                const double w_s = r.width_start && r.width_end ? *(r.width_start) + p * (*(r.width_end) - *(r.width_start)) : 0;
+                const double z_s = z_offset_start + p * (z_offset_end - z_offset_start);
+                const double w_s = width_start + p * (width_end - width_start);
                 const double z_bottom = z_s + std::min(0.0, h_s);
                 const double z_top = z_s + std::max(0.0, h_s);
 
@@ -530,6 +529,8 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                     continuous_road_obj_mesh.indices.insert(continuous_road_obj_mesh.indices.end(), wall_idx_patch.begin(), wall_idx_patch.end());
                 }
             }
+            if (continuous_road_obj_mesh.vertices.empty()) // can happen for e.g. s_start == s_end
+                continue;
 
             const std::size_t           last_idx = continuous_road_obj_mesh.vertices.size() - 1;
             const std::array<size_t, 6> back_idx_patch = {last_idx - 3, last_idx - 2, last_idx - 1, last_idx - 3, last_idx - 1, last_idx};
@@ -543,11 +544,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
     {
         // can't add point object
         if (road_object_outline.outline.size() < 2)
+        {
+            if (errors)
+                errors->push_back("can't create outline from < 2 points");
             continue;
-
-        Vec3D e_s, e_t, e_h;
-
-        const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
+        }
 
         Mesh3D outline_road_obj_mesh;
 
@@ -556,7 +557,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
             road_object_outline.outline.begin(), road_object_outline.outline.end(), [](const RoadObjectCorner& c) { return is_zero(c.height); });
         for (const bool is_top : {true, false})
         {
-            if (is_flat_object)
+            if (is_flat_object && is_top)
                 continue;
             for (const RoadObjectCorner& corner : road_object_outline.outline)
             {
@@ -565,9 +566,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 Vec3D pt_obj;
                 if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
-                    require_or_throw(road_obj.s0.has_value(), "s-coordinate required for Object Outline of type CornerLocal");
-                    require_or_throw(road_obj.t0.has_value(), "t-coordinate required for Object Outline of type CornerLocal");
+                    require_or_throw(road_obj.s0.has_value(), "s-coordinate required for outline of type <cornerLocal>");
+                    require_or_throw(road_obj.t0.has_value(), "t-coordinate required for outline of type <cornerLocal>");
+                    Vec3D       e_s, e_t, e_h;
                     const Vec3D p0 = this->get_xyz(*(road_obj.s0), *(road_obj.t0), road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h);
+                    const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                     pt_obj = {corner.pt[0], corner.pt[1], corner.pt[2]};
                     if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
                         pt_obj[2] -= p0[2]; // make road relative
