@@ -29,7 +29,7 @@ struct RefLine
     Vec3D            derivative(const double s) const;
     Line3D           get_line(const double s_start, const double s_end, const double eps) const;
     double           match(const double x, const double y) const;
-    std::set<double> approximate_linear(const double eps, const double s_start, const double s_end) const;
+    std::set<double> approximate_linear(const double eps, double s_start, double s_end) const;
 
     double length;
 

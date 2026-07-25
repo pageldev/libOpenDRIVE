@@ -98,13 +98,16 @@ Line3D RefLine::get_line(const double s_start, const double s_end, const double 
     return out_line;
 }
 
-std::set<double> RefLine::approximate_linear(const double eps, const double s_start, const double s_end) const
+std::set<double> RefLine::approximate_linear(const double eps, double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s0_to_geometry.empty())
         return {};
 
-    auto s_end_geom_iter = this->s0_to_geometry.lower_bound(s_end);
-    auto s_start_geom_iter = this->s0_to_geometry.upper_bound(s_start);
+    s_start = std::min(s_start, s_end);
+    s_end = std::max(s_start, s_end);
+
+    auto s_end_geom_iter = this->s0_to_geometry.lower_bound(s_end);     // first element >= s
+    auto s_start_geom_iter = this->s0_to_geometry.upper_bound(s_start); // first element > s
     if (s_start_geom_iter != s0_to_geometry.begin())
         s_start_geom_iter--;
 
