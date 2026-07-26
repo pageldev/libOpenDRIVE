@@ -25,7 +25,7 @@
 namespace odr
 {
 
-double Crossfall::get(const double s, const bool on_left_side) const
+double Crossfall::get(double s, bool on_left_side) const
 {
     if (this->segments.empty())
         return 0;
@@ -79,7 +79,7 @@ Road::Road(
     require_or_throw(length > 0, "length {} <= 0", length);
 }
 
-double Road::get_lanesection_s0(const double s) const
+double Road::get_lanesection_s0(double s) const
 {
     require_or_throw(!(this->s_to_lanesection.empty()), "no lanesections");
 
@@ -94,7 +94,7 @@ double Road::get_lanesection_s0(const double s) const
     return lanesec.s0;
 }
 
-LaneSection Road::get_lanesection(const double s) const
+LaneSection Road::get_lanesection(double s) const
 {
     const double lanesec_s0 = this->get_lanesection_s0(s);
     return this->s_to_lanesection.at(lanesec_s0);
@@ -105,7 +105,7 @@ double Road::get_lanesection_end(const LaneSection& lanesection) const
     return this->get_lanesection_end(lanesection.s0);
 }
 
-double Road::get_lanesection_end(const double lanesection_s0) const
+double Road::get_lanesection_end(double lanesection_s0) const
 {
     auto s_lanesec_iter = this->s_to_lanesection.find(lanesection_s0);
     if (s_lanesec_iter == this->s_to_lanesection.end())
@@ -125,13 +125,13 @@ double Road::get_lanesection_length(const LaneSection& lanesection) const
     return s_end - lanesection.s0;
 }
 
-double Road::get_lanesection_length(const double lanesection_s0) const
+double Road::get_lanesection_length(double lanesection_s0) const
 {
     const double s_end = this->get_lanesection_end(lanesection_s0);
     return s_end - lanesection_s0;
 }
 
-Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h, const bool allow_extrapolate) const
+Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h, bool allow_extrapolate) const
 {
     require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
     const double s_road = std::min(std::max(s, 0.0), this->length);
@@ -164,7 +164,7 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool allow_extrapolate) const
+Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate) const
 {
     require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
     const double s_road = std::min(std::max(s, 0.0), this->length);

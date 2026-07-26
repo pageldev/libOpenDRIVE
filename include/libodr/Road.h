@@ -33,7 +33,7 @@ struct Crossfall : public CubicProfile // extends cubic with 'side' attribute
 
     Crossfall() = default;
 
-    double get(const double s, const bool on_left_side) const;
+    double get(double s, bool on_left_side) const;
 
     std::map<double, Side> s_to_side;
 };
@@ -87,22 +87,17 @@ public:
     std::vector<RoadObject>  get_road_objects() const;
     std::vector<RoadSignal>  get_road_signals() const;
 
-    double      get_lanesection_s0(const double s) const;
-    LaneSection get_lanesection(const double s) const;
+    double      get_lanesection_s0(double s) const;
+    LaneSection get_lanesection(double s) const;
 
     double get_lanesection_end(const LaneSection& lanesection) const;
-    double get_lanesection_end(const double lanesection_s0) const;
+    double get_lanesection_end(double lanesection_s0) const;
     double get_lanesection_length(const LaneSection& lanesection) const;
-    double get_lanesection_length(const double lanesection_s0) const;
+    double get_lanesection_length(double lanesection_s0) const;
 
-    Vec3D get_xyz(const double s,
-                  const double t,
-                  const double h,
-                  Vec3D*       e_s = nullptr,
-                  Vec3D*       e_t = nullptr,
-                  Vec3D*       e_h = nullptr,
-                  const bool   allow_extrapolate = true) const;
-    Vec3D get_surface_pt(double s, const double t, Vec3D* vn = nullptr, bool allow_extrapolate = true) const;
+    Vec3D
+    get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr, bool allow_extrapolate = true) const;
+    Vec3D get_surface_pt(double s, double t, Vec3D* vn = nullptr, bool allow_extrapolate = true) const;
 
     Line3D get_lane_border_line(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
     Line3D get_lane_border_line(const LaneKey& lane_key, double eps, bool outer = true) const;

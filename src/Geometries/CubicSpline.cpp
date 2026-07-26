@@ -33,17 +33,17 @@ CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin)
     this->d = d;
 }
 
-double CubicPoly::evaluate(const double s) const
+double CubicPoly::evaluate(double s) const
 {
     return a + b * s + c * s * s + d * s * s * s;
 }
 
-double CubicPoly::derivative(const double s) const
+double CubicPoly::derivative(double s) const
 {
     return b + 2 * c * s + 3 * d * s * s;
 }
 
-double CubicPoly::max_value(const double s_start, const double s_end) const
+double CubicPoly::max_value(double s_start, double s_end) const
 {
     if (this->d != 0)
     {
@@ -61,7 +61,7 @@ double CubicPoly::max_value(const double s_start, const double s_end) const
     return this->evaluate(s_start);
 }
 
-std::set<double> CubicPoly::approximate_linear(const double eps, const double s_start, const double s_end) const
+std::set<double> CubicPoly::approximate_linear(double eps, double s_start, double s_end) const
 {
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
 
@@ -127,7 +127,7 @@ void CubicPoly::set_zero()
     d = 0;
 }
 
-std::optional<double> CubicProfile::evaluate(const double s) const
+std::optional<double> CubicProfile::evaluate(double s) const
 {
     const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
@@ -135,7 +135,7 @@ std::optional<double> CubicProfile::evaluate(const double s) const
     return poly->evaluate(s);
 }
 
-std::optional<double> CubicProfile::derivative(const double s) const
+std::optional<double> CubicProfile::derivative(double s) const
 {
     const std::optional<CubicPoly>& poly = this->get_poly(s);
     if (!poly)
@@ -184,7 +184,7 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
     return retval;
 }
 
-std::optional<CubicPoly> CubicProfile::get_poly(const double s) const
+std::optional<CubicPoly> CubicProfile::get_poly(double s) const
 {
     if (this->segments.empty())
         return std::nullopt;
@@ -199,7 +199,7 @@ std::optional<CubicPoly> CubicProfile::get_poly(const double s) const
     return target_poly_iter->second;
 }
 
-double CubicProfile::max_value(const double s_start, const double s_end) const
+double CubicProfile::max_value(double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->segments.empty())
         return 0;
@@ -222,7 +222,7 @@ double CubicProfile::max_value(const double s_start, const double s_end) const
     return max_val;
 }
 
-std::set<double> CubicProfile::approximate_linear(const double eps, const double s_start, const double s_end) const
+std::set<double> CubicProfile::approximate_linear(double eps, double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->segments.empty())
         return {};

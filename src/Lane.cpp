@@ -27,7 +27,7 @@ std::string LaneKey::to_string() const
 
 Lane::Lane(int id, std::optional<std::string> type, std::optional<bool> level) : id(id), type(type), level(level) {}
 
-std::vector<SingleRoadMark> Lane::get_roadmarks(const double s_start, const double s_end) const
+std::vector<SingleRoadMark> Lane::get_roadmarks(double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s_to_roadmark.empty())
         return {};

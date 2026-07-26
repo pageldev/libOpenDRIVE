@@ -38,7 +38,7 @@ std::set<RoadGeometry*> RefLine::get_geometries()
     return geometries;
 }
 
-std::optional<double> RefLine::get_geometry_s0(const double s) const
+std::optional<double> RefLine::get_geometry_s0(double s) const
 {
     if (this->s0_to_geometry.empty())
         return std::nullopt;
@@ -48,7 +48,7 @@ std::optional<double> RefLine::get_geometry_s0(const double s) const
     return target_geom_iter->first;
 }
 
-const RoadGeometry* RefLine::get_geometry(const double s) const
+const RoadGeometry* RefLine::get_geometry(double s) const
 {
     const std::optional<double> geom_s0 = this->get_geometry_s0(s);
     if (!geom_s0)
@@ -56,13 +56,13 @@ const RoadGeometry* RefLine::get_geometry(const double s) const
     return this->s0_to_geometry.at(*geom_s0).get();
 }
 
-RoadGeometry* RefLine::get_geometry(const double s)
+RoadGeometry* RefLine::get_geometry(double s)
 {
     RoadGeometry* road_geometry = const_cast<RoadGeometry*>(static_cast<const RefLine&>(*this).get_geometry(s));
     return road_geometry;
 }
 
-Vec3D RefLine::get_xyz(const double s) const
+Vec3D RefLine::get_xyz(double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
     require_or_throw(geom != nullptr, "reference line has no geometry at s {}", s);
@@ -70,7 +70,7 @@ Vec3D RefLine::get_xyz(const double s) const
     return Vec3D{pt_xy[0], pt_xy[1], this->elevation_profile.evaluate(s).value_or(0.0)};
 }
 
-Vec3D RefLine::derivative(const double s) const
+Vec3D RefLine::derivative(double s) const
 {
     const RoadGeometry* geom = this->get_geometry(s);
     require_or_throw(geom != nullptr, "reference line has no geometry at s {}", s);
@@ -78,9 +78,9 @@ Vec3D RefLine::derivative(const double s) const
     return Vec3D{d_xy[0], d_xy[1], this->elevation_profile.derivative(s).value_or(0.0)};
 }
 
-double RefLine::match(const double x, const double y) const
+double RefLine::match(double x, double y) const
 {
-    std::function<double(double)> f_dist = [&](const double s)
+    std::function<double(double)> f_dist = [&](double s)
     {
         const Vec3D pt = this->get_xyz(s);
         return euclDistance(Vec2D{pt[0], pt[1]}, {x, y});
@@ -88,7 +88,7 @@ double RefLine::match(const double x, const double y) const
     return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
 }
 
-Line3D RefLine::get_line(const double s_start, const double s_end, const double eps) const
+Line3D RefLine::get_line(double s_start, double s_end, double eps) const
 {
     std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end);
 
@@ -98,7 +98,7 @@ Line3D RefLine::get_line(const double s_start, const double s_end, const double 
     return out_line;
 }
 
-std::set<double> RefLine::approximate_linear(const double eps, double s_start, double s_end) const
+std::set<double> RefLine::approximate_linear(double eps, double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s0_to_geometry.empty())
         return {};

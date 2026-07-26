@@ -61,13 +61,13 @@ public:
     OpenDriveMap() = default;
 
     XodrParseResult load(const pugi::xml_document& xml_doc,
-                         const bool                with_road_objects = true,
-                         const bool                with_lateral_profile = true,
-                         const bool                with_lane_height = true,
-                         const bool                abs_z_for_for_local_road_obj_outline = false,
-                         const bool                fix_spiral_edge_cases = true,
-                         const bool                with_road_signals = true,
-                         const bool                treat_value_zero_as_missing = true);
+                         bool                      with_road_objects = true,
+                         bool                      with_lateral_profile = true,
+                         bool                      with_lane_height = true,
+                         bool                      abs_z_for_for_local_road_obj_outline = false,
+                         bool                      fix_spiral_edge_cases = true,
+                         bool                      with_road_signals = true,
+                         bool                      treat_value_zero_as_missing = true);
 
     void reset();
 
@@ -76,7 +76,7 @@ public:
     Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
-    RoadNetworkMesh get_road_network_mesh(const double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
+    RoadNetworkMesh get_road_network_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
     RoutingGraph    get_routing_graph(std::vector<std::string>* warnings = nullptr) const;
 
     OpenDriveMapHeader header;

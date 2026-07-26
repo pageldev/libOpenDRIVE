@@ -53,7 +53,7 @@ struct Lane
 {
     Lane(int id, std::optional<std::string> type = std::nullopt, std::optional<bool> level = std::nullopt);
 
-    std::vector<SingleRoadMark> get_roadmarks(const double s_start, const double s_end) const;
+    std::vector<SingleRoadMark> get_roadmarks(double s_start, double s_end) const;
 
     int id;
 

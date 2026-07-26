@@ -17,7 +17,7 @@ std::vector<Lane> LaneSection::get_lanes() const
     return get_map_values(this->id_to_lane);
 }
 
-int LaneSection::get_lane_id(const double s, const double t) const
+int LaneSection::get_lane_id(double s, double t) const
 {
     // default to 0 so lane #0 is at t=0 if no lane offset is defined
     if (this->id_to_lane.at(0).outer_border.evaluate(s).value_or(0.0) == t) // exactly on lane #0
@@ -43,12 +43,12 @@ int LaneSection::get_lane_id(const double s, const double t) const
     return target_iter->second;
 }
 
-Lane LaneSection::get_lane(const int id) const
+Lane LaneSection::get_lane(int id) const
 {
     return this->id_to_lane.at(id);
 }
 
-Lane LaneSection::get_lane(const double s, const double t) const
+Lane LaneSection::get_lane(double s, double t) const
 {
     return this->id_to_lane.at(this->get_lane_id(s, t));
 }

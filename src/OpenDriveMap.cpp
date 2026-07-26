@@ -62,13 +62,13 @@ OpenDriveMapHeader::OpenDriveMapHeader(std::optional<int>         rev_major,
 }
 
 XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
-                                   const bool                with_road_objects,
-                                   const bool                with_lateral_profile,
-                                   const bool                with_lane_height,
-                                   const bool                abs_z_for_for_local_road_obj_outline,
-                                   const bool                fix_spiral_edge_cases,
-                                   const bool                with_road_signals,
-                                   const bool                treat_value_zero_as_missing)
+                                   bool                      with_road_objects,
+                                   bool                      with_lateral_profile,
+                                   bool                      with_lane_height,
+                                   bool                      abs_z_for_for_local_road_obj_outline,
+                                   bool                      fix_spiral_edge_cases,
+                                   bool                      with_road_signals,
+                                   bool                      treat_value_zero_as_missing)
 {
     XodrParseResult      result;
     const pugi::xml_node odr_node = xml_doc.child("OpenDRIVE");
@@ -871,7 +871,7 @@ std::vector<Junction> OpenDriveMap::get_junctions() const
     return get_map_values(this->id_to_junction);
 }
 
-RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const
+RoadNetworkMesh OpenDriveMap::get_road_network_mesh(double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const
 {
     RoadNetworkMesh  out_mesh;
     LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;

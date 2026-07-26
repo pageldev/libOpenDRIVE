@@ -18,12 +18,12 @@ struct CubicBezier
     CubicBezier() = default;
     CubicBezier(std::array<Vec<T, Dim>, 4> control_points);
 
-    Vec<T, Dim>                evaluate(const T t) const;
-    Vec<T, Dim>                derivative(const T t) const;
-    T                          get_t(const T arclen) const;
+    Vec<T, Dim>                evaluate(T t) const;
+    Vec<T, Dim>                derivative(T t) const;
+    T                          get_t(T arclen) const;
     T                          get_length() const;
-    std::array<Vec<T, Dim>, 4> get_subcurve(const T t_start, const T t_end) const;
-    std::set<T>                approximate_linear(const T eps) const;
+    std::array<Vec<T, Dim>, 4> get_subcurve(T t_start, T t_end) const;
+    std::set<T>                approximate_linear(T eps) const;
 
     static std::array<Vec<T, Dim>, 4> get_control_points(const std::array<Vec<T, Dim>, 4>& coefficients)
     {
@@ -99,7 +99,7 @@ CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : co
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::evaluate(const T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::evaluate(T t) const
 {
     Vec<T, Dim> out_pt;
     for (std::size_t dim = 0; dim < Dim; dim++)
@@ -109,7 +109,7 @@ Vec<T, Dim> CubicBezier<T, Dim>::evaluate(const T t) const
 }
 
 template<typename T, std::size_t Dim>
-T CubicBezier<T, Dim>::get_t(const T arclen) const
+T CubicBezier<T, Dim>::get_t(T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
@@ -142,7 +142,7 @@ T CubicBezier<T, Dim>::get_length() const
 }
 
 template<typename T, std::size_t Dim>
-Vec<T, Dim> CubicBezier<T, Dim>::derivative(const T t) const
+Vec<T, Dim> CubicBezier<T, Dim>::derivative(T t) const
 {
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
 
@@ -154,10 +154,10 @@ Vec<T, Dim> CubicBezier<T, Dim>::derivative(const T t) const
 }
 
 template<typename T, std::size_t Dim>
-std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, const T t_end) const
+std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end) const
 {
     // modified evaluate(T t) allowing different t values for segments
-    auto f_cubic_t123 = [](const T& t1, const T& t2, const T& t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
+    auto f_cubic_t123 = [](T t1, T t2, T t3, const std::array<Vec<T, Dim>, 4>& ctrl_pts) -> Vec<T, Dim>
     {
         Vec<T, Dim> out;
         for (std::size_t dim = 0; dim < Dim; dim++)
@@ -180,7 +180,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, co
 }
 
 template<typename T, std::size_t Dim>
-std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
+std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 {
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
 

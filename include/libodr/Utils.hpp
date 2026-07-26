@@ -106,7 +106,7 @@ V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
 }
 
 template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-T golden_section_search(const std::function<T(T)>& f, T a, T b, const T& tol)
+T golden_section_search(const std::function<T(T)>& f, T a, T b, T tol)
 {
     const T invphi = (std::sqrt(5) - 1) / 2;
     const T invphi2 = (3 - std::sqrt(5)) / 2;
@@ -153,11 +153,11 @@ T golden_section_search(const std::function<T(T)>& f, T a, T b, const T& tol)
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 void rdp(const std::vector<Vec<T, Dim>>& points,
-         const T&                        epsilon,
+         T                               epsilon,
          std::vector<Vec<T, Dim>>&       out,
-         const std::size_t               start_idx = 0,
-         const std::size_t               step = 1,
-         const int                       _end_idx = -1)
+         std::size_t                     start_idx = 0,
+         std::size_t                     step = 1,
+         int                             _end_idx = -1)
 {
     std::size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
     std::size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
@@ -235,7 +235,7 @@ void rdp(const std::vector<Vec<T, Dim>>& points,
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, const T& eps)
+std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, T eps)
 {
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
 
@@ -255,7 +255,7 @@ std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& 
 }
 
 template<typename T>
-inline std::vector<T> get_triangle_strip_outline_indices(const std::size_t num_vertices)
+inline std::vector<T> get_triangle_strip_outline_indices(std::size_t num_vertices)
 {
     if (num_vertices < 3)
         return {};
