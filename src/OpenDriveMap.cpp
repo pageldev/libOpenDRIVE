@@ -926,7 +926,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps, bool enfor
     return out_mesh;
 }
 
-RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* errors) const
+RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings) const
 {
     RoutingGraph routing_graph;
 
@@ -1029,15 +1029,15 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* errors) c
             auto road_in_iter = id_to_road.find(conn.incoming_road);
             if (road_in_iter == id_to_road.end())
             {
-                if (errors)
-                    errors->push_back(fmt::format("{}: incoming road[@id={}] not found", _loc_str, conn.incoming_road));
+                if (warnings)
+                    warnings->push_back(fmt::format("{}: incoming road[@id={}] not found", _loc_str, conn.incoming_road));
                 continue;
             }
             auto road_conn_iter = id_to_road.find(conn.connecting_road);
             if (road_conn_iter == id_to_road.end())
             {
-                if (errors)
-                    errors->push_back(fmt::format("{}: connecting road[@id={}] not found", _loc_str, conn.connecting_road));
+                if (warnings)
+                    warnings->push_back(fmt::format("{}: connecting road[@id={}] not found", _loc_str, conn.connecting_road));
                 continue;
             }
 

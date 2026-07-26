@@ -117,7 +117,7 @@ public:
                                 double                    default_h = 0,
                                 double                    default_z = 0,
                                 bool                      enforce_road_bounds = false,
-                                std::vector<std::string>* errors = nullptr) const;
+                                std::vector<std::string>* warnings = nullptr) const;
 
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer = true) const;
     std::set<double> approximate_lane_border_linear(const LaneKey& lane_key, double eps, bool outer = true) const;

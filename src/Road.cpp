@@ -415,7 +415,7 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal, bool enforce_ro
 }
 
 Mesh3D Road::get_road_object_mesh(
-    const RoadObject& road_obj, double eps, double default_h, double default_z, bool enforce_road_bounds, std::vector<std::string>* errors) const
+    const RoadObject& road_obj, double eps, double default_h, double default_z, bool enforce_road_bounds, std::vector<std::string>* warnings) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_obj.outlines.empty())         // single road object - no repeats or outlines, handle as one repeat
@@ -478,8 +478,8 @@ Mesh3D Road::get_road_object_mesh(
                     single_road_obj_mesh = RoadObject::get_cube(w_s, *(road_obj.length), h_s);
                 else // fallback to cube
                 {
-                    if (errors)
-                        errors->push_back("no radius or length/width, using default-cube");
+                    if (warnings)
+                        warnings->push_back("no radius or length/width, using default-cube");
                     single_road_obj_mesh = RoadObject::get_cube(0.1, 0.1, 0.1);
                 }
 
@@ -555,8 +555,8 @@ Mesh3D Road::get_road_object_mesh(
         // can't add point or line object
         if (road_object_outline.outline.size() < 3)
         {
-            if (errors)
-                errors->push_back("can't create outline from < 3 points");
+            if (warnings)
+                warnings->push_back("can't create outline from < 3 points");
             continue;
         }
 
