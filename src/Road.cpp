@@ -412,10 +412,10 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
 Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double default_h, double default_z, std::vector<std::string>* errors) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
-    if (repeats_copy.empty() && road_obj.outlines.empty())         // handle single road object as one object repeat
+    if (repeats_copy.empty() && road_obj.outlines.empty())         // single road object - no repeats or outlines, handle as one repeat
     {
-        require_or_throw(road_obj.s0.has_value(), "missing s-coordinate on Road Object without Repeat");
-        require_or_throw(road_obj.t0.has_value(), "missing t-coordinate on Road Object without Repeat");
+        require_or_throw(road_obj.s0.has_value(), "missing s-coordinate on road object without repeat or outlines");
+        require_or_throw(road_obj.t0.has_value(), "missing t-coordinate on road object without repeat ot outlines");
         RoadObjectRepeat rp(*(road_obj.s0),
                             0,
                             1,
@@ -542,11 +542,11 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
 
     for (const RoadObjectOutline& road_object_outline : road_obj.outlines)
     {
-        // can't add point object
-        if (road_object_outline.outline.size() < 2)
+        // can't add point or line object
+        if (road_object_outline.outline.size() < 3)
         {
             if (errors)
-                errors->push_back("can't create outline from < 2 points");
+                errors->push_back("can't create outline from < 3 points");
             continue;
         }
 
@@ -564,12 +564,14 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double h_obj = is_top ? std::max(0.0, corner.height) : std::min(0.0, corner.height);
 
                 Vec3D pt_obj;
+                Vec2D st_obj;
                 if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
                     require_or_throw(road_obj.s0.has_value(), "s-coordinate required for outline of type <cornerLocal>");
                     require_or_throw(road_obj.t0.has_value(), "t-coordinate required for outline of type <cornerLocal>");
+                    st_obj = {*(road_obj.s0), *(road_obj.t0)};
                     Vec3D       e_s, e_t, e_h;
-                    const Vec3D p0 = this->get_xyz(*(road_obj.s0), *(road_obj.t0), road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h);
+                    const Vec3D p0 = this->get_xyz(st_obj[0], st_obj[1], road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h);
                     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                     pt_obj = {corner.pt[0], corner.pt[1], corner.pt[2]};
                     if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
@@ -579,11 +581,12 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 }
                 else
                 {
-                    pt_obj = this->get_xyz(corner.pt[0], corner.pt[1], corner.pt[2] + h_obj);
+                    st_obj = {corner.pt[0], corner.pt[1]};
+                    pt_obj = this->get_xyz(st_obj[0], st_obj[1], corner.pt[2] + h_obj);
                 }
 
                 outline_road_obj_mesh.vertices.push_back(pt_obj);
-                outline_road_obj_mesh.st_coordinates.push_back({*(road_obj.s0), *(road_obj.t0)}); // shouldn't get here if invalid s/t
+                outline_road_obj_mesh.st_coordinates.push_back(st_obj);
             }
         }
 
