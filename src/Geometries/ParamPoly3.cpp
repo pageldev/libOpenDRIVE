@@ -26,14 +26,14 @@ ParamPoly3::ParamPoly3(double s0,
                        PRange p_range) :
     RoadGeometry(s0, x0, y0, hdg0, length), aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV), p_range(p_range)
 {
-    require_or_throw(!std::isnan(aU), "aU is NaN");
-    require_or_throw(!std::isnan(bU), "bU is NaN");
-    require_or_throw(!std::isnan(cU), "cU is NaN");
-    require_or_throw(!std::isnan(dU), "dU is NaN");
-    require_or_throw(!std::isnan(aV), "aV is NaN");
-    require_or_throw(!std::isnan(bV), "bV is NaN");
-    require_or_throw(!std::isnan(cV), "cV is NaN");
-    require_or_throw(!std::isnan(dV), "dV is NaN");
+    require_or_throw(!std::isnan(aU), "aU must not be NaN");
+    require_or_throw(!std::isnan(bU), "bU must not be NaN");
+    require_or_throw(!std::isnan(cU), "cU must not be NaN");
+    require_or_throw(!std::isnan(dU), "dU must not be NaN");
+    require_or_throw(!std::isnan(aV), "aV must not be NaN");
+    require_or_throw(!std::isnan(bV), "bV must not be NaN");
+    require_or_throw(!std::isnan(cV), "cV must not be NaN");
+    require_or_throw(!std::isnan(dV), "dV must not be NaN");
 
     if (p_range == PRange::ArcLength) // normalize
     {

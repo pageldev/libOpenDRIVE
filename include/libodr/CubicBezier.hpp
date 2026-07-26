@@ -113,7 +113,7 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
 {
     if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
     {
-        throw std::runtime_error(fmt::format("arc length {:.3f} out of range; valid length: {:.3f}", arclen, this->valid_length));
+        throw std::runtime_error(fmt::format("arc length must be in range [0, {:.3f}] (got {:.3f})", this->valid_length, arclen));
     }
 
     const T arclen_adj = std::min<T>(arclen, this->valid_length);
@@ -182,7 +182,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end)
 template<typename T, std::size_t Dim>
 std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     // approximate cubic bezier by splitting into quadratic ones
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);

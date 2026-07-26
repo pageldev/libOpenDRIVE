@@ -35,23 +35,25 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     width_start(width_start),
     width_end(width_end)
 {
-    require_or_throw(s0 >= 0, "s {} < 0", s0);
-    require_or_throw(length >= 0, "length {} < 0", length);
-    require_or_throw(distance >= 0, "distance {} < 0", distance);
-    require_or_throw(!t_start || !std::isnan(*t_start), "tStart is NaN");
-    require_or_throw(!t_end || !std::isnan(*t_end), "tEnd is NaN");
-    require_or_throw(!height_start || !std::isnan(*height_start), "heightStart is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
-    require_or_throw(!height_end || !std::isnan(*height_end), "heightEnd is NaN");
-    require_or_throw(!width_start || width_start >= 0, "widthStart < 0");
-    require_or_throw(!width_end || width_end >= 0, "widthEnd < 0");
+    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
+    require_or_throw(length >= 0, "length must be greater than or equal to 0 (got {})", length);
+    require_or_throw(distance >= 0, "distance must be greater than or equal to 0 (got {})", distance);
+    require_or_throw(!t_start || !std::isnan(*t_start), "tStart must not be NaN");
+    require_or_throw(!t_end || !std::isnan(*t_end), "tEnd must not be NaN");
+    require_or_throw(!height_start || !std::isnan(*height_start), "heightStart must not be NaN"); // OpenDRIVE 1.4-1.6 allows negative height
+    require_or_throw(!height_end || !std::isnan(*height_end), "heightEnd must not be NaN");
+    require_or_throw(!width_start || width_start >= 0, "widthStart must be greater than or equal to 0");
+    require_or_throw(!width_end || width_end >= 0, "widthEnd must be greater than or equal to 0");
 }
 
 RoadObjectCorner::RoadObjectCorner(Vec3D pt, double height, Type type, std::optional<int> id) : pt(pt), height(height), type(type), id(id)
 {
-    require_or_throw(std::none_of(pt.begin(), pt.end(), [](double v) { return std::isnan(v); }), "pt [{}] has NaN values", fmt::join(pt, ", "));
-    require_or_throw(!std::isnan(height), "height is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
+    require_or_throw(std::none_of(pt.begin(), pt.end(), [](double v) { return std::isnan(v); }),
+                     "point coordinates must not contain NaN values (got [{}])",
+                     fmt::join(pt, ", "));
+    require_or_throw(!std::isnan(height), "height must not be NaN"); // OpenDRIVE 1.4-1.6 allows negative height
     if (type == Type::Road)
-        require_or_throw(pt[0] >= 0, "s {} < 0", pt[0]);
+        require_or_throw(pt[0] >= 0, "s must be greater than or equal to 0 (got {})", pt[0]);
 }
 
 RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
@@ -99,22 +101,22 @@ RoadObject::RoadObject(const std::string&         id,
     orientation(orientation),
     is_dynamic(is_dynamic)
 {
-    require_or_throw(!s0 || s0 >= 0, "s < 0");
-    require_or_throw(!t0 || !std::isnan(*t0), "t is NaN");
-    require_or_throw(!z0 || !std::isnan(*z0), "z is NaN");
-    require_or_throw(!length || length > 0, "length <= 0");
-    require_or_throw(!valid_length || valid_length >= 0, "validLength < 0");
-    require_or_throw(!width || !std::isnan(*width), "width is NaN");
-    require_or_throw(!radius || radius > 0, "radius <= 0");
-    require_or_throw(!height || !std::isnan(*height), "height is NaN"); // OpenDRIVE 1.4-1.6 allows negative height
-    require_or_throw(!hdg || !std::isnan(*hdg), "hdg is NaN");
-    require_or_throw(!pitch || !std::isnan(*pitch), "pitch is NaN");
-    require_or_throw(!roll || !std::isnan(*roll), "roll is NaN");
+    require_or_throw(!s0 || s0 >= 0, "s must be greater than or equal to 0");
+    require_or_throw(!t0 || !std::isnan(*t0), "t must not be NaN");
+    require_or_throw(!z0 || !std::isnan(*z0), "z must not be NaN");
+    require_or_throw(!length || length > 0, "length must be greater than 0");
+    require_or_throw(!valid_length || valid_length >= 0, "valid length must be greater than or equal to 0");
+    require_or_throw(!width || !std::isnan(*width), "width must not be NaN");
+    require_or_throw(!radius || radius > 0, "radius must be greater than 0");
+    require_or_throw(!height || !std::isnan(*height), "height must not be NaN"); // OpenDRIVE 1.4-1.6 allows negative height
+    require_or_throw(!hdg || !std::isnan(*hdg), "heading must not be NaN");
+    require_or_throw(!pitch || !std::isnan(*pitch), "pitch must not be NaN");
+    require_or_throw(!roll || !std::isnan(*roll), "roll must not be NaN");
 }
 
 Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     Mesh3D       cylinder_mesh;
     const double z_bottom = std::min(0.0, height);

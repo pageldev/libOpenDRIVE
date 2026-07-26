@@ -12,8 +12,8 @@ namespace odr
 Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end) :
     RoadGeometry(s0, x0, y0, hdg0, length), curv_start(curv_start), curv_end(curv_end)
 {
-    require_or_throw(!std::isnan(curv_start), "curvStart is NaN");
-    require_or_throw(!std::isnan(curv_end), "curvEnd is NaN");
+    require_or_throw(!std::isnan(curv_start), "curvStart must not be NaN");
+    require_or_throw(!std::isnan(curv_end), "curvEnd must not be NaN");
 
     this->c_dot = (curv_end - curv_start) / length;
     this->s_start = curv_start / c_dot;
@@ -50,7 +50,7 @@ Vec2D Spiral::derivative(double s) const
 
 std::set<double> Spiral::approximate_linear(double eps) const
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     // TODO: properly implement
     std::set<double> s_vals;

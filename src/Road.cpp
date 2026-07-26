@@ -50,7 +50,7 @@ RoadLink::RoadLink(const std::string& id, const std::string& type_str, std::opti
     id(id), contact_point(contact_point)
 {
     std::optional<Type> type = magic_enum::enum_cast<Type>(type_str, magic_enum::case_insensitive);
-    require_or_throw(type.has_value(), "invalid road link type '{}'", type_str);
+    require_or_throw(type.has_value(), "road link type '{}' is invalid", type_str);
     if (*type == Type::Road)
         require_or_throw(contact_point.has_value(), "a road link of type 'road' requires a contact point");
     this->type = *type;
@@ -76,12 +76,12 @@ Road::Road(
     const std::string& id, double length, const std::string& junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
     id(id), length(length), junction(junction), traffic_rule(traffic_rule), name(name), ref_line(length)
 {
-    require_or_throw(length > 0, "length {} <= 0", length);
+    require_or_throw(length > 0, "length must be greater than 0 (got {})", length);
 }
 
 double Road::get_lanesection_s0(double s) const
 {
-    require_or_throw(!(this->s_to_lanesection.empty()), "no lanesections");
+    require_or_throw(!(this->s_to_lanesection.empty()), "road has no lane sections");
 
     auto s_lanesec_iter = this->s_to_lanesection.upper_bound(s);
     if (s_lanesec_iter != this->s_to_lanesection.begin())
@@ -89,7 +89,11 @@ double Road::get_lanesection_s0(double s) const
     const LaneSection& lanesec = s_lanesec_iter->second;
 
     const double lanesec_s_end = this->get_lanesection_end(lanesec);
-    require_or_throw(s >= lanesec.s0 && s <= this->get_lanesection_end(lanesec), "s {} outside of lanesection []", s, lanesec.s0, lanesec_s_end);
+    require_or_throw(s >= lanesec.s0 && s <= this->get_lanesection_end(lanesec),
+                     "s must be in lane section range [{}, {}] (got {})",
+                     lanesec.s0,
+                     lanesec_s_end,
+                     s);
 
     return lanesec.s0;
 }
@@ -133,7 +137,7 @@ double Road::get_lanesection_length(double lanesection_s0) const
 
 Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h, bool allow_extrapolate) const
 {
-    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
+    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s must be in road range [0, {}] (got {})", this->length, s);
     const double s_road = std::min(std::max(s, 0.0), this->length);
     const Vec3D  s_vec = this->ref_line.derivative(s_road);
     const Vec3D  e_s = normalize(s_vec);
@@ -166,7 +170,7 @@ Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3
 
 Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate) const
 {
-    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
+    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s must be in road range [0, {}] (got {})", this->length, s);
     const double s_road = std::min(std::max(s, 0.0), this->length);
 
     const double                lanesection_s0 = this->get_lanesection_s0(s_road);
@@ -420,8 +424,8 @@ Mesh3D Road::get_road_object_mesh(
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_obj.outlines.empty())         // single road object - no repeats or outlines, handle as one repeat
     {
-        require_or_throw(road_obj.s0.has_value(), "missing s-coordinate on road object without repeat or outlines");
-        require_or_throw(road_obj.t0.has_value(), "missing t-coordinate on road object without repeat ot outlines");
+        require_or_throw(road_obj.s0.has_value(), "s-coordinate is required for a road object without repeats or outlines");
+        require_or_throw(road_obj.t0.has_value(), "t-coordinate is required for a road object without repeats or outlines");
         RoadObjectRepeat rp(*(road_obj.s0),
                             0,
                             1,
@@ -445,7 +449,7 @@ Mesh3D Road::get_road_object_mesh(
     for (const RoadObjectRepeat& r : repeats_copy)
     {
         const bool has_t_range = r.t_start.has_value() && r.t_end.has_value();
-        require_or_throw(has_t_range || road_obj.t0.has_value(), "missing t-coordinate on Road Object Repeat");
+        require_or_throw(has_t_range || road_obj.t0.has_value(), "t-coordinate is required for a road object repeat");
 
         const double s_start = r.s0;
         const double s_end = std::min(s_start + r.length, this->length);
@@ -479,7 +483,7 @@ Mesh3D Road::get_road_object_mesh(
                 else // fallback to cube
                 {
                     if (warnings)
-                        warnings->push_back("no radius or length/width, using default-cube");
+                        warnings->push_back("object has neither a radius nor both length and width: using a default cube");
                     single_road_obj_mesh = RoadObject::get_cube(0.1, 0.1, 0.1);
                 }
 
@@ -556,7 +560,7 @@ Mesh3D Road::get_road_object_mesh(
         if (road_object_outline.outline.size() < 3)
         {
             if (warnings)
-                warnings->push_back("can't create outline from < 3 points");
+                warnings->push_back("cannot create an outline with fewer than 3 points");
             continue;
         }
 
@@ -577,8 +581,8 @@ Mesh3D Road::get_road_object_mesh(
                 Vec2D st_obj;
                 if (corner.type == RoadObjectCorner::Type::Local_AbsZ || corner.type == RoadObjectCorner::Type::Local_RelZ)
                 {
-                    require_or_throw(road_obj.s0.has_value(), "s-coordinate required for outline of type <cornerLocal>");
-                    require_or_throw(road_obj.t0.has_value(), "t-coordinate required for outline of type <cornerLocal>");
+                    require_or_throw(road_obj.s0.has_value(), "s-coordinate is required for a <cornerLocal> outline");
+                    require_or_throw(road_obj.t0.has_value(), "t-coordinate is required for a <cornerLocal> outline");
                     st_obj = {*(road_obj.s0), *(road_obj.t0)};
                     Vec3D       e_s, e_t, e_h;
                     const Vec3D p0 = this->get_xyz(st_obj[0], st_obj[1], road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h, !enforce_road_bounds);

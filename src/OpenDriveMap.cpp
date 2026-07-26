@@ -96,12 +96,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         const std::optional<std::string> road_id = try_get_attribute<std::string>(road_node, "id");
         if (!road_id)
         {
-            result.errors.push_back({road_node, "missing id"});
+            result.errors.push_back({road_node, "required attribute 'id' is missing"});
             continue;
         }
         if (this->id_to_road.find(*road_id) != this->id_to_road.end())
         {
-            result.errors.push_back({road_node, "duplicate id"});
+            result.errors.push_back({road_node, "attribute 'id' has a duplicate value"});
             continue;
         }
 
@@ -145,7 +145,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             }
         }
         if (const pugi::xml_node neighbor_node = link_node.child("neighbor"))
-            result.errors.push_back({neighbor_node, "<neighbor> not supported"});
+            result.errors.push_back({neighbor_node, "element <neighbor> is not supported"});
 
         // parse road type and speed
         for (const pugi::xml_node road_type_node : road_node.children("type"))
@@ -154,7 +154,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::string type = road_type_node.attribute("type").as_string("");
             if (s < 0)
             {
-                result.errors.push_back({road_type_node, "s < 0"});
+                result.errors.push_back({road_type_node, "s must be greater than or equal to 0"});
                 continue;
             }
             road->s_to_type[s] = type;
@@ -242,7 +242,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 }
                 else
                 {
-                    result.errors.push_back({geometry_node, "unknown geometry"});
+                    result.errors.push_back({geometry_node, "unknown geometry type"});
                     invalid_geometry = true;
                     continue;
                 }
@@ -256,7 +256,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
         if (road->ref_line.s0_to_geometry.empty())
         {
-            result.errors.push_back({plan_view_node ? plan_view_node : road_node, "no geometries"});
+            result.errors.push_back({plan_view_node ? plan_view_node : road_node, "no road geometries found"});
             invalid_geometry = true;
         }
         if (invalid_geometry)
@@ -280,7 +280,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 std::optional<CubicPoly> cubic_poly;
                 try
                 {
-                    require_or_throw(s0 >= 0, "s {} < 0", s0);
+                    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
                     cubic_poly.emplace(node.attribute("a").as_double(NAN),
                                        node.attribute("b").as_double(NAN),
                                        node.attribute("c").as_double(NAN),
@@ -311,7 +311,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 std::optional<CubicPoly> crossfall_poly;
                 try
                 {
-                    require_or_throw(s0 >= 0, "s {} < 0", s0);
+                    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
                     crossfall_poly.emplace(crossfall_node.attribute("a").as_double(NAN),
                                            crossfall_node.attribute("b").as_double(NAN),
                                            crossfall_node.attribute("c").as_double(NAN),
@@ -330,7 +330,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             }
 
             if (const pugi::xml_node shape_node = lateral_profile_node.child("shape"))
-                result.errors.push_back({shape_node, "<shape> not supported"});
+                result.errors.push_back({shape_node, "element <shape> is not supported"});
         }
 
         // parse road lane sections and lanes
@@ -355,17 +355,17 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::optional<int> lane_id = try_get_attribute<int>(lane_node, "id");
                 if (!lane_id)
                 {
-                    result.errors.push_back({lane_node, "missing id"});
+                    result.errors.push_back({lane_node, "required attribute 'id' is missing"});
                     continue;
                 }
                 if (lanesection->id_to_lane.find(*lane_id) != lanesection->id_to_lane.end())
                 {
-                    result.errors.push_back({lane_node, "duplicate id"});
+                    result.errors.push_back({lane_node, "attribute 'id' has a duplicate value"});
                     continue;
                 }
 
                 if (const pugi::xml_node border_node = lane_node.child("border"))
-                    result.errors.push_back({border_node, "<border> not supported"});
+                    result.errors.push_back({border_node, "element <border> is not supported"});
 
                 Lane& lane =
                     lanesection->id_to_lane
@@ -385,7 +385,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     std::optional<CubicPoly> width_poly;
                     try
                     {
-                        require_or_throw(s_offset >= 0, "sOffset {} < 0", s_offset);
+                        require_or_throw(s_offset >= 0, "sOffset must be greater than or equal to 0 (got {})", s_offset);
                         width_poly.emplace(lane_width_node.attribute("a").as_double(NAN),
                                            lane_width_node.attribute("b").as_double(NAN),
                                            lane_width_node.attribute("c").as_double(NAN),
@@ -403,7 +403,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     // "The reference line itself is defined as lane zero and must not have a width entry (i.e. its width must always be 0.0)."
                     if (lane_id == 0 && !width_poly->is_zero())
                     {
-                        result.errors.push_back({lane_width_node, "width must be 0 for lane #0"});
+                        result.errors.push_back({lane_width_node, "width must be 0 for lane 0"});
                         width_poly->set_zero();
                     }
 
@@ -498,7 +498,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             if (const std::optional<int> missing_lane_id = find_first_gap_in_keys(lanesection->id_to_lane))
             {
-                result.errors.push_back({lanesection_node, fmt::format("missing lane #{}", *missing_lane_id)});
+                result.errors.push_back({lanesection_node, fmt::format("lane {} is missing", *missing_lane_id)});
                 invalid_lanesection = true;
                 continue;
             }
@@ -507,7 +507,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const auto id_lane_iter0 = lanesection->id_to_lane.find(0);
             if (id_lane_iter0 == lanesection->id_to_lane.end())
             {
-                result.errors.push_back({lanesection_node, "missing lane #0"});
+                result.errors.push_back({lanesection_node, "lane 0 is missing"});
                 invalid_lanesection = true;
                 continue;
             }
@@ -555,12 +555,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::optional<std::string> object_id = try_get_attribute<std::string>(object_node, "id");
                 if (!object_id)
                 {
-                    result.errors.push_back({object_node, "missing id"});
+                    result.errors.push_back({object_node, "required attribute 'id' is missing"});
                     continue;
                 }
                 if (road->id_to_object.find(*object_id) != road->id_to_object.end())
                 {
-                    result.errors.push_back({object_node, "duplicate id"});
+                    result.errors.push_back({object_node, "attribute 'id' has a duplicate value"});
                     continue;
                 }
 
@@ -669,7 +669,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                     if (!from_lane || !to_lane)
                     {
-                        result.errors.push_back({validity_node, "required attributes 'fromLane' or 'toLane' missing"});
+                        result.errors.push_back({validity_node, "attributes 'fromLane' and 'toLane' are required"});
                         continue;
                     }
                     road_object->lane_validities.emplace_back(*from_lane, *to_lane);
@@ -686,12 +686,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::optional<std::string> signal_id = try_get_attribute<std::string>(signal_node, "id");
                 if (!signal_id)
                 {
-                    result.errors.push_back({signal_node, "missing id"});
+                    result.errors.push_back({signal_node, "required attribute 'id' is missing"});
                     continue;
                 }
                 if (road->id_to_signal.find(*signal_id) != road->id_to_signal.end())
                 {
-                    result.errors.push_back({signal_node, "duplicate id"});
+                    result.errors.push_back({signal_node, "attribute 'id' has a duplicate value"});
                     continue;
                 }
 
@@ -728,7 +728,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 {
                     if (!(validity_node.attribute("fromLane") && validity_node.attribute("toLane")))
                     {
-                        result.errors.push_back({validity_node, "required attributes 'fromLane' or 'toLane' missing"});
+                        result.errors.push_back({validity_node, "attributes 'fromLane' and 'toLane' are required"});
                         continue;
                     }
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
@@ -749,12 +749,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         const std::optional<std::string> junction_id = try_get_attribute<std::string>(junction_node, "id");
         if (!junction_id)
         {
-            result.errors.push_back({junction_node, "missing id"});
+            result.errors.push_back({junction_node, "required attribute 'id' is missing"});
             continue;
         }
         if (this->id_to_junction.find(*junction_id) != this->id_to_junction.end())
         {
-            result.errors.push_back({junction_node, "duplicate id"});
+            result.errors.push_back({junction_node, "attribute 'id' has a duplicate value"});
             continue;
         }
 
@@ -766,12 +766,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::optional<std::string> conn_id = try_get_attribute<std::string>(connection_node, "id");
             if (!conn_id)
             {
-                result.errors.push_back({junction_node, "missing id"});
+                result.errors.push_back({junction_node, "required attribute 'id' is missing"});
                 continue;
             }
             if (junction.id_to_connection.find(*conn_id) != junction.id_to_connection.end())
             {
-                result.errors.push_back({connection_node, "duplicate id"});
+                result.errors.push_back({connection_node, "attribute 'id' has a duplicate value"});
                 continue;
             }
 
@@ -789,7 +789,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 const std::optional<int> to_lane = try_get_attribute<int>(lane_link_node, "to");
                 if (!from_lane || !to_lane)
                 {
-                    result.errors.push_back({lane_link_node, "required attributes 'from' or 'to' missing"});
+                    result.errors.push_back({lane_link_node, "attributes 'from' and 'to' are required"});
                     continue;
                 }
                 connection.lane_links.emplace(*from_lane, *to_lane);
@@ -798,7 +798,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
         const std::size_t num_conns = junction.id_to_connection.size();
         if (num_conns == 0)
-            result.errors.push_back({junction_node, "no connections"});
+            result.errors.push_back({junction_node, "no connections found"});
 
         for (const pugi::xml_node priority_node : junction_node.children("priority"))
         {
@@ -807,7 +807,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             if (!prio_low || !prio_high)
             {
-                result.errors.push_back({priority_node, "required attributes 'low' or 'high' missing"});
+                result.errors.push_back({priority_node, "attributes 'low' and 'high' are required"});
                 continue;
             }
             junction.priorities.emplace(*prio_high, *prio_low);
@@ -818,12 +818,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             const std::optional<std::string> controller_id = try_get_attribute<std::string>(controller_node, "id");
             if (!controller_id)
             {
-                result.errors.push_back({controller_node, "missing id"});
+                result.errors.push_back({controller_node, "required attribute 'id' is missing"});
                 continue;
             }
             if (junction.id_to_controller.find(*controller_id) != junction.id_to_controller.end())
             {
-                result.errors.push_back({controller_node, "duplicate id"});
+                result.errors.push_back({controller_node, "attribute 'id' has a duplicate value"});
                 continue;
             }
 
@@ -1030,14 +1030,14 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             if (road_in_iter == id_to_road.end())
             {
                 if (warnings)
-                    warnings->push_back(fmt::format("{}: incoming road[@id={}] not found", _loc_str, conn.incoming_road));
+                    warnings->push_back(fmt::format("{}: incoming road '{}' not found", _loc_str, conn.incoming_road));
                 continue;
             }
             auto road_conn_iter = id_to_road.find(conn.connecting_road);
             if (road_conn_iter == id_to_road.end())
             {
                 if (warnings)
-                    warnings->push_back(fmt::format("{}: connecting road[@id={}] not found", _loc_str, conn.connecting_road));
+                    warnings->push_back(fmt::format("{}: connecting road '{}' not found", _loc_str, conn.connecting_road));
                 continue;
             }
 

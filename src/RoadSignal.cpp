@@ -48,11 +48,11 @@ RoadSignal::RoadSignal(const std::string&         id,
     text(text),
     country(country)
 {
-    require_or_throw(s0 >= 0, "s {} < 0", s0);
-    require_or_throw(!std::isnan(t0), "t is NaN");
-    require_or_throw(!std::isnan(zOffset), "zOffset is NaN");
-    require_or_throw(!height || height >= 0, "height < 0");
-    require_or_throw(!width || width >= 0, "width < 0");
+    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
+    require_or_throw(!std::isnan(t0), "t must not be NaN");
+    require_or_throw(!std::isnan(zOffset), "zOffset must not be NaN");
+    require_or_throw(!height || height >= 0, "height must be greater than or equal to 0");
+    require_or_throw(!width || width >= 0, "width must be greater than or equal to 0");
 }
 
 Mesh3D RoadSignal::get_box(double w, double l, double h)

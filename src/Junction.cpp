@@ -14,7 +14,7 @@ JunctionConnection::JunctionConnection(const std::string& id,
     id(id), incoming_road(incoming_road), connecting_road(connecting_road)
 {
     std::optional<ContactPoint> contact_point = magic_enum::enum_cast<ContactPoint>(contact_point_str, magic_enum::case_insensitive);
-    require_or_throw(contact_point.has_value(), "invalid junction connection contact type '{}'", contact_point_str);
+    require_or_throw(contact_point.has_value(), "junction connection contact type '{}' is invalid", contact_point_str);
     this->contact_point = *contact_point;
 }
 
@@ -23,7 +23,7 @@ JunctionPriority::JunctionPriority(const std::string& high, const std::string& l
 JunctionController::JunctionController(const std::string& id, std::optional<std::string> type, std::optional<int64_t> sequence) :
     id(id), type(type), sequence(sequence)
 {
-    require_or_throw(!sequence || sequence >= 0, "sequence < 0");
+    require_or_throw(!sequence || sequence >= 0, "sequence must be greater than or equal to 0");
 }
 
 Junction::Junction(const std::string& id, std::optional<std::string> name) : id(id), name(name) {}

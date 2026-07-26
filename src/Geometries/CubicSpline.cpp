@@ -19,11 +19,11 @@ namespace odr
 
 CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin)
 {
-    require_or_throw(!std::isnan(a), "a is NaN");
-    require_or_throw(!std::isnan(b), "b is NaN");
-    require_or_throw(!std::isnan(c), "c is NaN");
-    require_or_throw(!std::isnan(d), "d is NaN");
-    require_or_throw(!std::isnan(s_origin), "s_origin is NaN");
+    require_or_throw(!std::isnan(a), "a must not be NaN");
+    require_or_throw(!std::isnan(b), "b must not be NaN");
+    require_or_throw(!std::isnan(c), "c must not be NaN");
+    require_or_throw(!std::isnan(d), "d must not be NaN");
+    require_or_throw(!std::isnan(s_origin), "s origin must not be NaN");
 
     // ds = s - s0 => resolve to polynomial form
     // make CubicPolys work on absolute s position => makes CubicProfile::add work
@@ -63,7 +63,7 @@ double CubicPoly::max_value(double s_start, double s_end) const
 
 std::set<double> CubicPoly::approximate_linear(double eps, double s_start, double s_end) const
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     if (s_start == s_end)
         return {};

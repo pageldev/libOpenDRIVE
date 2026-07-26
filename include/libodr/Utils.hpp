@@ -69,7 +69,7 @@ template<class K, class V>
 K get_nearest_key(const std::map<K, V>& input_map, const K& k)
 {
     if (input_map.empty())
-        throw std::runtime_error("map empty");
+        throw std::runtime_error("map is empty");
 
     auto kv_iter = input_map.upper_bound(k);
     if (kv_iter == input_map.end())
@@ -237,7 +237,7 @@ void rdp(const std::vector<Vec<T, Dim>>& points,
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, T eps)
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     Vec<T, Dim> param_c;
     for (std::size_t dim = 0; dim < Dim; dim++)

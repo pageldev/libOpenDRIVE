@@ -11,9 +11,9 @@ namespace odr
 
 HeightOffset::HeightOffset(double s_offset, double inner, double outer) : s_offset(s_offset), inner(inner), outer(outer)
 {
-    require_or_throw(s_offset >= 0, "s {} < 0", s_offset);
-    require_or_throw(!std::isnan(inner), "inner is NaN");
-    require_or_throw(!std::isnan(outer), "outer is NaN");
+    require_or_throw(s_offset >= 0, "s must be greater than or equal to 0 (got {})", s_offset);
+    require_or_throw(!std::isnan(inner), "inner border must not be NaN");
+    require_or_throw(!std::isnan(outer), "outer border must not be NaN");
 }
 
 LaneKey::LaneKey(const std::string& road_id, double lanesection_s0, int lane_id) : road_id(road_id), lanesection_s0(lanesection_s0), lane_id(lane_id)

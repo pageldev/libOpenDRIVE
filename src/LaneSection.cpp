@@ -9,7 +9,7 @@ namespace odr
 {
 LaneSection::LaneSection(double s0) : s0(s0)
 {
-    require_or_throw(s0 >= 0, "s {} < 0", s0);
+    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
 }
 
 std::vector<Lane> LaneSection::get_lanes() const
