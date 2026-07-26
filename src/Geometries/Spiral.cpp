@@ -50,6 +50,8 @@ Vec2D Spiral::derivative(double s) const
 
 std::set<double> Spiral::approximate_linear(double eps) const
 {
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+
     // TODO: properly implement
     std::set<double> s_vals;
     for (double s = s0; s < (s0 + length); s += (10 * eps))

@@ -63,6 +63,8 @@ double CubicPoly::max_value(const double s_start, const double s_end) const
 
 std::set<double> CubicPoly::approximate_linear(const double eps, const double s_start, const double s_end) const
 {
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+
     if (s_start == s_end)
         return {};
 

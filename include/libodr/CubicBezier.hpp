@@ -182,6 +182,8 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(const T t_start, co
 template<typename T, std::size_t Dim>
 std::set<T> CubicBezier<T, Dim>::approximate_linear(const T eps) const
 {
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+
     // approximate cubic bezier by splitting into quadratic ones
     std::array<Vec<T, Dim>, 4> coefficients = this->get_coefficients(this->control_points);
     const T                    seg_size = std::pow(0.5 * eps / ((1.0 / 54.0) * norm(coefficients[3])), (1.0 / 3.0));

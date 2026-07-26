@@ -114,6 +114,8 @@ RoadObject::RoadObject(const std::string&         id,
 
 Mesh3D RoadObject::get_cylinder(double eps, double radius, double height)
 {
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+
     Mesh3D       cylinder_mesh;
     const double z_bottom = std::min(0.0, height);
     const double z_top = std::max(0.0, height);

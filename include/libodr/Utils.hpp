@@ -237,6 +237,8 @@ void rdp(const std::vector<Vec<T, Dim>>& points,
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
 std::vector<T> approximate_linear_quad_bezier(const std::array<Vec<T, Dim>, 3>& ctrl_pts, const T& eps)
 {
+    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and > 0");
+
     Vec<T, Dim> param_c;
     for (std::size_t dim = 0; dim < Dim; dim++)
         param_c[dim] = ctrl_pts[0][dim] - 2 * ctrl_pts[1][dim] + ctrl_pts[2][dim];
