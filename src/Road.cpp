@@ -131,22 +131,26 @@ double Road::get_lanesection_length(const double lanesection_s0) const
     return s_end - lanesection_s0;
 }
 
-Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h) const
+Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s, Vec3D* _e_t, Vec3D* _e_h, const bool allow_extrapolate) const
 {
-    const Vec3D s_vec = this->ref_line.derivative(s);
-    const Vec3D e_s = normalize(s_vec);
+    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
+    const double s_road = std::min(std::max(s, 0.0), this->length);
+    const Vec3D  s_vec = this->ref_line.derivative(s_road);
+    const Vec3D  e_s = normalize(s_vec);
 
     const Vec3D e_t_base{-e_s[1], e_s[0], 0.0}; // flat in xy-plane and perpendicular to e_s
     const Vec3D e_h_base = crossProduct(e_s, e_t_base);
 
     // Rodrigues rotation of e_t_base around e_s by theta; simplified since dot(k,v)=0 and cross(k,v)=e_h_base
-    const double theta = this->superelevation.evaluate(s).value_or(0.0);
+    const double theta = this->superelevation.evaluate(s_road).value_or(0.0);
     const Vec3D  e_t = normalize(Vec3D{std::cos(theta) * e_t_base[0] + std::sin(theta) * e_h_base[0],
                                       std::cos(theta) * e_t_base[1] + std::sin(theta) * e_h_base[1],
                                       std::cos(theta) * e_t_base[2] + std::sin(theta) * e_h_base[2]});
 
     const Vec3D e_h = normalize(crossProduct(e_s, e_t));
-    const Vec3D p0 = this->ref_line.get_xyz(s);
+    Vec3D       p0 = this->ref_line.get_xyz(s_road);
+    if (s != s_road) // out of road bounds, linear extrapolate
+        p0 = add(p0, mut(s - s_road, s_vec));
 
     const Vec3D xyz{p0[0] + t * e_t[0] + h * e_h[0], p0[1] + t * e_t[1] + h * e_h[1], p0[2] + t * e_t[2] + h * e_h[2]};
 
@@ -160,17 +164,18 @@ Vec3D Road::get_xyz(const double s, const double t, const double h, Vec3D* _e_s,
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_road_bounds) const
+Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool allow_extrapolate) const
 {
-    require_or_throw(clamp_s_to_road_bounds || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
-    s = std::min(std::max(s, 0.0), this->length);
+    require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s {} out of road range [0,{}]", s, this->length);
+    const double s_road = std::min(std::max(s, 0.0), this->length);
 
-    const double                lanesection_s0 = this->get_lanesection_s0(s);
+    const double                lanesection_s0 = this->get_lanesection_s0(s_road);
     const LaneSection&          lanesection = this->s_to_lanesection.at(lanesection_s0);
-    const Lane&                 lane = lanesection.get_lane(s, t);
+    const Lane&                 lane = lanesection.get_lane(s_road, t);
     const Lane&                 inner_neighbor_lane = lanesection.get_lane(next_towards_zero(lane.id));
-    const std::optional<double> t_inner_brdr_opt = inner_neighbor_lane.outer_border.evaluate(s);
-    require_or_throw(t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s);
+    const std::optional<double> t_inner_brdr_opt = inner_neighbor_lane.outer_border.evaluate(s_road);
+    require_or_throw(
+        t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s_road);
     const double t_inner_brdr = t_inner_brdr_opt.value_or(0.0);
     double       h = 0;
 
@@ -179,13 +184,13 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
     if (lane.level.value_or(false))
     {
         // compensate crossfall and superelevation to level lane
-        const double alpha = this->crossfall.get(s, (lane.id > 0));
-        const double theta = this->superelevation.evaluate(s).value_or(0.0);
+        const double alpha = this->crossfall.get(s_road, (lane.id > 0));
+        const double theta = this->superelevation.evaluate(s_road).value_or(0.0);
         h = -std::tan(alpha) * std::abs(t_inner_brdr) + std::tan(theta) * (t - t_inner_brdr);
     }
     else
     {
-        h = -std::tan(this->crossfall.get(s, (lane.id > 0))) * std::abs(t);
+        h = -std::tan(this->crossfall.get(s_road, (lane.id > 0))) * std::abs(t);
     }
 
     // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1.9 Lane Height Record:
@@ -194,21 +199,21 @@ Vec3D Road::get_surface_pt(double s, const double t, Vec3D* vn, bool clamp_s_to_
     {
         const std::map<double, HeightOffset>& heights = lane.s_to_height_offset;
 
-        const auto heights_iter = heights.upper_bound(s); // first element > s
-        if (heights_iter != heights.begin())              // s after first <height> record
+        const auto heights_iter = heights.upper_bound(s_road); // first element > s
+        if (heights_iter != heights.begin())                   // s after first <height> record
         {
             const HeightOffset&         height_offset = std::prev(heights_iter)->second;
             const double                h_inner = height_offset.inner;
             const double                h_outer = height_offset.outer;
-            const std::optional<double> t_outer_brdr = lane.outer_border.evaluate(s);
-            require_or_throw(t_outer_brdr.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
+            const std::optional<double> t_outer_brdr = lane.outer_border.evaluate(s_road);
+            require_or_throw(t_outer_brdr.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s_road);
             const double t_outer_brdr_value = t_outer_brdr.value_or(0.0);
             const double t_norm = (t_outer_brdr_value != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr_value - t_inner_brdr) : 0.0; // [0,1]
             h += t_norm * (h_outer - h_inner) + h_inner;
         }
     }
 
-    return this->get_xyz(s, t, h, nullptr, nullptr, vn);
+    return this->get_xyz(s, t, h, nullptr, nullptr, vn, allow_extrapolate);
 }
 
 std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer) const
@@ -348,7 +353,7 @@ Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double eps, std::vector<uint
     return this->get_lane_mesh(lane_key, lane_key.lanesection_s0, lanesec_s_end, eps, outline_indices);
 }
 
-Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& roadmark, double eps) const
+Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds) const
 {
     if (is_zero(roadmark.width))
         return Mesh3D{};
@@ -365,12 +370,12 @@ Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& ro
         const std::optional<double> lane_outer_border = lane.outer_border.evaluate(s);
         require_or_throw(lane_outer_border.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
         const double t_edge_a = lane_outer_border.value_or(0.0) + roadmark.width * 0.5 + roadmark.t;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a, !enforce_road_bounds));
         out_mesh.normals.push_back(vn_edge_a);
 
         Vec3D        vn_edge_b{0, 0, 0};
         const double t_edge_b = t_edge_a - roadmark.width;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b));
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b, !enforce_road_bounds));
         out_mesh.normals.push_back(vn_edge_b);
     }
 
@@ -384,7 +389,7 @@ Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& ro
     return out_mesh;
 }
 
-Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
+Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal, bool enforce_road_bounds) const
 {
     const Mat3D  rot_mat = EulerAnglesToMatrix<double>(road_signal.roll.value_or(0), road_signal.pitch.value_or(0), road_signal.hOffset.value_or(0));
     const double s = road_signal.s0;
@@ -396,7 +401,7 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     Mesh3D road_signal_mesh = RoadSignal::get_box(width, RoadSignal::Thickness, height);
 
     Vec3D       e_s, e_t, e_h;
-    const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h);
+    const Vec3D p0 = this->get_xyz(s, t, z, &e_s, &e_t, &e_h, !enforce_road_bounds);
     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
     for (Vec3D& pt_uvz : road_signal_mesh.vertices)
     {
@@ -409,7 +414,8 @@ Mesh3D Road::get_road_signal_mesh(const RoadSignal& road_signal) const
     return road_signal_mesh;
 }
 
-Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double default_h, double default_z, std::vector<std::string>* errors) const
+Mesh3D Road::get_road_object_mesh(
+    const RoadObject& road_obj, double eps, double default_h, double default_z, bool enforce_road_bounds, std::vector<std::string>* errors) const
 {
     std::vector<RoadObjectRepeat> repeats_copy = road_obj.repeats; // make copy to keep method const
     if (repeats_copy.empty() && road_obj.outlines.empty())         // single road object - no repeats or outlines, handle as one repeat
@@ -478,7 +484,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 }
 
                 Vec3D       e_s, e_t, e_h;
-                const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h);
+                const Vec3D p0 = this->get_xyz(s, t_s, z_s, &e_s, &e_t, &e_h, !enforce_road_bounds);
                 const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                 for (Vec3D& pt_uvz : single_road_obj_mesh.vertices)
                 {
@@ -506,10 +512,14 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 const double z_bottom = z_s + std::min(0.0, h_s);
                 const double z_top = z_s + std::max(0.0, h_s);
 
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_bottom));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_bottom));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s + 0.5 * w_s, z_top));
-                continuous_road_obj_mesh.vertices.push_back(this->get_xyz(s, t_s - 0.5 * w_s, z_top));
+                continuous_road_obj_mesh.vertices.push_back(
+                    this->get_xyz(s, t_s - 0.5 * w_s, z_bottom, nullptr, nullptr, nullptr, !enforce_road_bounds));
+                continuous_road_obj_mesh.vertices.push_back(
+                    this->get_xyz(s, t_s + 0.5 * w_s, z_bottom, nullptr, nullptr, nullptr, !enforce_road_bounds));
+                continuous_road_obj_mesh.vertices.push_back(
+                    this->get_xyz(s, t_s + 0.5 * w_s, z_top, nullptr, nullptr, nullptr, !enforce_road_bounds));
+                continuous_road_obj_mesh.vertices.push_back(
+                    this->get_xyz(s, t_s - 0.5 * w_s, z_top, nullptr, nullptr, nullptr, !enforce_road_bounds));
 
                 const std::array<Vec2D, 4> s_t_coords = {{{s, t_s - 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s + 0.5 * w_s}, {s, t_s - 0.5 * w_s}}};
                 continuous_road_obj_mesh.st_coordinates.insert(continuous_road_obj_mesh.st_coordinates.end(), s_t_coords.begin(), s_t_coords.end());
@@ -571,7 +581,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                     require_or_throw(road_obj.t0.has_value(), "t-coordinate required for outline of type <cornerLocal>");
                     st_obj = {*(road_obj.s0), *(road_obj.t0)};
                     Vec3D       e_s, e_t, e_h;
-                    const Vec3D p0 = this->get_xyz(st_obj[0], st_obj[1], road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h);
+                    const Vec3D p0 = this->get_xyz(st_obj[0], st_obj[1], road_obj.z0.value_or(default_z), &e_s, &e_t, &e_h, !enforce_road_bounds);
                     const Mat3D base_mat{{{e_s[0], e_t[0], e_h[0]}, {e_s[1], e_t[1], e_h[1]}, {e_s[2], e_t[2], e_h[2]}}};
                     pt_obj = {corner.pt[0], corner.pt[1], corner.pt[2]};
                     if (corner.type == RoadObjectCorner::Type::Local_AbsZ)
@@ -582,7 +592,7 @@ Mesh3D Road::get_road_object_mesh(const RoadObject& road_obj, double eps, double
                 else
                 {
                     st_obj = {corner.pt[0], corner.pt[1]};
-                    pt_obj = this->get_xyz(st_obj[0], st_obj[1], corner.pt[2] + h_obj);
+                    pt_obj = this->get_xyz(st_obj[0], st_obj[1], corner.pt[2] + h_obj, nullptr, nullptr, nullptr, !enforce_road_bounds);
                 }
 
                 outline_road_obj_mesh.vertices.push_back(pt_obj);

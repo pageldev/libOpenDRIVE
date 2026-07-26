@@ -871,7 +871,7 @@ std::vector<Junction> OpenDriveMap::get_junctions() const
     return get_map_values(this->id_to_junction);
 }
 
-RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
+RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps, bool enforce_road_bounds) const
 {
     RoadNetworkMesh  out_mesh;
     LanesMesh&       lanes_mesh = out_mesh.lanes_mesh;
@@ -903,7 +903,7 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
                 {
                     roadmarks_idx_offset = roadmarks_mesh.vertices.size();
                     roadmarks_mesh.roadmark_type_start_indices[roadmarks_idx_offset] = roadmark.type;
-                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane_key, roadmark, eps));
+                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane_key, roadmark, eps, enforce_road_bounds));
                 }
             }
         }
@@ -912,14 +912,14 @@ RoadNetworkMesh OpenDriveMap::get_road_network_mesh(const double eps) const
         {
             const std::size_t road_objs_idx_offset = road_objects_mesh.vertices.size();
             road_objects_mesh.road_object_start_indices[road_objs_idx_offset] = road_object_id;
-            road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps));
+            road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object, eps, 0, 0, enforce_road_bounds, nullptr));
         }
 
         for (const auto& [road_signal_id, road_signal] : road.id_to_signal)
         {
             const std::size_t signals_idx_offset = road_signals_mesh.vertices.size();
             road_signals_mesh.road_signal_start_indices[signals_idx_offset] = road_signal_id;
-            road_signals_mesh.add_mesh(road.get_road_signal_mesh(road_signal));
+            road_signals_mesh.add_mesh(road.get_road_signal_mesh(road_signal, enforce_road_bounds));
         }
     }
 
