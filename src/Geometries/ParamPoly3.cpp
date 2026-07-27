@@ -10,10 +10,10 @@
 namespace odr
 {
 
-ParamPoly3::ParamPoly3(double s0,
-                       double x0,
-                       double y0,
-                       double hdg0,
+ParamPoly3::ParamPoly3(double s,
+                       double x,
+                       double y,
+                       double hdg,
                        double length,
                        double aU,
                        double bU,
@@ -24,7 +24,7 @@ ParamPoly3::ParamPoly3(double s0,
                        double cV,
                        double dV,
                        PRange p_range) :
-    RoadGeometry(s0, x0, y0, hdg0, length), aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV), p_range(p_range)
+    RoadGeometry(s, x, y, hdg, length), aU(aU), bU(bU), cU(cU), dU(dU), aV(aV), bV(bV), cV(cV), dV(dV), p_range(p_range)
 {
     require_or_throw(!std::isnan(aU), "aU must not be NaN");
     require_or_throw(!std::isnan(bU), "bU must not be NaN");
@@ -59,22 +59,22 @@ std::unique_ptr<RoadGeometry> ParamPoly3::clone() const
 
 Vec2D ParamPoly3::get_xy(double s) const
 {
-    const double p = this->cubic_bezier.get_t(s - s0);
+    const double p = this->cubic_bezier.get_t(s - this->s);
     const Vec2D  pt = this->cubic_bezier.evaluate(p);
 
-    const double xt = (std::cos(hdg0) * pt[0]) - (std::sin(hdg0) * pt[1]) + x0;
-    const double yt = (std::sin(hdg0) * pt[0]) + (std::cos(hdg0) * pt[1]) + y0;
+    const double x_t = (std::cos(hdg) * pt[0]) - (std::sin(hdg) * pt[1]) + x;
+    const double y_t = (std::sin(hdg) * pt[0]) + (std::cos(hdg) * pt[1]) + y;
 
-    return Vec2D{xt, yt};
+    return Vec2D{x_t, y_t};
 }
 
 Vec2D ParamPoly3::derivative(double s) const
 {
-    const double p = this->cubic_bezier.get_t(s - s0);
+    const double p = this->cubic_bezier.get_t(s - this->s);
     const Vec2D  dxy = this->cubic_bezier.derivative(p);
 
-    const double h1 = std::cos(hdg0);
-    const double h2 = std::sin(hdg0);
+    const double h1 = std::cos(hdg);
+    const double h2 = std::sin(hdg);
     const double dx = h1 * dxy[0] - h2 * dxy[1];
     const double dy = h2 * dxy[0] + h1 * dxy[1];
 
@@ -85,11 +85,11 @@ std::set<double> ParamPoly3::approximate_linear(double eps) const
 {
     std::set<double> p_vals = this->cubic_bezier.approximate_linear(eps);
 
-    std::set<double> s_vals;
+    std::set<double> s_samples;
     for (const double p : p_vals)
-        s_vals.insert(p * length + s0);
+        s_samples.insert(p * length + s);
 
-    return s_vals;
+    return s_samples;
 }
 
 } // namespace odr

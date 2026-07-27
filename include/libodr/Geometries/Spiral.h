@@ -10,7 +10,7 @@ namespace odr
 
 struct Spiral : public RoadGeometry
 {
-    Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end);
+    Spiral(double s, double x, double y, double hdg, double length, double curv_start, double curv_end);
 
     std::unique_ptr<RoadGeometry> clone() const override;
 
@@ -19,17 +19,17 @@ struct Spiral : public RoadGeometry
 
     std::set<double> approximate_linear(double eps) const override;
 
-    double curv_start = 0;
-    double curv_end = 0;
-    double s_start = 0;
-    double s_end = 0;
-    double c_dot = 0;
+    double curv_start;
+    double curv_end;
+    double spiral_s_start; // internal s (curv_start/c_dot) != road s
+    double spiral_s_end;
+    double c_dot;
 
 private:
-    double s0_spiral = 0;
-    double x0_spiral = 0;
-    double y0_spiral = 0;
-    double a0_spiral = 0;
+    double spiral_s_origin;
+    double spiral_x_origin;
+    double spiral_y_origin;
+    double spiral_hdg_origin;
 };
 
 } // namespace odr

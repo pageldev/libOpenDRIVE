@@ -12,7 +12,7 @@
 namespace odr
 {
 
-RoadObjectRepeat::RoadObjectRepeat(double                s0,
+RoadObjectRepeat::RoadObjectRepeat(double                s,
                                    double                length,
                                    double                distance,
                                    std::optional<double> t_start,
@@ -23,7 +23,7 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
                                    std::optional<double> z_offset_end,
                                    std::optional<double> width_start,
                                    std::optional<double> width_end) :
-    s0(s0),
+    s(s),
     length(length),
     distance(distance),
     t_start(t_start),
@@ -35,7 +35,7 @@ RoadObjectRepeat::RoadObjectRepeat(double                s0,
     width_start(width_start),
     width_end(width_end)
 {
-    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
+    require_or_throw(s >= 0, "s must be greater than or equal to 0 (got {})", s);
     require_or_throw(length >= 0, "length must be greater than or equal to 0 (got {})", length);
     require_or_throw(distance >= 0, "distance must be greater than or equal to 0 (got {})", distance);
     require_or_throw(!t_start || !std::isnan(*t_start), "tStart must not be NaN");
@@ -66,9 +66,9 @@ RoadObjectOutline::RoadObjectOutline(std::optional<int>         id,
 }
 
 RoadObject::RoadObject(const std::string&         id,
-                       std::optional<double>      s0,
-                       std::optional<double>      t0,
-                       std::optional<double>      z0,
+                       std::optional<double>      s,
+                       std::optional<double>      t,
+                       std::optional<double>      z_offset,
                        std::optional<double>      length,
                        std::optional<double>      valid_length,
                        std::optional<double>      width,
@@ -84,9 +84,9 @@ RoadObject::RoadObject(const std::string&         id,
                        std::optional<bool>        is_dynamic) :
 
     id(id),
-    s0(s0),
-    t0(t0),
-    z0(z0),
+    s(s),
+    t(t),
+    z_offset(z_offset),
     length(length),
     valid_length(valid_length),
     width(width),
@@ -101,9 +101,9 @@ RoadObject::RoadObject(const std::string&         id,
     orientation(orientation),
     is_dynamic(is_dynamic)
 {
-    require_or_throw(!s0 || s0 >= 0, "s must be greater than or equal to 0");
-    require_or_throw(!t0 || !std::isnan(*t0), "t must not be NaN");
-    require_or_throw(!z0 || !std::isnan(*z0), "z must not be NaN");
+    require_or_throw(!s || s >= 0, "s must be greater than or equal to 0");
+    require_or_throw(!t || !std::isnan(*t), "t must not be NaN");
+    require_or_throw(!z_offset || !std::isnan(*z_offset), "zOffset must not be NaN");
     require_or_throw(!length || length > 0, "length must be greater than 0");
     require_or_throw(!valid_length || valid_length >= 0, "valid length must be greater than or equal to 0");
     require_or_throw(!width || !std::isnan(*width), "width must not be NaN");

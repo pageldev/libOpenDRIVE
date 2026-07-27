@@ -13,8 +13,8 @@ RoutingGraphEdge::RoutingGraphEdge(LaneKey from, LaneKey to, double weight) : fr
 
 WeightedLaneKey::WeightedLaneKey(const LaneKey& lane_key, double weight) : LaneKey(lane_key), weight(weight) {}
 
-WeightedLaneKey::WeightedLaneKey(const std::string& road_id, double lanesection_s0, int lane_id, double weight) :
-    LaneKey(road_id, lanesection_s0, lane_id), weight(weight)
+WeightedLaneKey::WeightedLaneKey(const std::string& road_id, double lane_section_s, int lane_id, double weight) :
+    LaneKey(road_id, lane_section_s, lane_id), weight(weight)
 {
 }
 

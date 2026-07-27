@@ -12,7 +12,7 @@ namespace odr
 
 struct RoadObjectRepeat
 {
-    RoadObjectRepeat(double                s0,
+    RoadObjectRepeat(double                s,
                      double                length,
                      double                distance,
                      std::optional<double> t_start = std::nullopt,
@@ -24,7 +24,7 @@ struct RoadObjectRepeat
                      std::optional<double> width_start = std::nullopt,
                      std::optional<double> width_end = std::nullopt);
 
-    double s0;
+    double s;
     double length; // length of repeat area, not object
     double distance;
 
@@ -85,9 +85,9 @@ struct RoadObject
     };
 
     RoadObject(const std::string&         id,
-               std::optional<double>      s0 = std::nullopt,
-               std::optional<double>      t0 = std::nullopt,
-               std::optional<double>      z0 = std::nullopt,
+               std::optional<double>      s = std::nullopt,
+               std::optional<double>      t = std::nullopt,
+               std::optional<double>      z_offset = std::nullopt,
                std::optional<double>      length = std::nullopt,
                std::optional<double>      valid_length = std::nullopt,
                std::optional<double>      width = std::nullopt,
@@ -108,9 +108,9 @@ struct RoadObject
     std::string id;
 
     // can be superseded by Object Repeat Record (Rev. 1.4, 5.3.8.1.1)
-    std::optional<double> s0;
-    std::optional<double> t0;
-    std::optional<double> z0;
+    std::optional<double> s;
+    std::optional<double> t;
+    std::optional<double> z_offset;
 
     std::optional<double> length;       // physical length vs.
     std::optional<double> valid_length; // validity range, has no influence on shape

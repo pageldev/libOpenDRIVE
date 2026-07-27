@@ -39,7 +39,7 @@ std::string RoadsMesh::get_road_id(std::size_t vert_idx) const
     return get_nearest_lower_val<size_t, std::string>(this->road_start_indices, vert_idx);
 }
 
-double LanesMesh::get_lanesec_s0(std::size_t vert_idx) const
+double LanesMesh::get_lane_section_s(std::size_t vert_idx) const
 {
     return get_nearest_lower_val<size_t, double>(this->lanesec_start_indices, vert_idx);
 }

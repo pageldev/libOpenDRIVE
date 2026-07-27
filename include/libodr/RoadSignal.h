@@ -14,9 +14,9 @@ struct RoadSignal
 {
     RoadSignal(const std::string&         id,
                const std::string&         road_id,
-               double                     s0,
-               double                     t0,
-               double                     zOffset,
+               double                     s,
+               double                     t,
+               double                     z_offset,
                bool                       is_dynamic,
                const std::string&         type,
                const std::string&         subtype,
@@ -41,9 +41,9 @@ struct RoadSignal
     std::string id;
     std::string road_id;
 
-    double s0;
-    double t0;
-    double zOffset;
+    double s;
+    double t;
+    double z_offset;
     bool   is_dynamic;
 
     std::string type;

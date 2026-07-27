@@ -10,7 +10,7 @@ namespace odr
 
 struct Arc : public RoadGeometry
 {
-    Arc(double s0, double x0, double y0, double hdg0, double length, double curvature);
+    Arc(double s, double x, double y, double hdg, double length, double curvature);
 
     std::unique_ptr<RoadGeometry> clone() const override;
 

@@ -17,10 +17,10 @@ struct ParamPoly3 : public RoadGeometry
         ArcLength
     };
 
-    ParamPoly3(double s0,
-               double x0,
-               double y0,
-               double hdg0,
+    ParamPoly3(double s,
+               double x,
+               double y,
+               double hdg,
                double length,
                double aU,
                double bU,

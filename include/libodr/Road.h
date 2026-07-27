@@ -87,13 +87,11 @@ public:
     std::vector<RoadObject>  get_road_objects() const;
     std::vector<RoadSignal>  get_road_signals() const;
 
-    double      get_lanesection_s0(double s) const;
+    double      get_lane_section_s(double s) const;
     LaneSection get_lanesection(double s) const;
 
     double get_lanesection_end(const LaneSection& lanesection) const;
-    double get_lanesection_end(double lanesection_s0) const;
     double get_lanesection_length(const LaneSection& lanesection) const;
-    double get_lanesection_length(double lanesection_s0) const;
 
     Vec3D
     get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr, bool allow_extrapolate = true) const;
@@ -110,7 +108,7 @@ public:
     Mesh3D get_road_object_mesh(const RoadObject&         road_object,
                                 double                    eps,
                                 double                    default_h = 0,
-                                double                    default_z = 0,
+                                double                    default_z_offset = 0,
                                 bool                      enforce_road_bounds = false,
                                 std::vector<std::string>* warnings = nullptr) const;
 
@@ -132,7 +130,7 @@ public:
     Crossfall    crossfall;
     RefLine      ref_line;
 
-    std::map<double, LaneSection>     s_to_lanesection;
+    std::map<double, LaneSection>     s_to_lane_section;
     std::map<double, std::string>     s_to_type;
     std::map<double, SpeedRecord>     s_to_speed;
     std::map<std::string, RoadObject> id_to_object;

@@ -12,16 +12,16 @@ namespace odr
 
 struct RoadMarkLine
 {
-    RoadMarkLine(double                     sOffset,
-                 double                     tOffset,
+    RoadMarkLine(double                     s_offset,
+                 double                     t_offset,
                  double                     length,
                  std::optional<double>      width = std::nullopt,
                  std::optional<double>      space = std::nullopt,
                  std::optional<std::string> color = std::nullopt,
                  std::optional<std::string> rule = std::nullopt);
 
-    double sOffset;
-    double tOffset;
+    double s_offset;
+    double t_offset;
     double length;
 
     std::optional<double> width;
@@ -56,7 +56,7 @@ struct RoadMark
     static constexpr double BoldWidth = 0.25;
 
     std::string road_id;
-    double      lanesection_s0;
+    double      lane_section_s;
     int         lane_id;
     double      s_offset;
 
@@ -75,10 +75,10 @@ struct RoadMark
 
 struct SingleRoadMark
 {
-    SingleRoadMark(double s0, double s1, double t, double width, const std::string& type) noexcept;
+    SingleRoadMark(double s_start, double s_end, double t, double width, const std::string& type) noexcept;
 
-    double s0;
-    double s1;
+    double s_start;
+    double s_end;
     double t;
     double width;
 

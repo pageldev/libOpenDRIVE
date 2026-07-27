@@ -26,7 +26,7 @@ struct LanesMesh : public RoadsMesh
     LanesMesh() = default;
     virtual ~LanesMesh() = default;
 
-    double get_lanesec_s0(std::size_t vert_idx) const;
+    double get_lane_section_s(std::size_t vert_idx) const;
     int    get_lane_id(std::size_t vert_idx) const;
 
     std::array<size_t, 2> get_idx_interval_lanesec(std::size_t vert_idx) const;

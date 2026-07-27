@@ -10,7 +10,7 @@ namespace odr
 
 struct LaneSection
 {
-    LaneSection(double s0);
+    LaneSection(double s);
 
     std::vector<Lane> get_lanes() const;
 
@@ -19,7 +19,7 @@ struct LaneSection
     Lane get_lane(int id) const;
     Lane get_lane(double s, double t) const;
 
-    double s0;
+    double s;
 
     std::map<int, Lane> id_to_lane;
 };

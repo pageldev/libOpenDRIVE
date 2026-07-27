@@ -9,17 +9,17 @@
 namespace odr
 {
 
-Spiral::Spiral(double s0, double x0, double y0, double hdg0, double length, double curv_start, double curv_end) :
-    RoadGeometry(s0, x0, y0, hdg0, length), curv_start(curv_start), curv_end(curv_end)
+Spiral::Spiral(double s, double x, double y, double hdg, double length, double curv_start, double curv_end) :
+    RoadGeometry(s, x, y, hdg, length), curv_start(curv_start), curv_end(curv_end)
 {
     require_or_throw(!std::isnan(curv_start), "curvStart must not be NaN");
     require_or_throw(!std::isnan(curv_end), "curvEnd must not be NaN");
 
     this->c_dot = (curv_end - curv_start) / length;
-    this->s_start = curv_start / c_dot;
-    this->s_end = curv_end / c_dot;
-    s0_spiral = curv_start / c_dot;
-    odrSpiral(s0_spiral, c_dot, &x0_spiral, &y0_spiral, &a0_spiral);
+    this->spiral_s_start = curv_start / c_dot;
+    this->spiral_s_end = curv_end / c_dot;
+    spiral_s_origin = curv_start / c_dot;
+    odrSpiral(spiral_s_origin, c_dot, &spiral_x_origin, &spiral_y_origin, &spiral_hdg_origin);
 }
 
 std::unique_ptr<RoadGeometry> Spiral::clone() const
@@ -30,21 +30,21 @@ std::unique_ptr<RoadGeometry> Spiral::clone() const
 Vec2D Spiral::get_xy(double s) const
 {
     double xs_spiral, ys_spiral, as_spiral;
-    odrSpiral(s - s0 + s0_spiral, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
+    odrSpiral(s - this->s + spiral_s_origin, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
 
-    const double hdg = hdg0 - a0_spiral;
-    const double xt = (std::cos(hdg) * (xs_spiral - x0_spiral)) - (std::sin(hdg) * (ys_spiral - y0_spiral)) + x0;
-    const double yt = (std::sin(hdg) * (xs_spiral - x0_spiral)) + (std::cos(hdg) * (ys_spiral - y0_spiral)) + y0;
+    const double hdg_rotation = hdg - spiral_hdg_origin;
+    const double xt = (std::cos(hdg_rotation) * (xs_spiral - spiral_x_origin)) - (std::sin(hdg_rotation) * (ys_spiral - spiral_y_origin)) + x;
+    const double yt = (std::sin(hdg_rotation) * (xs_spiral - spiral_x_origin)) + (std::cos(hdg_rotation) * (ys_spiral - spiral_y_origin)) + y;
     return Vec2D{xt, yt};
 }
 
 Vec2D Spiral::derivative(double s) const
 {
     double xs_spiral, ys_spiral, as_spiral;
-    odrSpiral(s - s0 + s0_spiral, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
-    const double hdg = as_spiral + hdg0 - a0_spiral;
-    const double dx = std::cos(hdg);
-    const double dy = std::sin(hdg);
+    odrSpiral(s - this->s + spiral_s_origin, c_dot, &xs_spiral, &ys_spiral, &as_spiral);
+    const double hdg_s = as_spiral + hdg - spiral_hdg_origin;
+    const double dx = std::cos(hdg_s);
+    const double dy = std::sin(hdg_s);
     return {{dx, dy}};
 }
 
@@ -53,12 +53,12 @@ std::set<double> Spiral::approximate_linear(double eps) const
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
     // TODO: properly implement
-    std::set<double> s_vals;
-    for (double s = s0; s < (s0 + length); s += (10 * eps))
-        s_vals.insert(s);
-    s_vals.insert(s0 + length);
+    std::set<double> s_samples;
+    for (double s_sample = s; s_sample < (s + length); s_sample += (10 * eps))
+        s_samples.insert(s_sample);
+    s_samples.insert(s + length);
 
-    return s_vals;
+    return s_samples;
 }
 
 } // namespace odr

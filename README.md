@@ -35,7 +35,7 @@ std::optional<std::string> lane_type = odr_road.get_lanesection(0.0).get_lane(-1
 
 // use routing graph
 odr::RoutingGraph routing_graph = odr_map.get_routing_graph();
-odr::LaneKey from("17" /*road id*/, 0.0 /*lane section s0*/, 1 /*lane id*/);
+odr::LaneKey from("17" /*road id*/, 0.0 /*lane section s*/, 1 /*lane id*/);
 odr::LaneKey to("41", 0.0, -1);
 std::vector<odr::LaneKey> path = routing_graph.shortest_path(from, to);
 

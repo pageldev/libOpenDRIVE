@@ -18,42 +18,42 @@ RefLine::RefLine(double length) : length(length) {}
 
 RefLine::RefLine(const RefLine& other) : length(other.length), elevation_profile(other.elevation_profile)
 {
-    for (const auto& s0_geometry : other.s0_to_geometry)
-        this->s0_to_geometry.emplace(s0_geometry.first, s0_geometry.second->clone());
+    for (const auto& [s, geometry] : other.s_to_geometry)
+        this->s_to_geometry.emplace(s, geometry->clone());
 }
 
 std::set<const RoadGeometry*> RefLine::get_geometries() const
 {
     std::set<const RoadGeometry*> geometries;
-    for (const auto& s0_geometry : this->s0_to_geometry)
-        geometries.insert(s0_geometry.second.get());
+    for (const auto& [_, geometry] : this->s_to_geometry)
+        geometries.insert(geometry.get());
     return geometries;
 }
 
 std::set<RoadGeometry*> RefLine::get_geometries()
 {
     std::set<RoadGeometry*> geometries;
-    for (auto& s0_geometry : this->s0_to_geometry)
-        geometries.insert(s0_geometry.second.get());
+    for (auto& [s, geometry] : this->s_to_geometry)
+        geometries.insert(geometry.get());
     return geometries;
 }
 
-std::optional<double> RefLine::get_geometry_s0(double s) const
+std::optional<double> RefLine::get_geometry_s(double s) const
 {
-    if (this->s0_to_geometry.empty())
+    if (this->s_to_geometry.empty())
         return std::nullopt;
-    auto target_geom_iter = this->s0_to_geometry.upper_bound(s); // first element > s
-    if (target_geom_iter != s0_to_geometry.begin())
+    auto target_geom_iter = this->s_to_geometry.upper_bound(s); // first element > s
+    if (target_geom_iter != s_to_geometry.begin())
         target_geom_iter--;
     return target_geom_iter->first;
 }
 
 const RoadGeometry* RefLine::get_geometry(double s) const
 {
-    const std::optional<double> geom_s0 = this->get_geometry_s0(s);
-    if (!geom_s0)
+    const std::optional<double> s_geometry = this->get_geometry_s(s);
+    if (!s_geometry)
         return nullptr;
-    return this->s0_to_geometry.at(*geom_s0).get();
+    return this->s_to_geometry.at(*s_geometry).get();
 }
 
 RoadGeometry* RefLine::get_geometry(double s)
@@ -90,53 +90,53 @@ double RefLine::match(double x, double y) const
 
 Line3D RefLine::get_line(double s_start, double s_end, double eps) const
 {
-    std::set<double> s_vals = this->approximate_linear(eps, s_start, s_end);
+    std::set<double> s_samples = this->approximate_linear(eps, s_start, s_end);
 
     Line3D out_line;
-    for (const double s : s_vals)
+    for (const double s : s_samples)
         out_line.push_back(this->get_xyz(s));
     return out_line;
 }
 
 std::set<double> RefLine::approximate_linear(double eps, double s_start, double s_end) const
 {
-    if ((s_start == s_end) || this->s0_to_geometry.empty())
+    if ((s_start == s_end) || this->s_to_geometry.empty())
         return {};
 
     s_start = std::min(s_start, s_end);
     s_end = std::max(s_start, s_end);
 
-    auto s_end_geom_iter = this->s0_to_geometry.lower_bound(s_end);     // first element >= s
-    auto s_start_geom_iter = this->s0_to_geometry.upper_bound(s_start); // first element > s
-    if (s_start_geom_iter != s0_to_geometry.begin())
-        s_start_geom_iter--;
+    auto geometry_end_iter = this->s_to_geometry.lower_bound(s_end);     // first element >= s
+    auto geometry_start_iter = this->s_to_geometry.upper_bound(s_start); // first element > s
+    if (geometry_start_iter != s_to_geometry.begin())
+        geometry_start_iter--;
 
-    std::vector<double> s_vals{s_start};
-    for (auto s0_geom_iter = s_start_geom_iter; s0_geom_iter != s_end_geom_iter; s0_geom_iter++)
+    std::vector<double> s_samples{s_start};
+    for (auto geometry_iter = geometry_start_iter; geometry_iter != geometry_end_iter; geometry_iter++)
     {
-        const std::set<double> s_vals_geom = s0_geom_iter->second->approximate_linear(eps);
-        if (s_vals_geom.size() < 2)
+        const std::set<double> s_samples_geometry = geometry_iter->second->approximate_linear(eps);
+        if (s_samples_geometry.size() < 2)
             throw std::runtime_error("expected at least two sample points");
-        for (const double s : s_vals_geom)
+        for (const double s : s_samples_geometry)
         {
             if (s > s_start && s < s_end)
-                s_vals.push_back(s);
+                s_samples.push_back(s);
         }
-        if (std::next(s0_geom_iter) != s_end_geom_iter)
-            s_vals.pop_back();
+        if (std::next(geometry_iter) != geometry_end_iter)
+            s_samples.pop_back();
     }
 
-    std::set<double> s_vals_elevation = this->elevation_profile.approximate_linear(eps, s_start, s_end);
-    for (const double s : s_vals_elevation)
+    std::set<double> s_samples_elevation = this->elevation_profile.approximate_linear(eps, s_start, s_end);
+    for (const double s : s_samples_elevation)
     {
         if (s > s_start && s < s_end)
-            s_vals.push_back(s);
+            s_samples.push_back(s);
     }
 
-    s_vals.push_back(s_end);
+    s_samples.push_back(s_end);
 
-    std::set<double> s_vals_set(s_vals.begin(), s_vals.end());
-    return s_vals_set;
+    std::set<double> s_sample_set(s_samples.begin(), s_samples.end());
+    return s_sample_set;
 }
 
 } // namespace odr

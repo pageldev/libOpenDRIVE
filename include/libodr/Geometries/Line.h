@@ -10,7 +10,7 @@ namespace odr
 
 struct Line : public RoadGeometry
 {
-    Line(double s0, double x0, double y0, double hdg0, double length);
+    Line(double s, double x, double y, double hdg, double length);
 
     std::unique_ptr<RoadGeometry> clone() const override;
 

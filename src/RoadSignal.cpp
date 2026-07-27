@@ -11,9 +11,9 @@ namespace odr
 
 RoadSignal::RoadSignal(const std::string&         id,
                        const std::string&         road_id,
-                       double                     s0,
-                       double                     t0,
-                       double                     zOffset,
+                       double                     s,
+                       double                     t,
+                       double                     z_offset,
                        bool                       is_dynamic,
                        const std::string&         type,
                        const std::string&         subtype,
@@ -30,9 +30,9 @@ RoadSignal::RoadSignal(const std::string&         id,
                        std::optional<std::string> country) :
     id(id),
     road_id(road_id),
-    s0(s0),
-    t0(t0),
-    zOffset(zOffset),
+    s(s),
+    t(t),
+    z_offset(z_offset),
     is_dynamic(is_dynamic),
     type(type),
     subtype(subtype),
@@ -48,9 +48,9 @@ RoadSignal::RoadSignal(const std::string&         id,
     text(text),
     country(country)
 {
-    require_or_throw(s0 >= 0, "s must be greater than or equal to 0 (got {})", s0);
-    require_or_throw(!std::isnan(t0), "t must not be NaN");
-    require_or_throw(!std::isnan(zOffset), "zOffset must not be NaN");
+    require_or_throw(s >= 0, "s must be greater than or equal to 0 (got {})", s);
+    require_or_throw(!std::isnan(t), "t must not be NaN");
+    require_or_throw(!std::isnan(z_offset), "zOffset must not be NaN");
     require_or_throw(!height || height >= 0, "height must be greater than or equal to 0");
     require_or_throw(!width || width >= 0, "width must be greater than or equal to 0");
 }

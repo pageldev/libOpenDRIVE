@@ -45,7 +45,7 @@ struct CubicProfile
 
     std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
 
-    std::map<double /* s0 */, CubicPoly> segments;
+    std::map<double, CubicPoly> s_to_poly;
 };
 
 } // namespace odr

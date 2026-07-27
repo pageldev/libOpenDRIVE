@@ -26,16 +26,16 @@ struct HeightOffset
 
 struct LaneKey
 {
-    LaneKey(const std::string& road_id, double lanesection_s0, int lane_id);
+    LaneKey(const std::string& road_id, double lane_section_s, int lane_id);
     std::string to_string() const;
 
     std::string road_id = "";
-    double      lanesection_s0 = 0;
+    double      lane_section_s = 0;
     int         lane_id = 0;
 
     bool operator==(const LaneKey& other) const
     {
-        return this->road_id == other.road_id && this->lanesection_s0 == other.lanesection_s0 && this->lane_id == other.lane_id;
+        return this->road_id == other.road_id && this->lane_section_s == other.lane_section_s && this->lane_id == other.lane_id;
     }
 
     bool operator!=(const LaneKey& other) const
@@ -67,7 +67,7 @@ struct Lane
     CubicProfile outer_border;
 
     std::map<double, HeightOffset> s_to_height_offset;
-    std::map<double, RoadMark>     s_to_roadmark;
+    std::map<double, RoadMark>     s_to_road_mark;
 };
 
 } // namespace odr
@@ -79,7 +79,7 @@ struct hash<odr::LaneKey>
 {
     size_t operator()(const odr::LaneKey& key) const
     {
-        return ((hash<string>()(key.road_id) ^ (hash<double>()(key.lanesection_s0) << 1)) >> 1) ^ (hash<int>()(key.lane_id) << 1);
+        return ((hash<string>()(key.road_id) ^ (hash<double>()(key.lane_section_s) << 1)) >> 1) ^ (hash<int>()(key.lane_id) << 1);
     }
 };
 
@@ -88,7 +88,7 @@ struct equal_to<odr::LaneKey>
 {
     bool operator()(const odr::LaneKey& lhs, const odr::LaneKey& rhs) const
     {
-        return (lhs.road_id == rhs.road_id) && (lhs.lanesection_s0 == rhs.lanesection_s0) && (lhs.lane_id == rhs.lane_id);
+        return (lhs.road_id == rhs.road_id) && (lhs.lane_section_s == rhs.lane_section_s) && (lhs.lane_id == rhs.lane_id);
     }
 };
 
@@ -99,8 +99,8 @@ struct less<odr::LaneKey>
     {
         if (lhs.road_id != rhs.road_id)
             return lhs.road_id < rhs.road_id;
-        if (lhs.lanesection_s0 != rhs.lanesection_s0)
-            return lhs.lanesection_s0 < rhs.lanesection_s0;
+        if (lhs.lane_section_s != rhs.lane_section_s)
+            return lhs.lane_section_s < rhs.lane_section_s;
         if (lhs.lane_id != rhs.lane_id)
             return lhs.lane_id < rhs.lane_id;
         return false;

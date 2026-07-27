@@ -21,7 +21,7 @@ struct RefLine
     std::set<const RoadGeometry*> get_geometries() const;
     std::set<RoadGeometry*>       get_geometries();
 
-    std::optional<double> get_geometry_s0(double s) const;
+    std::optional<double> get_geometry_s(double s) const;
     const RoadGeometry*   get_geometry(double s) const;
     RoadGeometry*         get_geometry(double s);
 
@@ -35,7 +35,7 @@ struct RefLine
 
     CubicProfile elevation_profile;
 
-    std::map<double, std::unique_ptr<RoadGeometry>> s0_to_geometry;
+    std::map<double, std::unique_ptr<RoadGeometry>> s_to_geometry;
 };
 
 } // namespace odr

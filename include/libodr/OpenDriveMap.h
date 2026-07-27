@@ -64,7 +64,7 @@ public:
                          bool                      with_road_objects = true,
                          bool                      with_lateral_profile = true,
                          bool                      with_lane_height = true,
-                         bool                      abs_z_for_for_local_road_obj_outline = false,
+                         bool                      local_road_object_outlines_use_absolute_z = false,
                          bool                      fix_spiral_edge_cases = true,
                          bool                      with_road_signals = true,
                          bool                      treat_value_zero_as_missing = true);
