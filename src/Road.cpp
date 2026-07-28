@@ -238,40 +238,6 @@ std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, d
     return this->approximate_lane_border_linear(lane_key, lanesection.s, s_end_lane_section, eps, outer);
 }
 
-Line3D Road::get_lane_border_line(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer) const
-{
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
-    const Lane&        lane = lanesection.id_to_lane.at(lane_key.lane_id);
-
-    std::set<double> s_samples = this->approximate_lane_border_linear(lane_key, s_start, s_end, eps, outer);
-
-    const Lane& border_lane = outer ? lane : lanesection.id_to_lane.at(next_towards_zero(lane.id));
-
-    Line3D border_line;
-    for (const double s : s_samples)
-    {
-        const std::optional<double> t_opt = border_lane.outer_border.evaluate(s);
-        require_or_throw(t_opt.has_value() || border_lane.id == 0, "lane {} has no outer border at s {}", border_lane.id, s);
-        double t = t_opt.value_or(0.0);
-        if (!outer)
-        {
-            const std::optional<double> t_lane_outer_border = lane.outer_border.evaluate(s);
-            require_or_throw(t_lane_outer_border.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
-            t = std::nextafter(t, t_lane_outer_border.value_or(0.0)); // ensure t is not on lane boundary but within lane
-        }
-        border_line.push_back(this->get_surface_pt(s, t));
-    }
-
-    return border_line;
-}
-
-Line3D Road::get_lane_border_line(const LaneKey& lane_key, double eps, bool outer) const
-{
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
-    const double       s_end_lane_section = this->get_lanesection_end(lanesection);
-    return this->get_lane_border_line(lane_key, lanesection.s, s_end_lane_section, eps, outer);
-}
-
 Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices) const
 {
     const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
