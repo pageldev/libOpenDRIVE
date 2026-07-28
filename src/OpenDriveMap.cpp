@@ -913,7 +913,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     RoutingGraph routing_graph;
 
     // helper function, only uses road successor/predecessor links, no junction links
-    auto get_next_lane_basic = [this](const LaneKey& lane, int next_lane_id, bool predecessor) -> std::optional<LaneKey>
+    auto get_linked_lane = [this](const LaneKey& lane, int linked_lane_id, bool predecessor) -> std::optional<LaneKey>
     {
         const auto id_road_iter = this->id_to_road.find(lane.road_id);
         if (id_road_iter == this->id_to_road.end())
@@ -924,14 +924,14 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
         if (lane_section_iter == road.s_to_lane_section.end()) // also catches empty road
             return std::nullopt;
 
-        // next lanesection in the same road
+        // case: next lanesection in the same road
         if (predecessor)
         {
             if (lane_section_iter != road.s_to_lane_section.begin())
             {
                 const LaneSection& prev_lanesec = std::prev(lane_section_iter)->second;
-                if (prev_lanesec.id_to_lane.find(next_lane_id) != prev_lanesec.id_to_lane.end())
-                    return LaneKey(lane.road_id, prev_lanesec.s, next_lane_id);
+                if (prev_lanesec.id_to_lane.find(linked_lane_id) != prev_lanesec.id_to_lane.end())
+                    return LaneKey(lane.road_id, prev_lanesec.s, linked_lane_id);
             }
         }
         else
@@ -940,12 +940,12 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             if (next_lane_section_iter != road.s_to_lane_section.end())
             {
                 const LaneSection& next_lanesec = next_lane_section_iter->second;
-                if (next_lanesec.id_to_lane.find(next_lane_id) != next_lanesec.id_to_lane.end())
-                    return LaneKey(lane.road_id, next_lanesec.s, next_lane_id);
+                if (next_lanesec.id_to_lane.find(linked_lane_id) != next_lanesec.id_to_lane.end())
+                    return LaneKey(lane.road_id, next_lanesec.s, linked_lane_id);
             }
         }
 
-        // next lanesection NOT in the same road
+        // case: next lanesection NOT in the same road
         const std::optional<RoadLink>& road_link = predecessor ? road.predecessor : road.successor;
         if (road_link && road_link->type == RoadLink::Type::Road)
         {
@@ -960,11 +960,19 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             const LaneSection& next_lanesection = (*(road_link->contact_point) == RoadLink::ContactPoint::Start) // Road always has ContactPoint
                                                       ? next_road.s_to_lane_section.begin()->second
                                                       : next_road.s_to_lane_section.rbegin()->second;
-            if (next_lanesection.id_to_lane.find(next_lane_id) != next_lanesection.id_to_lane.end())
-                return LaneKey(next_road.id, next_lanesection.s, next_lane_id);
+            if (next_lanesection.id_to_lane.find(linked_lane_id) != next_lanesection.id_to_lane.end())
+                return LaneKey(next_road.id, next_lanesection.s, linked_lane_id);
         }
 
         return std::nullopt;
+    };
+
+    auto add_lane_edge = [this, &routing_graph](const LaneKey& from, const LaneKey& to)
+    {
+        const Road&        from_road = this->id_to_road.at(from.road_id);
+        const LaneSection& from_lanesection = from_road.s_to_lane_section.at(from.lane_section_s);
+        const double       lane_length = from_road.get_lanesection_length(from_lanesection);
+        routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
     };
 
     // Parse Roads
@@ -982,23 +990,25 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
 
                 if (lane.predecessor)
                 {
-                    const std::optional<LaneKey> predecessor_lane = get_next_lane_basic(lane_key, *(lane.predecessor), lane_follows_road_dir);
+                    const std::optional<LaneKey> predecessor_lane = get_linked_lane(lane_key, *(lane.predecessor), true);
                     if (predecessor_lane)
                     {
-                        const Road&        predecessor_road = this->id_to_road.at(predecessor_lane->road_id);
-                        const LaneSection& predecessor_lanesection = predecessor_road.s_to_lane_section.at(predecessor_lane->lane_section_s);
-                        const double       lane_length = predecessor_road.get_lanesection_length(predecessor_lanesection);
-                        routing_graph.add_edge(RoutingGraphEdge(*predecessor_lane, lane_key, lane_length));
+                        if (lane_follows_road_dir)
+                            add_lane_edge(*predecessor_lane, lane_key);
+                        else
+                            add_lane_edge(lane_key, *predecessor_lane);
                     }
                 }
 
                 if (lane.successor)
                 {
-                    const std::optional<LaneKey> successor_lane = get_next_lane_basic(lane_key, *(lane.successor), !lane_follows_road_dir);
+                    const std::optional<LaneKey> successor_lane = get_linked_lane(lane_key, *(lane.successor), false);
                     if (successor_lane)
                     {
-                        const double lane_length = road.get_lanesection_length(lanesection);
-                        routing_graph.add_edge(RoutingGraphEdge(lane_key, *successor_lane, lane_length));
+                        if (lane_follows_road_dir)
+                            add_lane_edge(lane_key, *successor_lane);
+                        else
+                            add_lane_edge(*successor_lane, lane_key);
                     }
                 }
             }
