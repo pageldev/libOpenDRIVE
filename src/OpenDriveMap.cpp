@@ -986,16 +986,18 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             for (const auto& [lane_id, lane] : lanesection.id_to_lane)
             {
                 const LaneKey lane_key(road_id, s_lane_section, lane_id);
-                const bool    lane_follows_road_dir = lane_id < 0;
+                const bool    is_rht = road.traffic_rule.value_or(Road::TrafficRule::RHT) == Road::TrafficRule::RHT;
+                const bool    lane_follows_road_dir = is_rht ? lane_id < 0 : lane_id > 0;
+                const bool    lane_is_bidirectional = lane.type == "bidirectional";
 
                 if (lane.predecessor)
                 {
                     const std::optional<LaneKey> predecessor_lane = get_linked_lane(lane_key, *(lane.predecessor), true);
                     if (predecessor_lane)
                     {
-                        if (lane_follows_road_dir)
+                        if (lane_is_bidirectional || lane_follows_road_dir)
                             add_lane_edge(*predecessor_lane, lane_key);
-                        else
+                        if (lane_is_bidirectional || !lane_follows_road_dir)
                             add_lane_edge(lane_key, *predecessor_lane);
                     }
                 }
@@ -1005,9 +1007,9 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
                     const std::optional<LaneKey> successor_lane = get_linked_lane(lane_key, *(lane.successor), false);
                     if (successor_lane)
                     {
-                        if (lane_follows_road_dir)
+                        if (lane_is_bidirectional || lane_follows_road_dir)
                             add_lane_edge(lane_key, *successor_lane);
-                        else
+                        if (lane_is_bidirectional || !lane_follows_road_dir)
                             add_lane_edge(*successor_lane, lane_key);
                     }
                 }
