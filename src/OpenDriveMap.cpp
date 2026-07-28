@@ -970,6 +970,9 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     // Parse Roads
     for (const auto& [road_id, road] : id_to_road)
     {
+        if (road.junction != "-1" && id_to_junction.find(road.junction) == id_to_junction.end() && warnings)
+            warnings->push_back(fmt::format("/road[@id={}]: junction '{}' not found", road_id, road.junction));
+
         for (const auto& [s_lane_section, lanesection] : road.s_to_lane_section)
         {
             for (const auto& [lane_id, lane] : lanesection.id_to_lane)
