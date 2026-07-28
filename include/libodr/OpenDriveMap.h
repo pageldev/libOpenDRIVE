@@ -76,7 +76,7 @@ public:
     Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
-    Mesh3D       get_road_network_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
+    Mesh3D       get_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
     RoutingGraph get_routing_graph(std::vector<std::string>* warnings = nullptr) const;
 
     OpenDriveMapHeader header;

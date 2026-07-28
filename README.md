@@ -40,7 +40,7 @@ odr::LaneKey to("41", 0.0, -1);
 std::vector<odr::LaneKey> path = routing_graph.shortest_path(from, to);
 
 // get road network mesh
-odr::Mesh3D road_network_mesh = odr_map.get_road_network_mesh(0.1 /*eps*/);
+odr::Mesh3D road_network_mesh = odr_map.get_mesh(0.1 /*eps*/);
 std::cout << road_network_mesh.get_obj() << std::endl;
 ```
 

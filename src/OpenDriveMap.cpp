@@ -871,7 +871,7 @@ std::vector<Junction> OpenDriveMap::get_junctions() const
     return get_map_values(this->id_to_junction);
 }
 
-Mesh3D OpenDriveMap::get_road_network_mesh(double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const
+Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const
 {
     Mesh3D lanes_mesh;
     Mesh3D roadmarks_mesh;
