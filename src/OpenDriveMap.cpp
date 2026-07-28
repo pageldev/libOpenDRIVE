@@ -1039,12 +1039,38 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
                 continue;
             }
 
-            const Road&        road_in = road_in_iter->second;
-            const LaneSection& incoming_lanesec = road_in.s_to_lane_section.rbegin()->second;
-            const Road&        road_conn = road_conn_iter->second;
-            const LaneSection& connecting_lanesec = (conn.contact_point == JunctionConnection::ContactPoint::Start)
-                                                        ? road_conn.s_to_lane_section.begin()->second
-                                                        : road_conn.s_to_lane_section.rbegin()->second;
+            const Road& in_road = road_in_iter->second;
+            const Road& conn_road = road_conn_iter->second;
+            const bool  conn_road_contact_at_start = conn.contact_point == JunctionConnection::ContactPoint::Start;
+
+            // infer contact point of incoming road by checking connecting road's predecessor/successor
+            std::optional<RoadLink::ContactPoint> in_road_contact_point;
+            const std::optional<RoadLink>& conn_road_link_to_in_road = conn_road_contact_at_start ? conn_road.predecessor : conn_road.successor;
+            if (conn_road_link_to_in_road && conn_road_link_to_in_road->type == RoadLink::Type::Road && conn_road_link_to_in_road->id == in_road.id)
+            {
+                in_road_contact_point = conn_road_link_to_in_road->contact_point;
+            }
+            else // fallback: infer contact point from incoming road's predecessor/successor
+            {
+                const bool junction_is_predecessor =
+                    in_road.predecessor && in_road.predecessor->type == RoadLink::Type::Junction && in_road.predecessor->id == junc_id;
+                const bool junction_is_successor =
+                    in_road.successor && in_road.successor->type == RoadLink::Type::Junction && in_road.successor->id == junc_id;
+                if (junction_is_predecessor != junction_is_successor)
+                    in_road_contact_point = junction_is_predecessor ? RoadLink::ContactPoint::Start : RoadLink::ContactPoint::End;
+            }
+            if (!in_road_contact_point)
+            {
+                if (warnings)
+                    warnings->push_back(fmt::format("{}: contact point of incoming road '{}' could not be determined", _loc_str, in_road.id));
+                continue;
+            }
+
+            const bool         in_road_contact_at_start = *in_road_contact_point == RoadLink::ContactPoint::Start;
+            const LaneSection& incoming_lanesec =
+                in_road_contact_at_start ? in_road.s_to_lane_section.begin()->second : in_road.s_to_lane_section.rbegin()->second;
+            const LaneSection& connecting_lanesec =
+                conn_road_contact_at_start ? conn_road.s_to_lane_section.begin()->second : conn_road.s_to_lane_section.rbegin()->second;
 
             for (const JunctionLaneLink& lane_link : conn.lane_links)
             {
@@ -1054,9 +1080,9 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
                 if (from_lane_iter == incoming_lanesec.id_to_lane.end() || to_lane_iter == connecting_lanesec.id_to_lane.end())
                     continue;
 
-                const LaneKey from(road_in.id, incoming_lanesec.s, from_lane_iter->second.id);
-                const LaneKey to(road_conn.id, connecting_lanesec.s, to_lane_iter->second.id);
-                const double  lane_length = road_in.get_lanesection_length(incoming_lanesec);
+                const LaneKey from(in_road.id, incoming_lanesec.s, from_lane_iter->second.id);
+                const LaneKey to(conn_road.id, connecting_lanesec.s, to_lane_iter->second.id);
+                const double  lane_length = in_road.get_lanesection_length(incoming_lanesec);
 
                 routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }

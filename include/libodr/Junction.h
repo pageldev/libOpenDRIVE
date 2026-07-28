@@ -53,7 +53,7 @@ struct JunctionConnection
     std::string  id;
     std::string  incoming_road;
     std::string  connecting_road;
-    ContactPoint contact_point;
+    ContactPoint contact_point; // contact point on the connectingRoad
 
     std::set<JunctionLaneLink> lane_links;
 };
