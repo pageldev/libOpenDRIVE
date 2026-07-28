@@ -14,7 +14,7 @@ struct CubicPoly
 
     double evaluate(double s) const;
     double derivative(double s) const;
-    double max_value(double s_start, double s_end) const;
+    double max_abs_value(double s_start, double s_end) const;
 
     void negate();
     bool is_zero() const;
@@ -36,7 +36,7 @@ struct CubicProfile
     std::optional<double> evaluate(double s) const;
     std::optional<double> derivative(double s) const;
 
-    double max_value(double s_start, double s_end) const;
+    double max_abs_value(double s_start, double s_end) const;
 
     std::optional<CubicPoly> get_poly(double s) const;
 

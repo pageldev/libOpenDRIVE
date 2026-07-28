@@ -43,22 +43,32 @@ double CubicPoly::derivative(double s) const
     return b + 2 * c * s + 3 * d * s * s;
 }
 
-double CubicPoly::max_value(double s_start, double s_end) const
+double CubicPoly::max_abs_value(double s_start, double s_end) const
 {
+    double max_abs_value = std::max(std::abs(this->evaluate(s_start)), std::abs(this->evaluate(s_end)));
+
+    const auto update_max_abs_value = [&](double s)
+    {
+        if (s >= s_start && s <= s_end)
+            max_abs_value = std::max(max_abs_value, std::abs(this->evaluate(s)));
+    };
+
     if (this->d != 0)
     {
-        const double s_extremum = (std::sqrt(c * c - 3 * b * d) - c) / (3 * d);
-        const double max_val1 = this->evaluate(std::min(std::max(s_extremum, s_start), s_end));
-        const double max_val2 = this->evaluate(std::min(std::max(-s_extremum, s_start), s_end));
-        return std::max(max_val1, max_val2);
+        const double discriminant = this->c * this->c - 3 * this->b * this->d;
+        if (discriminant >= 0)
+        {
+            const double sqrt_discriminant = std::sqrt(discriminant);
+            update_max_abs_value((-this->c + sqrt_discriminant) / (3 * this->d));
+            update_max_abs_value((-this->c - sqrt_discriminant) / (3 * this->d));
+        }
     }
     else if (this->c != 0)
     {
-        const double s_extremum = (-b) / (2 * c);
-        return this->evaluate(std::min(std::max(s_extremum, s_start), s_end));
+        update_max_abs_value(-this->b / (2 * this->c));
     }
 
-    return this->evaluate(s_start);
+    return max_abs_value;
 }
 
 std::set<double> CubicPoly::approximate_linear(double eps, double s_start, double s_end) const
@@ -199,7 +209,7 @@ std::optional<CubicPoly> CubicProfile::get_poly(double s) const
     return target_poly_iter->second;
 }
 
-double CubicProfile::max_value(double s_start, double s_end) const
+double CubicProfile::max_abs_value(double s_start, double s_end) const
 {
     if ((s_start == s_end) || this->s_to_poly.empty())
         return 0;
@@ -209,17 +219,15 @@ double CubicProfile::max_value(double s_start, double s_end) const
     if (poly_start_iter != this->s_to_poly.begin())
         poly_start_iter--;
 
-    std::vector<double> max_poly_vals;
+    double max_abs_value = 0;
     for (auto poly_iter = poly_start_iter; poly_iter != poly_end_iter; poly_iter++)
     {
         const double s_start_poly = std::max(poly_iter->first, s_start);
         const double s_end_poly = (std::next(poly_iter) == poly_end_iter) ? s_end : std::min(std::next(poly_iter)->first, s_end);
-        max_poly_vals.push_back(poly_iter->second.max_value(s_start_poly, s_end_poly));
+        max_abs_value = std::max(max_abs_value, poly_iter->second.max_abs_value(s_start_poly, s_end_poly));
     }
 
-    const auto   max_iter = std::max_element(max_poly_vals.begin(), max_poly_vals.end());
-    const double max_val = (max_iter == max_poly_vals.end()) ? 0 : *max_iter;
-    return max_val;
+    return max_abs_value;
 }
 
 std::set<double> CubicProfile::approximate_linear(double eps, double s_start, double s_end) const

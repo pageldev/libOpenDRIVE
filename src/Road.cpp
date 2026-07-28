@@ -224,8 +224,8 @@ std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, d
     std::set<double> s_samples_lane_height = get_map_keys(lane.s_to_height_offset);
     s_samples.insert(s_samples_lane_height.begin(), s_samples_lane_height.end());
 
-    const double     t_max = lane.outer_border.max_value(s_start, s_end);
-    std::set<double> s_samples_superelevation = this->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
+    const double     t_max_abs = lane.outer_border.max_abs_value(s_start, s_end);
+    std::set<double> s_samples_superelevation = this->superelevation.approximate_linear(std::atan(eps / t_max_abs), s_start, s_end);
     s_samples.insert(s_samples_superelevation.begin(), s_samples_superelevation.end());
 
     return s_samples;
@@ -290,8 +290,8 @@ Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end
     std::set<double> s_samples_lane_height = get_map_keys(lane.s_to_height_offset);
     s_samples.insert(s_samples_lane_height.begin(), s_samples_lane_height.end());
 
-    const double     t_max = lane.outer_border.max_value(s_start, s_end);
-    std::set<double> s_samples_superelevation = this->superelevation.approximate_linear(std::atan(eps / std::abs(t_max)), s_start, s_end);
+    const double     t_max_abs = lane.outer_border.max_abs_value(s_start, s_end);
+    std::set<double> s_samples_superelevation = this->superelevation.approximate_linear(std::atan(eps / t_max_abs), s_start, s_end);
     s_samples.insert(s_samples_superelevation.begin(), s_samples_superelevation.end());
 
     // thin out s_samples array, be removing s vals closer than eps to each other
