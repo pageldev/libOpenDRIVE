@@ -1,8 +1,8 @@
 #pragma once
 #include "libodr/Junction.h"
 #include "libodr/Lane.h"
+#include "libodr/Mesh.h"
 #include "libodr/Road.h"
-#include "libodr/RoadNetworkMesh.h"
 #include "libodr/RoutingGraph.h"
 
 #include "pugixml.hpp"
@@ -76,8 +76,8 @@ public:
     Junction              get_junction(const std::string& id) const;
     std::vector<Junction> get_junctions() const;
 
-    RoadNetworkMesh get_road_network_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
-    RoutingGraph    get_routing_graph(std::vector<std::string>* warnings = nullptr) const;
+    Mesh3D       get_road_network_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
+    RoutingGraph get_routing_graph(std::vector<std::string>* warnings = nullptr) const;
 
     OpenDriveMapHeader header;
 

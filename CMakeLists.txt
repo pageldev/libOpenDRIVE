@@ -73,7 +73,6 @@ set(SOURCES
     src/RefLine.cpp
     src/Road.cpp
     src/RoadMark.cpp
-    src/RoadNetworkMesh.cpp
     src/RoadObject.cpp
     src/RoadSignal.cpp
     src/RoutingGraph.cpp
