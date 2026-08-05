@@ -101,15 +101,14 @@ LaneSection Road::get_lane_section(double s) const
 double Road::get_lane_section_end(const LaneSection& lane_section) const
 {
     auto lane_section_iter = this->s_to_lane_section.find(lane_section.s);
-    if (lane_section_iter == this->s_to_lane_section.end())
-        return NAN;
+    require_or_throw(lane_section_iter != this->s_to_lane_section.end(), "no lane section found for s {}", lane_section.s);
 
     const bool is_last = (lane_section_iter == std::prev(this->s_to_lane_section.end()));
     if (is_last)
         return this->length;
 
     const double s_next = std::next(lane_section_iter)->first;
-    return std::nextafter(s_next, std::numeric_limits<double>::lowest()); // should be within lane section
+    return std::nextafter(s_next, -std::numeric_limits<double>::infinity()); // to be within lane section
 }
 
 double Road::get_lane_section_length(const LaneSection& lane_section) const
@@ -151,15 +150,15 @@ Vec3D Road::get_xyz(double s, double t, double h, Vec3D* _e_s, Vec3D* _e_t, Vec3
     return xyz;
 }
 
-Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate) const
+Vec3D Road::get_lane_surface_pt(double lane_section_s, double lane_id, double s, double t, Vec3D* vn, bool allow_extrapolate) const
 {
     require_or_throw(allow_extrapolate || (s >= 0 && s <= this->length), "s must be in road range [0, {}] (got {})", this->length, s);
     const double s_clamped = std::min(std::max(s, 0.0), this->length);
 
-    const double                lane_section_s = this->get_lane_section_s(s_clamped);
-    const LaneSection&          lane_section = this->s_to_lane_section.at(lane_section_s);
-    const Lane&                 lane = lane_section.get_lane(s_clamped, t);
-    const Lane&                 inner_neighbor_lane = lane_section.get_lane(next_towards_zero(lane.id));
+    const LaneSection& lane_section = this->s_to_lane_section.at(lane_section_s);
+    const Lane&        lane = lane_section.id_to_lane.at(lane_id);
+    const Lane&        inner_neighbor_lane = lane_section.id_to_lane.at(next_towards_zero(lane.id));
+
     const std::optional<double> t_inner_brdr_opt = inner_neighbor_lane.outer_border.evaluate(s_clamped);
     require_or_throw(
         t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s_clamped);
@@ -201,6 +200,16 @@ Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate
     }
 
     return this->get_xyz(s, t, h, nullptr, nullptr, vn, allow_extrapolate);
+}
+
+Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate) const
+{
+    const double       s_clamped = std::min(std::max(s, 0.0), this->length);
+    const double       lane_section_s = this->get_lane_section_s(s_clamped);
+    const LaneSection& lane_section = this->s_to_lane_section.at(lane_section_s);
+    const double       lane_id = lane_section.get_lane_id(s_clamped, t);
+
+    return this->get_lane_surface_pt(lane_section_s, lane_id, s, t, vn, allow_extrapolate);
 }
 
 std::set<double> Road::approximate_lane_border_linear(double lane_section_s, int lane_id, double s_start, double s_end, double eps, bool outer) const
