@@ -884,12 +884,11 @@ Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<
         {
             for (const auto& [lane_id, lane] : lanesec.id_to_lane)
             {
-                const LaneKey lane_key(road_id, s_lane_section, lane_id);
-                lanes_mesh.add_mesh(road.get_lane_mesh(lane_key, eps));
+                lanes_mesh.add_mesh(road.get_lane_mesh(s_lane_section, lane_id, eps));
 
                 const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s, road.get_lanesection_end(lanesec));
                 for (const SingleRoadMark& roadmark : roadmarks)
-                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(lane_key, roadmark, eps, enforce_road_bounds));
+                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(s_lane_section, lane_id, roadmark, eps, enforce_road_bounds));
             }
         }
 

@@ -83,19 +83,13 @@ double Road::get_lane_section_s(double s) const
 {
     require_or_throw(!(this->s_to_lane_section.empty()), "road has no lane sections");
 
-    auto lane_section_iter = this->s_to_lane_section.upper_bound(s);
+    auto lane_section_iter = this->s_to_lane_section.upper_bound(s); // first element > s
     if (lane_section_iter != this->s_to_lane_section.begin())
         lane_section_iter--;
-    const LaneSection& lanesec = lane_section_iter->second;
+    const double lane_section_s = lane_section_iter->first;
+    require_or_throw(s >= lane_section_s, "s must not be before lane section start {} (got {})", lane_section_s, s);
 
-    const double s_end_lane_section = this->get_lanesection_end(lanesec);
-    require_or_throw(s >= lanesec.s && s <= this->get_lanesection_end(lanesec),
-                     "s must be in lane section range [{}, {}] (got {})",
-                     lanesec.s,
-                     s_end_lane_section,
-                     s);
-
-    return lanesec.s;
+    return lane_section_s;
 }
 
 LaneSection Road::get_lanesection(double s) const
@@ -209,10 +203,10 @@ Vec3D Road::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate
     return this->get_xyz(s, t, h, nullptr, nullptr, vn, allow_extrapolate);
 }
 
-std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, double s_start, double s_end, double eps, bool outer) const
+std::set<double> Road::approximate_lane_border_linear(double lane_section_s, int lane_id, double s_start, double s_end, double eps, bool outer) const
 {
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
-    const Lane&        lane = lanesection.id_to_lane.at(lane_key.lane_id);
+    const LaneSection& lanesection = this->s_to_lane_section.at(lane_section_s);
+    const Lane&        lane = lanesection.id_to_lane.at(lane_id);
 
     std::set<double> s_samples = this->ref_line.approximate_linear(eps, s_start, s_end);
 
@@ -231,17 +225,17 @@ std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, d
     return s_samples;
 }
 
-std::set<double> Road::approximate_lane_border_linear(const LaneKey& lane_key, double eps, bool outer) const
+std::set<double> Road::approximate_lane_border_linear(double lane_section_s, int lane_id, double eps, bool outer) const
 {
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
+    const LaneSection& lanesection = this->s_to_lane_section.at(lane_section_s);
     const double       s_end_lane_section = this->get_lanesection_end(lanesection);
-    return this->approximate_lane_border_linear(lane_key, lanesection.s, s_end_lane_section, eps, outer);
+    return this->approximate_lane_border_linear(lane_section_s, lane_id, lanesection.s, s_end_lane_section, eps, outer);
 }
 
-Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices) const
+Mesh3D Road::get_lane_mesh(double lane_section_s, int lane_id, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices) const
 {
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
-    const Lane&        lane = lanesection.id_to_lane.at(lane_key.lane_id);
+    const LaneSection& lanesection = this->s_to_lane_section.at(lane_section_s);
+    const Lane&        lane = lanesection.id_to_lane.at(lane_id);
 
     std::set<double> s_samples = this->ref_line.approximate_linear(eps, s_start, s_end);
     std::set<double> s_samples_outer_border = lane.outer_border.approximate_linear(eps, s_start, s_end);
@@ -308,22 +302,22 @@ Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double s_start, double s_end
     return out_mesh;
 }
 
-Mesh3D Road::get_lane_mesh(const LaneKey& lane_key, double eps, std::vector<uint32_t>* outline_indices) const
+Mesh3D Road::get_lane_mesh(double lane_section_s, int lane_id, double eps, std::vector<uint32_t>* outline_indices) const
 {
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
+    const LaneSection& lanesection = this->s_to_lane_section.at(lane_section_s);
     const double       s_end_lane_section = this->get_lanesection_end(lanesection);
-    return this->get_lane_mesh(lane_key, lanesection.s, s_end_lane_section, eps, outline_indices);
+    return this->get_lane_mesh(lane_section_s, lane_id, lanesection.s, s_end_lane_section, eps, outline_indices);
 }
 
-Mesh3D Road::get_roadmark_mesh(const LaneKey& lane_key, const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds) const
+Mesh3D Road::get_roadmark_mesh(double lane_section_s, int lane_id, const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds) const
 {
     if (is_zero(roadmark.width))
         return Mesh3D{};
 
-    const LaneSection& lanesection = this->s_to_lane_section.at(lane_key.lane_section_s);
-    const Lane&        lane = lanesection.id_to_lane.at(lane_key.lane_id);
+    const LaneSection& lanesection = this->s_to_lane_section.at(lane_section_s);
+    const Lane&        lane = lanesection.id_to_lane.at(lane_id);
 
-    const std::set<double> s_samples = this->approximate_lane_border_linear(lane_key, roadmark.s_start, roadmark.s_end, eps, true);
+    const std::set<double> s_samples = this->approximate_lane_border_linear(lane_section_s, lane_id, roadmark.s_start, roadmark.s_end, eps, true);
 
     Mesh3D out_mesh;
     for (const double s : s_samples)
