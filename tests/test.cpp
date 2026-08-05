@@ -60,10 +60,10 @@ TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
         INFO("road: " << road.id << ", length: " << road.length);
         REQUIRE(road.length >= 0.0);
         REQUIRE(!road.s_to_lane_section.empty());
-        for (const odr::LaneSection& ls : road.get_lanesections())
+        for (const odr::LaneSection& ls : road.get_lane_sections())
         {
             const double s_start = ls.s;
-            const double s_end = road.get_lanesection_end(ls);
+            const double s_end = road.get_lane_section_end(ls);
             REQUIRE(s_start >= 0.0);
             REQUIRE(s_end > s_start);
             for (const odr::Lane& lane : ls.get_lanes())

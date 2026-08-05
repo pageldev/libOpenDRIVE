@@ -334,22 +334,22 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
 
         // parse road lane sections and lanes
-        bool invalid_lanesection = false;
-        for (const pugi::xml_node lanesection_node : road_node.child("lanes").children("laneSection"))
+        bool invalid_lane_section = false;
+        for (const pugi::xml_node lane_section_node : road_node.child("lanes").children("laneSection"))
         {
-            std::optional<LaneSection> lanesection;
+            std::optional<LaneSection> lane_section;
             try
             {
-                lanesection.emplace(lanesection_node.attribute("s").as_double(NAN));
+                lane_section.emplace(lane_section_node.attribute("s").as_double(NAN));
             }
             catch (const std::exception& ex)
             {
-                result.errors.push_back({lanesection_node, ex.what()});
-                invalid_lanesection = true;
+                result.errors.push_back({lane_section_node, ex.what()});
+                invalid_lane_section = true;
                 continue;
             }
 
-            for (const pugi::xpath_node lane_xpath_node : lanesection_node.select_nodes(".//lane"))
+            for (const pugi::xpath_node lane_xpath_node : lane_section_node.select_nodes(".//lane"))
             {
                 const pugi::xml_node     lane_node = lane_xpath_node.node();
                 const std::optional<int> lane_id = try_get_attribute<int>(lane_node, "id");
@@ -358,7 +358,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({lane_node, "required attribute 'id' is missing"});
                     continue;
                 }
-                if (lanesection->id_to_lane.find(*lane_id) != lanesection->id_to_lane.end())
+                if (lane_section->id_to_lane.find(*lane_id) != lane_section->id_to_lane.end())
                 {
                     result.errors.push_back({lane_node, "attribute 'id' has a duplicate value"});
                     continue;
@@ -368,7 +368,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({border_node, "element <border> is not supported"});
 
                 Lane& lane =
-                    lanesection->id_to_lane
+                    lane_section->id_to_lane
                         .emplace(*lane_id,
                                  Lane(*lane_id, try_get_attribute<std::string>(lane_node, "type"), try_get_attribute<bool>(lane_node, "level")))
                         .first->second;
@@ -390,12 +390,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                            lane_width_node.attribute("b").as_double(NAN),
                                            lane_width_node.attribute("c").as_double(NAN),
                                            lane_width_node.attribute("d").as_double(NAN),
-                                           lanesection->s + s_offset);
+                                           lane_section->s + s_offset);
                     }
                     catch (const std::exception& ex)
                     {
                         result.errors.push_back({lane_width_node, ex.what()});
-                        invalid_lanesection = true;
+                        invalid_lane_section = true;
                         continue;
                     }
 
@@ -407,7 +407,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         width_poly->set_zero();
                     }
 
-                    lane.lane_width.s_to_poly.emplace(lanesection->s + s_offset, *width_poly);
+                    lane.lane_width.s_to_poly.emplace(lane_section->s + s_offset, *width_poly);
                 }
 
                 if (with_lane_height)
@@ -428,7 +428,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                             result.errors.push_back({lane_height_node, ex.what()});
                             continue;
                         }
-                        lane.s_to_height_offset.emplace(lanesection->s + height_offset->s_offset, *height_offset);
+                        lane.s_to_height_offset.emplace(lane_section->s + height_offset->s_offset, *height_offset);
                     }
                 }
 
@@ -492,29 +492,29 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         }
                     }
 
-                    lane.s_to_road_mark.emplace(lanesection->s + roadmark->s_offset, std::move(*roadmark));
+                    lane.s_to_road_mark.emplace(lane_section->s + roadmark->s_offset, std::move(*roadmark));
                 }
             }
 
-            if (const std::optional<int> missing_lane_id = find_first_gap_in_keys(lanesection->id_to_lane))
+            if (const std::optional<int> missing_lane_id = find_first_gap_in_keys(lane_section->id_to_lane))
             {
-                result.errors.push_back({lanesection_node, fmt::format("lane {} is missing", *missing_lane_id)});
-                invalid_lanesection = true;
+                result.errors.push_back({lane_section_node, fmt::format("lane {} is missing", *missing_lane_id)});
+                invalid_lane_section = true;
                 continue;
             }
 
             // derive lane borders from lane widths
-            const auto id_lane_iter0 = lanesection->id_to_lane.find(0);
-            if (id_lane_iter0 == lanesection->id_to_lane.end())
+            const auto id_lane_iter0 = lane_section->id_to_lane.find(0);
+            if (id_lane_iter0 == lane_section->id_to_lane.end())
             {
-                result.errors.push_back({lanesection_node, "lane 0 is missing"});
-                invalid_lanesection = true;
+                result.errors.push_back({lane_section_node, "lane 0 is missing"});
+                invalid_lane_section = true;
                 continue;
             }
 
             // iterate from lane #1 towards +inf
             const auto id_lane_iter1 = std::next(id_lane_iter0);
-            for (auto iter = id_lane_iter1; iter != lanesection->id_to_lane.end(); iter++)
+            for (auto iter = id_lane_iter1; iter != lane_section->id_to_lane.end(); iter++)
             {
                 if (iter == id_lane_iter1)
                     iter->second.outer_border = iter->second.lane_width;
@@ -526,7 +526,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             // "For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1) is always true"
             // The reverse iterator points to the element that is one before the element referred by the id_lane_iter0!
             const std::map<int, Lane>::reverse_iterator r_id_lane_iter1(id_lane_iter0);
-            for (auto r_iter = r_id_lane_iter1; r_iter != lanesection->id_to_lane.rend(); r_iter++)
+            for (auto r_iter = r_id_lane_iter1; r_iter != lane_section->id_to_lane.rend(); r_iter++)
             {
                 if (r_iter == r_id_lane_iter1)
                     r_iter->second.outer_border = r_iter->second.lane_width.negate();
@@ -536,12 +536,12 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
             // OpenDRIVE Format Specification, Rev. 1.4, 3.3.2 Lane Offset:
             // "... lane 0 may be offset using a cubic polynom"
-            for (auto& id_lane : lanesection->id_to_lane)
+            for (auto& id_lane : lane_section->id_to_lane)
                 id_lane.second.outer_border = id_lane.second.outer_border.add(road->lane_offset);
 
-            road->s_to_lane_section.emplace(lanesection->s, std::move(*lanesection));
+            road->s_to_lane_section.emplace(lane_section->s, std::move(*lane_section));
         }
-        if (invalid_lanesection)
+        if (invalid_lane_section)
             continue; // discard road
 
         // parse road objects
@@ -886,7 +886,7 @@ Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<
             {
                 lanes_mesh.add_mesh(road.get_lane_mesh(s_lane_section, lane_id, eps));
 
-                const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s, road.get_lanesection_end(lanesec));
+                const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s, road.get_lane_section_end(lanesec));
                 for (const SingleRoadMark& roadmark : roadmarks)
                     roadmarks_mesh.add_mesh(road.get_roadmark_mesh(s_lane_section, lane_id, roadmark, eps, enforce_road_bounds));
             }
@@ -923,7 +923,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
         if (lane_section_iter == road.s_to_lane_section.end()) // also catches empty road
             return std::nullopt;
 
-        // case: next lanesection in the same road
+        // case: next lane_section in the same road
         if (predecessor)
         {
             if (lane_section_iter != road.s_to_lane_section.begin())
@@ -944,7 +944,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             }
         }
 
-        // case: next lanesection NOT in the same road
+        // case: next lane_section NOT in the same road
         const std::optional<RoadLink>& road_link = predecessor ? road.predecessor : road.successor;
         if (road_link && road_link->type == RoadLink::Type::Road)
         {
@@ -956,11 +956,11 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             if (next_road.s_to_lane_section.empty())
                 return std::nullopt;
 
-            const LaneSection& next_lanesection = (*(road_link->contact_point) == RoadLink::ContactPoint::Start) // Road always has ContactPoint
-                                                      ? next_road.s_to_lane_section.begin()->second
-                                                      : next_road.s_to_lane_section.rbegin()->second;
-            if (next_lanesection.id_to_lane.find(linked_lane_id) != next_lanesection.id_to_lane.end())
-                return LaneKey(next_road.id, next_lanesection.s, linked_lane_id);
+            const LaneSection& next_lane_section = (*(road_link->contact_point) == RoadLink::ContactPoint::Start) // Road always has ContactPoint
+                                                       ? next_road.s_to_lane_section.begin()->second
+                                                       : next_road.s_to_lane_section.rbegin()->second;
+            if (next_lane_section.id_to_lane.find(linked_lane_id) != next_lane_section.id_to_lane.end())
+                return LaneKey(next_road.id, next_lane_section.s, linked_lane_id);
         }
 
         return std::nullopt;
@@ -969,8 +969,8 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     auto add_lane_edge = [this, &routing_graph](const LaneKey& from, const LaneKey& to)
     {
         const Road&        from_road = this->id_to_road.at(from.road_id);
-        const LaneSection& from_lanesection = from_road.s_to_lane_section.at(from.lane_section_s);
-        const double       lane_length = from_road.get_lanesection_length(from_lanesection);
+        const LaneSection& from_lane_section = from_road.s_to_lane_section.at(from.lane_section_s);
+        const double       lane_length = from_road.get_lane_section_length(from_lane_section);
         routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
     };
 
@@ -980,9 +980,9 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
         if (road.junction != "-1" && id_to_junction.find(road.junction) == id_to_junction.end() && warnings)
             warnings->push_back(fmt::format("/road[@id={}]: junction '{}' not found", road_id, road.junction));
 
-        for (const auto& [s_lane_section, lanesection] : road.s_to_lane_section)
+        for (const auto& [s_lane_section, lane_section] : road.s_to_lane_section)
         {
-            for (const auto& [lane_id, lane] : lanesection.id_to_lane)
+            for (const auto& [lane_id, lane] : lane_section.id_to_lane)
             {
                 const LaneKey lane_key(road_id, s_lane_section, lane_id);
                 const bool    is_rht = road.traffic_rule.value_or(Road::TrafficRule::RHT) == Road::TrafficRule::RHT;
@@ -1081,7 +1081,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
 
                 const LaneKey from(in_road.id, incoming_lanesec.s, from_lane_iter->second.id);
                 const LaneKey to(conn_road.id, connecting_lanesec.s, to_lane_iter->second.id);
-                const double  lane_length = in_road.get_lanesection_length(incoming_lanesec);
+                const double  lane_length = in_road.get_lane_section_length(incoming_lanesec);
 
                 routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }

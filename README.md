@@ -30,8 +30,8 @@ odr::Road odr_road = odr_map.get_road("17");
 odr::Vec3D pt_xyz = odr_road.get_xyz(2.1 /*s*/, 1.0 /*t*/, 0.0 /*h*/);
 
 // access road network attributes
-int lane_id = odr_road.get_lanesection(0.0).get_lane(-1).id;
-std::optional<std::string> lane_type = odr_road.get_lanesection(0.0).get_lane(-1).type;
+int lane_id = odr_road.get_lane_section(0.0).get_lane(-1).id;
+std::optional<std::string> lane_type = odr_road.get_lane_section(0.0).get_lane(-1).type;
 
 // use routing graph
 odr::RoutingGraph routing_graph = odr_map.get_routing_graph();

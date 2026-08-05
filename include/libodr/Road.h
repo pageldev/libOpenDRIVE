@@ -83,15 +83,15 @@ public:
          std::optional<TrafficRule> traffic_rule = std::nullopt,
          std::optional<std::string> name = std::nullopt);
 
-    std::vector<LaneSection> get_lanesections() const;
+    std::vector<LaneSection> get_lane_sections() const;
     std::vector<RoadObject>  get_road_objects() const;
     std::vector<RoadSignal>  get_road_signals() const;
 
     double      get_lane_section_s(double s) const;
-    LaneSection get_lanesection(double s) const;
+    LaneSection get_lane_section(double s) const;
 
-    double get_lanesection_end(const LaneSection& lanesection) const;
-    double get_lanesection_length(const LaneSection& lanesection) const;
+    double get_lane_section_end(const LaneSection& lane_section) const;
+    double get_lane_section_length(const LaneSection& lane_section) const;
 
     Vec3D
     get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr, bool allow_extrapolate = true) const;
