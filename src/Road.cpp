@@ -279,7 +279,7 @@ Mesh3D Road::get_lane_mesh(double lane_section_s, int lane_id, double s_start, d
         const std::optional<double> t_outer_brdr_opt = lane.outer_border.evaluate(s);
         require_or_throw(t_outer_brdr_opt.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
         const double t_outer_brdr = t_outer_brdr_opt.value_or(0.0);
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_outer_brdr, &vn_outer_brdr));
+        out_mesh.vertices.push_back(this->get_lane_surface_pt(lane_section_s, lane_id, s, t_outer_brdr, &vn_outer_brdr));
         out_mesh.normals.push_back(vn_outer_brdr);
         out_mesh.st_coordinates.push_back({s, t_outer_brdr});
 
@@ -288,7 +288,7 @@ Mesh3D Road::get_lane_mesh(double lane_section_s, int lane_id, double s_start, d
         require_or_throw(
             t_inner_brdr_opt.has_value() || inner_neighbor_lane.id == 0, "lane {} has no outer border at s {}", inner_neighbor_lane.id, s);
         const double t_inner_brdr = std::nextafter(t_inner_brdr_opt.value_or(0.0), t_outer_brdr); // ensure t is not on lane boundary but within lane
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_inner_brdr, &vn_inner_brdr));
+        out_mesh.vertices.push_back(this->get_lane_surface_pt(lane_section_s, lane_id, s, t_inner_brdr, &vn_inner_brdr));
         out_mesh.normals.push_back(vn_inner_brdr);
         out_mesh.st_coordinates.push_back({s, t_inner_brdr});
     }
@@ -335,12 +335,12 @@ Mesh3D Road::get_roadmark_mesh(double lane_section_s, int lane_id, const SingleR
         const std::optional<double> t_lane_outer_border = lane.outer_border.evaluate(s);
         require_or_throw(t_lane_outer_border.has_value() || lane.id == 0, "lane {} has no outer border at s {}", lane.id, s);
         const double t_edge_a = t_lane_outer_border.value_or(0.0) + roadmark.width * 0.5 + roadmark.t;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a, !enforce_road_bounds));
+        out_mesh.vertices.push_back(this->get_lane_surface_pt(lane_section_s, lane_id, s, t_edge_a, &vn_edge_a, !enforce_road_bounds));
         out_mesh.normals.push_back(vn_edge_a);
 
         Vec3D        vn_edge_b{0, 0, 0};
         const double t_edge_b = t_edge_a - roadmark.width;
-        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b, !enforce_road_bounds));
+        out_mesh.vertices.push_back(this->get_lane_surface_pt(lane_section_s, lane_id, s, t_edge_b, &vn_edge_b, !enforce_road_bounds));
         out_mesh.normals.push_back(vn_edge_b);
     }
 
