@@ -21,7 +21,7 @@ struct CubicBezier
     Vec<T, Dim>                derivative(T t) const;
     T                          get_t(T arclen) const;
     std::array<Vec<T, Dim>, 4> get_subcurve(T t_start, T t_end) const;
-    std::set<T>                approximate_linear(T eps) const;
+    std::set<T>                get_polyline_t_samples(T eps) const;
 
     static std::array<Vec<T, Dim>, 4> get_control_points(const std::array<Vec<T, Dim>, 4>& coefficients)
     {
@@ -72,13 +72,13 @@ struct CubicBezier
 
     std::array<Vec<T, Dim>, 4> control_points;
     std::map<T, T>             arclen_t;
-    static const double        LengthTolerance;
+    static const double        ArcLengthLookupTolerance;
 };
 
 template<typename T, std::size_t Dim>
 CubicBezier<T, Dim>::CubicBezier(std::array<Vec<T, Dim>, 4> control_points) : control_points(control_points)
 {
-    const std::set<T> t_vals = this->approximate_linear(this->LengthTolerance);
+    const std::set<T> t_vals = this->get_polyline_t_samples(this->ArcLengthLookupTolerance);
     if (t_vals.size() < 2)
         throw std::runtime_error("expected at least two t values");
 
@@ -109,10 +109,8 @@ Vec<T, Dim> CubicBezier<T, Dim>::evaluate(T t) const
 template<typename T, std::size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
-    if ((arclen - this->valid_length) > this->LengthTolerance || arclen < 0)
-    {
+    if ((arclen - this->valid_length) > this->ArcLengthLookupTolerance || arclen < 0)
         throw std::runtime_error(fmt::format("arc length must be in range [0, {:.3f}] (got {:.3f})", this->valid_length, arclen));
-    }
 
     const T arclen_adj = std::min<T>(arclen, this->valid_length);
 
@@ -173,7 +171,7 @@ std::array<Vec<T, Dim>, 4> CubicBezier<T, Dim>::get_subcurve(T t_start, T t_end)
 }
 
 template<typename T, std::size_t Dim>
-std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
+std::set<T> CubicBezier<T, Dim>::get_polyline_t_samples(T eps) const
 {
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
 
@@ -224,7 +222,7 @@ std::set<T> CubicBezier<T, Dim>::approximate_linear(T eps) const
 }
 
 template<typename T, std::size_t Dim>
-const double CubicBezier<T, Dim>::LengthTolerance = 1e-2;
+const double CubicBezier<T, Dim>::ArcLengthLookupTolerance = 1e-3;
 
 typedef CubicBezier<double, 2> CubicBezier2D;
 
