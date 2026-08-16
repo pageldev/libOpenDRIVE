@@ -1,5 +1,5 @@
 #pragma once
-#include "libodr/LaneValidityRecord.h"
+#include "libodr/LaneValidity.h"
 #include "libodr/Mesh.h"
 #include "libodr/RoadObject.h"
 

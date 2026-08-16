@@ -9,7 +9,7 @@
 #include "libodr/Junction.h"
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
-#include "libodr/LaneValidityRecord.h"
+#include "libodr/LaneValidity.h"
 #include "libodr/Math.hpp"
 #include "libodr/RefLine.h"
 #include "libodr/Road.h"
