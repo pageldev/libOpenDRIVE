@@ -75,11 +75,11 @@ struct RoadMark
 
 struct SingleRoadMark
 {
-    SingleRoadMark(double s_start, double s_end, double t, double width, const std::string& type) noexcept;
+    SingleRoadMark(double s_start, double s_end, double t_offset, double width, const std::string& type) noexcept;
 
     double s_start;
     double s_end;
-    double t;
+    double t_offset;
     double width;
 
     std::string type;

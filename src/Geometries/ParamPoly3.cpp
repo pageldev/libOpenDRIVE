@@ -81,15 +81,4 @@ Vec2D ParamPoly3::derivative(double s) const
     return {{dx, dy}};
 }
 
-std::set<double> ParamPoly3::approximate_linear(double eps) const
-{
-    std::set<double> p_vals = this->cubic_bezier.approximate_linear(eps);
-
-    std::set<double> s_samples;
-    for (const double p : p_vals)
-        s_samples.insert(p * length + s);
-
-    return s_samples;
-}
-
 } // namespace odr

@@ -16,8 +16,6 @@ struct Line : public RoadGeometry
 
     Vec2D get_xy(double s) const override;
     Vec2D derivative(double s) const override;
-
-    std::set<double> approximate_linear(double eps) const override;
 };
 
 } // namespace odr

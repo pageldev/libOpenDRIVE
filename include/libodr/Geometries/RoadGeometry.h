@@ -17,8 +17,6 @@ struct RoadGeometry
     virtual Vec2D get_xy(double s) const = 0;
     virtual Vec2D derivative(double s) const = 0;
 
-    virtual std::set<double> approximate_linear(double eps) const = 0;
-
     double s = 0;
     double x = 0;
     double y = 0;

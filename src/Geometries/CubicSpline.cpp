@@ -1,18 +1,11 @@
 #include "libodr/Geometries/CubicSpline.h"
-#include "libodr/CubicBezier.hpp"
 #include "libodr/Math.hpp"
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
-#include <iterator>
 #include <optional>
 #include <set>
-#include <stdexcept>
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace odr
 {
@@ -43,77 +36,64 @@ double CubicPoly::derivative(double s) const
     return b + 2 * c * s + 3 * d * s * s;
 }
 
-double CubicPoly::max_abs_value(double s_start, double s_end) const
+CubicBounds CubicPoly::bounds(double s_start, double s_end) const
 {
-    double max_abs_value = std::max(std::abs(this->evaluate(s_start)), std::abs(this->evaluate(s_end)));
+    CubicBounds out;
 
-    const auto update_max_abs_value = [&](double s)
+    const double val_start = evaluate(s_start);
+    const double val_end = evaluate(s_end);
+    out.min = std::min(val_start, val_end);
+    out.max = std::max(val_start, val_end);
+
+    const auto include_in_range = [&](double& lower, double& upper, double s, const auto& evaluate)
     {
-        if (s >= s_start && s <= s_end)
-            max_abs_value = std::max(max_abs_value, std::abs(this->evaluate(s)));
+        if (s > s_start && s < s_end)
+        {
+            const double value = evaluate(s);
+            lower = std::min(lower, value);
+            upper = std::max(upper, value);
+        }
     };
 
-    if (this->d != 0)
+    if (d != 0) // quadratic derivative
     {
-        const double discriminant = this->c * this->c - 3 * this->b * this->d;
-        if (discriminant >= 0)
+        const double discriminant = c * c - 3 * b * d;
+        if (discriminant >= 0) // internal extrema may exceed the endpoint bounds
         {
-            const double sqrt_discriminant = std::sqrt(discriminant);
-            update_max_abs_value((-this->c + sqrt_discriminant) / (3 * this->d));
-            update_max_abs_value((-this->c - sqrt_discriminant) / (3 * this->d));
+            const double root = std::sqrt(discriminant);
+            include_in_range(out.min, out.max, (-c - root) / (3 * d), [&](double s) { return evaluate(s); }); // local max
+            include_in_range(out.min, out.max, (-c + root) / (3 * d), [&](double s) { return evaluate(s); }); // local min
         }
     }
-    else if (this->c != 0)
-    {
-        update_max_abs_value(-this->b / (2 * this->c));
-    }
+    else if (c != 0) // d == 0, c != 0 -> linear derivative
+        include_in_range(out.min, out.max, -b / (2 * c), [&](double s) { return evaluate(s); });
 
-    return max_abs_value;
+    out.d1_min = std::min(derivative(s_start), derivative(s_end));
+    out.d1_max = std::max(derivative(s_start), derivative(s_end));
+    if (d != 0)
+        include_in_range(out.d1_min, out.d1_max, -c / (3 * d), [&](double s) { return derivative(s); });
+
+    out.d1 = std::max(std::abs(out.d1_min), std::abs(out.d1_max));
+    out.d2 = std::max(std::abs(2 * c + 6 * d * s_start), std::abs(2 * c + 6 * d * s_end));
+    out.d3 = std::abs(6 * d);
+
+    return out;
 }
 
-std::set<double> CubicPoly::approximate_linear(double eps, double s_start, double s_end) const
+void CubicPoly::add(const CubicPoly& other)
 {
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
+    a += other.a;
+    b += other.b;
+    c += other.c;
+    d += other.d;
+}
 
-    if (s_start == s_end)
-        return {};
-
-    if (d == 0 && c == 0) // linear case: /
-        return {s_start, s_end};
-
-    std::vector<double> s_samples;
-    if (d == 0 && c != 0) // quadratic case: U
-    {
-        const double step = 2.0 * std::sqrt(std::abs(eps / c));
-        for (double s = s_start; s < s_end; s += step)
-            s_samples.push_back(s);
-    }
-    else // cubic case
-    {
-        // transform to parametric form
-        const double d_p =
-            -d * s_start * s_start * s_start + d * s_end * s_end * s_end - 3 * d * s_start * s_end * s_end + 3 * d * s_start * s_start * s_end;
-        const double c_p = 3 * d * s_start * s_start * s_start + 3 * d * s_start * s_end * s_end - 6 * d * s_start * s_start * s_end +
-                           c * s_start * s_start + c * s_end * s_end - 2 * c * s_start * s_end;
-        const double b_p = -3 * d * s_start * s_start * s_start + 3 * d * s_start * s_start * s_end - 2 * c * s_start * s_start +
-                           2 * c * s_start * s_end - b * s_start + b * s_end;
-        const double a_p = d * s_start * s_start * s_start + c * s_start * s_start + b * s_start + a;
-
-        const std::array<Vec1D, 4> coefficients = {{{a_p}, {b_p}, {c_p}, {d_p}}};
-        const std::set<double>     p_vals = CubicBezier1D(CubicBezier1D::get_control_points(coefficients)).approximate_linear(eps);
-
-        s_samples.push_back(s_start);
-        for (const double p : p_vals)
-            s_samples.push_back(p * (s_end - s_start) + s_start);
-    }
-
-    if ((s_end - s_samples.back()) < 1e-9 && (s_samples.size() != 1))
-        s_samples.back() = s_end;
-    else
-        s_samples.push_back(s_end);
-
-    std::set<double> s_sample_set(s_samples.begin(), s_samples.end());
-    return s_sample_set;
+void CubicPoly::subtract(const CubicPoly& other)
+{
+    a -= other.a;
+    b -= other.b;
+    c -= other.c;
+    d -= other.d;
 }
 
 void CubicPoly::negate()
@@ -184,12 +164,9 @@ CubicProfile CubicProfile::add(const CubicProfile& other) const
             continue;
         }
 
-        CubicPoly res;
-        res.a = this_poly->a + other_poly->a;
-        res.b = this_poly->b + other_poly->b;
-        res.c = this_poly->c + other_poly->c;
-        res.d = this_poly->d + other_poly->d;
-        retval.s_to_poly[s] = res;
+        CubicPoly result = *this_poly;
+        result.add(*other_poly);
+        retval.s_to_poly[s] = result;
     }
     return retval;
 }
@@ -207,57 +184,6 @@ std::optional<CubicPoly> CubicProfile::get_poly(double s) const
     if (target_poly_iter != this->s_to_poly.begin())
         target_poly_iter--;
     return target_poly_iter->second;
-}
-
-double CubicProfile::max_abs_value(double s_start, double s_end) const
-{
-    if ((s_start == s_end) || this->s_to_poly.empty())
-        return 0;
-
-    auto poly_end_iter = this->s_to_poly.lower_bound(s_end);
-    auto poly_start_iter = this->s_to_poly.upper_bound(s_start);
-    if (poly_start_iter != this->s_to_poly.begin())
-        poly_start_iter--;
-
-    double max_abs_value = 0;
-    for (auto poly_iter = poly_start_iter; poly_iter != poly_end_iter; poly_iter++)
-    {
-        const double s_start_poly = std::max(poly_iter->first, s_start);
-        const double s_end_poly = (std::next(poly_iter) == poly_end_iter) ? s_end : std::min(std::next(poly_iter)->first, s_end);
-        max_abs_value = std::max(max_abs_value, poly_iter->second.max_abs_value(s_start_poly, s_end_poly));
-    }
-
-    return max_abs_value;
-}
-
-std::set<double> CubicProfile::approximate_linear(double eps, double s_start, double s_end) const
-{
-    if ((s_start == s_end) || this->s_to_poly.empty())
-        return {};
-
-    auto poly_end_iter = this->s_to_poly.lower_bound(s_end);
-    auto poly_start_iter = this->s_to_poly.upper_bound(s_start);
-    if (poly_start_iter != this->s_to_poly.begin())
-        poly_start_iter--;
-
-    std::set<double> s_samples;
-    for (auto poly_iter = poly_start_iter; poly_iter != poly_end_iter; poly_iter++)
-    {
-        const double s_start_poly = std::max(poly_iter->first, s_start);
-        const double s_end_poly = (std::next(poly_iter) == poly_end_iter) ? s_end : std::min(std::next(poly_iter)->first, s_end);
-
-        std::set<double> s_samples_poly = poly_iter->second.approximate_linear(eps, s_start_poly, s_end_poly);
-        if (s_samples_poly.size() < 2)
-        {
-            std::string err_msg = std::string("expected at least two sample points, got ") + std::to_string(s_samples_poly.size()) +
-                                  std::string(" for [") + std::to_string(s_start_poly) + ' ' + std::to_string(s_end_poly) + ']';
-            throw std::runtime_error(err_msg);
-        }
-
-        s_samples.insert(s_samples_poly.begin(), s_samples_poly.end());
-    }
-
-    return s_samples;
 }
 
 } // namespace odr

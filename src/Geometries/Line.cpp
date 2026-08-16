@@ -26,9 +26,4 @@ Vec2D Line::derivative([[maybe_unused]] double s) const
     return {{std::cos(hdg), std::sin(hdg)}};
 }
 
-std::set<double> Line::approximate_linear([[maybe_unused]] double eps) const
-{
-    return {s, s + length};
-}
-
 } // namespace odr

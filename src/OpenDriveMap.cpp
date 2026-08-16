@@ -324,9 +324,9 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     continue;
                 }
 
-                road->crossfall.s_to_poly.emplace(s, *crossfall_poly);
                 const std::optional<Crossfall::Side> side = try_get_enum<Crossfall::Side>(crossfall_node, "side");
-                road->crossfall.s_to_side[s] = side.value_or(Crossfall::Side::Both); // default to 'both'
+                road->crossfall.records.insert_or_assign(
+                    s, Crossfall::Record{*crossfall_poly, side.value_or(Crossfall::Side::Both)}); // default to 'both'
             }
 
             if (const pugi::xml_node shape_node = lateral_profile_node.child("shape"))

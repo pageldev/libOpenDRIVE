@@ -16,6 +16,7 @@ using Vec = std::array<T, Dim>;
 using Vec1D = Vec<double, 1>;
 using Vec2D = Vec<double, 2>;
 using Vec3D = Vec<double, 3>;
+using Line2D = std::vector<Vec2D>;
 using Line3D = std::vector<Vec3D>;
 
 template<typename T,

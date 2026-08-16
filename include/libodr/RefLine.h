@@ -25,11 +25,9 @@ struct RefLine
     const RoadGeometry*   get_geometry(double s) const;
     RoadGeometry*         get_geometry(double s);
 
-    Vec3D            get_xyz(double s) const;
-    Vec3D            derivative(double s) const;
-    Line3D           get_line(double s_start, double s_end, double eps) const;
-    double           match(double x, double y) const;
-    std::set<double> approximate_linear(double eps, double s_start, double s_end) const;
+    Vec3D  get_xyz(double s) const;
+    Vec3D  derivative(double s) const;
+    double match(double x, double y) const;
 
     double length;
 

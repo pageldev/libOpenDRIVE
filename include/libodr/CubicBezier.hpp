@@ -7,7 +7,6 @@
 #include <fmt/format.h>
 #include <map>
 #include <set>
-#include <sstream>
 
 namespace odr
 {
@@ -21,7 +20,6 @@ struct CubicBezier
     Vec<T, Dim>                evaluate(T t) const;
     Vec<T, Dim>                derivative(T t) const;
     T                          get_t(T arclen) const;
-    T                          get_length() const;
     std::array<Vec<T, Dim>, 4> get_subcurve(T t_start, T t_end) const;
     std::set<T>                approximate_linear(T eps) const;
 
@@ -127,18 +125,13 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
     if (arclen_adj == arcl_lower_bound)
         return t_lower_bound;
 
-    const T arcl_upper_bound = std::next(arclen_t_iter)->first;
-    const T t_upper_bound = std::next(arclen_t_iter)->second;
-    const T seg_arc_len = arcl_upper_bound - arcl_lower_bound;
-    const T seg_t_len = t_upper_bound - t_lower_bound;
+    const auto arclen_t_next_iter = std::next(arclen_t_iter);
+    const T    arcl_upper_bound = arclen_t_next_iter->first;
+    const T    t_upper_bound = arclen_t_next_iter->second;
+    const T    seg_arc_len = arcl_upper_bound - arcl_lower_bound;
+    const T    seg_t_len = t_upper_bound - t_lower_bound;
 
     return t_lower_bound + ((arclen_adj - arcl_lower_bound) / seg_arc_len) * seg_t_len;
-}
-
-template<typename T, std::size_t Dim>
-T CubicBezier<T, Dim>::get_length() const
-{
-    return std::prev(arclen_t.end())->first;
 }
 
 template<typename T, std::size_t Dim>
@@ -234,6 +227,5 @@ template<typename T, std::size_t Dim>
 const double CubicBezier<T, Dim>::LengthTolerance = 1e-2;
 
 typedef CubicBezier<double, 2> CubicBezier2D;
-typedef CubicBezier<double, 1> CubicBezier1D;
 
 } // namespace odr

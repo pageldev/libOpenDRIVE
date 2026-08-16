@@ -32,16 +32,4 @@ Vec2D Arc::derivative(double s) const
     return {{dx, dy}};
 }
 
-std::set<double> Arc::approximate_linear([[maybe_unused]] double eps) const
-{
-    // TODO: properly implement
-    const double     s_step = 0.01 / std::abs(this->curvature); // sample at approx. every 1°
-    std::set<double> s_samples;
-    for (double s_sample = s; s_sample < (s + length); s_sample += s_step)
-        s_samples.insert(s_sample);
-    s_samples.insert(s + length);
-
-    return s_samples;
-}
-
 } // namespace odr

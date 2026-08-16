@@ -22,7 +22,7 @@ namespace odr
 struct Lane;
 struct RoadMark;
 
-struct Crossfall : public CubicProfile // extends cubic with 'side' attribute
+struct Crossfall
 {
     enum class Side
     {
@@ -33,9 +33,15 @@ struct Crossfall : public CubicProfile // extends cubic with 'side' attribute
 
     Crossfall() = default;
 
+    struct Record
+    {
+        CubicPoly poly;
+        Side      side = Side::Both;
+    };
+
     double get(double s, bool on_left_side) const;
 
-    std::map<double, Side> s_to_side;
+    std::map<double, Record> records;
 };
 
 struct RoadLink
@@ -110,10 +116,6 @@ public:
                                 double                    default_z_offset = 0,
                                 bool                      enforce_road_bounds = false,
                                 std::vector<std::string>* warnings = nullptr) const;
-
-    std::set<double>
-    approximate_lane_border_linear(double lane_section_s, int lane_id, double s_start, double s_end, double eps, bool outer = true) const;
-    std::set<double> approximate_lane_border_linear(double lane_section_s, int lane_id, double eps, bool outer = true) const;
 
     std::string id;
     double      length;

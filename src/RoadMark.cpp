@@ -41,8 +41,8 @@ RoadMark::RoadMark(double                     s_offset,
     require_or_throw(!height || height > 0, "height must be greater than 0");
 }
 
-SingleRoadMark::SingleRoadMark(double s_start, double s_end, double t, double width, const std::string& type) noexcept :
-    s_start(s_start), s_end(s_end), t(t), width(width), type(type)
+SingleRoadMark::SingleRoadMark(double s_start, double s_end, double t_offset, double width, const std::string& type) noexcept :
+    s_start(s_start), s_end(s_end), t_offset(t_offset), width(width), type(type)
 {
 }
 

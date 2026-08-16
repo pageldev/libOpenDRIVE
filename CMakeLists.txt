@@ -67,6 +67,7 @@ set(SOURCES
     src/Geometries/Spiral/odrSpiral.cpp
     src/Junction.cpp
     src/Lane.cpp
+    src/Sampler.cpp
     src/LaneSection.cpp
     src/Mesh.cpp
     src/OpenDriveMap.cpp

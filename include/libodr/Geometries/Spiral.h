@@ -17,8 +17,6 @@ struct Spiral : public RoadGeometry
     Vec2D get_xy(double s) const override;
     Vec2D derivative(double s) const override;
 
-    std::set<double> approximate_linear(double eps) const override;
-
     double curv_start;
     double curv_end;
     double spiral_s_start; // internal s (curv_start/c_dot) != road s

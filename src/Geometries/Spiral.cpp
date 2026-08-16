@@ -48,17 +48,4 @@ Vec2D Spiral::derivative(double s) const
     return {{dx, dy}};
 }
 
-std::set<double> Spiral::approximate_linear(double eps) const
-{
-    require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
-
-    // TODO: properly implement
-    std::set<double> s_samples;
-    for (double s_sample = s; s_sample < (s + length); s_sample += (10 * eps))
-        s_samples.insert(s_sample);
-    s_samples.insert(s + length);
-
-    return s_samples;
-}
-
 } // namespace odr
