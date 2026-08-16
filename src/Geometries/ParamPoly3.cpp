@@ -71,7 +71,7 @@ Vec2D ParamPoly3::get_xy(double s) const
 Vec2D ParamPoly3::derivative(double s) const
 {
     const double p = this->cubic_bezier.get_t(s - this->s);
-    const Vec2D  dxy = this->cubic_bezier.derivative(p);
+    const Vec2D  dxy = normalize(this->cubic_bezier.derivative(p));
 
     const double h1 = std::cos(hdg);
     const double h2 = std::sin(hdg);
