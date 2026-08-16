@@ -163,7 +163,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             {
                 const std::string speed_record_max = node.attribute("max").as_string("");
                 const std::string speed_record_unit = node.attribute("unit").as_string("");
-                road->s_to_speed.emplace(s, SpeedRecord(speed_record_max, speed_record_unit));
+                road->s_to_speed.emplace(s, Speed(speed_record_max, speed_record_unit));
             }
         }
 

@@ -129,9 +129,9 @@ struct RoadObject
 
     std::optional<bool> is_dynamic;
 
-    std::vector<RoadObjectRepeat>   repeats;
-    std::vector<RoadObjectOutline>  outlines;
-    std::vector<LaneValidityRecord> lane_validities;
+    std::vector<RoadObjectRepeat>  repeats;
+    std::vector<RoadObjectOutline> outlines;
+    std::vector<LaneValidity>      lane_validities;
 };
 
 } // namespace odr

@@ -56,7 +56,7 @@ RoadLink::RoadLink(const std::string& id, const std::string& type_str, std::opti
     this->type = *type;
 }
 
-SpeedRecord::SpeedRecord(const std::string& max, const std::string& unit) : max(max), unit(unit) {}
+Speed::Speed(const std::string& max, const std::string& unit) : max(max), unit(unit) {}
 
 std::vector<LaneSection> Road::get_lane_sections() const
 {

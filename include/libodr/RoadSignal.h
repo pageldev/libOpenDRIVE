@@ -63,7 +63,7 @@ struct RoadSignal
     std::optional<std::string> text;
     std::optional<std::string> country;
 
-    std::vector<LaneValidityRecord> lane_validities;
+    std::vector<LaneValidity> lane_validities;
 };
 
 } // namespace odr

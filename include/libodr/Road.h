@@ -66,9 +66,9 @@ struct RoadLink
     std::optional<ContactPoint> contact_point;
 };
 
-struct SpeedRecord
+struct Speed
 {
-    SpeedRecord(const std::string& max, const std::string& unit);
+    Speed(const std::string& max, const std::string& unit);
 
     std::string max = "";
     std::string unit = "";
@@ -134,7 +134,7 @@ public:
 
     std::map<double, LaneSection>     s_to_lane_section;
     std::map<double, std::string>     s_to_type;
-    std::map<double, SpeedRecord>     s_to_speed;
+    std::map<double, Speed>           s_to_speed;
     std::map<std::string, RoadObject> id_to_object;
     std::map<std::string, RoadSignal> id_to_signal;
 };
