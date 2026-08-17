@@ -58,20 +58,6 @@ RoadLink::RoadLink(const std::string& id, const std::string& type_str, std::opti
 
 Speed::Speed(const std::string& max, const std::string& unit) : max(max), unit(unit) {}
 
-std::vector<LaneSection> Road::get_lane_sections() const
-{
-    return get_map_values(this->s_to_lane_section);
-}
-std::vector<RoadObject> Road::get_road_objects() const
-{
-    return get_map_values(this->id_to_object);
-}
-
-std::vector<RoadSignal> Road::get_road_signals() const
-{
-    return get_map_values(this->id_to_signal);
-}
-
 Road::Road(
     const std::string& id, double length, const std::string& junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
     id(id), length(length), junction(junction), traffic_rule(traffic_rule), name(name), ref_line(length)
@@ -90,12 +76,6 @@ double Road::get_lane_section_s(double s) const
     require_or_throw(s >= lane_section_s, "s must not be before lane section start {} (got {})", lane_section_s, s);
 
     return lane_section_s;
-}
-
-LaneSection Road::get_lane_section(double s) const
-{
-    const double lane_section_s = this->get_lane_section_s(s);
-    return this->s_to_lane_section.at(lane_section_s);
 }
 
 double Road::get_lane_section_end(const LaneSection& lane_section) const

@@ -89,12 +89,7 @@ public:
          std::optional<TrafficRule> traffic_rule = std::nullopt,
          std::optional<std::string> name = std::nullopt);
 
-    std::vector<LaneSection> get_lane_sections() const;
-    std::vector<RoadObject>  get_road_objects() const;
-    std::vector<RoadSignal>  get_road_signals() const;
-
-    double      get_lane_section_s(double s) const;
-    LaneSection get_lane_section(double s) const;
+    double get_lane_section_s(double s) const;
 
     double get_lane_section_end(const LaneSection& lane_section) const;
     double get_lane_section_length(const LaneSection& lane_section) const;

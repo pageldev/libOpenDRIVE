@@ -18,7 +18,7 @@ struct OpenDriveFixture
         this->odr_map = std::make_unique<odr::OpenDriveMap>();
         const odr::XodrParseResult parse_result = this->odr_map->load(xml_doc);
         REQUIRE(parse_result.errors.empty());
-        REQUIRE(!(this->odr_map->get_roads().empty()));
+        REQUIRE(!(this->odr_map->id_to_road.empty()));
     }
 
     pugi::xml_document                 xml_doc;
@@ -55,18 +55,18 @@ TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
     REQUIRE(path.size() == 15);
 
     // road sanity
-    for (const odr::Road& road : odr_map->get_roads())
+    for (const auto& [_, road] : odr_map->id_to_road)
     {
         INFO("road: " << road.id << ", length: " << road.length);
         REQUIRE(road.length >= 0.0);
         REQUIRE(!road.s_to_lane_section.empty());
-        for (const odr::LaneSection& ls : road.get_lane_sections())
+        for (const auto& [_, ls] : road.s_to_lane_section)
         {
             const double s_start = ls.s;
             const double s_end = road.get_lane_section_end(ls);
             REQUIRE(s_start >= 0.0);
             REQUIRE(s_end > s_start);
-            for (const odr::Lane& lane : ls.get_lanes())
+            for (const auto& [_, lane] : ls.id_to_lane)
             {
                 std::vector<odr::SingleRoadMark> roadmarks = lane.get_roadmarks(s_start, s_end);
                 (void)roadmarks; // silence unused var if not checked

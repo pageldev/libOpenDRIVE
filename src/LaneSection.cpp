@@ -12,11 +12,6 @@ LaneSection::LaneSection(double s) : s(s)
     require_or_throw(s >= 0, "s must be greater than or equal to 0 (got {})", s);
 }
 
-std::vector<Lane> LaneSection::get_lanes() const
-{
-    return get_map_values(this->id_to_lane);
-}
-
 int LaneSection::get_lane_id(double s, double t) const
 {
     // default to 0 so lane #0 is at t=0 if no lane offset is defined
@@ -41,16 +36,6 @@ int LaneSection::get_lane_id(double s, double t) const
         target_iter--;
 
     return target_iter->second;
-}
-
-Lane LaneSection::get_lane(int id) const
-{
-    return this->id_to_lane.at(id);
-}
-
-Lane LaneSection::get_lane(double s, double t) const
-{
-    return this->id_to_lane.at(this->get_lane_id(s, t));
 }
 
 } // namespace odr

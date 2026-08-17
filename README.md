@@ -22,16 +22,17 @@ for (const odr::XodrParseError& error : result.errors)
     std::cerr << error.node.path() << ": " << error.description << std::endl;
 
 // iterate roads
-for (odr::Road road : odr_map.get_roads())
+for (const auto& [, road] : odr_map.id_to_road)
     std::cout << "road: " << road.id << " length: " << road.length << std::endl;
 
 // get xyz point for road coordinates
-odr::Road odr_road = odr_map.get_road("17");
+const odr::Road& odr_road = odr_map.id_to_road.at("17");
 odr::Vec3D pt_xyz = odr_road.get_xyz(2.1 /*s*/, 1.0 /*t*/, 0.0 /*h*/);
 
 // access road network attributes
-int lane_id = odr_road.get_lane_section(0.0).get_lane(-1).id;
-std::optional<std::string> lane_type = odr_road.get_lane_section(0.0).get_lane(-1).type;
+const odr::Lane& lane = odr_road.s_to_lane_section.at(0.0).id_to_lane.at(-1);
+int lane_id = lane.id;
+std::optional<std::string> lane_type = lane.type;
 
 // use routing graph
 odr::RoutingGraph routing_graph = odr_map.get_routing_graph();

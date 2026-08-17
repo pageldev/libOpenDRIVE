@@ -851,26 +851,6 @@ void OpenDriveMap::reset()
     *this = OpenDriveMap{};
 }
 
-Road OpenDriveMap::get_road(const std::string& id) const
-{
-    return this->id_to_road.at(id);
-}
-
-Junction OpenDriveMap::get_junction(const std::string& id) const
-{
-    return this->id_to_junction.at(id);
-}
-
-std::vector<Road> OpenDriveMap::get_roads() const
-{
-    return get_map_values(this->id_to_road);
-}
-
-std::vector<Junction> OpenDriveMap::get_junctions() const
-{
-    return get_map_values(this->id_to_junction);
-}
-
 Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const
 {
     Mesh3D lanes_mesh;

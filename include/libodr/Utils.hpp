@@ -49,14 +49,6 @@ std::set<K> get_map_keys(const std::map<K, V>& input_map)
 }
 
 template<class K, class V>
-std::vector<V> get_map_values(const std::map<K, V>& input_map)
-{
-    std::vector<V> retval;
-    std::transform(input_map.begin(), input_map.end(), std::back_inserter(retval), [](const auto& pair) { return pair.second; });
-    return retval;
-}
-
-template<class K, class V>
 V get_nearest_lower_val(const std::map<K, V>& input_map, const K& k)
 {
     auto kv_iter = input_map.upper_bound(k);
