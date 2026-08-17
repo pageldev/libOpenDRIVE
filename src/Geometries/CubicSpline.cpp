@@ -10,38 +10,38 @@
 namespace odr
 {
 
-CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin)
+CubicPoly::CubicPoly(double a, double b, double c, double d, double s_origin) : a(a), b(b), c(c), d(d), s_origin(s_origin)
 {
-    require_or_throw(!std::isnan(a), "a must not be NaN");
-    require_or_throw(!std::isnan(b), "b must not be NaN");
-    require_or_throw(!std::isnan(c), "c must not be NaN");
-    require_or_throw(!std::isnan(d), "d must not be NaN");
-    require_or_throw(!std::isnan(s_origin), "s origin must not be NaN");
-
-    // ds = s - s_origin => resolve to polynomial form
-    // make CubicPolys work on absolute s position => makes CubicProfile::add work
-    this->a = a - b * s_origin + c * s_origin * s_origin - d * s_origin * s_origin * s_origin;
-    this->b = b - 2 * c * s_origin + 3 * d * s_origin * s_origin;
-    this->c = c - 3 * d * s_origin;
-    this->d = d;
+    require_or_throw(std::isfinite(a), "a must not be NaN");
+    require_or_throw(std::isfinite(b), "b must not be NaN");
+    require_or_throw(std::isfinite(c), "c must not be NaN");
+    require_or_throw(std::isfinite(d), "d must not be NaN");
+    require_or_throw(std::isfinite(s_origin), "s origin must not be NaN");
 }
 
 double CubicPoly::evaluate(double s) const
 {
-    return a + b * s + c * s * s + d * s * s * s;
+    const double ds = s - s_origin;
+    return a + ds * (b + ds * (c + ds * d));
 }
 
 double CubicPoly::derivative(double s) const
 {
-    return b + 2 * c * s + 3 * d * s * s;
+    const double ds = s - s_origin;
+    return b + ds * (2 * c + 3 * ds * d);
 }
 
 CubicBounds CubicPoly::bounds(double s_start, double s_end) const
 {
     CubicBounds out;
 
-    const double val_start = evaluate(s_start);
-    const double val_end = evaluate(s_end);
+    s_start -= s_origin;
+    s_end -= s_origin;
+    const auto evaluate_local = [&](double ds) { return a + ds * (b + ds * (c + ds * d)); };
+    const auto derivative_local = [&](double ds) { return b + ds * (2 * c + 3 * ds * d); };
+
+    const double val_start = evaluate_local(s_start);
+    const double val_end = evaluate_local(s_end);
     out.min = std::min(val_start, val_end);
     out.max = std::max(val_start, val_end);
 
@@ -61,17 +61,17 @@ CubicBounds CubicPoly::bounds(double s_start, double s_end) const
         if (discriminant >= 0) // internal extrema may exceed the endpoint bounds
         {
             const double root = std::sqrt(discriminant);
-            include_in_range(out.min, out.max, (-c - root) / (3 * d), [&](double s) { return evaluate(s); }); // local max
-            include_in_range(out.min, out.max, (-c + root) / (3 * d), [&](double s) { return evaluate(s); }); // local min
+            include_in_range(out.min, out.max, (-c - root) / (3 * d), evaluate_local); // local max
+            include_in_range(out.min, out.max, (-c + root) / (3 * d), evaluate_local); // local min
         }
     }
     else if (c != 0) // d == 0, c != 0 -> linear derivative
-        include_in_range(out.min, out.max, -b / (2 * c), [&](double s) { return evaluate(s); });
+        include_in_range(out.min, out.max, -b / (2 * c), evaluate_local);
 
-    out.d1_min = std::min(derivative(s_start), derivative(s_end));
-    out.d1_max = std::max(derivative(s_start), derivative(s_end));
+    out.d1_min = std::min(derivative_local(s_start), derivative_local(s_end));
+    out.d1_max = std::max(derivative_local(s_start), derivative_local(s_end));
     if (d != 0)
-        include_in_range(out.d1_min, out.d1_max, -c / (3 * d), [&](double s) { return derivative(s); });
+        include_in_range(out.d1_min, out.d1_max, -c / (3 * d), derivative_local);
 
     out.d1 = std::max(std::abs(out.d1_min), std::abs(out.d1_max));
     out.d2 = std::max(std::abs(2 * c + 6 * d * s_start), std::abs(2 * c + 6 * d * s_end));
@@ -80,20 +80,38 @@ CubicBounds CubicPoly::bounds(double s_start, double s_end) const
     return out;
 }
 
+void CubicPoly::rebase(double s_origin_new)
+{
+    a = evaluate(s_origin_new);
+    b = derivative(s_origin_new);
+    c += 3 * (s_origin_new - s_origin) * d;
+    s_origin = s_origin_new;
+}
+
 void CubicPoly::add(const CubicPoly& other)
 {
-    a += other.a;
-    b += other.b;
-    c += other.c;
-    d += other.d;
+    const double new_origin = std::max(s_origin, other.s_origin);
+    rebase(new_origin);
+    CubicPoly other_rebased = other;
+    other_rebased.rebase(new_origin);
+
+    a += other_rebased.a;
+    b += other_rebased.b;
+    c += other_rebased.c;
+    d += other_rebased.d;
 }
 
 void CubicPoly::subtract(const CubicPoly& other)
 {
-    a -= other.a;
-    b -= other.b;
-    c -= other.c;
-    d -= other.d;
+    const double new_origin = std::max(s_origin, other.s_origin);
+    rebase(new_origin);
+    CubicPoly other_rebased = other;
+    other_rebased.rebase(new_origin);
+
+    a -= other_rebased.a;
+    b -= other_rebased.b;
+    c -= other_rebased.c;
+    d -= other_rebased.d;
 }
 
 void CubicPoly::negate()

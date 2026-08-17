@@ -486,10 +486,9 @@ void LaneSampler::refine_border_interval(std::set<double>& samples, double s_sta
         height.value += std::abs(interval.inner_height_offset); // get_lane_surface_pt uses the inner height for a zero-width lane
     else
     {
-        const bool width_contains_zero = interval.width.min <= 0 && interval.width.max >= 0;
-        if (t_offset == 0 && !width_contains_zero)
+        if (t_offset == 0)
             height.value += std::abs(interval.outer_height_offset);
-        else if (width_contains_zero)
+        else if (interval.width.min <= 0 && interval.width.max >= 0) // width contains zero -> infinite bounds
         {
             height.value = std::numeric_limits<double>::infinity();
             height.d1 = std::numeric_limits<double>::infinity();

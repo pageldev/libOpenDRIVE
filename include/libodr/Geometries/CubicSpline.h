@@ -20,7 +20,7 @@ struct CubicBounds
 struct CubicPoly
 {
     CubicPoly() = default;
-    CubicPoly(double a, double b, double c, double d, double s_origin = 0.0); // constructs a global cubic from local coefficients in (s - s_origin)
+    CubicPoly(double a, double b, double c, double d, double s_origin = 0.0);
 
     double      evaluate(double s) const;
     double      derivative(double s) const;
@@ -36,6 +36,10 @@ struct CubicPoly
     double b = 0;
     double c = 0;
     double d = 0;
+    double s_origin = 0;
+
+private:
+    void rebase(double s_origin_new);
 };
 
 struct CubicProfile
