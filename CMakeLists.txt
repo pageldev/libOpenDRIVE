@@ -70,6 +70,7 @@ set(SOURCES
     src/Sampler.cpp
     src/LaneSection.cpp
     src/Mesh.cpp
+    src/OdrNode.cpp
     src/OpenDriveMap.cpp
     src/RefLine.cpp
     src/Road.cpp
