@@ -1,5 +1,6 @@
 #pragma once
 #include "libodr/Lane.h"
+#include "libodr/OdrNode.h"
 
 #include <map>
 #include <string>
@@ -7,7 +8,7 @@
 namespace odr
 {
 
-struct LaneSection
+struct LaneSection : public OdrNode
 {
     LaneSection(double s);
 

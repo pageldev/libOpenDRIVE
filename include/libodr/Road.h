@@ -4,6 +4,7 @@
 #include "libodr/LaneSection.h"
 #include "libodr/Math.hpp"
 #include "libodr/Mesh.h"
+#include "libodr/OdrNode.h"
 #include "libodr/RefLine.h"
 #include "libodr/RoadMark.h"
 #include "libodr/RoadObject.h"
@@ -44,7 +45,7 @@ struct Crossfall
     std::map<double, Record> records;
 };
 
-struct RoadLink
+struct RoadLink : public OdrNode
 {
     enum class Type
     {
@@ -66,7 +67,7 @@ struct RoadLink
     std::optional<ContactPoint> contact_point;
 };
 
-struct Speed
+struct Speed : public OdrNode
 {
     Speed(const std::string& max, const std::string& unit);
 
@@ -74,7 +75,7 @@ struct Speed
     std::string unit = "";
 };
 
-class Road
+class Road : public OdrNode
 {
 public:
     enum class TrafficRule

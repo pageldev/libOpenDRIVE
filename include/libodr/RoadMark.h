@@ -1,4 +1,5 @@
 #pragma once
+#include "libodr/OdrNode.h"
 #include "libodr/Utils.hpp"
 
 #include <functional>
@@ -10,7 +11,7 @@
 namespace odr
 {
 
-struct RoadMarkLine
+struct RoadMarkLine : public OdrNode
 {
     RoadMarkLine(double                     s_offset,
                  double                     t_offset,
@@ -31,7 +32,7 @@ struct RoadMarkLine
     std::optional<std::string> rule;
 };
 
-struct RoadMarkType
+struct RoadMarkType : public OdrNode
 {
     RoadMarkType(const std::string& name, std::optional<double> width = std::nullopt);
 
@@ -41,7 +42,7 @@ struct RoadMarkType
     std::vector<RoadMarkLine> lines;
 };
 
-struct RoadMark
+struct RoadMark : public OdrNode
 {
     RoadMark(double                     s_offset,
              const std::string&         type,

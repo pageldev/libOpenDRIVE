@@ -1,17 +1,16 @@
 #pragma once
-#include "libodr/Utils.hpp"
+#include "libodr/OdrNode.h"
 
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
+#include <vector>
 
 namespace odr
 {
 
-struct JunctionLaneLink
+struct JunctionLaneLink : public OdrNode
 {
     JunctionLaneLink(int from, int to);
 
@@ -19,24 +18,7 @@ struct JunctionLaneLink
     int to;
 };
 
-} // namespace odr
-
-namespace std
-{
-template<>
-struct less<odr::JunctionLaneLink>
-{
-    bool operator()(const odr::JunctionLaneLink& lhs, const odr::JunctionLaneLink& rhs) const
-    {
-        return odr::compare_class_members(lhs, rhs, less<void>(), &odr::JunctionLaneLink::from, &odr::JunctionLaneLink::to);
-    }
-};
-} // namespace std
-
-namespace odr
-{
-
-struct JunctionConnection
+struct JunctionConnection : public OdrNode
 {
     enum class ContactPoint
     {
@@ -55,10 +37,10 @@ struct JunctionConnection
     std::string  connecting_road;
     ContactPoint contact_point; // contact point on the connectingRoad
 
-    std::set<JunctionLaneLink> lane_links;
+    std::vector<JunctionLaneLink> lane_links;
 };
 
-struct JunctionPriority
+struct JunctionPriority : public OdrNode
 {
     JunctionPriority(const std::string& high, const std::string& low);
 
@@ -66,24 +48,7 @@ struct JunctionPriority
     std::string low;
 };
 
-} // namespace odr
-
-namespace std
-{
-template<>
-struct less<odr::JunctionPriority>
-{
-    bool operator()(const odr::JunctionPriority& lhs, const odr::JunctionPriority& rhs) const
-    {
-        return odr::compare_class_members(lhs, rhs, less<void>(), &odr::JunctionPriority::high, &odr::JunctionPriority::low);
-    }
-};
-} // namespace std
-
-namespace odr
-{
-
-struct JunctionController
+struct JunctionController : public OdrNode
 {
     JunctionController(const std::string& id, std::optional<std::string> type = std::nullopt, std::optional<int64_t> sequence = std::nullopt);
 
@@ -93,7 +58,7 @@ struct JunctionController
     std::optional<uint32_t>    sequence;
 };
 
-class Junction
+class Junction : public OdrNode
 {
 public:
     Junction(const std::string& id, std::optional<std::string> name = std::nullopt);
@@ -104,7 +69,7 @@ public:
 
     std::map<std::string, JunctionConnection> id_to_connection;
     std::map<std::string, JunctionController> id_to_controller;
-    std::set<JunctionPriority>                priorities;
+    std::vector<JunctionPriority>             priorities;
 };
 
 } // namespace odr

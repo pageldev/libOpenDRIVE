@@ -792,7 +792,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({lane_link_node, "attributes 'from' and 'to' are required"});
                     continue;
                 }
-                connection.lane_links.emplace(*from_lane, *to_lane);
+                connection.lane_links.emplace_back(*from_lane, *to_lane);
             }
         }
 
@@ -810,7 +810,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 result.errors.push_back({priority_node, "attributes 'low' and 'high' are required"});
                 continue;
             }
-            junction.priorities.emplace(*prio_high, *prio_low);
+            junction.priorities.emplace_back(*prio_high, *prio_low);
         }
 
         for (const pugi::xml_node controller_node : junction_node.children("controller"))
@@ -843,12 +843,79 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
         }
     }
 
+    set_node_parents();
     return result;
 }
 
 void OpenDriveMap::reset()
 {
     *this = OpenDriveMap{};
+}
+
+void OpenDriveMap::set_node_parents()
+{
+    for (auto& [_, road] : id_to_road)
+    {
+        if (road.predecessor)
+            road.predecessor->set_parent(&road);
+        if (road.successor)
+            road.successor->set_parent(&road);
+        for (auto& [_, speed] : road.s_to_speed)
+            speed.set_parent(&road);
+        for (auto& [_, lane_section] : road.s_to_lane_section)
+        {
+            lane_section.set_parent(&road);
+            for (auto& [_, lane] : lane_section.id_to_lane)
+            {
+                lane.set_parent(&lane_section);
+                for (auto& [_, height] : lane.s_to_height_offset)
+                    height.set_parent(&lane);
+                for (auto& [_, road_mark] : lane.s_to_road_mark)
+                {
+                    road_mark.set_parent(&lane);
+                    if (!road_mark.type_elem)
+                        continue;
+                    RoadMarkType& road_mark_type = *road_mark.type_elem;
+                    road_mark_type.set_parent(&road_mark);
+                    for (RoadMarkLine& line : road_mark_type.lines)
+                        line.set_parent(&road_mark_type);
+                }
+            }
+        }
+        for (auto& [_, object] : road.id_to_object)
+        {
+            object.set_parent(&road);
+            for (RoadObjectRepeat& repeat : object.repeats)
+                repeat.set_parent(&object);
+            for (RoadObjectOutline& outline : object.outlines)
+            {
+                outline.set_parent(&object);
+                for (RoadObjectCorner& corner : outline.outline)
+                    corner.set_parent(&outline);
+            }
+            for (LaneValidity& validity : object.lane_validities)
+                validity.set_parent(&object);
+        }
+        for (auto& [_, signal] : road.id_to_signal)
+        {
+            signal.set_parent(&road);
+            for (LaneValidity& validity : signal.lane_validities)
+                validity.set_parent(&signal);
+        }
+    }
+    for (auto& [_, junction] : id_to_junction)
+    {
+        for (auto& [_, connection] : junction.id_to_connection)
+        {
+            connection.set_parent(&junction);
+            for (JunctionLaneLink& lane_link : connection.lane_links)
+                lane_link.set_parent(&connection);
+        }
+        for (JunctionPriority& priority : junction.priorities)
+            priority.set_parent(&junction);
+        for (auto& [controller_id, controller] : junction.id_to_controller)
+            controller.set_parent(&junction);
+    }
 }
 
 Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<std::string>* warnings) const

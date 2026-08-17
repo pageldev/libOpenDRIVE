@@ -2,6 +2,7 @@
 #include "libodr/LaneValidity.h"
 #include "libodr/Math.hpp"
 #include "libodr/Mesh.h"
+#include "libodr/OdrNode.h"
 
 #include <optional>
 #include <string>
@@ -10,7 +11,7 @@
 namespace odr
 {
 
-struct RoadObjectRepeat
+struct RoadObjectRepeat : public OdrNode
 {
     RoadObjectRepeat(double                s,
                      double                length,
@@ -40,7 +41,7 @@ struct RoadObjectRepeat
     std::optional<double> width_end;
 };
 
-struct RoadObjectCorner
+struct RoadObjectCorner : public OdrNode
 {
     enum class Type
     {
@@ -58,7 +59,7 @@ struct RoadObjectCorner
     std::optional<int> id;
 };
 
-struct RoadObjectOutline
+struct RoadObjectOutline : public OdrNode
 {
     RoadObjectOutline(std::optional<int>         id = std::nullopt,
                       std::optional<std::string> fill_type = std::nullopt,
@@ -75,7 +76,7 @@ struct RoadObjectOutline
     std::vector<RoadObjectCorner> outline;
 };
 
-struct RoadObject
+struct RoadObject : public OdrNode
 {
     enum class Orientation
     {

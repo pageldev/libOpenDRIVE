@@ -1,6 +1,7 @@
 #pragma once
 #include "libodr/LaneValidity.h"
 #include "libodr/Mesh.h"
+#include "libodr/OdrNode.h"
 #include "libodr/RoadObject.h"
 
 #include <optional>
@@ -10,7 +11,7 @@
 namespace odr
 {
 
-struct RoadSignal
+struct RoadSignal : public OdrNode
 {
     RoadSignal(const std::string&         id,
                const std::string&         road_id,

@@ -1,5 +1,6 @@
 #pragma once
 #include "libodr/Geometries/CubicSpline.h"
+#include "libodr/OdrNode.h"
 #include "libodr/RoadMark.h"
 
 #include <cstddef>
@@ -15,7 +16,7 @@
 namespace odr
 {
 
-struct HeightOffset
+struct HeightOffset : public OdrNode
 {
     HeightOffset(double s_offset, double inner, double outer);
 
@@ -49,7 +50,7 @@ inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
     return os << lk.to_string();
 }
 
-struct Lane
+struct Lane : public OdrNode
 {
     Lane(int id, std::optional<std::string> type = std::nullopt, std::optional<bool> level = std::nullopt);
 

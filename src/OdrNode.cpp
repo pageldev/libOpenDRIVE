@@ -1,37 +1,57 @@
 #include "libodr/OdrNode.h"
 
+#include <utility>
+
 namespace odr
 {
 
-OdrNode::OdrNode(const OdrNode&) noexcept : parent_(nullptr) {}
+OdrNode::OdrNode(const OdrNode&) noexcept {}
 
-OdrNode::OdrNode(OdrNode&&) noexcept : parent_(nullptr) {}
+OdrNode::OdrNode(OdrNode&& other) noexcept : self_(std::move(other.self_)), parent_(std::move(other.parent_))
+{
+    if (self_)
+        *self_ = this;
+    other.parent_.reset();
+}
 
 OdrNode& OdrNode::operator=(const OdrNode&) noexcept
 {
-    parent_ = nullptr;
+    parent_.reset();
     return *this;
 }
 
-OdrNode& OdrNode::operator=(OdrNode&&) noexcept
+OdrNode& OdrNode::operator=(OdrNode&& other) noexcept
 {
-    parent_ = nullptr;
+    if (this == &other)
+        return *this;
+
+    if (other.self_)
+    {
+        self_ = std::move(other.self_);
+        *self_ = this;
+    }
+    parent_ = std::move(other.parent_);
+    other.parent_.reset();
     return *this;
 }
 
 OdrNode* OdrNode::parent() noexcept
 {
-    return parent_;
+    const std::shared_ptr<OdrNode*> parent = parent_.lock();
+    return parent ? *parent : nullptr;
 }
 
 const OdrNode* OdrNode::parent() const noexcept
 {
-    return parent_;
+    const std::shared_ptr<OdrNode*> parent = parent_.lock();
+    return parent ? *parent : nullptr;
 }
 
 void OdrNode::set_parent(OdrNode* parent)
 {
-    parent_ = parent;
+    if (parent && !parent->self_)
+        parent->self_ = std::make_shared<OdrNode*>(parent);
+    parent_ = parent ? parent->self_ : std::shared_ptr<OdrNode*>{};
 }
 
 } // namespace odr

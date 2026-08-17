@@ -2,6 +2,7 @@
 #include "libodr/Junction.h"
 #include "libodr/Lane.h"
 #include "libodr/Mesh.h"
+#include "libodr/OdrNode.h"
 #include "libodr/Road.h"
 #include "libodr/RoutingGraph.h"
 
@@ -15,7 +16,7 @@
 namespace odr
 {
 
-struct OpenDriveMapHeader
+struct OpenDriveMapHeader : public OdrNode
 {
     OpenDriveMapHeader(std::optional<int>         rev_major = std::nullopt,
                        std::optional<int>         rev_minor = std::nullopt,
@@ -70,6 +71,7 @@ public:
                          bool                      treat_value_zero_as_missing = true);
 
     void reset();
+    void set_node_parents();
 
     Mesh3D       get_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
     RoutingGraph get_routing_graph(std::vector<std::string>* warnings = nullptr) const;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace odr
 {
 
@@ -19,7 +21,8 @@ struct OdrNode
     void set_parent(OdrNode* parent);
 
 private:
-    OdrNode* parent_ = nullptr;
+    std::shared_ptr<OdrNode*> self_;
+    std::weak_ptr<OdrNode*>   parent_;
 };
 
 } // namespace odr
