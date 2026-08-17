@@ -927,23 +927,24 @@ Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<
 
     for (const auto& [road_id, road] : this->id_to_road)
     {
-        for (const auto& [s_lane_section, lanesec] : road.s_to_lane_section)
+        for (const auto& [_, lanesec] : road.s_to_lane_section)
         {
-            for (const auto& [lane_id, lane] : lanesec.id_to_lane)
+            const double s_lanesec_end = lanesec.get_end();
+            for (const auto& [_, lane] : lanesec.id_to_lane)
             {
-                lanes_mesh.add_mesh(road.get_lane_mesh(s_lane_section, lane_id, eps));
+                lanes_mesh.add_mesh(lane.get_mesh(eps));
 
-                const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s, road.get_lane_section_end(lanesec));
+                const std::vector<SingleRoadMark> roadmarks = lane.get_roadmarks(lanesec.s, s_lanesec_end);
                 for (const SingleRoadMark& roadmark : roadmarks)
-                    roadmarks_mesh.add_mesh(road.get_roadmark_mesh(s_lane_section, lane_id, roadmark, eps, enforce_road_bounds));
+                    roadmarks_mesh.add_mesh(lane.get_roadmark_mesh(roadmark, eps, enforce_road_bounds));
             }
         }
 
-        for (const auto& road_object_entry : road.id_to_object)
-            road_objects_mesh.add_mesh(road.get_road_object_mesh(road_object_entry.second, eps, 0, 0, enforce_road_bounds, warnings));
+        for (const auto& [_, road_object] : road.id_to_object)
+            road_objects_mesh.add_mesh(road_object.get_mesh(eps, 0, 0, enforce_road_bounds, warnings));
 
-        for (const auto& road_signal_entry : road.id_to_signal)
-            road_signals_mesh.add_mesh(road.get_road_signal_mesh(road_signal_entry.second, enforce_road_bounds));
+        for (const auto& [_, road_signal] : road.id_to_signal)
+            road_signals_mesh.add_mesh(road_signal.get_mesh(enforce_road_bounds));
     }
 
     Mesh3D out_mesh;
@@ -1017,7 +1018,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     {
         const Road&        from_road = this->id_to_road.at(from.road_id);
         const LaneSection& from_lane_section = from_road.s_to_lane_section.at(from.lane_section_s);
-        const double       lane_length = from_road.get_lane_section_length(from_lane_section);
+        const double       lane_length = from_lane_section.get_length();
         routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
     };
 
@@ -1128,7 +1129,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
 
                 const LaneKey from(in_road.id, incoming_lanesec.s, from_lane_iter->second.id);
                 const LaneKey to(conn_road.id, connecting_lanesec.s, to_lane_iter->second.id);
-                const double  lane_length = in_road.get_lane_section_length(incoming_lanesec);
+                const double  lane_length = incoming_lanesec.get_length();
 
                 routing_graph.add_edge(RoutingGraphEdge(from, to, lane_length));
             }

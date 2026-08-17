@@ -9,6 +9,7 @@ namespace odr
 class Road;
 struct CubicBounds;
 struct Lane;
+struct LaneSection;
 struct RefLine;
 struct RoadGeometry;
 
@@ -73,17 +74,17 @@ private:
 
 struct LaneSampler
 {
-    LaneSampler(const Road& road, double lane_section_s, const Lane& lane, const Lane& inner_lane);
+    explicit LaneSampler(const Lane& lane);
 
     EdgePoints edge_points(double s) const;
 
     std::set<double> get_mesh_s_samples(double s_start, double s_end, double eps, bool allow_extrapolate = true) const;
     std::set<double> get_border_s_samples(double s_start, double s_end, double t_offset, double eps, bool allow_extrapolate = true) const;
 
-    const Road&  road;
-    const double lane_section_s;
-    const Lane&  lane;
-    const Lane&  inner_lane;
+    const Lane&        lane;
+    const LaneSection& lane_section;
+    const Road&        road;
+    const Lane&        inner_lane;
 
 private:
     void refine_interval(std::set<double>& samples, double s_start, double s_end, const EdgePoints& start, const EdgePoints& end, double eps) const;

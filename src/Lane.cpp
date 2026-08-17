@@ -1,10 +1,18 @@
 #include "libodr/Lane.h"
+#include "libodr/LaneSection.h"
+#include "libodr/Mesh.h"
+#include "libodr/Road.h"
 #include "libodr/RoadMark.h"
+#include "libodr/Sampler.h"
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
 #include <fmt/format.h>
 #include <iterator>
+#include <set>
 
 namespace odr
 {
@@ -26,6 +34,126 @@ std::string LaneKey::to_string() const
 }
 
 Lane::Lane(int id, std::optional<std::string> type, std::optional<bool> level) : id(id), type(type), level(level) {}
+
+Vec3D Lane::get_surface_pt(double s, double t, Vec3D* vn, bool allow_extrapolate) const
+{
+    const LaneSection& lane_section = *get_parent_or_throw<LaneSection>(*this);
+    const Road&        road = *get_parent_or_throw<Road>(lane_section);
+
+    const double lane_section_s_end = lane_section.get_end();
+    require_or_throw(allow_extrapolate || (s >= lane_section.s && s <= lane_section_s_end),
+                     "s must be in lane section range [{}, {}] (got {})",
+                     lane_section.s,
+                     lane_section_s_end,
+                     s);
+    const double s_road_clamped = std::min(std::max(s, 0.0), road.length);
+
+    const Lane& inner_lane = lane_section.id_to_lane.at(next_towards_zero(this->id));
+
+    const std::optional<double> t_inner_brdr_opt = inner_lane.outer_border.evaluate(s_road_clamped);
+    require_or_throw(t_inner_brdr_opt.has_value() || inner_lane.id == 0, "lane {} has no outer border at s {}", inner_lane.id, s_road_clamped);
+    const double t_inner_brdr = t_inner_brdr_opt.value_or(0.0);
+    double       h = 0;
+
+    // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1 Lane Record:
+    // "keep lane on level, .i.e. do not apply superelevation or crossfall"
+    if (this->level.value_or(false))
+    {
+        // compensate crossfall and superelevation to level lane
+        const double alpha = road.crossfall.get(s_road_clamped, (this->id > 0));
+        const double theta = road.superelevation.evaluate(s_road_clamped).value_or(0.0);
+        h = -std::tan(alpha) * std::abs(t_inner_brdr) + std::tan(theta) * (t - t_inner_brdr);
+    }
+    else
+    {
+        h = -std::tan(road.crossfall.get(s_road_clamped, (this->id > 0))) * std::abs(t);
+    }
+
+    // OpenDRIVE® Format Specification, Rev. 1.4, 5.3.7.2.1.1.9 Lane Height Record:
+    // "The surface of a lane may be offset from the plane defined by the reference line and the corresponding elevation and crossfall entries"
+    if (!this->s_to_height_offset.empty())
+    {
+        const auto heights_iter = this->s_to_height_offset.upper_bound(s_road_clamped); // first element > s
+        if (heights_iter != this->s_to_height_offset.begin())                           // s after first <height> record
+        {
+            const HeightOffset&         height_offset = std::prev(heights_iter)->second;
+            const double                h_inner = height_offset.inner;
+            const double                h_outer = height_offset.outer;
+            const std::optional<double> t_outer_brdr = this->outer_border.evaluate(s_road_clamped);
+            require_or_throw(t_outer_brdr.has_value() || this->id == 0, "lane {} has no outer border at s {}", this->id, s_road_clamped);
+            const double t_outer_brdr_value = t_outer_brdr.value_or(0.0);
+            const double t_norm = (t_outer_brdr_value != t_inner_brdr) ? (t - t_inner_brdr) / (t_outer_brdr_value - t_inner_brdr) : 0.0; // [0,1]
+            h += t_norm * (h_outer - h_inner) + h_inner;
+        }
+    }
+
+    return road.get_xyz(s, t, h, nullptr, nullptr, vn, allow_extrapolate);
+}
+
+Mesh3D Lane::get_mesh(double eps, std::vector<uint32_t>* outline_indices) const
+{
+    const LaneSection&     lane_section = *get_parent_or_throw<LaneSection>(*this);
+    const LaneSampler      lane_sampler(*this);
+    const std::set<double> samples = lane_sampler.get_mesh_s_samples(lane_section.s, lane_section.get_end(), eps);
+
+    Mesh3D mesh;
+    for (const double s : samples)
+    {
+        for (const Lane* edge_lane : {this, &lane_sampler.inner_lane})
+        {
+            const std::optional<double> t = edge_lane->outer_border.evaluate(s);
+            require_or_throw(t.has_value() || edge_lane->id == 0, "lane {} has no outer border at s {}", edge_lane->id, s);
+            Vec3D normal{0, 0, 0};
+            mesh.vertices.push_back(this->get_surface_pt(s, t.value_or(0.0), &normal));
+            mesh.normals.push_back(normal);
+            mesh.st_coordinates.push_back({s, t.value_or(0.0)});
+        }
+    }
+
+    const bool ccw = this->id < 0;
+    for (std::size_t idx = 3; idx < mesh.vertices.size(); idx += 2)
+    {
+        const std::array<std::size_t, 6> patch = ccw ? std::array<std::size_t, 6>{idx - 3, idx - 1, idx, idx - 3, idx, idx - 2}
+                                                     : std::array<std::size_t, 6>{idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
+        mesh.indices.insert(mesh.indices.end(), patch.begin(), patch.end());
+    }
+    if (outline_indices)
+        *outline_indices = get_triangle_strip_outline_indices<uint32_t>(mesh.vertices.size());
+    return mesh;
+}
+
+Mesh3D Lane::get_roadmark_mesh(const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds) const
+{
+    if (is_zero(roadmark.width))
+        return Mesh3D{};
+
+    const std::set<double> s_samples = LaneSampler(*this).get_border_s_samples(roadmark.s_start, roadmark.s_end, roadmark.t_offset, eps);
+
+    Mesh3D out_mesh;
+    for (const double s : s_samples)
+    {
+        Vec3D                       vn_edge_a{0, 0, 0};
+        const std::optional<double> t_lane_outer_border = this->outer_border.evaluate(s);
+        require_or_throw(t_lane_outer_border.has_value() || this->id == 0, "lane {} has no outer border at s {}", this->id, s);
+        const double t_edge_a = t_lane_outer_border.value_or(0.0) + roadmark.width * 0.5 + roadmark.t_offset;
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_a, &vn_edge_a, !enforce_road_bounds));
+        out_mesh.normals.push_back(vn_edge_a);
+
+        Vec3D        vn_edge_b{0, 0, 0};
+        const double t_edge_b = t_edge_a - roadmark.width;
+        out_mesh.vertices.push_back(this->get_surface_pt(s, t_edge_b, &vn_edge_b, !enforce_road_bounds));
+        out_mesh.normals.push_back(vn_edge_b);
+    }
+
+    const std::size_t num_pts = out_mesh.vertices.size();
+    for (std::size_t idx = 3; idx < num_pts; idx += 2)
+    {
+        std::array<size_t, 6> indicies_patch = {idx - 3, idx, idx - 1, idx - 3, idx - 2, idx};
+        out_mesh.indices.insert(out_mesh.indices.end(), indicies_patch.begin(), indicies_patch.end());
+    }
+
+    return out_mesh;
+}
 
 std::vector<SingleRoadMark> Lane::get_roadmarks(double s_start, double s_end) const
 {

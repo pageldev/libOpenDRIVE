@@ -1,5 +1,7 @@
 #pragma once
 #include "libodr/Geometries/CubicSpline.h"
+#include "libodr/Math.hpp"
+#include "libodr/Mesh.h"
 #include "libodr/OdrNode.h"
 #include "libodr/RoadMark.h"
 
@@ -53,6 +55,11 @@ inline std::ostream& operator<<(std::ostream& os, const LaneKey& lk)
 struct Lane : public OdrNode
 {
     Lane(int id, std::optional<std::string> type = std::nullopt, std::optional<bool> level = std::nullopt);
+
+    Vec3D get_surface_pt(double s, double t, Vec3D* vn = nullptr, bool allow_extrapolate = true) const;
+
+    Mesh3D get_mesh(double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
+    Mesh3D get_roadmark_mesh(const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds = false) const;
 
     std::vector<SingleRoadMark> get_roadmarks(double s_start, double s_end) const;
 

@@ -22,22 +22,6 @@ RefLine::RefLine(const RefLine& other) : length(other.length), elevation_profile
         this->s_to_geometry.emplace(s, geometry->clone());
 }
 
-std::set<const RoadGeometry*> RefLine::get_geometries() const
-{
-    std::set<const RoadGeometry*> geometries;
-    for (const auto& [_, geometry] : this->s_to_geometry)
-        geometries.insert(geometry.get());
-    return geometries;
-}
-
-std::set<RoadGeometry*> RefLine::get_geometries()
-{
-    std::set<RoadGeometry*> geometries;
-    for (auto& [s, geometry] : this->s_to_geometry)
-        geometries.insert(geometry.get());
-    return geometries;
-}
-
 std::optional<double> RefLine::get_geometry_s(double s) const
 {
     if (this->s_to_geometry.empty())

@@ -12,6 +12,9 @@ struct LaneSection : public OdrNode
 {
     LaneSection(double s);
 
+    double get_end() const;
+    double get_length() const;
+
     // if t falls on a lane boundary, the inner lane (closer to lane #0) is returned
     int get_lane_id(double s, double t) const;
 

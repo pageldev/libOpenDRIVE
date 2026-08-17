@@ -60,6 +60,10 @@ class OpenDriveMap
 {
 public:
     OpenDriveMap() = default;
+    OpenDriveMap(const OpenDriveMap&) = delete; // not copyable to avoid null'ed parent refernces
+    OpenDriveMap& operator=(const OpenDriveMap&) = delete;
+    OpenDriveMap(OpenDriveMap&&) = default;
+    OpenDriveMap& operator=(OpenDriveMap&&) = default;
 
     XodrParseResult load(const pugi::xml_document& xml_doc,
                          bool                      with_road_objects = true,

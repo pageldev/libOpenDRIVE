@@ -3,25 +3,19 @@
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
 #include "libodr/Math.hpp"
-#include "libodr/Mesh.h"
 #include "libodr/OdrNode.h"
 #include "libodr/RefLine.h"
-#include "libodr/RoadMark.h"
 #include "libodr/RoadObject.h"
 #include "libodr/RoadSignal.h"
 
 #include <map>
 #include <optional>
-#include <set>
-#include <stdint.h>
 #include <string>
-#include <vector>
 
 namespace odr
 {
 
 struct Lane;
-struct RoadMark;
 
 struct Crossfall
 {
@@ -90,28 +84,12 @@ public:
          std::optional<TrafficRule> traffic_rule = std::nullopt,
          std::optional<std::string> name = std::nullopt);
 
-    double get_lane_section_s(double s) const;
-
-    double get_lane_section_end(const LaneSection& lane_section) const;
-    double get_lane_section_length(const LaneSection& lane_section) const;
+    const LaneSection* get_lane_section(double s) const;
+    LaneSection*       get_lane_section(double s);
 
     Vec3D
     get_xyz(double s, double t, double h, Vec3D* e_s = nullptr, Vec3D* e_t = nullptr, Vec3D* e_h = nullptr, bool allow_extrapolate = true) const;
     Vec3D get_surface_pt(double s, double t, Vec3D* vn = nullptr, bool allow_extrapolate = true) const;
-    Vec3D get_lane_surface_pt(double lane_section_s, double lane_id, double s, double t, Vec3D* vn = nullptr, bool allow_extrapolate = true) const;
-
-    Mesh3D get_lane_mesh(
-        double lane_section_s, int lane_id, double s_start, double s_end, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
-    Mesh3D get_lane_mesh(double lane_section_s, int lane_id, double eps, std::vector<uint32_t>* outline_indices = nullptr) const;
-
-    Mesh3D get_roadmark_mesh(double lane_section_s, int lane_id, const SingleRoadMark& roadmark, double eps, bool enforce_road_bounds = false) const;
-    Mesh3D get_road_signal_mesh(const RoadSignal& road_signal, bool enforce_road_bounds = false) const;
-    Mesh3D get_road_object_mesh(const RoadObject&         road_object,
-                                double                    eps,
-                                double                    default_h = 0,
-                                double                    default_z_offset = 0,
-                                bool                      enforce_road_bounds = false,
-                                std::vector<std::string>* warnings = nullptr) const;
 
     std::string id;
     double      length;

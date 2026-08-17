@@ -56,10 +56,7 @@ struct RoadMark : public OdrNode
     static constexpr double StandardWidth = 0.12;
     static constexpr double BoldWidth = 0.25;
 
-    std::string road_id;
-    double      lane_section_s;
-    int         lane_id;
-    double      s_offset;
+    double s_offset;
 
     std::string type;
     std::string color;

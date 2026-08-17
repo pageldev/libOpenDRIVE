@@ -103,6 +103,12 @@ struct RoadObject : public OdrNode
                std::optional<Orientation> orientation = std::nullopt,
                std::optional<bool>        is_dynamic = std::nullopt);
 
+    Mesh3D get_mesh(double                    eps,
+                    double                    default_h = 0,
+                    double                    default_z_offset = 0,
+                    bool                      enforce_road_bounds = false,
+                    std::vector<std::string>* warnings = nullptr) const;
+
     static Mesh3D get_cylinder(double eps, double radius, double height);
     static Mesh3D get_cube(double width, double length, double height);
 

@@ -63,7 +63,7 @@ TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
         for (const auto& [_, ls] : road.s_to_lane_section)
         {
             const double s_start = ls.s;
-            const double s_end = road.get_lane_section_end(ls);
+            const double s_end = ls.get_end();
             REQUIRE(s_start >= 0.0);
             REQUIRE(s_end > s_start);
             for (const auto& [_, lane] : ls.id_to_lane)

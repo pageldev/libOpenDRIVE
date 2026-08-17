@@ -371,8 +371,11 @@ void RoadSampler::refine_interval(std::set<double>& samples, double s_start, dou
     refine_interval(samples, s_mid, t_mid, s_end, t_end, eps);
 }
 
-LaneSampler::LaneSampler(const Road& road, double lane_section_s, const Lane& lane, const Lane& inner_lane) :
-    road(road), lane_section_s(lane_section_s), lane(lane), inner_lane(inner_lane)
+LaneSampler::LaneSampler(const Lane& lane) :
+    lane(lane),
+    lane_section(*get_parent_or_throw<LaneSection>(lane)),
+    road(*get_parent_or_throw<Road>(lane_section)),
+    inner_lane(lane_section.id_to_lane.at(next_towards_zero(lane.id)))
 {
 }
 
@@ -380,7 +383,7 @@ EdgePoints LaneSampler::edge_points(double s) const
 {
     const double outer_t = lane.outer_border.evaluate(s).value_or(0.0);
     const double inner_t = inner_lane.outer_border.evaluate(s).value_or(0.0);
-    return {road.get_lane_surface_pt(lane_section_s, lane.id, s, inner_t), road.get_lane_surface_pt(lane_section_s, lane.id, s, outer_t)};
+    return {lane.get_surface_pt(s, inner_t), lane.get_surface_pt(s, outer_t)};
 }
 
 std::set<double> LaneSampler::get_border_s_samples(double s_start, double s_end, double t_offset, double eps, bool allow_extrapolate) const
@@ -389,17 +392,16 @@ std::set<double> LaneSampler::get_border_s_samples(double s_start, double s_end,
     require_or_throw(std::isfinite(t_offset), "t offset must be finite (got {})", t_offset);
     require_or_throw(std::isfinite(s_start) && std::isfinite(s_end) && s_start < s_end, "invalid lane border range [{}, {}]", s_start, s_end);
 
-    const LaneSection& lane_section = road.s_to_lane_section.at(lane_section_s);
-    const double       lane_section_end = road.get_lane_section_end(lane_section);
-    require_or_throw(allow_extrapolate || (s_start >= lane_section_s && s_end <= lane_section_end),
+    const double lane_section_end = lane_section.get_end();
+    require_or_throw(allow_extrapolate || (s_start >= lane_section.s && s_end <= lane_section_end),
                      "lane border range [{}, {}] must be within lane section range [{}, {}]",
                      s_start,
                      s_end,
-                     lane_section_s,
+                     lane_section.s,
                      lane_section_end);
 
     // only refine for s-range of lane section, linear extrapolate past ends
-    const double refinement_start = std::max(s_start, lane_section_s);
+    const double refinement_start = std::max(s_start, lane_section.s);
     const double refinement_end = std::min(s_end, lane_section_end);
 
     std::set<double> samples{s_start, s_end};
@@ -421,17 +423,16 @@ std::set<double> LaneSampler::get_mesh_s_samples(double s_start, double s_end, d
     require_or_throw(std::isfinite(eps) && eps > 0, "eps must be finite and greater than 0 (got {})", eps);
     require_or_throw(std::isfinite(s_start) && std::isfinite(s_end) && s_start < s_end, "invalid lane mesh range [{}, {}]", s_start, s_end);
 
-    const LaneSection& lane_section = road.s_to_lane_section.at(lane_section_s);
-    const double       lane_section_end = road.get_lane_section_end(lane_section);
-    require_or_throw(allow_extrapolate || (s_start >= lane_section_s && s_end <= lane_section_end),
+    const double lane_section_end = lane_section.get_end();
+    require_or_throw(allow_extrapolate || (s_start >= lane_section.s && s_end <= lane_section_end),
                      "lane mesh range [{}, {}] must be within lane section range [{}, {}]",
                      s_start,
                      s_end,
-                     lane_section_s,
+                     lane_section.s,
                      lane_section_end);
 
     // only refine for s-range of lane section, linear extrapolate past ends
-    const double refinement_start = std::max(s_start, lane_section_s);
+    const double refinement_start = std::max(s_start, lane_section.s);
     const double refinement_end = std::min(s_end, lane_section_end);
 
     std::set<double> samples{s_start, s_end};
@@ -483,7 +484,7 @@ void LaneSampler::refine_border_interval(std::set<double>& samples, double s_sta
     if (height_delta == 0)
         height.value += std::abs(interval.inner_height_offset);
     else if (interval.width.min == 0 && interval.width.max == 0)
-        height.value += std::abs(interval.inner_height_offset); // get_lane_surface_pt uses the inner height for a zero-width lane
+        height.value += std::abs(interval.inner_height_offset); // get_surface_pt uses the inner height for a zero-width lane
     else
     {
         if (t_offset == 0)

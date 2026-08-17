@@ -18,9 +18,6 @@ struct RefLine
 
     RefLine& operator=(RefLine&& other) = default;
 
-    std::set<const RoadGeometry*> get_geometries() const;
-    std::set<RoadGeometry*>       get_geometries();
-
     std::optional<double> get_geometry_s(double s) const;
     const RoadGeometry*   get_geometry(double s) const;
     RoadGeometry*         get_geometry(double s);

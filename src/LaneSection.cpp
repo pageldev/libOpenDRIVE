@@ -1,7 +1,11 @@
 #include "libodr/LaneSection.h"
 #include "libodr/Geometries/CubicSpline.h"
+#include "libodr/Road.h"
 #include "libodr/Utils.hpp"
 
+#include <cmath>
+#include <iterator>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -10,6 +14,26 @@ namespace odr
 LaneSection::LaneSection(double s) : s(s)
 {
     require_or_throw(s >= 0, "s must be greater than or equal to 0 (got {})", s);
+}
+
+double LaneSection::get_end() const
+{
+    const Road& road = *get_parent_or_throw<Road>(*this);
+
+    auto lane_section_iter = road.s_to_lane_section.find(this->s);
+    require_or_throw(lane_section_iter != road.s_to_lane_section.end(), "no lane section found for s {}", this->s);
+
+    const bool is_last = (lane_section_iter == std::prev(road.s_to_lane_section.end()));
+    if (is_last)
+        return road.length;
+
+    const double s_next = std::next(lane_section_iter)->first;
+    return std::nextafter(s_next, -std::numeric_limits<double>::infinity()); // to be within lane section
+}
+
+double LaneSection::get_length() const
+{
+    return this->get_end() - this->s;
 }
 
 int LaneSection::get_lane_id(double s, double t) const

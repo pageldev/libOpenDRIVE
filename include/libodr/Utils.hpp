@@ -31,6 +31,17 @@ inline void require_or_throw(bool ok, fmt::format_string<Args...> fmt, Args&&...
         throw std::runtime_error(fmt::format(fmt, std::forward<Args>(args)...));
 }
 
+template<typename T, typename Node>
+std::conditional_t<std::is_const_v<Node>, const T, T>* get_parent_or_throw(Node& node)
+{
+    auto* parent = node.parent();
+    require_or_throw(parent != nullptr, "node has no parent");
+    using Parent = std::conditional_t<std::is_const_v<Node>, const T, T>;
+    Parent* typed_parent = dynamic_cast<Parent*>(parent);
+    require_or_throw(typed_parent != nullptr, "node has unexpected parent type");
+    return typed_parent;
+}
+
 template<class C, class T, T C::*member>
 struct PtrCmp
 {
