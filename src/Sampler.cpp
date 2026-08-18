@@ -41,37 +41,42 @@ struct IntervalBounds
     double s_length = 0;
 };
 
+struct RefLineIntervalBounds
+{
+    IntervalBounds interval;
+    CubicBounds    elevation;
+    GeometryBounds geometry;
+};
+
 // precondition: s-interval is a breakpoint-free interval (single geometry etc..)
-IntervalBounds get_ref_line_interval_bounds(const RefLine& ref_line, double s_start, double s_end)
+RefLineIntervalBounds get_ref_line_interval_bounds(const RefLine& ref_line, double s_start, double s_end)
 {
     const double                   s_mid = 0.5 * (s_start + s_end);
     const std::optional<CubicPoly> elevation_poly = ref_line.elevation_profile.get_poly(s_mid);
-    const CubicBounds              elevation = elevation_poly ? elevation_poly->bounds(s_start, s_end) : CubicBounds{};
     const RoadGeometry*            road_geometry = ref_line.get_geometry(s_mid);
     require_or_throw(road_geometry != nullptr, "unsupported reference line geometry");
-    const GeometryBounds geometry = geometry_bounds(*road_geometry, s_start, s_end);
 
-    IntervalBounds interval;
-    interval.ref_line_d1 = std::hypot(geometry.position_d1, elevation.d1);
-    interval.ref_line_d2 = std::hypot(geometry.position_d2, elevation.d2);
-    interval.s_length = s_end - s_start;
-    return interval;
+    RefLineIntervalBounds bounds;
+    bounds.elevation = elevation_poly ? elevation_poly->bounds(s_start, s_end) : CubicBounds{};
+    bounds.geometry = geometry_bounds(*road_geometry, s_start, s_end);
+    bounds.interval.ref_line_d1 = std::hypot(bounds.geometry.position_d1, bounds.elevation.d1);
+    bounds.interval.ref_line_d2 = std::hypot(bounds.geometry.position_d2, bounds.elevation.d2);
+    bounds.interval.s_length = s_end - s_start;
+    return bounds;
 }
 
 // precondition: s-interval is a breakpoint-free interval (single geometry etc..)
 IntervalBounds get_road_interval_bounds(const Road& road, double s_start, double s_end)
 {
     const double                   s_mid = 0.5 * (s_start + s_end);
-    const std::optional<CubicPoly> elevation_poly = road.ref_line.elevation_profile.get_poly(s_mid);
     const std::optional<CubicPoly> superelevation_poly = road.superelevation.get_poly(s_mid);
 
-    IntervalBounds interval = get_ref_line_interval_bounds(road.ref_line, s_start, s_end);
+    const RefLineIntervalBounds ref_line_bounds = get_ref_line_interval_bounds(road.ref_line, s_start, s_end);
+    IntervalBounds              interval = ref_line_bounds.interval;
     interval.theta = superelevation_poly ? superelevation_poly->bounds(s_start, s_end) : CubicBounds{};
 
-    const CubicBounds   elevation = elevation_poly ? elevation_poly->bounds(s_start, s_end) : CubicBounds{};
-    const RoadGeometry* road_geometry = road.ref_line.get_geometry(s_mid);
-    require_or_throw(road_geometry != nullptr, "unsupported reference line geometry");
-    const GeometryBounds geometry = geometry_bounds(*road_geometry, s_start, s_end);
+    const CubicBounds&    elevation = ref_line_bounds.elevation;
+    const GeometryBounds& geometry = ref_line_bounds.geometry;
 
     const double tangent_d1 = std::hypot(geometry.tangent_d1, elevation.d2);
     const double tangent_d2 = std::hypot(geometry.tangent_d2, elevation.d3);
@@ -305,7 +310,7 @@ std::set<double> RefLineSampler::get_polyline_s_samples(double s_start, double s
 
 void RefLineSampler::refine_interval(std::set<double>& samples, double s_start, double s_end, double eps) const
 {
-    const IntervalBounds interval = get_ref_line_interval_bounds(ref_line, s_start, s_end);
+    const IntervalBounds interval = get_ref_line_interval_bounds(ref_line, s_start, s_end).interval;
     const double         error = curve_error(interval, CubicBounds{}, DerivativeBounds{});
     if (std::isfinite(error) && std::nextafter(error, std::numeric_limits<double>::infinity()) <= eps)
         return;

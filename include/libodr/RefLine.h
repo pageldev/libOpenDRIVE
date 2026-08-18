@@ -18,9 +18,8 @@ struct RefLine
 
     RefLine& operator=(RefLine&& other) = default;
 
-    std::optional<double> get_geometry_s(double s) const;
-    const RoadGeometry*   get_geometry(double s) const;
-    RoadGeometry*         get_geometry(double s);
+    const RoadGeometry* get_geometry(double s) const;
+    RoadGeometry*       get_geometry(double s);
 
     Vec3D  get_xyz(double s) const;
     Vec3D  derivative(double s) const;

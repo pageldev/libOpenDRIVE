@@ -62,8 +62,10 @@ Vec2D ParamPoly3::get_xy(double s) const
     const double p = this->cubic_bezier.get_t(s - this->s);
     const Vec2D  pt = this->cubic_bezier.evaluate(p);
 
-    const double x_t = (std::cos(hdg) * pt[0]) - (std::sin(hdg) * pt[1]) + x;
-    const double y_t = (std::sin(hdg) * pt[0]) + (std::cos(hdg) * pt[1]) + y;
+    const double cos_hdg = std::cos(hdg);
+    const double sin_hdg = std::sin(hdg);
+    const double x_t = (cos_hdg * pt[0]) - (sin_hdg * pt[1]) + x;
+    const double y_t = (sin_hdg * pt[0]) + (cos_hdg * pt[1]) + y;
 
     return Vec2D{x_t, y_t};
 }

@@ -114,7 +114,8 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
 
     const T arclen_adj = std::min<T>(arclen, this->valid_length);
 
-    auto arclen_t_iter = this->arclen_t.upper_bound(arclen_adj);
+    auto arclen_t_next_iter = this->arclen_t.upper_bound(arclen_adj);
+    auto arclen_t_iter = arclen_t_next_iter;
     if (arclen_t_iter != this->arclen_t.begin())
         arclen_t_iter--;
 
@@ -123,11 +124,12 @@ T CubicBezier<T, Dim>::get_t(T arclen) const
     if (arclen_adj == arcl_lower_bound)
         return t_lower_bound;
 
-    const auto arclen_t_next_iter = std::next(arclen_t_iter);
-    const T    arcl_upper_bound = arclen_t_next_iter->first;
-    const T    t_upper_bound = arclen_t_next_iter->second;
-    const T    seg_arc_len = arcl_upper_bound - arcl_lower_bound;
-    const T    seg_t_len = t_upper_bound - t_lower_bound;
+    if (arclen_t_next_iter == arclen_t_iter || arclen_t_next_iter == this->arclen_t.end())
+        arclen_t_next_iter = std::next(arclen_t_iter);
+    const T arcl_upper_bound = arclen_t_next_iter->first;
+    const T t_upper_bound = arclen_t_next_iter->second;
+    const T seg_arc_len = arcl_upper_bound - arcl_lower_bound;
+    const T seg_t_len = t_upper_bound - t_lower_bound;
 
     return t_lower_bound + ((arclen_adj - arcl_lower_bound) / seg_arc_len) * seg_t_len;
 }
