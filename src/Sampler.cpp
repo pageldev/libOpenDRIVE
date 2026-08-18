@@ -39,6 +39,8 @@ struct IntervalBounds
     double frame_d1 = 0;
     double frame_d2 = 0;
     double s_length = 0;
+    double arclength_error = 0;
+    double frame_mapping_error = 0;
 };
 
 struct RefLineIntervalBounds
@@ -62,6 +64,8 @@ RefLineIntervalBounds get_ref_line_interval_bounds(const RefLine& ref_line, doub
     bounds.interval.ref_line_d1 = std::hypot(bounds.geometry.position_d1, bounds.elevation.d1);
     bounds.interval.ref_line_d2 = std::hypot(bounds.geometry.position_d2, bounds.elevation.d2);
     bounds.interval.s_length = s_end - s_start;
+    bounds.interval.arclength_error = bounds.geometry.arclength_error;
+    bounds.interval.frame_mapping_error = bounds.geometry.frame_mapping_error;
     return bounds;
 }
 
@@ -135,8 +139,12 @@ double curve_error(const IntervalBounds& interval, const CubicBounds& lateral, c
     const double speed = interval.ref_line_d1 + lateral.d1 + max_abs(lateral) * interval.frame_d1 + height.d1 + height.value * interval.frame_d1;
     const double acceleration = interval.ref_line_d2 + lateral.d2 + 2 * lateral.d1 * interval.frame_d1 + max_abs(lateral) * interval.frame_d2 +
                                 height.d2 + 2 * height.d1 * interval.frame_d1 + height.value * interval.frame_d2;
+    double mapping_error = interval.arclength_error;
+    if (interval.frame_mapping_error > 0)
+        mapping_error += (max_abs(lateral) + height.value) * interval.frame_mapping_error;
+
     // A curve is within min(length * max|p'| / 2, length^2 * max|p''| / 8) of its chord.
-    return std::min(0.5 * interval.s_length * speed, 0.125 * interval.s_length * interval.s_length * acceleration);
+    return mapping_error + std::min(0.5 * interval.s_length * speed, 0.125 * interval.s_length * interval.s_length * acceleration);
 }
 
 } // namespace
@@ -189,9 +197,22 @@ GeometryBounds geometry_bounds(const RoadGeometry& geometry, double s_start, dou
     }
     else if (const ParamPoly3* param_poly = dynamic_cast<const ParamPoly3*>(&geometry))
     {
-        const double p_start = param_poly->cubic_bezier.get_t(s_start - param_poly->s);
-        const double p_end = param_poly->cubic_bezier.get_t(s_end - param_poly->s);
+        const double arclen_start = s_start - param_poly->s;
+        const double arclen_end = s_end - param_poly->s;
+        const double p_start = param_poly->cubic_bezier.get_t(arclen_start);
+        const double p_end = param_poly->cubic_bezier.get_t(arclen_end);
         const double dp_ds = (p_end - p_start) / (s_end - s_start);
+
+        // The difference between the piecewise-linear lookup and its endpoint interpolation is piecewise linear,
+        // so its maximum absolute value occurs at a lookup breakpoint.
+        double p_mapping_error = 0;
+        for (auto breakpoint = param_poly->cubic_bezier.arclen_t.upper_bound(arclen_start);
+             breakpoint != param_poly->cubic_bezier.arclen_t.end() && breakpoint->first < arclen_end;
+             ++breakpoint)
+        {
+            const double p_linear = p_start + (breakpoint->first - arclen_start) * dp_ds;
+            p_mapping_error = std::max(p_mapping_error, std::abs(breakpoint->second - p_linear));
+        }
 
         const CubicBounds u = CubicPoly(param_poly->aU, param_poly->bU, param_poly->cU, param_poly->dU).bounds(p_start, p_end);
         const CubicBounds v = CubicPoly(param_poly->aV, param_poly->bV, param_poly->cV, param_poly->dV).bounds(p_start, p_end);
@@ -211,6 +232,9 @@ GeometryBounds geometry_bounds(const RoadGeometry& geometry, double s_start, dou
         bounds.lateral_d1 = bounds.tangent_d1 / bounds.speed_lower;
         bounds.lateral_d2 =
             bounds.tangent_d2 / bounds.speed_lower + 3 * bounds.tangent_d1 * bounds.tangent_d1 / (bounds.speed_lower * bounds.speed_lower);
+        bounds.arclength_error = position_d1_p_bound * p_mapping_error;
+        if (p_mapping_error > 0)
+            bounds.frame_mapping_error = 2 * position_d2_p_bound / bounds.speed_lower * p_mapping_error;
         return bounds;
     }
     else
@@ -225,31 +249,8 @@ std::set<double> get_ref_line_mandatory_s_samples(const RefLine& ref_line, doubl
 {
     std::set<double> samples{s_start, s_end};
 
-    const auto insert_map_keys = [&](const auto& map)
-    {
-        for (const auto& [s, _] : map)
-        {
-            if (s > s_start && s < s_end)
-                samples.insert(s);
-        }
-    };
-
-    insert_map_keys(ref_line.s_to_geometry);
-    insert_map_keys(ref_line.elevation_profile.s_to_poly);
-
-    // paramPoly3 uses a piecewise-linear arc-length-to-parameter map, include those breakpoints
-    for (const auto& [_, geometry] : ref_line.s_to_geometry)
-    {
-        const auto* param_poly3 = dynamic_cast<const ParamPoly3*>(geometry.get());
-        if (!param_poly3)
-            continue;
-        for (const auto& [arclen, __] : param_poly3->cubic_bezier.arclen_t)
-        {
-            const double s = param_poly3->s + arclen;
-            if (s > s_start && s < s_end)
-                samples.insert(s);
-        }
-    }
+    insert_map_keys_if_in_range(samples, ref_line.s_to_geometry, s_start, s_end);
+    insert_map_keys_if_in_range(samples, ref_line.elevation_profile.s_to_poly, s_start, s_end);
 
     return samples;
 }
@@ -263,11 +264,7 @@ std::set<double> get_road_mandatory_s_samples(const Road& road, double s_start, 
     if (s_start < road.length && s_end > road.length)
         samples.insert(road.length);
 
-    for (const auto& [s, _] : road.superelevation.s_to_poly)
-    {
-        if (s > s_start && s < s_end)
-            samples.insert(s);
-    }
+    insert_map_keys_if_in_range(samples, road.superelevation.s_to_poly, s_start, s_end);
 
     return samples;
 }
@@ -276,19 +273,10 @@ std::set<double> get_lane_mandatory_s_samples(const Road& road, const Lane& lane
 {
     std::set<double> samples = get_road_mandatory_s_samples(road, s_start, s_end);
 
-    const auto insert_map_keys = [&](const auto& map) -> void
-    {
-        for (const auto& [s, _] : map)
-        {
-            if (s > s_start && s < s_end)
-                samples.insert(s);
-        }
-    };
-
-    insert_map_keys(road.crossfall.records);
-    insert_map_keys(lane.outer_border.s_to_poly);
-    insert_map_keys(inner_lane.outer_border.s_to_poly);
-    insert_map_keys(lane.s_to_height_offset);
+    insert_map_keys_if_in_range(samples, road.crossfall.records, s_start, s_end);
+    insert_map_keys_if_in_range(samples, lane.outer_border.s_to_poly, s_start, s_end);
+    insert_map_keys_if_in_range(samples, inner_lane.outer_border.s_to_poly, s_start, s_end);
+    insert_map_keys_if_in_range(samples, lane.s_to_height_offset, s_start, s_end);
 
     return samples;
 }

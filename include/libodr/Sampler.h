@@ -29,6 +29,8 @@ struct GeometryBounds
     double tangent_d2 = 0;
     double lateral_d1 = 0; // change in lateral direction; equals |pos''(s)| for arc-length geometries
     double lateral_d2 = 0;
+    double arclength_error = 0;     // error arc-length lookup p to linear p in meter; always 0 for arc-length geometries
+    double frame_mapping_error = 0; // always 0 for arc-length geometries
 };
 
 struct EdgePoints

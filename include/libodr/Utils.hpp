@@ -59,6 +59,16 @@ std::set<K> get_map_keys(const std::map<K, V>& input_map)
     return retval;
 }
 
+template<class V>
+void insert_map_keys_if_in_range(std::set<double>& target_set, const std::map<double, V>& input_map, double a, double b)
+{
+    for (const auto& [s, _] : input_map)
+    {
+        if (s > a && s < b)
+            target_set.insert(s);
+    }
+}
+
 template<class K, class V>
 V get_nearest_lower_val(const std::map<K, V>& input_map, const K& k)
 {
