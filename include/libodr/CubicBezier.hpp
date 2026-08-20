@@ -109,10 +109,10 @@ Vec<T, Dim> CubicBezier<T, Dim>::evaluate(T t) const
 template<typename T, std::size_t Dim>
 T CubicBezier<T, Dim>::get_t(T arclen) const
 {
-    if ((arclen - this->valid_length) > this->ArcLengthLookupTolerance || arclen < 0)
+    if ((arclen - this->valid_length) > this->ArcLengthLookupTolerance || arclen < -this->ArcLengthLookupTolerance)
         throw std::runtime_error(fmt::format("arc length must be in range [0, {:.3f}] (got {:.3f})", this->valid_length, arclen));
 
-    const T arclen_adj = std::min<T>(arclen, this->valid_length);
+    const T arclen_adj = std::clamp<T>(arclen, 0, this->valid_length);
 
     auto arclen_t_next_iter = this->arclen_t.upper_bound(arclen_adj);
     auto arclen_t_iter = arclen_t_next_iter;
