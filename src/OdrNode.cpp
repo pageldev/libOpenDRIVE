@@ -5,17 +5,18 @@
 namespace odr
 {
 
-OdrNode::OdrNode(const OdrNode&) noexcept {}
+OdrNode::OdrNode(const OdrNode& other) noexcept : xml_offset(other.xml_offset) {}
 
-OdrNode::OdrNode(OdrNode&& other) noexcept : self_(std::move(other.self_)), parent_(std::move(other.parent_))
+OdrNode::OdrNode(OdrNode&& other) noexcept : xml_offset(other.xml_offset), self_(std::move(other.self_)), parent_(std::move(other.parent_))
 {
     if (self_)
         *self_ = this;
     other.parent_.reset();
 }
 
-OdrNode& OdrNode::operator=(const OdrNode&) noexcept
+OdrNode& OdrNode::operator=(const OdrNode& other) noexcept
 {
+    xml_offset = other.xml_offset;
     parent_.reset();
     return *this;
 }
@@ -30,6 +31,7 @@ OdrNode& OdrNode::operator=(OdrNode&& other) noexcept
         self_ = std::move(other.self_);
         *self_ = this;
     }
+    xml_offset = other.xml_offset;
     parent_ = std::move(other.parent_);
     other.parent_.reset();
     return *this;

@@ -87,6 +87,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                       try_get_attribute<std::string>(header_node, "vendor"),
                                       try_get_attribute<std::string>(header_node, "version"),
                                       georef_node ? std::optional<std::string>(georef_node.text().as_string("")) : std::nullopt);
+    this->header.xml_offset = header_node.offset_debug();
 
     // Roads
     if (!odr_node.child("road"))
@@ -119,6 +120,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             result.errors.push_back({road_node, ex.what()});
             continue;
         }
+        road->xml_offset = road_node.offset_debug();
 
         // parse road links
         const pugi::xml_node link_node = road_node.child("link");
@@ -139,6 +141,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({next_link_node, ex.what()});
                     continue;
                 }
+                link->xml_offset = next_link_node.offset_debug();
 
                 std::optional<RoadLink>& road_link = is_predecessor ? road->predecessor : road->successor;
                 road_link = link;
@@ -163,7 +166,9 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
             {
                 const std::string speed_record_max = node.attribute("max").as_string("");
                 const std::string speed_record_unit = node.attribute("unit").as_string("");
-                road->s_to_speed.emplace(s, Speed(speed_record_max, speed_record_unit));
+                Speed             speed(speed_record_max, speed_record_unit);
+                speed.xml_offset = node.offset_debug();
+                road->s_to_speed.emplace(s, std::move(speed));
             }
         }
 
@@ -348,6 +353,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 invalid_lane_section = true;
                 continue;
             }
+            lane_section->xml_offset = lane_section_node.offset_debug();
 
             for (const pugi::xpath_node lane_xpath_node : lane_section_node.select_nodes(".//lane"))
             {
@@ -372,6 +378,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         .emplace(*lane_id,
                                  Lane(*lane_id, try_get_attribute<std::string>(lane_node, "type"), try_get_attribute<bool>(lane_node, "level")))
                         .first->second;
+                lane.xml_offset = lane_node.offset_debug();
 
                 if (const pugi::xml_attribute id_attr = lane_node.child("link").child("predecessor").attribute("id"))
                     lane.predecessor = id_attr.as_int();
@@ -428,6 +435,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                             result.errors.push_back({lane_height_node, ex.what()});
                             continue;
                         }
+                        height_offset->xml_offset = lane_height_node.offset_debug();
                         lane.s_to_height_offset.emplace(lane_section->s + height_offset->s_offset, *height_offset);
                     }
                 }
@@ -451,6 +459,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         result.errors.push_back({roadmark_node, ex.what()});
                         continue;
                     }
+                    roadmark->xml_offset = roadmark_node.offset_debug();
 
                     if (const pugi::xml_node roadmark_type_node = roadmark_node.child("type"))
                     {
@@ -467,6 +476,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
                         if (roadmark_type)
                         {
+                            roadmark_type->xml_offset = roadmark_type_node.offset_debug();
                             for (const pugi::xml_node roadmarks_line_node : roadmark_type_node.children("line"))
                             {
                                 std::optional<RoadMarkLine> roadmark_line;
@@ -485,6 +495,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                     result.errors.push_back({roadmarks_line_node, ex.what()});
                                     continue;
                                 }
+                                roadmark_line->xml_offset = roadmarks_line_node.offset_debug();
 
                                 roadmark_type->lines.emplace_back(std::move(*roadmark_line));
                             }
@@ -590,6 +601,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({object_node, ex.what()});
                     continue;
                 }
+                road_object->xml_offset = object_node.offset_debug();
 
                 for (const pugi::xml_node repeat_node : object_node.children("repeat"))
                 {
@@ -606,6 +618,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                                           try_get_attribute<double>(repeat_node, "zOffsetEnd"),
                                                           try_get_attribute<double>(repeat_node, "widthStart"),
                                                           try_get_attribute<double>(repeat_node, "widthEnd"));
+                        road_object->repeats.back().xml_offset = repeat_node.offset_debug();
                     }
                     catch (const std::exception& ex)
                     {
@@ -622,6 +635,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                                           try_get_attribute<std::string>(outline_node, "laneType"),
                                                           try_get_attribute<bool>(outline_node, "outer"),
                                                           try_get_attribute<bool>(outline_node, "closed"));
+                    road_object_outline.xml_offset = outline_node.offset_debug();
 
                     for (const pugi::xml_node corner_local_node : outline_node.children("cornerLocal"))
                     {
@@ -634,6 +648,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                                                      corner_local_node.attribute("height").as_double(NAN),
                                                                      default_local_outline_type,
                                                                      try_get_attribute<int>(corner_local_node, "id"));
+                            road_object_outline.outline.back().xml_offset = corner_local_node.offset_debug();
                         }
                         catch (const std::exception& ex)
                         {
@@ -652,6 +667,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                                                      corner_road_node.attribute("height").as_double(NAN),
                                                                      RoadObjectCorner::Type::Road,
                                                                      try_get_attribute<int>(corner_road_node, "id"));
+                            road_object_outline.outline.back().xml_offset = corner_road_node.offset_debug();
                         }
                         catch (const std::exception& ex)
                         {
@@ -673,6 +689,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                         continue;
                     }
                     road_object->lane_validities.emplace_back(*from_lane, *to_lane);
+                    road_object->lane_validities.back().xml_offset = validity_node.offset_debug();
                 }
 
                 road->id_to_object.emplace(*object_id, std::move(*road_object));
@@ -723,6 +740,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     result.errors.push_back({signal_node, ex.what()});
                     continue;
                 }
+                road_signal->xml_offset = signal_node.offset_debug();
 
                 for (const pugi::xml_node validity_node : signal_node.children("validity"))
                 {
@@ -734,6 +752,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     const int from_lane = validity_node.attribute("fromLane").as_int(INT_MIN);
                     const int to_lane = validity_node.attribute("toLane").as_int(INT_MAX);
                     road_signal->lane_validities.emplace_back(from_lane, to_lane);
+                    road_signal->lane_validities.back().xml_offset = validity_node.offset_debug();
                 }
 
                 road->id_to_signal.emplace(*signal_id, std::move(*road_signal));
@@ -760,6 +779,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
 
         Junction& junction =
             this->id_to_junction.emplace(*junction_id, Junction(*junction_id, try_get_attribute<std::string>(junction_node, "name"))).first->second;
+        junction.xml_offset = junction_node.offset_debug();
 
         for (const pugi::xml_node connection_node : junction_node.children("connection"))
         {
@@ -782,6 +802,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                                                                              connection_node.attribute("connectingRoad").as_string(""),
                                                                              connection_node.attribute("contactPoint").as_string("")))
                                                  .first->second;
+            connection.xml_offset = connection_node.offset_debug();
 
             for (const pugi::xml_node lane_link_node : connection_node.children("laneLink"))
             {
@@ -793,6 +814,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                     continue;
                 }
                 connection.lane_links.emplace_back(*from_lane, *to_lane);
+                connection.lane_links.back().xml_offset = lane_link_node.offset_debug();
             }
         }
 
@@ -811,6 +833,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 continue;
             }
             junction.priorities.emplace_back(*prio_high, *prio_low);
+            junction.priorities.back().xml_offset = priority_node.offset_debug();
         }
 
         for (const pugi::xml_node controller_node : junction_node.children("controller"))
@@ -838,6 +861,7 @@ XodrParseResult OpenDriveMap::load(const pugi::xml_document& xml_doc,
                 result.errors.push_back({controller_node, ex.what()});
                 continue;
             }
+            junction_controller->xml_offset = controller_node.offset_debug();
 
             junction.id_to_controller.emplace(*controller_id, std::move(*junction_controller));
         }

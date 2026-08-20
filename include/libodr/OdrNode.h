@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 
 namespace odr
@@ -19,6 +20,8 @@ struct OdrNode
     const OdrNode* parent() const noexcept;
 
     void set_parent(OdrNode* parent);
+
+    std::ptrdiff_t xml_offset = -1; // locate element in xml, is utf8-based offset for pugixml by default
 
 private:
     std::shared_ptr<OdrNode*> self_;
