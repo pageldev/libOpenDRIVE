@@ -1,11 +1,12 @@
 #include "libodr/RefLine.h"
 #include "libodr/Math.hpp"
+#include "libodr/Sampler.h"
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <functional>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -57,12 +58,34 @@ Vec3D RefLine::derivative(double s) const
 
 double RefLine::match(double x, double y) const
 {
-    std::function<double(double)> f_dist = [&](double s)
+    if (length <= 0.0)
+        return 0.0;
+
+    const std::set<double> samples = RefLineSampler(*this).get_polyline_s_samples(0.0, length, 1e-2);
+    double                 best_s = 0.0;
+    double                 best_dist = std::numeric_limits<double>::infinity();
+
+    auto  prev = samples.begin();
+    Vec3D prev_pt = get_xyz(*prev);
+    for (auto it = std::next(prev); it != samples.end(); ++it)
     {
-        const Vec3D pt = this->get_xyz(s);
-        return euclDistance(Vec2D{pt[0], pt[1]}, {x, y});
-    };
-    return golden_section_search<double>(f_dist, 0.0, length, 1e-2);
+        const Vec3D  pt = get_xyz(*it);
+        const double dx = pt[0] - prev_pt[0];
+        const double dy = pt[1] - prev_pt[1];
+        const double length_sq = dx * dx + dy * dy;
+        const double fraction = length_sq == 0.0 ? 0.0 : std::clamp(((x - prev_pt[0]) * dx + (y - prev_pt[1]) * dy) / length_sq, 0.0, 1.0);
+        const double s = *prev + fraction * (*it - *prev);
+        const Vec3D  candidate = get_xyz(s);
+        const double dist = std::hypot(candidate[0] - x, candidate[1] - y);
+        if (dist < best_dist)
+        {
+            best_dist = dist;
+            best_s = s;
+        }
+        prev = it;
+        prev_pt = pt;
+    }
+    return best_s;
 }
 
 } // namespace odr

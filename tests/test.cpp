@@ -1,12 +1,19 @@
+#include "libodr/Geometries/Arc.h"
+#include "libodr/Geometries/Line.h"
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
 #include "libodr/OpenDriveMap.h"
+#include "libodr/RefLine.h"
 #include "libodr/Road.h"
 #include "libodr/RoadMark.h"
 #include "libodr/RoadObject.h"
 #include <catch2/catch_test_macros.hpp>
 
+#include <cmath>
+#include <cstddef>
+#include <memory>
 #include <type_traits>
+#include <utility>
 
 struct OpenDriveFixture
 {
@@ -45,6 +52,42 @@ TEST_CASE("odr types are movable", "[types]")
     STATIC_REQUIRE(std::is_move_assignable_v<odr::Junction>);
     STATIC_REQUIRE(std::is_move_constructible_v<odr::JunctionConnection>);
     STATIC_REQUIRE(std::is_move_assignable_v<odr::JunctionConnection>);
+}
+
+TEST_CASE("RefLine match on a long straight line", "[match]")
+{
+    struct CountingLine : odr::Line
+    {
+        using odr::Line::Line;
+        mutable std::size_t evaluations = 0;
+
+        odr::Vec2D get_xy(double s) const override
+        {
+            ++evaluations;
+            return odr::Line::get_xy(s);
+        }
+    };
+
+    odr::RefLine ref_line(10000.0);
+    auto         line = std::make_unique<CountingLine>(0.0, 0.0, 0.0, 0.0, ref_line.length);
+    const auto*  counted_line = line.get();
+    ref_line.s_to_geometry[0.0] = std::move(line);
+
+    REQUIRE(std::abs(ref_line.match(5000.37, 4.0) - 5000.37) < 1e-2);
+    REQUIRE(counted_line->evaluations < 100);
+    REQUIRE(std::abs(ref_line.match(-5.0, 0.0)) < 1e-2);
+    REQUIRE(std::abs(ref_line.match(10005.0, 0.0) - ref_line.length) < 1e-2);
+}
+
+TEST_CASE("RefLine match across line and arc", "[match]")
+{
+    const double arc_length = 2.0 * std::acos(-1.0) * 30.0;
+    odr::RefLine ref_line(100.0 + arc_length);
+    ref_line.s_to_geometry[0.0] = std::make_unique<odr::Line>(0.0, 0.0, 0.0, 0.0, 100.0);
+    ref_line.s_to_geometry[100.0] = std::make_unique<odr::Arc>(100.0, 100.0, 0.0, 0.0, arc_length, -1.0 / 30.0);
+
+    const odr::Vec3D point = ref_line.get_xyz(250.0);
+    REQUIRE(std::abs(ref_line.match(point[0], point[1]) - 250.0) < 1e-2);
 }
 
 TEST_CASE_METHOD(OpenDriveFixture, "Basic OpenDriveMap check", "[xodr]")
