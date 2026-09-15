@@ -4,6 +4,7 @@
 #include "libodr/Utils.hpp"
 
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "libodr/earcut.hpp"
 
 #include <algorithm>

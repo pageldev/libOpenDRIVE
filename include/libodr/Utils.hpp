@@ -1,9 +1,8 @@
 #pragma once
 #include "libodr/Math.hpp"
+#include "libodr/RoadObject.h"
 
 #include "fmt/core.h"
-#include "fmt/ranges.h"
-#include "libodr/RoadObject.h"
 #include "magic_enum/magic_enum.hpp"
 #include "pugixml.hpp"
 
@@ -11,7 +10,6 @@
 #include <array>
 #include <charconv>
 #include <cmath>
-#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -42,15 +40,6 @@ std::conditional_t<std::is_const_v<Node>, const T, T>* get_parent_or_throw(Node&
     return typed_parent;
 }
 
-template<class C, class T, T C::*member>
-struct PtrCmp
-{
-    bool operator()(const C* lhs, const C* rhs) const
-    {
-        return (*lhs).*member < (*rhs).*member;
-    }
-};
-
 template<class K, class V>
 std::set<K> get_map_keys(const std::map<K, V>& input_map)
 {
@@ -69,45 +58,6 @@ void insert_map_keys_if_in_range(std::set<double>& target_set, const std::map<do
     }
 }
 
-template<class K, class V>
-V get_nearest_lower_val(const std::map<K, V>& input_map, const K& k)
-{
-    auto kv_iter = input_map.upper_bound(k);
-    if (kv_iter != input_map.begin())
-        kv_iter--;
-    return kv_iter->second;
-}
-
-template<class K, class V>
-K get_nearest_key(const std::map<K, V>& input_map, const K& k)
-{
-    if (input_map.empty())
-        throw std::runtime_error("map is empty");
-
-    auto kv_iter = input_map.upper_bound(k);
-    if (kv_iter == input_map.end())
-        return std::prev(kv_iter)->first;
-
-    if (kv_iter == input_map.begin())
-        return kv_iter->first;
-
-    auto prev_kv_iter = std::prev(kv_iter);
-    auto nearest_key = std::abs(prev_kv_iter->first - k) < std::abs(kv_iter->first - k) ? prev_kv_iter->first : kv_iter->first;
-    return nearest_key;
-}
-
-template<class K, class V>
-std::array<K, 2> get_key_interval(const std::map<K, V>& input_map, const K& k, const K& end_k)
-{
-    auto kv_iter = input_map.upper_bound(k);
-    if (kv_iter != input_map.begin())
-        kv_iter--;
-    const std::size_t start_idx = kv_iter->first;
-    const std::size_t end_idx = (std::next(kv_iter) == input_map.end()) ? end_k : std::next(kv_iter)->first;
-
-    return {start_idx, end_idx};
-}
-
 template<template<typename...> class Map, typename K, typename V>
 V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
 {
@@ -116,135 +66,6 @@ V try_get_val(const Map<K, V>& m, const K& key, const V& default_val)
         return default_val;
     else
         return iter->second;
-}
-
-template<typename T, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-T golden_section_search(const std::function<T(T)>& f, T a, T b, T tol)
-{
-    const T invphi = (std::sqrt(5) - 1) / 2;
-    const T invphi2 = (3 - std::sqrt(5)) / 2;
-
-    T h = b - a;
-    if (h <= tol)
-        return 0.5 * (a + b);
-
-    // Required steps to achieve tolerance
-    int n = static_cast<int>(std::ceil(std::log(tol / h) / std::log(invphi)));
-
-    T c = a + invphi2 * h;
-    T d = a + invphi * h;
-    T yc = f(c);
-    T yd = f(d);
-
-    for (int k = 0; k < (n - 1); k++)
-    {
-        if (yc < yd)
-        {
-            b = d;
-            d = c;
-            yd = yc;
-            h = invphi * h;
-            c = a + invphi2 * h;
-            yc = f(c);
-        }
-        else
-        {
-            a = c;
-            c = d;
-            yc = yd;
-            h = invphi * h;
-            d = a + invphi * h;
-            yd = f(d);
-        }
-    }
-
-    if (yc < yd)
-        return 0.5 * (a + d);
-
-    return 0.5 * (c + b);
-}
-
-template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-void rdp(const std::vector<Vec<T, Dim>>& points,
-         T                               epsilon,
-         std::vector<Vec<T, Dim>>&       out,
-         std::size_t                     start_idx = 0,
-         std::size_t                     step = 1,
-         int                             _end_idx = -1)
-{
-    std::size_t end_idx = (_end_idx > 0) ? static_cast<size_t>(_end_idx) : points.size();
-    std::size_t last_idx = static_cast<size_t>((end_idx - start_idx - 1) / step) * step + start_idx;
-
-    if ((last_idx + 1 - start_idx) < 2)
-        return;
-
-    // find the point with the maximum distance from line BETWEEN start and end
-    T           d_max(0);
-    std::size_t d_max_idx = 0;
-    for (std::size_t idx = start_idx + step; idx < last_idx; idx += step)
-    {
-        std::array<T, Dim> delta;
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            delta[dim] = points.at(last_idx)[dim] - points.at(start_idx)[dim];
-
-        // Normalise
-        T mag(0);
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            mag += std::pow(delta.at(dim), 2.0);
-        mag = std::sqrt(mag);
-        if (mag > 0.0)
-        {
-            for (std::size_t dim = 0; dim < Dim; dim++)
-                delta.at(dim) = delta.at(dim) / mag;
-        }
-
-        std::array<T, Dim> pv;
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            pv[dim] = points.at(idx)[dim] - points.at(start_idx)[dim];
-
-        // Get dot product (project pv onto normalized direction)
-        T pvdot(0);
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            pvdot += delta.at(dim) * pv.at(dim);
-
-        // Scale line direction vector
-        std::array<T, Dim> ds;
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            ds[dim] = pvdot * delta.at(dim);
-
-        // Subtract this from pv
-        std::array<T, Dim> a;
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            a[dim] = pv.at(dim) - ds.at(dim);
-
-        T d(0);
-        for (std::size_t dim = 0; dim < Dim; dim++)
-            d += std::pow(a.at(dim), 2.0);
-        d = std::sqrt(d);
-
-        if (d > d_max)
-        {
-            d_max = d;
-            d_max_idx = idx;
-        }
-    }
-
-    if (d_max > epsilon)
-    {
-        std::vector<Vec<T, Dim>> rec_results_1;
-        rdp<T, Dim>(points, epsilon, rec_results_1, start_idx, step, d_max_idx + 1);
-        std::vector<Vec<T, Dim>> rec_results_2;
-        rdp<T, Dim>(points, epsilon, rec_results_2, d_max_idx, step, end_idx);
-
-        out.assign(rec_results_1.begin(), rec_results_1.end() - 1);
-        out.insert(out.end(), rec_results_2.begin(), rec_results_2.end());
-    }
-    else
-    {
-        out.clear();
-        out.push_back(points.at(start_idx));
-        out.push_back(points.at(last_idx));
-    }
 }
 
 template<typename T, std::size_t Dim, typename std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
@@ -295,35 +116,6 @@ inline std::vector<T> get_triangle_strip_outline_indices(std::size_t num_vertice
     return out_indices;
 }
 
-template<class T, typename F>
-bool compare_class_members(const T&, const T&, F)
-{
-    return false;
-};
-
-template<class T, typename S, typename F, typename... Ss>
-bool compare_class_members(const T& obj_a, const T& obj_b, F cmp, S field, Ss... fields)
-{
-    if (obj_a.*field != obj_b.*field)
-        return cmp(obj_a.*field, obj_b.*field);
-    return compare_class_members(obj_a, obj_b, cmp, fields...);
-};
-
-template<class T>
-bool check_class_members_equal(const T&, const T&)
-{
-    return true;
-};
-
-// run '==' operator for class members in order
-template<class T, typename S, typename... Ss>
-bool check_class_members_equal(const T& obj_a, const T& obj_b, S field, Ss... fields)
-{
-    if (!(std::equal_to<T>{}(obj_a.*field, obj_b.*field)))
-        return false;
-    return check_class_members_equal(obj_a, obj_b, fields...);
-};
-
 inline int next_towards_zero(int value)
 {
     if (value > 0)
@@ -331,26 +123,6 @@ inline int next_towards_zero(int value)
     else if (value < 0)
         return value + 1;
     return 0;
-}
-
-// returns "xpath-ish" path string - might work as xpath
-inline std::string node_path(pugi::xml_node node)
-{
-    std::vector<std::string> parts;
-    while (node && node.type() == pugi::node_element)
-    {
-        std::string part = node.name();
-        if (const pugi::xml_attribute id_attr = node.attribute("id"))
-            part += "[@id='" + std::string(id_attr.value()) + "']";
-        else if (const pugi::xml_attribute s_attr = node.attribute("s"))
-            part += "[@s='" + std::string(s_attr.value()) + "']";
-        else if (const pugi::xml_attribute s_attr = node.attribute("sOffset"))
-            part += "[@sOffset='" + std::string(s_attr.value()) + "']";
-        parts.push_back(part);
-        node = node.parent();
-    }
-    std::reverse(parts.begin(), parts.end());
-    return fmt::format("/{}", fmt::join(parts, "/"));
 }
 
 inline bool parse_bool(std::string_view s)
