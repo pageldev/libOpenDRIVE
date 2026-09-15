@@ -56,6 +56,17 @@ struct XodrParseResult
     std::vector<XodrParseError> errors;
 };
 
+struct RoutingParseError
+{
+    const OdrNode* node;
+    std::string    description;
+};
+
+struct RoutingParseResult
+{
+    std::vector<RoutingParseError> errors;
+};
+
 class OpenDriveMap
 {
 public:
@@ -78,7 +89,7 @@ public:
     void set_node_parents();
 
     Mesh3D       get_mesh(double eps, bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
-    RoutingGraph get_routing_graph(std::vector<std::string>* warnings = nullptr) const;
+    RoutingGraph get_routing_graph(RoutingParseResult* result = nullptr) const;
 
     OpenDriveMapHeader header;
 

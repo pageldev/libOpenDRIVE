@@ -979,7 +979,7 @@ Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<
     return out_mesh;
 }
 
-RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings) const
+RoutingGraph OpenDriveMap::get_routing_graph(RoutingParseResult* result) const
 {
     RoutingGraph routing_graph;
 
@@ -1049,8 +1049,8 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     // Parse Roads
     for (const auto& [road_id, road] : id_to_road)
     {
-        if (road.junction != "-1" && id_to_junction.find(road.junction) == id_to_junction.end() && warnings)
-            warnings->push_back(fmt::format("/road[@id={}]: junction '{}' not found", road_id, road.junction));
+        if (road.junction != "-1" && id_to_junction.find(road.junction) == id_to_junction.end() && result)
+            result->errors.push_back({&road, fmt::format("junction '{}' not found", road.junction)});
 
         for (const auto& [s_lane_section, lane_section] : road.s_to_lane_section)
         {
@@ -1091,22 +1091,20 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
     // Parse Junctions
     for (const auto& [junc_id, junction] : id_to_junction)
     {
-        for (const auto& [conn_id, conn] : junction.id_to_connection)
+        for (const auto& [_, conn] : junction.id_to_connection)
         {
-            const std::string _loc_str = fmt::format("/junction[@id={}]/connection[@id={}]", junc_id, conn_id);
-
             auto road_in_iter = id_to_road.find(conn.incoming_road);
             if (road_in_iter == id_to_road.end())
             {
-                if (warnings)
-                    warnings->push_back(fmt::format("{}: incoming road '{}' not found", _loc_str, conn.incoming_road));
+                if (result)
+                    result->errors.push_back({&conn, fmt::format("incoming road '{}' not found", conn.incoming_road)});
                 continue;
             }
             auto road_conn_iter = id_to_road.find(conn.connecting_road);
             if (road_conn_iter == id_to_road.end())
             {
-                if (warnings)
-                    warnings->push_back(fmt::format("{}: connecting road '{}' not found", _loc_str, conn.connecting_road));
+                if (result)
+                    result->errors.push_back({&conn, fmt::format("connecting road '{}' not found", conn.connecting_road)});
                 continue;
             }
 
@@ -1132,8 +1130,8 @@ RoutingGraph OpenDriveMap::get_routing_graph(std::vector<std::string>* warnings)
             }
             if (!in_road_contact_point)
             {
-                if (warnings)
-                    warnings->push_back(fmt::format("{}: contact point of incoming road '{}' could not be determined", _loc_str, in_road.id));
+                if (result)
+                    result->errors.push_back({&conn, fmt::format("contact point of incoming road '{}' could not be determined", in_road.id)});
                 continue;
             }
 
