@@ -1,10 +1,15 @@
 #include "libodr/Sampler.h"
 
+#include "libodr/CubicBezier.hpp"
 #include "libodr/Geometries/Arc.h"
 #include "libodr/Geometries/CubicSpline.h"
 #include "libodr/Geometries/Line.h"
 #include "libodr/Geometries/ParamPoly3.h"
+#include "libodr/Geometries/RoadGeometry.h"
 #include "libodr/Geometries/Spiral.h"
+#include "libodr/Lane.h"
+#include "libodr/LaneSection.h"
+#include "libodr/RefLine.h"
 #include "libodr/Road.h"
 #include "libodr/Utils.hpp"
 
@@ -13,8 +18,10 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace odr

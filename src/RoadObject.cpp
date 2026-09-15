@@ -3,7 +3,6 @@
 #include "libodr/Sampler.h"
 #include "libodr/Utils.hpp"
 
-#include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "libodr/earcut.hpp"
 
@@ -12,6 +11,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <set>
 
 namespace odr

@@ -1,8 +1,6 @@
 #pragma once
 #include "libodr/OdrNode.h"
 
-#include <climits>
-
 namespace odr
 {
 

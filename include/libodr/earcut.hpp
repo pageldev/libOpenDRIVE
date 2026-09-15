@@ -22,10 +22,10 @@ THIS SOFTWARE.
 
 #include <algorithm>
 #include <cassert>
-#include <cmath>
 #include <cstddef>
-#include <limits>
+#include <cstdint>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 

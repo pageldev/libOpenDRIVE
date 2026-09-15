@@ -1,6 +1,5 @@
 #pragma once
 #include "libodr/Geometries/CubicSpline.h"
-#include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
 #include "libodr/Math.hpp"
 #include "libodr/OdrNode.h"
@@ -14,8 +13,6 @@
 
 namespace odr
 {
-
-struct Lane;
 
 struct Crossfall
 {

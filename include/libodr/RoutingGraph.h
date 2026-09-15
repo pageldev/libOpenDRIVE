@@ -1,7 +1,6 @@
 #pragma once
 #include "libodr/Lane.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <string>

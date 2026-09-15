@@ -1,19 +1,29 @@
 #include "libodr/Geometries/Arc.h"
 #include "libodr/Geometries/Line.h"
+#include "libodr/Geometries/RoadGeometry.h"
+#include "libodr/Junction.h"
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
+#include "libodr/Math.hpp"
 #include "libodr/OpenDriveMap.h"
 #include "libodr/RefLine.h"
 #include "libodr/Road.h"
 #include "libodr/RoadMark.h"
 #include "libodr/RoadObject.h"
-#include <catch2/catch_test_macros.hpp>
+#include "libodr/RoutingGraph.h"
 
+#include "catch2/catch_message.hpp"
+#include "catch2/catch_test_macros.hpp"
+#include "pugixml.hpp"
+
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 struct OpenDriveFixture
 {

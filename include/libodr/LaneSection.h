@@ -3,7 +3,6 @@
 #include "libodr/OdrNode.h"
 
 #include <map>
-#include <string>
 
 namespace odr
 {

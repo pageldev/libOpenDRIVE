@@ -6,11 +6,11 @@
 #include "libodr/RoadMark.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <optional>
 #include <ostream>
-#include <set>
 #include <string>
 #include <string_view>
 #include <vector>

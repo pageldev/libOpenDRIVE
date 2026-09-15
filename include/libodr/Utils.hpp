@@ -2,7 +2,7 @@
 #include "libodr/Math.hpp"
 #include "libodr/RoadObject.h"
 
-#include "fmt/core.h"
+#include "fmt/format.h"
 #include "magic_enum/magic_enum.hpp"
 #include "pugixml.hpp"
 
@@ -10,13 +10,18 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
+#include <cstring>
+#include <iterator>
 #include <map>
-#include <memory>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <system_error>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace odr

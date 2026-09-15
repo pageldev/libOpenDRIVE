@@ -10,9 +10,12 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <fmt/format.h>
+#include <initializer_list>
 #include <iterator>
 #include <set>
+#include <utility>
 
 namespace odr
 {

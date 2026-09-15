@@ -2,7 +2,6 @@
 #include "libodr/Math.hpp"
 
 #include <memory>
-#include <set>
 
 namespace odr
 {

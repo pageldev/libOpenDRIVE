@@ -5,6 +5,7 @@
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 
 namespace odr

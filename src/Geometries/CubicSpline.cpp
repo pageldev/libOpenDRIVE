@@ -1,11 +1,11 @@
 #include "libodr/Geometries/CubicSpline.h"
-#include "libodr/Math.hpp"
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <optional>
 #include <set>
+#include <utility>
 
 namespace odr
 {

@@ -19,17 +19,17 @@
 #include "libodr/Utils.hpp"
 
 #include <algorithm>
-#include <cctype>
 #include <climits>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <set>
-#include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 

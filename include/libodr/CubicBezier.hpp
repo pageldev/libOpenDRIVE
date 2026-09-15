@@ -2,11 +2,16 @@
 #include "libodr/Math.hpp"
 #include "libodr/Utils.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <fmt/format.h>
+#include <iterator>
 #include <map>
 #include <set>
+#include <stdexcept>
+#include <vector>
 
 namespace odr
 {

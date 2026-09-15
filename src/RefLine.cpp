@@ -1,4 +1,5 @@
 #include "libodr/RefLine.h"
+#include "libodr/Geometries/RoadGeometry.h"
 #include "libodr/Math.hpp"
 #include "libodr/Sampler.h"
 #include "libodr/Utils.hpp"
@@ -8,9 +9,8 @@
 #include <iterator>
 #include <limits>
 #include <optional>
-#include <stdexcept>
+#include <set>
 #include <utility>
-#include <vector>
 
 namespace odr
 {
