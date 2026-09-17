@@ -968,7 +968,7 @@ Mesh3D OpenDriveMap::get_mesh(double eps, bool enforce_road_bounds, std::vector<
             road_objects_mesh.add_mesh(road_object.get_mesh(eps, 0, 0, enforce_road_bounds, warnings));
 
         for (const auto& [_, road_signal] : road.id_to_signal)
-            road_signals_mesh.add_mesh(road_signal.get_mesh(enforce_road_bounds));
+            road_signals_mesh.add_mesh(road_signal.get_mesh(enforce_road_bounds, warnings));
     }
 
     Mesh3D out_mesh;

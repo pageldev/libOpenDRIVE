@@ -33,7 +33,7 @@ struct RoadSignal : public OdrNode
                std::optional<std::string> text = std::nullopt,
                std::optional<std::string> country = std::nullopt);
 
-    Mesh3D get_mesh(bool enforce_road_bounds = false) const;
+    Mesh3D get_mesh(bool enforce_road_bounds = false, std::vector<std::string>* warnings = nullptr) const;
 
     static constexpr double Thickness = 0.2;
     static constexpr double DefaultWidth = 0.6;

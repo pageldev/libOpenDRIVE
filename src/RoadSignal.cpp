@@ -72,9 +72,12 @@ Mesh3D RoadSignal::get_box(double w, double l, double h)
                   {});
 }
 
-Mesh3D RoadSignal::get_mesh(bool enforce_road_bounds) const
+Mesh3D RoadSignal::get_mesh(bool enforce_road_bounds, std::vector<std::string>* warnings) const
 {
     const Road& road = *get_parent_or_throw<Road>(*this);
+
+    if (this->height.value_or(0.0) == 0.0 && this->width.value_or(0.0) == 0.0 && warnings)
+        warnings->push_back("signal has neither height nor width: using a default sign");
 
     const Mat3D  rot_mat = EulerAnglesToMatrix<double>(this->roll.value_or(0), this->pitch.value_or(0), this->hOffset.value_or(0));
     const double height = this->height.value_or(DefaultHeight);
