@@ -4,12 +4,14 @@
 #include "libodr/Junction.h"
 #include "libodr/Lane.h"
 #include "libodr/LaneSection.h"
+#include "libodr/LaneValidity.h"
 #include "libodr/Math.hpp"
 #include "libodr/OpenDriveMap.h"
 #include "libodr/RefLine.h"
 #include "libodr/Road.h"
 #include "libodr/RoadMark.h"
 #include "libodr/RoadObject.h"
+#include "libodr/RoadSignal.h"
 #include "libodr/RoutingGraph.h"
 
 #include "catch2/catch_message.hpp"
@@ -42,26 +44,52 @@ struct OpenDriveFixture
     std::unique_ptr<odr::OpenDriveMap> odr_map;
 };
 
-TEST_CASE("odr types are movable", "[types]")
+TEST_CASE("odr types are nothrow movable", "[types]")
 {
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::OpenDriveMap>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::OpenDriveMap>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::Road>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::Road>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObject>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObject>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObjectRepeat>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObjectRepeat>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::RoadObjectOutline>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::RoadObjectOutline>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::LaneSection>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::LaneSection>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::Lane>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::Lane>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::Junction>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::Junction>);
-    STATIC_REQUIRE(std::is_move_constructible_v<odr::JunctionConnection>);
-    STATIC_REQUIRE(std::is_move_assignable_v<odr::JunctionConnection>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::OpenDriveMap>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::OpenDriveMap>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::OpenDriveMapHeader>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::OpenDriveMapHeader>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::Road>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::Road>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadLink>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadLink>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::Speed>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::Speed>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadObject>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadObject>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadObjectRepeat>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadObjectRepeat>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadObjectOutline>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadObjectOutline>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadObjectCorner>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadObjectCorner>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadSignal>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadSignal>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::LaneSection>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::LaneSection>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::Lane>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::Lane>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::HeightOffset>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::HeightOffset>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::LaneValidity>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::LaneValidity>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadMark>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadMark>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadMarkType>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadMarkType>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::RoadMarkLine>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::RoadMarkLine>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::Junction>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::Junction>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::JunctionConnection>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::JunctionConnection>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::JunctionLaneLink>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::JunctionLaneLink>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::JunctionPriority>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::JunctionPriority>);
+    STATIC_REQUIRE(std::is_nothrow_move_constructible_v<odr::JunctionController>);
+    STATIC_REQUIRE(std::is_nothrow_move_assignable_v<odr::JunctionController>);
 }
 
 TEST_CASE("RefLine match on a long straight line", "[match]")

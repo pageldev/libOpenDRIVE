@@ -44,7 +44,6 @@ private:
 struct CubicProfile
 {
     CubicProfile() = default;
-    virtual ~CubicProfile() = default;
 
     std::optional<double> evaluate(double s) const;
     std::optional<double> derivative(double s) const;
