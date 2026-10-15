@@ -47,7 +47,7 @@ Speed::Speed(const std::string& max, const std::string& unit) : max(max), unit(u
 
 Road::Road(
     const std::string& id, double length, const std::string& junction, std::optional<TrafficRule> traffic_rule, std::optional<std::string> name) :
-    id(id), length(length), junction(junction), traffic_rule(traffic_rule), name(name), ref_line(length)
+    id(id), length(length), junction(junction), rule(traffic_rule), name(name), ref_line(length)
 {
     require_or_throw(length > 0, "length must be greater than 0 (got {})", length);
 }

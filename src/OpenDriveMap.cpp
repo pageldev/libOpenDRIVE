@@ -1057,7 +1057,7 @@ RoutingGraph OpenDriveMap::get_routing_graph(RoutingParseResult* result) const
             for (const auto& [lane_id, lane] : lane_section.id_to_lane)
             {
                 const LaneKey lane_key(road_id, s_lane_section, lane_id);
-                const bool    is_rht = road.traffic_rule.value_or(Road::TrafficRule::RHT) == Road::TrafficRule::RHT;
+                const bool    is_rht = road.rule.value_or(Road::TrafficRule::RHT) == Road::TrafficRule::RHT;
                 const bool    lane_follows_road_dir = is_rht ? lane_id < 0 : lane_id > 0;
                 const bool    lane_is_bidirectional = lane.type == "bidirectional";
 

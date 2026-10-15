@@ -92,7 +92,7 @@ public:
     double      length;
     std::string junction;
 
-    std::optional<TrafficRule> traffic_rule;
+    std::optional<TrafficRule> rule;
     std::optional<std::string> name;
 
     std::optional<RoadLink> predecessor;
